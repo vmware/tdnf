@@ -14,15 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-_TDNFCliGetOptionByName(
-    const char* pszName,
-    struct option* pKnownOptions,
-    struct option** ppOption
-    );
-
-
 uint32_t
 TDNFCliValidateOptionName(
     const char* pszName,

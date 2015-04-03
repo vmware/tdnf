@@ -14,13 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-ParseFilter(
-    const char* pszRepolistFilter,
-    TDNF_REPOLISTFILTER* pnFilter
-    );
-
 uint32_t
 TDNFCliParseRepoListArgs(
     PTDNF_CMD_ARGS pCmdArgs,

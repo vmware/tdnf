@@ -14,14 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFFindAvailablePkgByPkg(
-    HySack hSack,
-    HyPackage hPkgToFind,
-    HyPackage* phPkg
-    );
-
 uint32_t
 TDNFFindAvailablePkgByPkg(
     HySack hSack,

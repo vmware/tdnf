@@ -14,34 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-ReadAllBytes(
-    const char* pszFileName,
-    char** pszFileContents
-    );
-
-static
-uint32_t
-ReadGPGKey(
-   const char* pszFile,
-   char** ppszKeyData
-   );
-
-static
-uint32_t
-AddKeyToKeyRing(
-    const char* pszFile,
-    rpmKeyring pKeyring
-    );
-
-static
-uint32_t
-VerifyRpmSig(
-    rpmKeyring pKeyring,
-    const char* pszPkgFile
-    );
-
 uint32_t
 TDNFGPGCheck(
     rpmKeyring pKeyring,
@@ -280,6 +252,8 @@ VerifyRpmSig(
     rpmts pTS = NULL;
     rpmtd pTD = NULL;
     Header pPkgHeader = NULL;
+    pgpDig pDigest = NULL;
+
 
     if(!pKeyring || IsNullOrEmptyString(pszPkgFile))
     {
@@ -300,11 +274,12 @@ VerifyRpmSig(
         dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
+    rpmtsSetVSFlags (pTS, _RPMVSF_NOSIGNATURES);
 
     pTD = rpmtdNew();
     if(!pTD)
     {
-        dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
+        dwError = ERROR_TDNF_RPMTD_CREATE_FAILED;
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
 
@@ -319,7 +294,20 @@ VerifyRpmSig(
 
     if(!headerGet(pPkgHeader, RPMTAG_RSAHEADER, pTD, HEADERGET_MINMEM))
     {
-        dwError = ERROR_TDNF_RPM_NOT_SIGNED; 
+        dwError = ERROR_TDNF_RPM_GET_RSAHEADER_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pDigest = pgpNewDig();
+    if(pgpPrtPkts(pTD->data, pTD->count, pDigest, 0))
+    {
+        dwError = ERROR_TDNF_RPM_GPG_PARSE_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(rpmKeyringLookup(pKeyring, pDigest) != RPMRC_OK)
+    {
+        dwError = ERROR_TDNF_RPM_GPG_NO_MATCH;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -327,6 +315,18 @@ cleanup:
     if(pFD_t)
     {
         Fclose(pFD_t);
+    }
+    if(pDigest)
+    {
+        pgpFreeDig(pDigest);
+    }
+    if(pPkgHeader)
+    {
+        headerFree(pPkgHeader);
+    }
+    if(pTD)
+    {
+        rpmtdFree(pTD);
     }
     if(pTS)
     {

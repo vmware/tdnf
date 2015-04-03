@@ -14,13 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFCopyEnabledRepos(
-    PTDNF_REPO_DATA pRepoData,
-    char*** pppszReposUsed
-    );
-
 uint32_t
 TDNFClean(
     PTDNF pTdnf,

@@ -14,86 +14,7 @@
 */
 #include "includes.h"
     
-typedef struct _ts
-{   
-  rpmts              pTS;
-  rpmKeyring         pKeyring;
-  rpmtransFlags      nTransFlags;
-  rpmprobFilterFlags nProbFilterFlags;
-  FD_t               pFD;
-}TS;
     
-static
-void*
-_TDNFRpmCB(
-     const void* pArg,
-     const rpmCallbackType what,
-     const rpm_loff_t amount,
-     const rpm_loff_t total,
-     fnpyKey key,
-     void* data
-     ); 
-
-static
-uint32_t
-_TDNFPopulateTransaction(
-    TS* pTS,         
-    PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
-    );  
-
-static
-uint32_t
-_TDNFTransAddDowngradePkgs(
-    TS* pTS,
-    PTDNF pTdnf
-    );
-
-static
-uint32_t
-_TDNFTransAddErasePkgs(
-    TS* pTS,
-    PTDNF pTdnf
-    );
-
-static
-uint32_t
-_TDNFTransAddErasePkg(
-    TS* pTS,
-    HyPackage hPkg
-    );
-
-static
-uint32_t
-_TDNFTransAddInstallPkgs(
-    TS* pTS,
-    PTDNF pTdnf
-    );
-
-static
-uint32_t
-_TDNFTransAddInstallPkg(
-    TS* pTS,
-    PTDNF pTdnf,
-    HyPackage hPkg,
-    int nUpgrade
-    );
-
-static
-uint32_t
-_TDNFTransAddUpgradePkgs(
-    TS* pTS,
-    PTDNF pTdnf
-    );
-
-
-static
-uint32_t
-_TDNFRunTransaction(
-    TS* pTS,
-    PTDNF pTdnf
-    );
-
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
@@ -101,7 +22,7 @@ TDNFRpmExecTransaction(
     )
 {
     uint32_t dwError = 0;
-    TS ts = {0};
+    TDNFRPMTS ts = {0};
 
     if(!pTdnf || !pSolvedInfo)
     {
@@ -141,16 +62,16 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(rpmtsSetNotifyCallback(ts.pTS, _TDNFRpmCB, (void*)&ts))
+    if(rpmtsSetNotifyCallback(ts.pTS, TDNFRpmCB, (void*)&ts))
     {
         dwError = ERROR_TDNF_RPMTS_SET_CB_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = _TDNFPopulateTransaction(&ts, pTdnf, pSolvedInfo);
+    dwError = TDNFPopulateTransaction(&ts, pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = _TDNFRunTransaction(&ts, pTdnf);
+    dwError = TDNFRunTransaction(&ts, pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -170,8 +91,8 @@ error:
 }
 
 uint32_t
-_TDNFPopulateTransaction(
-    TS* pTS,
+TDNFPopulateTransaction(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
     )
@@ -180,28 +101,28 @@ _TDNFPopulateTransaction(
 
     if(pSolvedInfo->pPkgsToInstall)
     {
-        dwError = _TDNFTransAddInstallPkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToUpgrade)
     {
-        dwError = _TDNFTransAddUpgradePkgs(
+        dwError = TDNFTransAddUpgradePkgs(
                       pTS,
                       pTdnf);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToRemove)
     {
-        dwError = _TDNFTransAddErasePkgs(
+        dwError = TDNFTransAddErasePkgs(
                       pTS,
                       pTdnf);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToDowngrade)
     {
-        dwError = _TDNFTransAddDowngradePkgs(
+        dwError = TDNFTransAddDowngradePkgs(
                       pTS,
                       pTdnf);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -215,7 +136,7 @@ error:
 }
 
 int
-doCheck(TS* pTS)
+doCheck(PTDNFRPMTS pTS)
 {
   int nResult = 0;
   rpmpsi psi = NULL;
@@ -248,8 +169,8 @@ doCheck(TS* pTS)
 }
 
 uint32_t
-_TDNFRunTransaction(
-    TS* pTS,
+TDNFRunTransaction(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf
     )
 {
@@ -283,8 +204,8 @@ error:
 }
 
 uint32_t
-_TDNFTransAddInstallPkgs(
-    TS* pTS,
+TDNFTransAddInstallPkgs(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf
     )
 {
@@ -301,7 +222,7 @@ _TDNFTransAddInstallPkgs(
     }
     for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
     {
-        dwError = _TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -321,8 +242,8 @@ error:
 }
 
 uint32_t
-_TDNFTransAddInstallPkg(
-    TS* pTS,
+TDNFTransAddInstallPkg(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf,
     HyPackage hPkg,
     int nUpgrade
@@ -436,8 +357,8 @@ error:
 }
 
 uint32_t
-_TDNFTransAddUpgradePkgs(
-    TS* pTS,
+TDNFTransAddUpgradePkgs(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf
     )
 {
@@ -454,7 +375,7 @@ _TDNFTransAddUpgradePkgs(
     }
     for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
     {
-        dwError = _TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 1);
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 1);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -474,8 +395,8 @@ error:
 }
 
 uint32_t
-_TDNFTransAddErasePkgs(
-    TS* pTS,
+TDNFTransAddErasePkgs(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf
     )
 {
@@ -492,7 +413,7 @@ _TDNFTransAddErasePkgs(
     }
     for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
     {
-        dwError = _TDNFTransAddErasePkg(pTS, hPkg);
+        dwError = TDNFTransAddErasePkg(pTS, hPkg);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -512,8 +433,8 @@ error:
 }
 
 uint32_t
-_TDNFTransAddDowngradePkgs(
-    TS* pTS,
+TDNFTransAddDowngradePkgs(
+    PTDNFRPMTS pTS,
     PTDNF pTdnf
     )
 {
@@ -531,7 +452,7 @@ _TDNFTransAddDowngradePkgs(
     }
     for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
     {
-        dwError = _TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
         BAIL_ON_TDNF_ERROR(dwError);
 
         //Downgrade is a removal of existing and installing old.
@@ -549,7 +470,7 @@ _TDNFTransAddDowngradePkgs(
         dwError = TDNFFindInstalledPkgByName(pTdnf->hSack, pszName, &hInstalledPkg);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = _TDNFTransAddErasePkg(pTS, hInstalledPkg);
+        dwError = TDNFTransAddErasePkg(pTS, hInstalledPkg);
         BAIL_ON_TDNF_ERROR(dwError);
 
         hy_package_free(hInstalledPkg);
@@ -577,8 +498,8 @@ error:
 
 
 uint32_t
-_TDNFTransAddErasePkg(
-    TS* pTS,
+TDNFTransAddErasePkg(
+    PTDNFRPMTS pTS,
     HyPackage hPkg
     )
 {
@@ -621,7 +542,7 @@ error:
 
 
 void*
-_TDNFRpmCB(
+TDNFRpmCB(
      const void* pArg,
      const rpmCallbackType what,
      const rpm_loff_t amount,
@@ -632,7 +553,7 @@ _TDNFRpmCB(
 {
     void* pResult = NULL;
     char* pszFileName = (char*)key;
-    TS* pTS = (TS*)data;
+    PTDNFRPMTS pTS = (PTDNFRPMTS)data;
 
     switch (what)
     {

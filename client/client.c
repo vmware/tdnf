@@ -14,20 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFApplyScopeFilter(
-    HyQuery hQuery,
-    TDNF_SCOPE nScope
-    );
-
-static
-uint32_t
-TDNFApplyPackageFilter(
-    HyQuery hQuery,
-    char** ppszPackageNameSpecs
-    );
-
 uint32_t
 TDNFCountCommand(
     PTDNF pTdnf,

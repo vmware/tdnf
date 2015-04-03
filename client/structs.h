@@ -23,3 +23,11 @@ typedef struct _TDNF_
     PTDNF_REPO_DATA pRepos;
 }TDNF;
 
+typedef struct _TDNF_RPM_TS_
+{
+  rpmts              pTS;
+  rpmKeyring         pKeyring;
+  rpmtransFlags      nTransFlags;
+  rpmprobFilterFlags nProbFilterFlags;
+  FD_t               pFD;
+}TDNFRPMTS, *PTDNFRPMTS;

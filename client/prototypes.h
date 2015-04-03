@@ -12,7 +12,52 @@
       * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
       *
 */
+//clean.c
+uint32_t
+TDNFCopyEnabledRepos(
+    PTDNF_REPO_DATA pRepoData,
+    char*** pppszReposUsed
+    );
+
+//client.c
+uint32_t
+TDNFApplyScopeFilter(
+    HyQuery hQuery,
+    TDNF_SCOPE nScope
+    );
+
+
+uint32_t
+TDNFApplyPackageFilter(
+    HyQuery hQuery,
+    char** ppszPackageNameSpecs
+    );
+
 //gpgcheck.c
+uint32_t
+ReadAllBytes(
+    const char* pszFileName,
+    char** pszFileContents
+    );
+
+uint32_t
+ReadGPGKey(
+   const char* pszFile,
+   char** ppszKeyData
+   );
+
+uint32_t
+AddKeyToKeyRing(
+    const char* pszFile,
+    rpmKeyring pKeyring
+    );
+
+uint32_t
+VerifyRpmSig(
+    rpmKeyring pKeyring,
+    const char* pszPkgFile
+    );
+
 uint32_t
 TDNFGPGCheck(
     rpmKeyring pKeyring,
@@ -33,6 +78,12 @@ TDNFLoadYumRepo(
     HySack hSack,
     HyRepo hRepo,
     int nFlags
+    );
+
+//makecache.c
+uint32_t
+TDNFRefreshCache(
+    PTDNF pTdnf
     );
 
 //repoutils.c
@@ -95,6 +146,13 @@ TDNFDownloadPackage(
 
 //packageutils.c
 uint32_t
+TDNFFindAvailablePkgByPkg(
+    HySack hSack,
+    HyPackage hPkgToFind,
+    HyPackage* phPkg
+    );
+
+uint32_t
 TDNFFindInstalledPkgByName(
     HySack hSack,
     const char* pszName,
@@ -122,6 +180,24 @@ TDNFPopulatePkgInfos(
 
 //goal.c
 uint32_t
+TDNFGoalGetResultsIgnoreNoData(
+    HyPackageList hPkgList,
+    PTDNF_PKG_INFO* ppPkgInfoResults
+    );
+
+uint32_t
+TDNFGoalGetResults(
+    HyPackageList hPkgList,
+    PTDNF_PKG_INFO* ppPkgInfoResults
+    );
+
+uint32_t
+TDNFGoalSetUserInstalled(
+    HyGoal hGoal,
+    HyPackageList hPkgList
+    );
+
+uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     HyPackageList hPkgList,
@@ -136,6 +212,15 @@ TDNFGoalReportProblems(
     );
 //config.c
 uint32_t
+TDNFReadKeyValue(
+    GKeyFile* pKeyFile,
+    char* pszGroupName,
+    char* pszKeyName,
+    char* pszDefault,
+    char** ppszValue
+    );
+
+uint32_t
 TDNFReadConfig(
     char* pszConfFile,
     char* pszConfGroup,
@@ -148,6 +233,16 @@ TDNFFreeConfig(
     );
 
 //repo.c
+uint32_t
+TDNFPrintRepoMetadata(
+    LrYumRepoMd* pRepoMD
+    );
+
+uint32_t
+TDNFInitRepoFromMetaData(
+    HyRepo hRepo,
+    LrYumRepo* pRepo);
+
 uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
@@ -172,13 +267,136 @@ TDNFGetRepoByName(
 
 //repolist.c
 uint32_t
+TDNFLoadReposFromFile(
+    char* pszRepoFile,
+    PTDNF_REPO_DATA* ppRepos
+    );
+
+uint32_t
 TDNFLoadRepoData(
     PTDNF_CONF pConf,
     TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
     );
 
+//resolve.c
+HySubject
+hy_subject_create(
+    const char * pattern
+    );
+
+HyPossibilities
+hy_subject_nevra_possibilities_real(
+    HySubject subject,
+    HyForm *forms, HySack sack, int flags
+    );
+
+int
+hy_possibilities_next_nevra(
+    HyPossibilities iter,
+    HyNevra *out_nevra
+    );
+
+uint32_t
+TDNFGetMatchingInstalledAndAvailable(
+    PTDNF pTdnf,
+    int nAlterType,
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList* phPkgListGoal
+    );
+
+uint32_t
+TDNFGetMatching(
+    PTDNF pTdnf,
+    int nSystem,
+    const char* pszName,
+    HyPackageList* phPkgList
+    );
+
+uint32_t
+TDNFGetGoalPackageList(
+    TDNF_ALTERTYPE nAlterType,
+    HyPackageList hPkgsInstalled,
+    HyPackageList hPkgsAvailable,
+    HyPackageList* phPkgList
+    );
+
+uint32_t
+TDNFGetSelector(
+    PTDNF pTdnf,
+    const char* pszPkg,
+    HySelector* phSelector
+    );
+
+//rpmtrans.c
+void*
+TDNFRpmCB(
+     const void* pArg,
+     const rpmCallbackType what,
+     const rpm_loff_t amount,
+     const rpm_loff_t total,
+     fnpyKey key,
+     void* data
+     );
+
+uint32_t
+TDNFPopulateTransaction(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    );
+
+uint32_t
+TDNFTransAddDowngradePkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFTransAddErasePkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFTransAddErasePkg(
+    PTDNFRPMTS pTS,
+    HyPackage hPkg
+    );
+
+uint32_t
+TDNFTransAddInstallPkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFTransAddInstallPkg(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf,
+    HyPackage hPkg,
+    int nUpgrade
+    );
+
+uint32_t
+TDNFTransAddUpgradePkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFRunTransaction(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
 //memory.c
+void
+TDNFFreePackageInfoContents(
+    PTDNF_PKG_INFO pPkgInfo
+    );
+
 uint32_t
 TDNFAllocateMemory(
     size_t size,
@@ -188,6 +406,44 @@ TDNFAllocateMemory(
 void
 TDNFFreeMemory(
     void* pMemory
+    );
+
+//search.c
+uint32_t
+TDNFQueryTermsHelper(
+    HyPackageList hAccumPkgList,
+    HyQuery hQuery,
+    int nKeyId,
+    const char* pszMatch
+    );
+
+uint32_t
+TDNFCopyWithWildCards(
+    const char* pszSrc,
+    const char** ppszDst
+    );
+
+uint32_t
+QueryTermsInNameSummary(
+    HyPackageList,
+    HyQuery,
+    const char*
+    );
+
+uint32_t
+QueryTermsInDescUrl(
+    HyPackageList,
+    HyQuery,
+    const char*
+    );
+
+uint32_t
+TDNFQueryTerms(
+    HyPackageList hAccumPkgList,
+    PTDNF_CMD_ARGS pCmdArgs,
+    HyQuery hQuery,
+    int nStartArgIndex,
+    TDNFQueryTermsFunction pfQueryTerms
     );
 
 //strings.c
@@ -208,6 +464,22 @@ TDNFAllocateStringPrintf(
     char** ppszDst,
     const char* pszFmt,
     ...
+    );
+//updateinfo.c
+uint32_t
+TDNFGetUpdateInfoPackages(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
+    );
+
+void
+TDNFFreeUpdateInfoReferences(
+    PTDNF_UPDATEINFO_REF pRef
+    );
+
+void
+TDNFFreeUpdateInfoPackages(
+    PTDNF_UPDATEINFO_PKG pPkg
     );
 
 //utils.c

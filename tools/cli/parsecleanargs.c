@@ -14,13 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-ParseCleanType(
-    const char* pszCleanType,
-    TDNF_CLEANTYPE* pnCleanType
-    );
-
 uint32_t
 TDNFCliParseCleanArgs(
     PTDNF_CMD_ARGS pCmdArgs,

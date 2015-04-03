@@ -151,7 +151,47 @@ TDNFCliHelpCommand(
     PTDNF_CMD_ARGS pCmdArgs
     );
 
+//installcmd.c
+uint32_t
+PrintExistingPackagesSkipped(
+    PTDNF_PKG_INFO pPkgInfos
+    );
+
+uint32_t
+PrintNotAvailablePackages(
+    PTDNF_PKG_INFO pPkgInfos
+    );
+
+uint32_t
+PrintAction(
+    PTDNF_PKG_INFO pPkgInfos,
+    TDNF_ALTERTYPE nAlterType
+    );
+
+//main.c
+uint32_t
+PrintError(
+    uint32_t dwErrorCode
+    );
+
+uint32_t
+TDNFCliGetErrorString(
+    uint32_t dwErrorCode,
+    char** ppszError
+    );
+
+void
+TDNFCliShowVersion(
+    );
+
 //options.c
+uint32_t
+_TDNFCliGetOptionByName(
+    const char* pszName,
+    struct option* pKnownOptions,
+    struct option** ppOption
+    );
+
 uint32_t
 TDNFCliValidateOptionName(
     const char* pszOptionName,
@@ -179,6 +219,32 @@ ShowConsoleProps(
 
 //parseargs.c
 uint32_t
+TDNFCopyOptions(
+    PTDNF_CMD_ARGS pOptionArgs,
+    PTDNF_CMD_ARGS pArgs
+    );
+
+uint32_t
+ParseOption(
+    const char* pszName,
+    const char* pszArg,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
+ParseRpmVerbosity(
+    const char* pszVerbosity,
+    int* pnVerbosity
+    );
+
+uint32_t
+HandleOptionsError(
+    const char* pszName,
+    const char* pszArg,
+    struct option* pstOptions
+    );
+
+uint32_t
 TDNFCliParseArgs(
     int argc,
     char* const* argv,
@@ -193,6 +259,12 @@ TDNFCliParsePackageArgs(
     );
 
 //parsecleanargs.c
+uint32_t
+ParseCleanType(
+    const char* pszCleanType,
+    TDNF_CLEANTYPE* pnCleanType
+    );
+
 uint32_t
 TDNFCliParseCleanArgs(
     PTDNF_CMD_ARGS pCmdArgs,
@@ -218,10 +290,24 @@ TDNFCliParseInfoArgs(
     PTDNF_LIST_ARGS* ppListArgs
     );
 
+//parserepolistargs.c
+uint32_t
+ParseFilter(
+    const char* pszRepolistFilter,
+    TDNF_REPOLISTFILTER* pnFilter
+    );
+
 uint32_t
 TDNFCliParseRepoListArgs(
     PTDNF_CMD_ARGS pCmdArgs,
     TDNF_REPOLISTFILTER* pnFilter
+    );
+
+//parseupdateinfo.c
+uint32_t
+ParseMode(
+    const char* pszOutMode,
+    TDNF_UPDATEINFO_OUTPUT* pnOutMode
     );
 
 uint32_t
@@ -233,6 +319,24 @@ TDNFCliParseUpdateInfoArgs(
 void
 TDNFFreeUpdateInfoArgs(
     PTDNF_UPDATEINFO_ARGS pUpdateInfoArgs
+    );
+
+//updateinfocmd.c
+char*
+TDNFGetUpdateInfoType(
+    int nType
+    );
+
+uint32_t
+TDNFCliUpdateInfoList(
+    PTDNF_UPDATEINFO pUpdateInfo
+    );
+
+uint32_t
+TDNFCliUpdateInfoSummary(
+    PTDNF pTdnf,
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_UPDATEINFO_ARGS pInfoArgs
     );
 
 void

@@ -14,13 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFLoadReposFromFile(
-    char* pszRepoFile,
-    PTDNF_REPO_DATA* ppRepos
-    );
-
 uint32_t
 TDNFRepoList(
     PTDNF pTdnf,

@@ -16,36 +16,6 @@
 
 static TDNF_CMD_ARGS _opt = {0};
 
-static
-uint32_t
-_TDNFCopyOptions(
-    PTDNF_CMD_ARGS pOptionArgs,
-    PTDNF_CMD_ARGS pArgs
-    );
-
-static
-uint32_t
-ParseOption(
-    const char* pszName,
-    const char* pszArg,
-    PTDNF_CMD_ARGS pCmdArgs
-    );
-
-static
-uint32_t
-ParseRpmVerbosity(
-    const char* pszVerbosity,
-    int* pnVerbosity
-    );
-
-static
-uint32_t
-HandleOptionsError(
-    const char* pszName,
-    const char* pszArg,
-    struct option* pstOptions
-    );
-
 //options - incomplete
 static struct option pstOptions[] =
 {
@@ -148,7 +118,7 @@ TDNFCliParseArgs(
             }
     }
 
-    dwError = _TDNFCopyOptions(&_opt, pCmdArgs);
+    dwError = TDNFCopyOptions(&_opt, pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
     //Collect extra args
@@ -187,7 +157,7 @@ error:
 }
 
 uint32_t
-_TDNFCopyOptions(
+TDNFCopyOptions(
     PTDNF_CMD_ARGS pOptionArgs,
     PTDNF_CMD_ARGS pArgs
     )

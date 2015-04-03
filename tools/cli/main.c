@@ -14,24 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-PrintError(
-    uint32_t dwErrorCode
-    );
-
-static
-uint32_t
-TDNFCliGetErrorString(
-    uint32_t dwErrorCode,
-    char** ppszError
-    );
-
-static
-void
-TDNFCliShowVersion(
-    );
-
 int main(int argc, char* argv[])
 {
     uint32_t dwError = 0;

@@ -14,27 +14,10 @@
 */
 #include "includes.h"
 
-static
-char*
-_TDNFGetUpdateInfoType(
-    int nType
-    );
 
-static
-uint32_t
-TDNFCliUpdateInfoList(
-    PTDNF_UPDATEINFO pUpdateInfo
-    );
-
-uint32_t
-TDNFCliUpdateInfoSummary(
-    PTDNF pTdnf,
-    PTDNF_CMD_ARGS pCmdArgs,
-    PTDNF_UPDATEINFO_ARGS pInfoArgs
-    );
 
 char*
-_TDNFGetUpdateInfoType(
+TDNFGetUpdateInfoType(
     int nType
     )
 {
@@ -134,7 +117,7 @@ TDNFCliUpdateInfoSummary(
             printf(
                 "%d %s notice(s)\n",
                 pSummary[i].nCount,
-                _TDNFGetUpdateInfoType(pSummary[i].nType));
+                TDNFGetUpdateInfoType(pSummary[i].nType));
         }
     }
 
@@ -170,7 +153,7 @@ TDNFCliUpdateInfoList(
         {
             fprintf(stdout, "%s %s %s\n",
                 pInfo->pszID,
-                _TDNFGetUpdateInfoType(pInfo->nType),
+                TDNFGetUpdateInfoType(pInfo->nType),
                 pPkg->pszFileName);
             
             pPkg = pPkg->pNext;

@@ -15,24 +15,6 @@
 #include "includes.h"
 
 uint32_t
-TDNFGoalGetResultsIgnoreNoData(
-    HyPackageList hPkgList,
-    PTDNF_PKG_INFO* ppPkgInfoResults
-    );
-
-uint32_t
-TDNFGoalGetResults(
-    HyPackageList hPkgList,
-    PTDNF_PKG_INFO* ppPkgInfoResults
-    );
-
-uint32_t
-TDNFGoalSetUserInstalled(
-    HyGoal hGoal,
-    HyPackageList hPkgList
-    );
-
-uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     HyPackageList hPkgList,

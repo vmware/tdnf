@@ -14,24 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-PrintExistingPackagesSkipped(
-    PTDNF_PKG_INFO pPkgInfos
-    );
-
-static
-uint32_t
-PrintNotAvailablePackages(
-    PTDNF_PKG_INFO pPkgInfos
-    );
-static
-uint32_t
-PrintAction(
-    PTDNF_PKG_INFO pPkgInfos,
-    TDNF_ALTERTYPE nAlterType
-    );
-
 uint32_t
 TDNFCliInstallCommand(
     PTDNF pTdnf,

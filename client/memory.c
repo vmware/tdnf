@@ -14,12 +14,6 @@
 */
 #include "includes.h"
 
-static
-void
-_TDNFFreePackageInfoContents(
-    PTDNF_PKG_INFO pPkgInfo
-    );
-
 uint32_t
 TDNFAllocateMemory(
     size_t size,
@@ -77,7 +71,7 @@ TDNFFreePackageInfo(
         PTDNF_PKG_INFO pPkgInfoTemp = pPkgInfo;
         pPkgInfo = pPkgInfo->pNext;
 
-        _TDNFFreePackageInfoContents(pPkgInfoTemp);
+        TDNFFreePackageInfoContents(pPkgInfoTemp);
         TDNFFreeMemory(pPkgInfoTemp);
     }
 }
@@ -93,14 +87,14 @@ TDNFFreePackageInfoArray(
     {
       for(unIndex = 0; unIndex < unLength; ++unIndex)
       {
-        _TDNFFreePackageInfoContents(&pPkgInfoArray[unIndex]);
+        TDNFFreePackageInfoContents(&pPkgInfoArray[unIndex]);
       }
     }
     TDNF_SAFE_FREE_MEMORY(pPkgInfoArray);
 }
 
 void
-_TDNFFreePackageInfoContents(
+TDNFFreePackageInfoContents(
     PTDNF_PKG_INFO pPkgInfo
     )
 {

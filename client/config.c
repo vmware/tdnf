@@ -14,16 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFReadKeyValue(
-    GKeyFile* pKeyFile,
-    char* pszGroupName,
-    char* pszKeyName,
-    char* pszDefault,
-    char** ppszValue
-    );
-
 int
 TDNFConfGetRpmVerbosity(
     PTDNF pTdnf

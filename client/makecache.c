@@ -14,12 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFRefreshCache(
-    PTDNF pTdnf
-    );
-
 uint32_t
 TDNFMakeCache(
     PTDNF pTdnf

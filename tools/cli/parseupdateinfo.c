@@ -14,13 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-ParseMode(
-    const char* pszOutMode,
-    TDNF_UPDATEINFO_OUTPUT* pnOutMode
-    );
-
 uint32_t
 TDNFCliParseUpdateInfoArgs(
     PTDNF_CMD_ARGS pCmdArgs,

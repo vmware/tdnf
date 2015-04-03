@@ -14,24 +14,6 @@
 */
 #include "includes.h"
 
-static
-uint32_t
-TDNFGetUpdateInfoPackages(
-    HyAdvisory hAdv,
-    PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
-    );
-
-static
-void
-TDNFFreeUpdateInfoReferences(
-    PTDNF_UPDATEINFO_REF pRef
-    );
-
-static
-void
-TDNFFreeUpdateInfoPackages(
-    PTDNF_UPDATEINFO_PKG pPkg
-    );
 
 //TODO: Refactor UpdateInfoSummary into one function
 uint32_t

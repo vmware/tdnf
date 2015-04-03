@@ -14,17 +14,6 @@
 */
 #include "includes.h"
 
-uint32_t
-TDNFPrintRepoMetadata(
-    LrYumRepoMd* pRepoMD
-    );
-
-static
-uint32_t
-TDNFInitRepoFromMetaData(
-    HyRepo hRepo,
-    LrYumRepo* pRepo);
-
 //Download repo metadata and initialize
 uint32_t
 TDNFInitRepo(

@@ -14,50 +14,6 @@
 */
 #include "includes.h"
 
-typedef uint32_t (*TDNFQueryTermsFunction)(HyPackageList, HyQuery, const char*);
-
-static
-uint32_t
-TDNFQueryTermsHelper(
-    HyPackageList hAccumPkgList,
-    HyQuery hQuery,
-    int nKeyId,
-    const char* pszMatch
-    );
-
-static
-uint32_t
-TDNFCopyWithWildCards(
-    const char* pszSrc,
-    const char** ppszDst
-    );
-
-static
-uint32_t
-QueryTermsInNameSummary(
-    HyPackageList,
-    HyQuery,
-    const char*
-    );
-
-static
-uint32_t
-QueryTermsInDescUrl(
-    HyPackageList,
-    HyQuery,
-    const char*
-    );
-
-static
-uint32_t
-TDNFQueryTerms(
-    HyPackageList hAccumPkgList,
-    PTDNF_CMD_ARGS pCmdArgs,
-    HyQuery hQuery,
-    int nStartArgIndex,
-    TDNFQueryTermsFunction pfQueryTerms
-    );
-
 uint32_t
 TDNFSearchCommand(
     PTDNF pTdnf,
@@ -199,7 +155,6 @@ error:
     goto cleanup;
 }
 
-static
 uint32_t
 QueryTermsInNameSummary(
     HyPackageList hAccumPkgList,
@@ -227,7 +182,6 @@ error:
     goto cleanup;
 }
 
-static
 uint32_t
 QueryTermsInDescUrl(
     HyPackageList hAccumPkgList,
@@ -255,7 +209,6 @@ error:
     goto cleanup;
 }
 
-static
 uint32_t
 TDNFQueryTerms(
     HyPackageList hAccumPkgList,
@@ -301,7 +254,6 @@ error:
     goto cleanup;
 }
 
-static
 uint32_t
 TDNFQueryTermsHelper(
     HyPackageList hAccumPkgList,
@@ -359,7 +311,6 @@ error:
     goto cleanup;
 }
 
-static
 uint32_t
 TDNFCopyWithWildCards(
     const char* pszSrc,

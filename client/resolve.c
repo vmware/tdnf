@@ -14,45 +14,6 @@
 */
 #include "includes.h"
 
-HySubject hy_subject_create(const char * pattern);
-HyPossibilities hy_subject_nevra_possibilities_real(HySubject subject,
-    HyForm *forms, HySack sack, int flags);
-int hy_possibilities_next_nevra(HyPossibilities iter, HyNevra *out_nevra);
-
-uint32_t
-_TDNFGetMatchingInstalledAndAvailable(
-    PTDNF pTdnf,
-    int nAlterType,
-    const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
-    HyPackageList* phPkgListGoal
-    );
-
-static
-uint32_t
-_TDNFGetMatching(
-    PTDNF pTdnf,
-    int nSystem,
-    const char* pszName,
-    HyPackageList* phPkgList
-    );
-
-static
-uint32_t
-_TDNFGetGoalPackageList(
-    TDNF_ALTERTYPE nAlterType,
-    HyPackageList hPkgsInstalled,
-    HyPackageList hPkgsAvailable,
-    HyPackageList* phPkgList
-    );
-
-uint32_t
-_TDNFGetSelector(
-    PTDNF pTdnf,
-    const char* pszPkg,
-    HySelector* phSelector
-    );
-
 uint32_t
 TDNFResolve(
     PTDNF pTdnf,
@@ -111,7 +72,7 @@ TDNFResolve(
     }
     else
     {
-        dwError = _TDNFGetMatchingInstalledAndAvailable(
+        dwError = TDNFGetMatchingInstalledAndAvailable(
                       pTdnf,
                       nAlterType,
                       pszPkgName,
@@ -119,7 +80,7 @@ TDNFResolve(
                       &hPkgListGoal);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = _TDNFGetSelector(
+        dwError = TDNFGetSelector(
                       pTdnf,
                       pszPkgName,
                       &hSelector);
@@ -179,7 +140,7 @@ error:
 }
 
 uint32_t
-_TDNFGetMatchingInstalledAndAvailable(
+TDNFGetMatchingInstalledAndAvailable(
     PTDNF pTdnf,
     int nAlterType,
     const char* pszName,
@@ -198,21 +159,21 @@ _TDNFGetMatchingInstalledAndAvailable(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = _TDNFGetMatching(
+    dwError = TDNFGetMatching(
                   pTdnf,
                   1,//Installed
                   pszName,
                   &hPkgsInstalled);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = _TDNFGetMatching(
+    dwError = TDNFGetMatching(
                   pTdnf,
                   0,//Available
                   pszName,
                   &hPkgsAvailable);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = _TDNFGetGoalPackageList(
+    dwError = TDNFGetGoalPackageList(
                   nAlterType,
                   hPkgsInstalled,
                   hPkgsAvailable,
@@ -253,7 +214,7 @@ error:
 }
 
 uint32_t
-_TDNFGetMatching(
+TDNFGetMatching(
     PTDNF pTdnf,
     int nSystem,
     const char* pszPkgName,
@@ -313,7 +274,7 @@ error:
 }
 
 uint32_t
-_TDNFGetGoalPackageList(
+TDNFGetGoalPackageList(
     TDNF_ALTERTYPE nAlterType,
     HyPackageList hPkgsInstalled,
     HyPackageList hPkgsAvailable,
@@ -368,7 +329,7 @@ error:
 
 
 uint32_t
-_TDNFGetSelector(
+TDNFGetSelector(
     PTDNF pTdnf,
     const char* pszPkg,
     HySelector* phSelector
