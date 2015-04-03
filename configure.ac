@@ -43,9 +43,6 @@ AC_CHECK_HEADERS(rpm/rpmlib.h)
 echo "Looking for librpm libs"
 AC_CHECK_LIB(rpm, rpmtsCreate)
 
-echo "Looking for librpmio libs"
-AC_CHECK_LIB(rpmio, rpmReadConfigFiles)
-
 #makefiles
 AC_CONFIG_FILES([Makefile
                  client/Makefile

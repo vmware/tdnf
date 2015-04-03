@@ -29,5 +29,4 @@ libtdnfclient_la_SOURCES = \
 libtdnfclient_la_LIBADD =  \
     -lhawkey \
     -lrepo \
-    -lrpm \
-    -lrpmio
+    -lrpm
