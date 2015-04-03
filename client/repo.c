@@ -360,7 +360,7 @@ TDNFGetRepoByName(
     }
     pRepos = pTdnf->pRepos;
 
-    while(pRepos->pNext)
+    while(pRepos)
     {
         if(!strcmp(pszName, pRepos->pszName))
         {
