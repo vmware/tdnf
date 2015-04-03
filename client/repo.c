@@ -358,6 +358,13 @@ TDNFGetRepoByName(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    if(!pTdnf->pRepos)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pRepos = pTdnf->pRepos;
 
     while(pRepos)
