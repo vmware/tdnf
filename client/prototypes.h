@@ -192,6 +192,14 @@ TDNFPopulatePkgInfos(
     PTDNF_PKG_INFO* ppPkgInfos
     );
 
+uint32_t
+TDNFPopulatePkgInfoArray(
+    HyPackageList hPkgList,
+    TDNF_PKG_DETAIL nDetail,
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t* pdwCount
+    );
+
 //goal.c
 uint32_t
 TDNFGoalGetResultsIgnoreNoData(

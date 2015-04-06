@@ -21,6 +21,13 @@ uint32_t
     HyQuery,
     const char*);
 
+typedef enum
+{
+    DETAIL_LIST,
+    DETAIL_INFO
+}TDNF_PKG_DETAIL;
+
+
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 
 #define BAIL_ON_TDNF_ERROR(dwError) \
