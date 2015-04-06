@@ -12,6 +12,14 @@
       * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
       *
 */
+
+//checklocal.c
+uint32_t
+TDNFCheckLocalPackagesInternal(
+    PTDNF pTdnf,
+    const char* pszLocalPath
+    );
+
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
@@ -66,6 +74,12 @@ TDNFGPGCheck(
     );
 
 //init.c
+uint32_t
+TDNFCloneCmdArgs(
+    PTDNF_CMD_ARGS pCmdArgsIn,
+    PTDNF_CMD_ARGS* ppCmdArgs
+    );
+
 uint32_t
 TDNFInitSack(
     PTDNF pTdnf,
@@ -211,6 +225,34 @@ TDNFGoalReportProblems(
     HyGoal hGoal
     );
 //config.c
+int
+TDNFConfGetRpmVerbosity(
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFConfSetFlag(
+    TDNF_CONF_FLAG nFlag,
+    int nValue //0 or 1
+    );
+
+uint32_t
+TDNFConfGetFlag(
+    TDNF_CONF_FLAG nFlag,
+    int nValue //0 or 1
+    );
+
+uint32_t
+TDNFConfSetValue(
+    TDNF_CONF_TYPE nType,
+    const char* pszValue
+    );
+
+uint32_t
+TDNFConfGetValue(
+    TDNF_CONF_TYPE nType,
+    char** ppszValue
+    );
 uint32_t
 TDNFReadKeyValue(
     GKeyFile* pKeyFile,
@@ -330,6 +372,12 @@ TDNFGetSelector(
     );
 
 //rpmtrans.c
+uint32_t
+TDNFRpmExecTransaction(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    );
+
 void*
 TDNFRpmCB(
      const void* pArg,
@@ -484,13 +532,38 @@ TDNFFreeUpdateInfoPackages(
 
 //utils.c
 uint32_t
+TDNFIsSystemError(
+    uint32_t dwError
+    );
+
+uint32_t
+TDNFGetSystemError(
+    uint32_t dwError
+    );
+
+uint32_t
 TDNFIsDir(
     const char* pszPath,
     int* pnPathIsDir
     );
 
+int
+TDNFIsGlob(
+    const char* pszString
+    );
+
 uint32_t
-TDNFUtilsFormatSize(
-    uint32_t dwSize,
-    char** ppszFormattedSize
+TDNFUtilsMakeDir(
+    const char* pszPath
+    );
+
+uint32_t
+TDNFUtilsMakeDirs(
+    const char* pszPath
+    );
+
+//validate.c
+uint32_t
+TDNFValidateCmdArgs(
+    PTDNF pTdnf
     );

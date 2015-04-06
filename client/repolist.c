@@ -14,33 +14,6 @@
 */
 #include "includes.h"
 
-uint32_t
-TDNFRepoList(
-    PTDNF pTdnf,
-    TDNF_REPOLISTFILTER nFilter,
-    PTDNF_REPO_DATA* ppReposAll
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_REPO_DATA pReposAll = NULL;
-
-    if(!pTdnf || !pTdnf->pConf || !ppReposAll)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFLoadRepoData(pTdnf->pConf, nFilter, &pReposAll);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    *ppReposAll = pReposAll;
-
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
 
 uint32_t
 TDNFLoadRepoData(

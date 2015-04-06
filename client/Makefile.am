@@ -2,18 +2,16 @@ lib_LTLIBRARIES = libtdnfclient.la
 libtdnfclient_la_CPPFLAGS = -I$(top_srcdir)/include
 
 libtdnfclient_la_SOURCES = \
-    checklocal.c \
+    api.c \
     clean.c \
     client.c \
     config.c \
     goal.c \
     gpgcheck.c \
     init.c \
-    install.c \
     makecache.c \
     memory.c \
     packageutils.c \
-    provides.c \
     repo.c \
     remoterepo.c \
     repolist.c \

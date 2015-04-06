@@ -113,6 +113,7 @@ uint32_t
     {ERROR_TDNF_PACKAGELIST_EMPTY,   "ERROR_TDNF_PACKAGELIST_EMPTY",   "Packagelist was empty"}, \
     {ERROR_TDNF_GOAL_CREATE,         "ERROR_TDNF_GOAL_CREATE",         "Error creating goal"}, \
     {ERROR_TDNF_INVALID_RESOLVE_ARG, "ERROR_TDNF_INVALID_RESOLVE_ARG", "Invalid argument in resolve"}, \
+    {ERROR_TDNF_CLEAN_UNSUPPORTED,   "ERROR_TDNF_CLEAN_UNSUPPORTED",   "Clean type specified is not supported in this release. Please try clean all."}, \
     {ERROR_TDNF_HAWKEY_BASE,         "ERROR_TDNF_HAWKEY_BASE",         "Hawkey base error"}, \
     {ERROR_TDNF_HAWKEY_FAILED,       "ERROR_TDNF_HAWKEY_FAILED",       "Hawkey general runtime error"}, \
     {ERROR_TDNF_HAWKEY_OP,           "ERROR_TDNF_HAWKEY_OP",           "Hawkey client programming error"}, \

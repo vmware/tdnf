@@ -15,61 +15,6 @@
 #include "includes.h"
 
 uint32_t
-TDNFClean(
-    PTDNF pTdnf,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO* ppCleanInfo
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CLEAN_INFO pCleanInfo = NULL;
-    char** ppszReposUsed = NULL;
-
-    if(!pTdnf || !ppCleanInfo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFAllocateMemory(
-                sizeof(TDNF_CLEAN_INFO),
-                (void**)&pCleanInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFCopyEnabledRepos(pTdnf->pRepos, &pCleanInfo->ppszReposUsed);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    ppszReposUsed = pCleanInfo->ppszReposUsed;
-    if(nCleanType == CLEANTYPE_ALL)
-    {
-        while(*ppszReposUsed)
-        {
-            dwError = TDNFRepoRemoveCache(pTdnf, *ppszReposUsed);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            ++ppszReposUsed;
-        }
-    }
-
-    pCleanInfo->nCleanAll = (nCleanType == CLEANTYPE_ALL);
-
-    *ppCleanInfo = pCleanInfo;
-cleanup:
-    return dwError;
-
-error:
-    if(ppCleanInfo)
-    {
-        *ppCleanInfo = NULL;
-    }
-    if(pCleanInfo)
-    {
-        TDNFFreeCleanInfo(pCleanInfo);
-    }
-    goto cleanup;
-}
-
-uint32_t
 TDNFCopyEnabledRepos(
     PTDNF_REPO_DATA pRepoData,
     char*** pppszReposUsed

@@ -14,36 +14,6 @@
 */
 #include "includes.h"
 
-uint32_t
-TDNFMakeCache(
-    PTDNF pTdnf
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CLEAN_INFO pCleanInfo = NULL;
-
-    if(!pTdnf)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    //Do clean metadata and refresh
-    dwError = TDNFClean(pTdnf, CLEANTYPE_ALL, &pCleanInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFRefreshCache(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-cleanup:
-    if(pCleanInfo)
-    {
-        TDNFFreeCleanInfo(pCleanInfo);
-    }
-    return dwError;
-
-error:
-    goto cleanup;
-}
 
 uint32_t
 TDNFRefreshCache(
