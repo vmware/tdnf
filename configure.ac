@@ -1,5 +1,5 @@
 AC_INIT(tdnfconf, 1.0)
-AC_MSG_NOTICE([discus tdnf configuration])
+AC_MSG_NOTICE([tdnf configuration])
 
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
