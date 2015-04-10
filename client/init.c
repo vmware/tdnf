@@ -14,92 +14,6 @@
 */
 #include "includes.h"
 
-uint32_t
-TDNFOpenHandle(
-    PTDNF_CMD_ARGS pArgs,
-    PTDNF* ppTdnf
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF pTdnf = NULL;
-    HyRepo hRepo = NULL;
-    int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
-
-    if(!pArgs || !ppTdnf)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFAllocateMemory(
-                sizeof(TDNF),
-                (void**)&pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFReadConfig(TDNF_CONF_FILE, TDNF_CONF_GROUP, &pTdnf->pConf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFLoadRepoData(
-                  pTdnf->pConf,
-                  REPOLISTFILTER_ENABLED,
-                  &pTdnf->pRepos);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFInitSack(pTdnf, &pTdnf->hSack, HY_LOAD_FILELISTS);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    //If there is an empty repo directory, do nothing
-    if(pTdnf->pRepos)
-    {
-        PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
-        while(pTempRepo)
-        {
-            if(pTempRepo->nEnabled)
-            {
-                dwError = TDNFInitRepo(pTdnf, pTempRepo, &hRepo);
-                if(dwError)
-                {
-                    if(pTempRepo->nSkipIfUnavailable)
-                    {
-                        pTempRepo->nEnabled = 0;
-                        fprintf(stderr, "Disabling Repo: '%s'\n", pTempRepo->pszName);
-
-                        dwError = 0;
-                    }
-                }
-                BAIL_ON_TDNF_ERROR(dwError);
-
-                if(pTempRepo->nEnabled)
-                {
-                    pTempRepo->hRepo = hRepo;
-
-                    dwError = TDNFLoadYumRepo(pTdnf->hSack, hRepo, nYumFlags);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
-            }
-            pTempRepo = pTempRepo->pNext;
-        }
-    }
-    
-    *ppTdnf = pTdnf;
-
-cleanup:
-    return dwError;
-
-error:
-    if(pTdnf)
-    {
-        TDNFCloseHandle(pTdnf);
-    }
-    if(ppTdnf)
-    {
-        *ppTdnf = NULL;
-    }
-    goto cleanup;
-}
 
 uint32_t
 TDNFLoadYumRepo(
@@ -175,30 +89,6 @@ error:
     goto cleanup;
 }
 
-
-void
-TDNFCloseHandle(
-    PTDNF pTdnf
-    )
-{
-    if(pTdnf)
-    {
-        if(pTdnf->hSack)
-        {
-            hy_sack_free(pTdnf->hSack);
-        }
-        if(pTdnf->pConf)
-        {
-            TDNFFreeConfig(pTdnf->pConf);
-        }
-        if(pTdnf->pArgs)
-        {
-            TDNFFreeCmdArgs(pTdnf->pArgs);
-        }
-        TDNFFreeMemory(pTdnf);
-    }
-}
-
 uint32_t
 TDNFCloneCmdArgs(
     PTDNF_CMD_ARGS pCmdArgsIn,
@@ -259,19 +149,3 @@ error:
     goto cleanup;
 }
 
-void
-TDNFFreeCmdArgs(
-    PTDNF_CMD_ARGS pCmdArgs
-    )
-{
-    int nIndex = 0;
-    if(pCmdArgs)
-    {
-        for(nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
-        {
-            TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
-        }
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
-    }
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs);
-}

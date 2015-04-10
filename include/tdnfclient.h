@@ -22,60 +22,17 @@ extern "C" {
 #include "tdnftypes.h"
 #include "tdnferror.h"
 
-//config.c
-int
-TDNFConfGetRpmVerbosity(
-    PTDNF pTdnf
-    );
+//api.c
 
-uint32_t
-TDNFConfSetFlag(
-    TDNF_CONF_FLAG nFlag,
-    int nValue //0 or 1
-    );
-
-uint32_t
-TDNFConfGetFlag(
-    TDNF_CONF_FLAG nFlag,
-    int nValue //0 or 1
-    );
-
-uint32_t
-TDNFConfSetValue(
-    TDNF_CONF_TYPE nType,
-    const char* pszValue
-    );
-
-uint32_t
-TDNFConfGetValue(
-    TDNF_CONF_TYPE nType,
-    char** ppszValue
-    );
-
-//init.c
+//Open a handle using initial args 
+//args can define a command, have config overrides
 uint32_t
 TDNFOpenHandle(
     PTDNF_CMD_ARGS pArgs,
     PTDNF* pTdnf
     );
 
-void
-TDNFCloseHandle(
-    PTDNF pTdnf
-    );
-
-uint32_t
-TDNFCloneCmdArgs(
-    PTDNF_CMD_ARGS pCmdArgsIn,
-    PTDNF_CMD_ARGS* ppCmdArgs
-    );
-
-void
-TDNFFreeCmdArgs(
-    PTDNF_CMD_ARGS pCmdArgs
-    );
-
-//command APIs
+//check for updates
 uint32_t
 TDNFCheckUpdates(
     PTDNF pTdnf,
@@ -84,6 +41,8 @@ TDNFCheckUpdates(
     uint32_t* pdwCount
     );
 
+//clean local cache. all is the only type 
+//currently supported.
 uint32_t
 TDNFClean(
     PTDNF pTdnf,
@@ -91,6 +50,8 @@ TDNFClean(
     PTDNF_CLEAN_INFO* ppCleanInfo
     );
 
+//show list of packages filtered by scope, name
+//globbing supported.
 uint32_t
 TDNFList(
     PTDNF pTdnf,
@@ -100,6 +61,8 @@ TDNFList(
     uint32_t* pdwCount
     );
 
+//show info on packages filtered by scope, name.
+//globbing supported
 uint32_t
 TDNFInfo(
     PTDNF pTdnf,
@@ -109,6 +72,7 @@ TDNFInfo(
     uint32_t* pdwCount
     );
 
+//show information on currently configured repositories
 uint32_t
 TDNFRepoList(
     PTDNF pTdnf,
@@ -116,17 +80,22 @@ TDNFRepoList(
     PTDNF_REPO_DATA* ppRepoData
     );
 
+//refresh cache
 uint32_t
 TDNFMakeCache(
     PTDNF pTdnf
     );
 
+//check all packages in a local directory
+//using the local directory contents 
+//for dep resolution.
 uint32_t
 TDNFCheckLocalPackages(
     PTDNF pTdnf,
     const char* pszLocalPath
     );
 
+//show packages that provide a particular file
 uint32_t
 TDNFProvides(
     PTDNF pTdnf,
@@ -134,14 +103,7 @@ TDNFProvides(
     PTDNF_PKG_INFO* ppPkgInfo
     );
 
-uint32_t
-TDNFUpdateInfoSummary(
-    PTDNF pTdnf,
-    TDNF_AVAIL nAvail,
-    char** ppszPackageNameSpecs,
-    PTDNF_UPDATEINFO_SUMMARY* ppSummary
-    );
-
+//Show update info for specified scope 
 uint32_t
 TDNFUpdateInfo(
     PTDNF pTdnf,
@@ -151,17 +113,25 @@ TDNFUpdateInfo(
     PTDNF_UPDATEINFO* ppUpdateInfo
     );
 
-void
-TDNFFreeCleanInfo(
-    PTDNF_CLEAN_INFO pCleanInfo
+//Show update info summary
+uint32_t
+TDNFUpdateInfoSummary(
+    PTDNF pTdnf,
+    TDNF_AVAIL nAvail,
+    char** ppszPackageNameSpecs,
+    PTDNF_UPDATEINFO_SUMMARY* ppSummary
     );
-//client.c
+
+//sanity check. displays current installed count.
+//should be same as rpm -qa | wc -l
 uint32_t
 TDNFCountCommand(
     PTDNF pTdnf,
     uint32_t* pdwCount
     );
 
+//Search installed and available packages for keywords
+//in description, name 
 uint32_t
 TDNFSearchCommand(
     PTDNF pTdnf,
@@ -170,6 +140,12 @@ TDNFSearchCommand(
     uint32_t* pdwCount
     );
 
+//invoke hawkey goal dependency resolution
+//return solved pkg info which has descriptive
+//info about steps to reach current goal.
+//usually the SolvedPkgInfo is used to display
+//info about changes to the user and upon approval,
+//submitted to TDNFAlterCommand
 uint32_t
 TDNFResolve(
     PTDNF pTdnf,
@@ -177,11 +153,10 @@ TDNFResolve(
     PTDNF_SOLVED_PKG_INFO* ppSolvedPkgInfo
     );
 
-uint32_t
-TDNFInstallCommand(
-    PTDNF pTdnf
-    );
-
+//This function will alter the current
+//install state.
+//install/update/erase/downgrade are 
+//represented as altertype.
 uint32_t
 TDNFAlterCommand(
     PTDNF pTdnf,
@@ -189,34 +164,54 @@ TDNFAlterCommand(
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
     ); 
 
-//rpmtrans
+//Show a descriptive error message
+//divided into different areas like 
+//hawkey, repo, rpm and generic tdnf errors.
 uint32_t
-TDNFRpmExecTransaction(
-    PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+TDNFGetErrorString(
+    uint32_t dwErrorCode,
+    char** ppszErrorString
     );
 
-//validate
+//Format package size to suffix with
+//K, M, G for Kilo, Mega, Giga bytes
 uint32_t
-TDNFValidateCmdArgs(
-    PTDNF pTdnf
+TDNFUtilsFormatSize(
+    uint32_t dwSize,
+    char** ppszFormattedSize
     );
 
-//memory.c
+//apis to allocate and free memory 
 uint32_t
 TDNFAllocateMemory(
     size_t size,
     void** ppMemory
     );
 
-void
-TDNFFreeMemory(
-    void* pMemory
+uint32_t
+TDNFAllocateString(
+    const char* pszSrc,
+    char** ppszDst
     );
 
 void
-TDNFFreeSolvedPackageInfo(
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+TDNFCloseHandle(
+    PTDNF pTdnf
+    );
+
+void
+TDNFFreeCleanInfo(
+    PTDNF_CLEAN_INFO pCleanInfo
+    );
+
+void
+TDNFFreeCmdArgs(
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+void
+TDNFFreeMemory(
+    void* pMemory
     );
 
 void
@@ -231,18 +226,18 @@ TDNFFreePackageInfoArray(
     );
 
 void
-TDNFFreePackageInfo(
-    PTDNF_PKG_INFO pPkgInfo
-    );
-
-void
 TDNFFreeRepos(
     PTDNF_REPO_DATA pRepos
     );
 
 void
-TDNFFreeUpdateInfoSummary(
-    PTDNF_UPDATEINFO_SUMMARY pSummary
+TDNFFreeSolvedPackageInfo(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+void
+TDNFFreeStringArray(
+    char** ppszArray
     );
 
 void
@@ -250,53 +245,11 @@ TDNFFreeUpdateInfo(
     PTDNF_UPDATEINFO pUpdateInfo
     );
 
-//utils
-uint32_t
-TDNFIsSystemError(
-    uint32_t dwError
-    );
-
-uint32_t
-TDNFGetSystemError(
-    uint32_t dwError
-    );
-
-uint32_t
-TDNFGetErrorString(
-    uint32_t dwErrorCode,
-    char** ppszErrorString
-    );
-
-uint32_t
-TDNFUtilsFormatSize(
-    uint32_t dwSize,
-    char** ppszFormattedSize
-    );
-int
-TDNFIsGlob(
-    const char* pszString
-    );
-
-uint32_t
-TDNFUtilsMakeDir(
-    const char* pszPath
-    );
-
-uint32_t
-TDNFUtilsMakeDirs(
-    const char* pszPath
-    );
-//strings.c
-uint32_t
-TDNFAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
 void
-TDNFFreeStringArray(
-    char** ppszArray
+TDNFFreeUpdateInfoSummary(
+    PTDNF_UPDATEINFO_SUMMARY pSummary
     );
+
 #ifdef __cplusplus
 }
 #endif
