@@ -73,8 +73,8 @@ TDNFDownloadPackage(
 
     lr_handle_setopt(pRepoHandle, NULL, LRO_URLS, ppszUrls);
     lr_handle_setopt(pRepoHandle, NULL, LRO_REPOTYPE, LR_YUMREPO);
-    lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYPEER, 0);
-    lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYHOST, 0);
+    lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYPEER, 1);
+    lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYHOST, 2);
 
     dwError = TDNFRepoGetUserPass(pTdnf, pszRepo, &pszUserPass);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -83,7 +83,6 @@ TDNFDownloadPackage(
     {
         lr_handle_setopt(pRepoHandle, NULL, LRO_USERPWD, pszUserPass);
     }
-
     bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSCB, lrProgressCB);
     if(bRet == FALSE)
     {
