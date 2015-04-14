@@ -114,8 +114,8 @@ TDNFInitRepo(
         }
 
         lr_handle_setopt(hLibRepo, NULL, LRO_URLS, ppszRepoUrls);
-        lr_handle_setopt(hLibRepo, NULL, LRO_SSLVERIFYPEER, 0);
-        lr_handle_setopt(hLibRepo, NULL, LRO_SSLVERIFYHOST, 0);
+        lr_handle_setopt(hLibRepo, NULL, LRO_SSLVERIFYPEER, 1);
+        lr_handle_setopt(hLibRepo, NULL, LRO_SSLVERIFYHOST, 2);
         lr_handle_setopt(hLibRepo, NULL, LRO_DESTDIR, pszRepoCacheDir);
         lr_handle_setopt(hLibRepo, NULL, LRO_YUMDLIST, ppszDownloadList);
         if(!IsNullOrEmptyString(pRepoData->pszUser) && 
