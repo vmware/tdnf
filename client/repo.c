@@ -342,6 +342,7 @@ error:
     goto cleanup;
 }
 
+//TODO: This needs to be GetRepoById.
 uint32_t
 TDNFGetRepoByName(
     PTDNF pTdnf,
@@ -369,9 +370,10 @@ TDNFGetRepoByName(
 
     while(pRepos)
     {
-        if(!strcmp(pszName, pRepos->pszName))
+        if(!strcmp(pszName, pRepos->pszId))
         {
             pRepo = pRepos;
+            break;
         }
         pRepos = pRepos->pNext;
     }
