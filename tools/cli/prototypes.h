@@ -1,17 +1,24 @@
 /*
-      * Copyright (C) 2014-2015 VMware, Inc. All rights reserved.
-      *
-      * Header : prototypes.h
-      *
-      * Abstract :
-      *
-      *            tdnf
-      *
-      *            command line tool
-      *
-      * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
-      *
-*/
+ * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU General Public License v2 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
+/*
+ * Header : prototypes.h
+ *
+ * Abstract :
+ *
+ *            tdnf
+ *
+ *            command line tool
+ *
+ * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
+ *
+ */
+
 #pragma once
 
 uint32_t
