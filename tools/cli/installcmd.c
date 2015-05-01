@@ -216,6 +216,8 @@ TDNFCliAlterCommand(
         {
             dwError = TDNFAlterCommand(pTdnf, nAlterType, pSolvedPkgInfo);
             BAIL_ON_CLI_ERROR(dwError);
+
+            fprintf(stdout, "\nComplete!\n");
         }
         else
         {
