@@ -55,6 +55,7 @@ TDNFCliShowHelp(
     printf("makecache                 Generate the metadata cache\n");
     printf("provides                  Find what package provides the given value\n");
     printf("reinstall                 reinstall a package\n");
+    printf("remove                    Remove a package or packages from your system\n");
     printf("repolist                  Display the configured software repositories\n");
     printf("repository-packages       Run commands on top of all packages in given repository\n");
     printf("search                    Search package details for the given string\n");
