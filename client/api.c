@@ -77,7 +77,7 @@ TDNFCheckLocalPackages(
     }
     fprintf(stdout, "Checking all packages from: %s\n", pszLocalPath);
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
+    hSack = hy_sack_create(NULL, NULL, NULL, NULL, 0);
     if(!hSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -106,7 +106,7 @@ TDNFCheckLocalPackages(
 
         if(!hPkg)
         {
-            dwError = ERROR_TDNF_INVALID_PARAMETER; 
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
         hy_packagelist_push(hPkgList, hPkg);
@@ -851,7 +851,7 @@ TDNFSearchCommand(
         }
     }
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
+    hSack = hy_sack_create(NULL, NULL, NULL, NULL, 0);
     if(!hSack)
     {
         unError = HY_E_IO;
