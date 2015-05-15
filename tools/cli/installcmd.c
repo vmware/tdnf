@@ -209,9 +209,9 @@ TDNFCliAlterCommand(
         if(!pCmdArgs->nAssumeYes && !pCmdArgs->nAssumeNo)
         {
             printf("Is this ok [y/N]:");
-            if(scanf("%c", &chChoice) != 1)
+            if (scanf("%c", &chChoice) != 1)
             {
-                chChoice = 'N';
+                printf("Invalid input\n");
             }
         }
 
