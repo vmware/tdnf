@@ -76,11 +76,16 @@ extern "C" {
 #define ERROR_TDNF_HAWKEY_NO_SOLUTION   (ERROR_TDNF_HAWKEY_BASE + HY_E_NO_SOLUTION)
 // the capability was not available
 #define ERROR_TDNF_HAWKEY_NO_CAPABILITY (ERROR_TDNF_HAWKEY_BASE + HY_E_NO_CAPABILITY)
-//Repo errors 1400 to 1499
-#define ERROR_TDNF_REPO_BASE            1400
+//Repo errors 1400 to 1469
+#define ERROR_TDNF_REPO_BASE                 1400
 
-//RPM Errors 1500 to 1599
-#define ERROR_TDNF_RPM_BASE                  1500
+//RPM Errors 1470 to 1599
+#define ERROR_TDNF_RPM_BASE                  1470
+#define ERROR_TDNF_RPMRC_NOTFOUND            1471
+#define ERROR_TDNF_RPMRC_FAIL                1472
+#define ERROR_TDNF_RPMRC_NOTTRUSTED          1473
+#define ERROR_TDNF_RPMRC_NOKEY               1474
+//
 #define ERROR_TDNF_RPMTS_CREATE_FAILED       1501
 #define ERROR_TDNF_RPMTS_BAD_ROOT_DIR        1502
 #define ERROR_TDNF_RPMTS_SET_CB_FAILED       1503

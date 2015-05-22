@@ -337,7 +337,12 @@ TDNFTransAddInstallPkg(
                      fp,
                      pszFilePath,
                      &rpmHeader);
-    BAIL_ON_TDNF_ERROR(dwError);
+    //If not checking gpg sigs, ignore signature errors
+    if(!nGPGCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     dwError = rpmtsAddInstallElement(
                    pTS->pTS,
@@ -345,7 +350,7 @@ TDNFTransAddInstallPkg(
                    (fnpyKey)pszFilePath,
                    nUpgrade,
                    NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
+    BAIL_ON_TDNF_RPM_ERROR(dwError);
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
     if(pszDownloadCacheDir)
