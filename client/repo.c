@@ -172,6 +172,15 @@ TDNFInitRepo(
 
     *phRepo = hRepo;
 cleanup:
+    if(pszRepoDataDir)
+    {
+        g_free(pszRepoDataDir);
+    }
+    if(pszRepoCacheDir)
+    {
+        g_free(pszRepoCacheDir);
+    }
+
     if(pResult)
     {
         lr_result_free(pResult);

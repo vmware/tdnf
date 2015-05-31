@@ -353,6 +353,16 @@ hy_possibilities_next_nevra(
     HyNevra *out_nevra
     );
 
+void
+hy_possibilities_free(
+    HyPossibilities iter
+    );
+
+void
+hy_subject_free(
+    HySubject subject
+    );
+
 uint32_t
 TDNFGetMatchingInstalledAndAvailable(
     PTDNF pTdnf,

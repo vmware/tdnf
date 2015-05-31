@@ -220,6 +220,7 @@ TDNFFreeConfig(
     if(pConf)
     {
        TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
+       TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
        TDNF_SAFE_FREE_MEMORY(pConf);
     }
 }

@@ -143,6 +143,10 @@ TDNFGetMatching(
     *phPkgList = hPkgList;
 
 cleanup:
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
     return dwError;
 
 error:
@@ -237,9 +241,16 @@ TDNFGetSelector(
     
     hSubject = hy_subject_create(pszPkg);
 
-    hPoss = hy_subject_nevra_possibilities_real(hSubject, NULL, pTdnf->hSack, 0);
-
-    hy_possibilities_next_nevra(hPoss, &hNevra);
+    hPoss = hy_subject_nevra_possibilities_real(
+                hSubject,
+                NULL,
+                pTdnf->hSack,
+                0);
+    if(hy_possibilities_next_nevra(hPoss, &hNevra) == -1)
+    {
+        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pszName = hy_nevra_get_string(hNevra, HY_NEVRA_NAME);
     pszVersion = hy_nevra_get_string(hNevra, HY_NEVRA_VERSION);
@@ -318,6 +329,18 @@ TDNFGetSelector(
     *phSelector = hSelector;
 
 cleanup:
+    if(hNevra)
+    {
+        hy_nevra_free(hNevra);
+    }
+    if(hPoss)
+    {
+        hy_possibilities_free(hPoss);
+    }
+    if(hSubject)
+    {
+        hy_subject_free(hSubject);
+    }
     TDNF_SAFE_FREE_MEMORY(pszEVR);
     return dwError;
 
