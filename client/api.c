@@ -737,25 +737,27 @@ TDNFResolve(
     }
     else
     {
-        dwError = TDNFGetMatchingInstalledAndAvailable(
-                      pTdnf,
-                      nAlterType,
-                      pszPkgName,
-                      pSolvedPkgInfo,
-                      &hPkgListGoal);
-        BAIL_ON_TDNF_ERROR(dwError);
-
         dwError = TDNFGetSelector(
                       pTdnf,
                       pszPkgName,
                       &hSelector);
         BAIL_ON_TDNF_ERROR(dwError);
+        if(hSelector != NULL)
+        {
+            hPkgListGoal = hy_selector_matches(hSelector);
+        }
+        else
+        {
+            dwError = TDNFGetMatchingInstalledAndAvailable(
+                          pTdnf,
+                          nAlterType,
+                          pszPkgName,
+                          pSolvedPkgInfo,
+                          &hPkgListGoal);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
-    if(hSelector != NULL)
-    {
-        hPkgListGoal = hy_selector_matches(hSelector);
-    }
     if(hy_packagelist_count(hPkgListGoal) > 0)
     {
         dwError = TDNFGoal(
@@ -789,6 +791,14 @@ TDNFResolve(
     *ppSolvedPkgInfo = pSolvedPkgInfo;
 
 cleanup:
+    if(hSelector)
+    {
+        hy_selector_free(hSelector);
+    }
+    if(hPkgListGoal)
+    {
+        hy_packagelist_free(hPkgListGoal);
+    }
     if(hQuery)
     {
         hy_query_free(hQuery);
@@ -1070,6 +1080,14 @@ TDNFCloseHandle(
 {
     if(pTdnf)
     {
+        if(pTdnf->hGoal)
+        {
+            hy_goal_free(pTdnf->hGoal);
+        }
+        if(pTdnf->pRepos)
+        {
+            TDNFFreeRepos(pTdnf->pRepos);
+        }
         if(pTdnf->hSack)
         {
             hy_sack_free(pTdnf->hSack);

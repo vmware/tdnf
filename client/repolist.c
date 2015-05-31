@@ -274,6 +274,7 @@ TDNFFreeRepos(
   while(pRepos)
   {
     pRepo = pRepos;
+    TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
     TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
     TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
     TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
