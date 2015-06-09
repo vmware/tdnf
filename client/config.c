@@ -121,6 +121,13 @@ TDNFReadConfig(
                       TDNF_DEFAULT_CACHE_LOCATION,
                       &pConf->pszCacheDir);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFConfigReadProxySettings(
+                      pKeyFile,
+                      pszGroup,
+                      pConf);
+        BAIL_ON_TDNF_ERROR(dwError);
+
     }
 
     *ppConf = pConf;
@@ -145,6 +152,83 @@ error:
     {
         TDNFFreeConfig(pConf);
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFConfigReadProxySettings(
+    GKeyFile* pKeyFile,
+    char* pszGroup,
+    PTDNF_CONF pConf)
+{
+    uint32_t dwError = 0;
+    char* pszProxyUser = NULL;
+    char* pszProxyPass = NULL;
+
+    if(!pKeyFile || !pszGroup || !pConf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //optional proxy server
+    dwError = TDNFReadKeyValue(
+                  pKeyFile,
+                  pszGroup,
+                  TDNF_CONF_KEY_PROXY,
+                  NULL,
+                  &pConf->pszProxy);
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!IsNullOrEmptyString(pConf->pszProxy))
+    {
+        //optional proxy user
+        dwError = TDNFReadKeyValue(
+                      pKeyFile,
+                      pszGroup,
+                      TDNF_CONF_KEY_PROXY_USER,
+                      NULL,
+                      &pszProxyUser);
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        //optional proxy pass
+        dwError = TDNFReadKeyValue(
+                      pKeyFile,
+                      pszGroup,
+                      TDNF_CONF_KEY_PROXY_PASS,
+                      NULL,
+                      &pszProxyPass);
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if(!IsNullOrEmptyString(pszProxyUser) &&
+           !IsNullOrEmptyString(pszProxyPass))
+        {
+            dwError = TDNFAllocateStringPrintf(
+                          &pConf->pszProxyUserPass,
+                          "%s:%s",
+                          pszProxyUser,
+                          pszProxyPass);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszProxyUser);
+    TDNF_SAFE_FREE_MEMORY(pszProxyPass);
+    return dwError;
+
+error:
     goto cleanup;
 }
 
@@ -219,6 +303,8 @@ TDNFFreeConfig(
 {
     if(pConf)
     {
+       TDNF_SAFE_FREE_MEMORY(pConf->pszProxy);
+       TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
        TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
        TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
        TDNF_SAFE_FREE_MEMORY(pConf);

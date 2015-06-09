@@ -95,6 +95,9 @@ typedef enum
 #define TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE "clean_requirements_on_remove"
 #define TDNF_CONF_KEY_REPODIR             "repodir"
 #define TDNF_CONF_KEY_CACHEDIR            "cachedir"
+#define TDNF_CONF_KEY_PROXY               "proxy"
+#define TDNF_CONF_KEY_PROXY_USER          "proxy_username"
+#define TDNF_CONF_KEY_PROXY_PASS          "proxy_password"
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"
@@ -122,6 +125,8 @@ typedef enum
     {ERROR_TDNF_INVALID_REPO_FILE,   "ERROR_TDNF_INVALID_REPO_FILE",   "Encountered an invalid repo file"}, \
     {ERROR_TDNF_REPO_DIR_OPEN,       "ERROR_TDNF_REPO_DIR_OPEN",       "Error opening repo dir. Check if the repodir configured in tdnf.conf exists (usually /etc/yum.repos.d)"}, \
     {ERROR_TDNF_NO_MATCH,            "ERROR_TDNF_NO_MATCH",            "No matching packages to list"}, \
+    {ERROR_TDNF_SET_PROXY,           "ERROR_TDNF_SET_PROXY",           "There was an error setting the proxy server."}, \
+    {ERROR_TDNF_SET_PROXY_USERPASS,  "ERROR_TDNF_SET_PROXY_USERPASS",  "There was an error setting the proxy server user and pass"}, \
     {ERROR_TDNF_NO_ENABLED_REPOS,    "ERROR_TDNF_NO_ENABLED_REPOS",    "There are no enabled repos.\n Run ""tdnf repolist all"" to see the repos you have.\n You can enable repos by editing repo files in your repodir(usually /etc/yum.repos.d)"}, \
     {ERROR_TDNF_PACKAGELIST_EMPTY,   "ERROR_TDNF_PACKAGELIST_EMPTY",   "Packagelist was empty"}, \
     {ERROR_TDNF_GOAL_CREATE,         "ERROR_TDNF_GOAL_CREATE",         "Error creating goal"}, \
