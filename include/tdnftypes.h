@@ -200,7 +200,8 @@ typedef struct _TDNF_CONF
     int nCleanRequirementsOnRemove;
     char* pszRepoDir;
     char* pszCacheDir;
-
+    char* pszProxy;
+    char* pszProxyUserPass;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_METADATA

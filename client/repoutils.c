@@ -370,3 +370,48 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFRepoApplyProxySettings(
+    PTDNF_CONF pConf,
+    LrHandle* pRepoHandle
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pConf || !pRepoHandle)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(!IsNullOrEmptyString(pConf->pszProxy))
+    {
+        if(!lr_handle_setopt(
+            pRepoHandle,
+            NULL,
+            LRO_PROXY,
+            pConf->pszProxy))
+        {
+            dwError = ERROR_TDNF_SET_PROXY;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if(!IsNullOrEmptyString(pConf->pszProxyUserPass))
+        {
+            if(!lr_handle_setopt(
+                pRepoHandle,
+                NULL,
+                LRO_PROXYUSERPWD,
+                pConf->pszProxyUserPass))
+            {
+                dwError = ERROR_TDNF_SET_PROXY_USERPASS;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}

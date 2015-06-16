@@ -139,6 +139,9 @@ TDNFInitRepo(
                 LRO_USERPWD,
                 pszUserPass);
         }
+
+        dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, hLibRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     lr_handle_setopt(hLibRepo, NULL, LRO_REPOTYPE, LR_YUMREPO);

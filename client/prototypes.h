@@ -156,6 +156,12 @@ TDNFRepoGetKeyValueBoolean(
     int nDefault,
     int* pnValue
     );
+
+uint32_t
+TDNFRepoApplyProxySettings(
+    PTDNF_CONF pConf,
+    LrHandle* pRepoHandle
+    );
 //remoterepo.c
 uint32_t
 TDNFDownloadPackage(
@@ -282,6 +288,12 @@ TDNFReadConfig(
     char* pszConfGroup,
     PTDNF_CONF* ppConf
     );
+
+uint32_t
+TDNFConfigReadProxySettings(
+    GKeyFile* pKeyFile,
+    char* pszGroup,
+    PTDNF_CONF pConf);
 
 void
 TDNFFreeConfig(

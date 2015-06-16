@@ -51,6 +51,10 @@ extern "C" {
 #define ERROR_TDNF_GOAL_CREATE          1014
 #define ERROR_TDNF_INVALID_RESOLVE_ARG  1015
 #define ERROR_TDNF_CLEAN_UNSUPPORTED    1016
+//Config settings error
+#define ERROR_TDNF_SET_PROXY            1020
+#define ERROR_TDNF_SET_PROXY_USERPASS   1021
+
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300

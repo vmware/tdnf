@@ -96,6 +96,10 @@ TDNFDownloadPackage(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pRepoHandle);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     bRet = lr_download_package (
                          pRepoHandle,
                          pszPackage,
