@@ -475,6 +475,16 @@ TDNFRunTransaction(
     PTDNF pTdnf
     );
 
+uint32_t
+TDNFRemoveCachedRpms(
+    GArray* pCachedRpmsArray
+    );
+
+void
+TDNFFreeCachedRpmsArray(
+    GArray* pArray
+    );
+
 //memory.c
 void
 TDNFFreePackageInfoContents(

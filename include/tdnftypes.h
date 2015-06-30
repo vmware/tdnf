@@ -198,6 +198,7 @@ typedef struct _TDNF_CONF
     int nGPGCheck;
     int nInstallOnlyLimit;
     int nCleanRequirementsOnRemove;
+    int nKeepCache;
     char* pszRepoDir;
     char* pszCacheDir;
     char* pszProxy;
