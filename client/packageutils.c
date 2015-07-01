@@ -591,6 +591,7 @@ error:
     {
         *ppszVersion = NULL;
     }
+    TDNF_SAFE_FREE_MEMORY(pszVersion);
     goto cleanup;
 }
 
@@ -631,5 +632,6 @@ error:
     {
         *ppszRelease = NULL;
     }
+    TDNF_SAFE_FREE_MEMORY(pszRelease);
     goto cleanup;
 }

@@ -1136,3 +1136,9 @@ TDNFFreeCmdArgs(
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 
+const char*
+TDNFGetVersion(
+    )
+{
+    return PACKAGE_VERSION;
+}

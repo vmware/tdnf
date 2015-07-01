@@ -595,5 +595,5 @@ void
 TDNFCliShowVersion(
     )
 {
-    fprintf(stdout, "tdnf: 1.0.0\n");
+    fprintf(stdout, "%s: %s\n", PACKAGE_NAME, TDNFGetVersion());
 }
