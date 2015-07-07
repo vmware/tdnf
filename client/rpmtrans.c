@@ -19,8 +19,7 @@
  */
 
 #include "includes.h"
-    
-    
+
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
@@ -28,11 +27,21 @@ TDNFRpmExecTransaction(
     )
 {
     uint32_t dwError = 0;
+    int nKeepCachedRpms = 0;
     TDNFRPMTS ts = {0};
 
-    if(!pTdnf || !pSolvedInfo)
+    if(!pTdnf || !pTdnf->pConf || !pSolvedInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nKeepCachedRpms = pTdnf->pConf->nKeepCache;
+
+    ts.pCachedRpmsArray = g_array_new(TRUE, TRUE, sizeof(char*));
+    if(!ts.pCachedRpmsArray)
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -74,6 +83,7 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+
     dwError = TDNFPopulateTransaction(&ts, pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -89,6 +99,14 @@ cleanup:
     if(ts.pKeyring)
     {
         rpmKeyringFree(ts.pKeyring);
+    }
+    if(ts.pCachedRpmsArray)
+    {
+        if(!nKeepCachedRpms)
+        {
+            TDNFRemoveCachedRpms(ts.pCachedRpmsArray);
+        }
+        TDNFFreeCachedRpmsArray(ts.pCachedRpmsArray);
     }
     return dwError;
 
@@ -260,14 +278,14 @@ TDNFTransAddInstallPkg(
     char* pszRpmCacheDir = NULL;
     char* pszFilePath = NULL;
     const char* pszRepoName = NULL;
-    const char* pszName = NULL;
+    char* pszHyName = NULL;
     Header rpmHeader = NULL;
     FD_t fp = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
 
     pszRepoName = hy_package_get_reponame(hPkg);
-    pszName = hy_package_get_location(hPkg);
+    pszHyName = hy_package_get_location(hPkg);
 
     pszRpmCacheDir = g_build_filename(
                            G_DIR_SEPARATOR_S,
@@ -276,7 +294,15 @@ TDNFTransAddInstallPkg(
                            "rpms",
                            G_DIR_SEPARATOR_S,
                            NULL);
-    pszFilePath = g_build_filename(pszRpmCacheDir, pszName, NULL);
+    pszFilePath = g_build_filename(pszRpmCacheDir, pszHyName, NULL);
+    if(pTS->pCachedRpmsArray)
+    {
+        if(!g_array_append_val(pTS->pCachedRpmsArray, pszFilePath))
+        {
+            dwError = ERROR_TDNF_OUT_OF_MEMORY;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
     pszDownloadCacheDir = g_path_get_dirname(pszFilePath);
     if(!pszDownloadCacheDir)
@@ -353,13 +379,25 @@ TDNFTransAddInstallPkg(
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
+    if(pszHyName)
+    {
+        hy_free(pszHyName);
+    }
     if(pszDownloadCacheDir)
     {
         g_free(pszDownloadCacheDir);
     }
+    if(pszRpmCacheDir)
+    {
+        g_free(pszRpmCacheDir);
+    }
     if(fp)
     {
         Fclose(fp);
+    }
+    if(rpmHeader)
+    {
+        headerFree(rpmHeader);
     }
     return dwError;
 
@@ -591,3 +629,56 @@ TDNFRpmCB(
     return pResult;
 }
 
+uint32_t
+TDNFRemoveCachedRpms(
+    GArray* pCachedRpmsArray
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwIndex = 0;
+    char* pszCachedRpm = NULL;
+
+    if(!pCachedRpmsArray)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(dwIndex = 0; dwIndex < pCachedRpmsArray->len; ++dwIndex)
+    {
+        pszCachedRpm = g_array_index(pCachedRpmsArray, char*, dwIndex);
+        if(access(pszCachedRpm, F_OK) != -1)
+        {
+            if(unlink(pszCachedRpm))
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+void
+TDNFFreeCachedRpmsArray(
+    GArray* pArray
+    )
+{
+    uint32_t dwIndex = 0;
+    char* pszPath = NULL;
+
+    if(pArray)
+    {
+        for(dwIndex = 0; dwIndex < pArray->len; ++dwIndex)
+        {
+            pszPath = g_array_index(pArray, char*, dwIndex);
+            TDNF_SAFE_FREE_MEMORY(pszPath);
+        }
+        g_array_free(pArray, TRUE);
+    }
+}

@@ -692,6 +692,7 @@ TDNFResolve(
     HyPackageList hPkgList = NULL;
     HyPackageList hPkgListGoal = NULL;
     HySelector hSelector = NULL;
+    HyPackage hPkgTemp = NULL;
 
     const char* pszPkgName = NULL;
 
@@ -721,6 +722,16 @@ TDNFResolve(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nAlterType = nAlterType;
+
+    //Check if package is installed before proceeding
+    if(nAlterType == ALTER_ERASE)
+    {
+        dwError = TDNFFindInstalledPkgByName(
+                      pTdnf->hSack,
+                      pszPkgName,
+                      &hPkgTemp);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     if(nAlterType == ALTER_AUTOERASE)
     {
@@ -791,6 +802,10 @@ TDNFResolve(
     *ppSolvedPkgInfo = pSolvedPkgInfo;
 
 cleanup:
+    if(hPkgTemp)
+    {
+         hy_package_free(hPkgTemp);
+    }
     if(hSelector)
     {
         hy_selector_free(hSelector);
@@ -1121,3 +1136,9 @@ TDNFFreeCmdArgs(
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 
+const char*
+TDNFGetVersion(
+    )
+{
+    return PACKAGE_VERSION;
+}

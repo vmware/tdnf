@@ -51,9 +51,10 @@ TDNFDownloadPackage(
     GError* pError = NULL;
     gboolean bRet = FALSE;
     char* ppszUrls[] = {NULL, NULL};
-    const char* pszPackage = NULL;
+    char* pszHyPackage = NULL;
     const char* pszRepo = NULL;
     char* pszUserPass = NULL;
+    char* pszBaseUrl = NULL;
     
     if(!pTdnf || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
     {
@@ -71,11 +72,13 @@ TDNFDownloadPackage(
     }
 
     //Get package details
-    pszPackage = hy_package_get_location(hPkg);
+    pszHyPackage = hy_package_get_location(hPkg);
     pszRepo = hy_package_get_reponame(hPkg);
 
-    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &ppszUrls[0]);
+    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    ppszUrls[0] = pszBaseUrl;
 
     lr_handle_setopt(pRepoHandle, NULL, LRO_URLS, ppszUrls);
     lr_handle_setopt(pRepoHandle, NULL, LRO_REPOTYPE, LR_YUMREPO);
@@ -102,7 +105,7 @@ TDNFDownloadPackage(
 
     bRet = lr_download_package (
                          pRepoHandle,
-                         pszPackage,
+                         pszHyPackage,
                          pszRpmCacheDir,
                          LR_CHECKSUM_UNKNOWN,
                          NULL,
@@ -118,9 +121,14 @@ TDNFDownloadPackage(
     }
     fprintf(stdout, "\n");
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
     if(pRepoHandle)
     {
         lr_handle_free(pRepoHandle);
+    }
+    if(pszHyPackage)
+    {
+        hy_free(pszHyPackage);
     }
     return dwError;
 

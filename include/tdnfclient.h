@@ -130,6 +130,11 @@ TDNFCountCommand(
     uint32_t* pdwCount
     );
 
+//version
+const char*
+TDNFGetVersion(
+    );
+
 //Search installed and available packages for keywords
 //in description, name 
 uint32_t

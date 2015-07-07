@@ -106,6 +106,19 @@ TDNFReadConfig(
                           TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
                           NULL);
         }
+        if(g_key_file_has_key(
+                pKeyFile,
+                pszGroup,
+                TDNF_CONF_KEY_KEEP_CACHE,
+                NULL))
+        {
+            pConf->nKeepCache =
+                     g_key_file_get_boolean(
+                          pKeyFile,
+                          pszGroup,
+                          TDNF_CONF_KEY_KEEP_CACHE,
+                          NULL);
+        }
         dwError = TDNFReadKeyValue(
                       pKeyFile,
                       pszGroup,

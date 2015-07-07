@@ -36,4 +36,5 @@ typedef struct _TDNF_RPM_TS_
   rpmtransFlags      nTransFlags;
   rpmprobFilterFlags nProbFilterFlags;
   FD_t               pFD;
+  GArray*            pCachedRpmsArray;
 }TDNFRPMTS, *PTDNFRPMTS;

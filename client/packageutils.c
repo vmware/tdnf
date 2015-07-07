@@ -21,6 +21,18 @@
 #include "includes.h"
 
 uint32_t
+TDNFGetPackageVersion(
+    HyPackage hPkg,
+    char** ppszVersion
+    );
+
+uint32_t
+TDNFGetPackageRelease(
+    HyPackage hPkg,
+    char** ppszRelease
+    );
+
+uint32_t
 TDNFFindAvailablePkgByPkg(
     HySack hSack,
     HyPackage hPkgToFind,
@@ -31,6 +43,7 @@ TDNFFindAvailablePkgByPkg(
     HyQuery hQuery = NULL;
     HyPackageList hPkgList = NULL;
     HyPackage hPkg = NULL;
+    char* pszHyNevra = NULL;
 
     if(!hSack || !hPkgToFind || !phPkg)
     {
@@ -51,11 +64,12 @@ TDNFFindAvailablePkgByPkg(
                   HY_SYSTEM_REPO_NAME);
     BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
 
+    pszHyNevra = hy_package_get_nevra(hPkgToFind);
     dwError = hy_query_filter(
                   hQuery,
                   HY_PKG_NEVRA,
                   HY_EQ,
-                  hy_package_get_nevra(hPkgToFind));
+                  pszHyNevra);
     BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
 
     hPkgList = hy_query_run(hQuery);
@@ -85,6 +99,10 @@ TDNFFindAvailablePkgByPkg(
     *phPkg = hPkg;
 
 cleanup:
+    if(pszHyNevra)
+    {
+        hy_free(pszHyNevra);
+    }
     if(hPkgList)
     {
         hy_packagelist_free(hPkgList);
@@ -342,22 +360,31 @@ TDNFPopulatePkgInfos(
                       (void**)&pPkgInfo);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(hy_package_get_name(hPkg), &pPkgInfo->pszName);
+        dwError = TDNFSafeAllocateString(
+                      hy_package_get_name(hPkg),
+                      &pPkgInfo->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(hy_package_get_version(hPkg), &pPkgInfo->pszVersion);
+        dwError = TDNFGetPackageVersion(hPkg, &pPkgInfo->pszVersion);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(hy_package_get_release(hPkg), &pPkgInfo->pszRelease);
+        dwError = TDNFGetPackageRelease(hPkg, &pPkgInfo->pszRelease);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(hy_package_get_arch(hPkg), &pPkgInfo->pszArch);
+
+        dwError = TDNFSafeAllocateString(
+                      hy_package_get_arch(hPkg),
+                      &pPkgInfo->pszArch);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(hy_package_get_reponame(hPkg), &pPkgInfo->pszRepoName);
+        dwError = TDNFSafeAllocateString(
+                      hy_package_get_reponame(hPkg),
+                      &pPkgInfo->pszRepoName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(hy_package_get_summary(hPkg), &pPkgInfo->pszSummary);
+        dwError = TDNFSafeAllocateString(
+                      hy_package_get_summary(hPkg),
+                      &pPkgInfo->pszSummary);
         BAIL_ON_TDNF_ERROR(dwError);
 
         pPkgInfo->pNext = pPkgInfos;
@@ -450,14 +477,10 @@ TDNFPopulatePkgInfoArray(
                           &pPkg->pszArch);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFSafeAllocateString(
-                          hy_package_get_version(hPkg),
-                          &pPkg->pszVersion);
+            dwError = TDNFGetPackageVersion(hPkg, &pPkg->pszVersion);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFSafeAllocateString(
-                          hy_package_get_release(hPkg),
-                          &pPkg->pszRelease);
+            dwError = TDNFGetPackageRelease(hPkg, &pPkg->pszRelease);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFSafeAllocateString(
@@ -497,15 +520,10 @@ TDNFPopulatePkgInfoArray(
                           &pPkg->pszArch);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFSafeAllocateString(
-                          hy_package_get_version(hPkg),
-                          &pPkg->pszVersion);
+            dwError = TDNFGetPackageVersion(hPkg, &pPkg->pszVersion);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFSafeAllocateString(
-                          hy_package_get_release(hPkg),
-                          &pPkg->pszRelease);
-            BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFGetPackageRelease(hPkg, &pPkg->pszRelease);
 
             dwError = TDNFSafeAllocateString(
                           hy_package_get_reponame(hPkg),
@@ -534,5 +552,86 @@ error:
     {
         TDNFFreePackageInfoArray(pPkgInfo, dwCount);
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetPackageVersion(
+    HyPackage hPkg,
+    char** ppszVersion
+    )
+{
+    uint32_t dwError = 0;
+    char* pszVersion = NULL;
+    char* pszHyVersion = NULL;
+
+    if(!hPkg || !ppszVersion)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszHyVersion = hy_package_get_version(hPkg);
+
+    dwError = TDNFSafeAllocateString(
+                  pszHyVersion,
+                  &pszVersion);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszVersion = pszVersion;
+
+cleanup:
+    if(pszHyVersion)
+    {
+        hy_free(pszHyVersion);
+    }
+    return dwError;
+error:
+    if(ppszVersion)
+    {
+        *ppszVersion = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszVersion);
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetPackageRelease(
+    HyPackage hPkg,
+    char** ppszRelease
+    )
+{
+    uint32_t dwError = 0;
+    char* pszRelease = NULL;
+    char* pszHyRelease = NULL;
+
+    if(!hPkg || !ppszRelease)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszHyRelease = hy_package_get_release(hPkg);
+
+    dwError = TDNFSafeAllocateString(
+                  pszHyRelease,
+                  &pszRelease);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszRelease = pszRelease;
+
+cleanup:
+    if(pszHyRelease)
+    {
+        hy_free(pszHyRelease);
+    }
+    return dwError;
+
+error:
+    if(ppszRelease)
+    {
+        *ppszRelease = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszRelease);
     goto cleanup;
 }
