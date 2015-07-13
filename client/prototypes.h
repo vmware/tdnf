@@ -456,6 +456,12 @@ TDNFTransAddInstallPkgs(
     );
 
 uint32_t
+TDNFTransAddReInstallPkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
