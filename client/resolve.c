@@ -248,6 +248,10 @@ TDNFGetSelector(
                 0);
     if(hy_possibilities_next_nevra(hPoss, &hNevra) == -1)
     {
+        //make sure that we reset on failure to avoid
+        //a potential double free
+        hNevra = NULL;
+
         dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
         BAIL_ON_TDNF_ERROR(dwError);
     }
