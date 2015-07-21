@@ -20,6 +20,7 @@
 
 #include "includes.h"
 
+
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
@@ -126,6 +127,13 @@ TDNFPopulateTransaction(
     if(pSolvedInfo->pPkgsToInstall)
     {
         dwError = TDNFTransAddInstallPkgs(
+                      pTS,
+                      pTdnf);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(pSolvedInfo->pPkgsToReinstall)
+    {
+        dwError = TDNFTransAddReInstallPkgs(
                       pTS,
                       pTdnf);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -239,6 +247,44 @@ TDNFTransAddInstallPkgs(
     HyPackageList hPkgList = NULL;
 
     hPkgList = hy_goal_list_installs(pTdnf->hGoal);
+    if(!hPkgList)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
+    {
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if(hPkgList)
+    {
+        hy_packagelist_free(hPkgList);
+    }
+    return dwError;
+
+error:
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFTransAddReInstallPkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    )
+{
+    uint32_t dwError = 0;
+    int i = 0;
+    HyPackage hPkg = NULL;
+    HyPackageList hPkgList = NULL;
+
+    hPkgList = hy_goal_list_reinstalls(pTdnf->hGoal);
     if(!hPkgList)
     {
         dwError = ERROR_TDNF_NO_DATA;
