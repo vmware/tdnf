@@ -155,3 +155,81 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFRefreshSack(
+    PTDNF pTdnf,
+    int nCleanMetadata
+    )
+{
+    uint32_t dwError = 0;
+    HyRepo hRepo = NULL;
+    int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
+
+    if(!pTdnf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(pTdnf->hSack)
+    {
+        hy_sack_free(pTdnf->hSack);
+        pTdnf->hSack = NULL;
+    }
+
+    dwError = TDNFInitSack(pTdnf, &pTdnf->hSack, HY_LOAD_FILELISTS);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    //If there is an empty repo directory, do nothing
+    if(pTdnf->pRepos)
+    {
+        PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
+        while(pTempRepo)
+        {
+            if(pTempRepo->nEnabled)
+            {
+                if(nCleanMetadata)
+                {
+                    fprintf(stderr,
+                            "Refreshing metadata for: '%s'\n",
+                            pTempRepo->pszName);
+                    dwError = TDNFRepoRemoveCache(pTdnf, pTempRepo->pszId);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+
+                dwError = TDNFInitRepo(pTdnf, pTempRepo, &hRepo);
+                if(dwError)
+                {
+                    if(pTempRepo->nSkipIfUnavailable)
+                    {
+                        pTempRepo->nEnabled = 0;
+                        fprintf(stderr, "Disabling Repo: '%s'\n", pTempRepo->pszName);
+
+                        dwError = 0;
+                    }
+                }
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                if(pTempRepo->nEnabled)
+                {
+                    if(pTempRepo->hRepo)
+                    {
+                        hy_repo_free(pTempRepo->hRepo);
+                        pTempRepo->hRepo = NULL;
+                    }
+                    pTempRepo->hRepo = hRepo;
+
+                    dwError = TDNFLoadYumRepo(pTdnf->hSack, hRepo, nYumFlags);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
+            pTempRepo = pTempRepo->pNext;
+        }
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}

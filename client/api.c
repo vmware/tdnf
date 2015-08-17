@@ -459,25 +459,18 @@ TDNFMakeCache(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_CLEAN_INFO pCleanInfo = NULL;
 
     if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    //Do clean metadata and refresh
-    dwError = TDNFClean(pTdnf, CLEANTYPE_ALL, &pCleanInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFRefreshCache(pTdnf);
+    //Pass in clean metadata as 1
+    dwError = TDNFRefreshSack(pTdnf, 1);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
-    if(pCleanInfo)
-    {
-        TDNFFreeCleanInfo(pCleanInfo);
-    }
     return dwError;
 
 error:
@@ -494,8 +487,6 @@ TDNFOpenHandle(
 {
     uint32_t dwError = 0;
     PTDNF pTdnf = NULL;
-    HyRepo hRepo = NULL;
-    int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
 
     if(!pArgs || !ppTdnf)
     {
@@ -520,42 +511,9 @@ TDNFOpenHandle(
                   &pTdnf->pRepos);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFInitSack(pTdnf, &pTdnf->hSack, HY_LOAD_FILELISTS);
+    dwError = TDNFRefreshSack(pTdnf, pTdnf->pArgs->nRefresh);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    //If there is an empty repo directory, do nothing
-    if(pTdnf->pRepos)
-    {
-        PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
-        while(pTempRepo)
-        {
-            if(pTempRepo->nEnabled)
-            {
-                dwError = TDNFInitRepo(pTdnf, pTempRepo, &hRepo);
-                if(dwError)
-                {
-                    if(pTempRepo->nSkipIfUnavailable)
-                    {
-                        pTempRepo->nEnabled = 0;
-                        fprintf(stderr, "Disabling Repo: '%s'\n", pTempRepo->pszName);
-
-                        dwError = 0;
-                    }
-                }
-                BAIL_ON_TDNF_ERROR(dwError);
-
-                if(pTempRepo->nEnabled)
-                {
-                    pTempRepo->hRepo = hRepo;
-
-                    dwError = TDNFLoadYumRepo(pTdnf->hSack, hRepo, nYumFlags);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
-            }
-            pTempRepo = pTempRepo->pNext;
-        }
-    }
-    
     *ppTdnf = pTdnf;
 
 cleanup:
