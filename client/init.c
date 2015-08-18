@@ -190,10 +190,14 @@ TDNFRefreshSack(
             {
                 if(nCleanMetadata)
                 {
-                    fprintf(stderr,
+                    fprintf(stdout,
                             "Refreshing metadata for: '%s'\n",
                             pTempRepo->pszName);
                     dwError = TDNFRepoRemoveCache(pTdnf, pTempRepo->pszId);
+                    if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
+                    {
+                        dwError = 0;//Ignore non existent folders
+                    }
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
 
