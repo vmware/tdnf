@@ -100,6 +100,12 @@ TDNFLoadYumRepo(
     int nFlags
     );
 
+uint32_t
+TDNFRefreshSack(
+    PTDNF pTdnf,
+    int nCleanMetadata
+    );
+
 //makecache.c
 uint32_t
 TDNFRefreshCache(
