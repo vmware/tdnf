@@ -9,7 +9,6 @@ libtdnfclient_la_SOURCES = \
     goal.c \
     gpgcheck.c \
     init.c \
-    makecache.c \
     memory.c \
     packageutils.c \
     repo.c \

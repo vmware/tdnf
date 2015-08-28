@@ -78,6 +78,11 @@ int main(int argc, char* argv[])
             {
                 nFound = 1;
 
+                if(!strcmp(pszCmd, "makecache"))
+                {
+                    pCmdArgs->nRefresh = 1;
+                }
+
                 dwError = TDNFOpenHandle(pCmdArgs, &pTdnf);
                 BAIL_ON_CLI_ERROR(dwError);
 
@@ -515,8 +520,8 @@ TDNFCliMakeCacheCommand(
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
     }
-    dwError = TDNFMakeCache(pTdnf);
-    BAIL_ON_CLI_ERROR(dwError);
+    //Empty as refresh flag is set for makecache command
+    //and will execute refresh on all enabled repos
 
     fprintf(stdout, "Metadata cache created.\n");
 
