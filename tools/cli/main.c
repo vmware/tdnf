@@ -195,6 +195,15 @@ TDNFCliListCommand(
     uint32_t dwIndex = 0;
     PTDNF_LIST_ARGS pListArgs = NULL;
 
+    #define MAX_COL_LEN 256
+    char szNameAndArch[MAX_COL_LEN] = {0};
+    char szVersionAndRelease[MAX_COL_LEN] = {0};
+
+    #define COL_COUNT 3 
+    //Name.Arch | Version-Release | Repo
+    int nColPercents[COL_COUNT] = {55, 25, 15};
+    int nColWidths[COL_COUNT] = {0};
+
     dwError = TDNFCliParseListArgs(pCmdArgs, &pListArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -206,13 +215,45 @@ TDNFCliListCommand(
                   &unCount);
     BAIL_ON_CLI_ERROR(dwError);
 
+    dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
+    BAIL_ON_CLI_ERROR(dwError);
+
     for(dwIndex = 0; dwIndex < unCount; ++dwIndex)
     {
         pPkg = &pPkgInfo[dwIndex];
-        printf("%*s\r", 80, pPkg->pszRepoName);
-        printf("%*s-%s\r", 50, pPkg->pszVersion, pPkg->pszRelease);
-        printf("%s.%s", pPkg->pszName, pPkg->pszArch);
-        printf("\n");
+
+        memset(szNameAndArch, 0, MAX_COL_LEN);
+        if(snprintf(
+            szNameAndArch,
+            MAX_COL_LEN,
+            "%s.%s",
+            pPkg->pszName,
+            pPkg->pszArch) < 0)
+        {
+            dwError = errno;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+
+        memset(szVersionAndRelease, 0, MAX_COL_LEN);
+        if(snprintf(
+            szVersionAndRelease,
+            MAX_COL_LEN,
+            "%s-%s",
+            pPkg->pszVersion,
+            pPkg->pszRelease) < 0)
+        {
+            dwError = errno;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+
+        printf(
+            "%-*s%-*s%*s\n",
+            nColWidths[0],
+            szNameAndArch,
+            nColWidths[1],
+            szVersionAndRelease,
+            nColWidths[2],
+            pPkg->pszRepoName);
     }
 
 cleanup:
