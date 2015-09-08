@@ -29,11 +29,14 @@ lrProgressCB(
 {
     if(dTotalToDownload > 0.00)
     {
+        gdouble dPercent = (dDownloaded/dTotalToDownload) * 100.0;
         fprintf(
             stdout,
-            "Downloading %.2f of %.2f\r",
+            "%-35s %10.0f  %5.0f%%\r",
+            (char*)pUserData,
             dDownloaded,
-            dTotalToDownload);
+            dPercent);
+        fflush(stdout);
     }
     return 0;
 }
@@ -55,6 +58,7 @@ TDNFDownloadPackage(
     const char* pszRepo = NULL;
     char* pszUserPass = NULL;
     char* pszBaseUrl = NULL;
+    const char* pszPkgName = NULL;
     
     if(!pTdnf || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
     {
@@ -73,6 +77,7 @@ TDNFDownloadPackage(
 
     //Get package details
     pszHyPackage = hy_package_get_location(hPkg);
+    pszPkgName = hy_package_get_name(hPkg);
     pszRepo = hy_package_get_reponame(hPkg);
 
     dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &pszBaseUrl);
@@ -93,6 +98,13 @@ TDNFDownloadPackage(
         lr_handle_setopt(pRepoHandle, NULL, LRO_USERPWD, pszUserPass);
     }
     bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSCB, lrProgressCB);
+    if(bRet == FALSE)
+    {
+        //TODO: Add repo specific
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSDATA, pszPkgName);
     if(bRet == FALSE)
     {
         //TODO: Add repo specific

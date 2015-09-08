@@ -217,6 +217,10 @@ TDNFCliAlterCommand(
 
         if(pCmdArgs->nAssumeYes || chChoice == 'y')
         {
+            if(pSolvedPkgInfo->nNeedDownload)
+            {
+                fprintf(stdout, "\nDownloading:\n");
+            }
             dwError = TDNFAlterCommand(pTdnf, nAlterType, pSolvedPkgInfo);
             BAIL_ON_CLI_ERROR(dwError);
 
