@@ -239,6 +239,11 @@ TDNFRepoRemoveCache(
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
+        if(pszFilePath)
+        {
+            g_free(pszFilePath);
+            pszFilePath = NULL;
+        }
     }
     if(rmdir(pszRepoCacheDir))
     {
@@ -254,6 +259,10 @@ cleanup:
     if(pszRepoCacheDir)
     {
         g_free(pszRepoCacheDir);
+    }
+    if(pDir)
+    {
+        g_dir_close(pDir);
     }
     return dwError;
 

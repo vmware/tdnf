@@ -340,8 +340,13 @@ TDNFGetGPGCheck(
         if(pRepo)
         {
             nGPGCheck = pRepo->nGPGCheck;
-            dwError = TDNFAllocateString(pRepo->pszUrlGPGKey, &pszUrlGPGKey);
-            BAIL_ON_TDNF_ERROR(dwError);
+            if(nGPGCheck)
+            {
+                dwError = TDNFAllocateString(
+                             pRepo->pszUrlGPGKey,
+                             &pszUrlGPGKey);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
         }
     }
 

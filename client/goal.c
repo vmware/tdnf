@@ -266,11 +266,11 @@ TDNFGoalReportProblems(
     nCount = hy_goal_count_problems(hGoal);
     if(nCount > 0)
     {
-        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount);
+        fprintf(stdout, "Found %d problem(s) while resolving\n", nCount);
         for(; i < nCount; ++i)
         {
             pszProblem = hy_goal_describe_problem(hGoal, i);
-            fprintf(stderr, "%d. %s\n", i+1, pszProblem);
+            fprintf(stdout, "%d. %s\n", i+1, pszProblem);
 
             hy_free(pszProblem);
             pszProblem = NULL;
