@@ -28,6 +28,7 @@ int main(int argc, char* argv[])
     TDNF_CLI_CMD_MAP arCmdMap[] = 
     {
         {"autoerase",          TDNFCliAutoEraseCommand},
+        {"autoremove",         TDNFCliAutoEraseCommand},
         {"check-local",        TDNFCliCheckLocalCommand},
         {"check-update",       TDNFCliCheckUpdateCommand},
         {"clean",              TDNFCliCleanCommand},
@@ -550,7 +551,18 @@ PrintError(
         dwError = TDNFGetErrorString(dwErrorCode, &pszError);
         BAIL_ON_CLI_ERROR(dwError);
     }
-    printf("Error(%d) : %s\n", dwErrorCode, pszError);
+    if(dwErrorCode == ERROR_TDNF_CLI_NOTHING_TO_DO)
+    {
+        dwErrorCode = 0;
+    }
+    if(dwErrorCode)
+    {
+        printf("Error(%d) : %s\n", dwErrorCode, pszError);
+    }
+    else
+    {
+        printf("%s\n", pszError);
+    }
 
 cleanup:
     TDNF_CLI_SAFE_FREE_MEMORY(pszError);
