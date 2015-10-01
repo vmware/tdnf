@@ -64,8 +64,32 @@ TDNFCliUpgradeCommand(
     )
 {
     uint32_t dwError = 0;
-    
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_UPGRADE);
+    int nAlterType = ALTER_UPGRADE;
+
+    if(pCmdArgs->nCmdCount == 1)
+    {
+        nAlterType = ALTER_UPGRADEALL;
+    }
+
+    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, nAlterType);
+    BAIL_ON_CLI_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliDistroSyncCommand(
+    PTDNF pTdnf,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+
+    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_DISTRO_SYNC);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:

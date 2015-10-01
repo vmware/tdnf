@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
         {"check-update",       TDNFCliCheckUpdateCommand},
         {"clean",              TDNFCliCleanCommand},
         {"count",              TDNFCliCountCommand},
+        {"distro-sync",        TDNFCliDistroSyncCommand},
         {"downgrade",          TDNFCliDowngradeCommand},
         {"erase",              TDNFCliEraseCommand},
         {"help",               TDNFCliHelpCommand},

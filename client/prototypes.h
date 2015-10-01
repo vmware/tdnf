@@ -413,6 +413,18 @@ TDNFGetSelector(
     HySelector* phSelector
     );
 
+uint32_t
+TDNFResolveAll(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+uint32_t
+TDNFResolvePackages(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
 //rpmtrans.c
 uint32_t
 TDNFRpmExecTransaction(

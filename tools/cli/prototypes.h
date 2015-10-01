@@ -82,6 +82,12 @@ TDNFCliUpgradeCommand(
     );
 
 uint32_t
+TDNFCliDistroSyncCommand(
+    PTDNF pTdnf,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
 TDNFCliDowngradeCommand(
     PTDNF pTdnf,
     PTDNF_CMD_ARGS pCmdArgs

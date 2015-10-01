@@ -359,3 +359,146 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFResolveAll(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pTdnf || !pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGoal(
+                  pTdnf,
+                  NULL,
+                  NULL,
+                  pSolvedPkgInfo->nAlterType,
+                  pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFResolvePackages(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+    HyPackageList hPkgList = NULL;
+    HyPackageList hPkgListGoal = NULL;
+    HySelector hSelector = NULL;
+    HyPackage hPkgTemp = NULL;
+    const char* pszPkgName = NULL;
+    int nAlterType = -1;
+
+    if(!pTdnf || !pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nAlterType = pSolvedPkgInfo->nAlterType;
+
+    //TODO: support multiple packages
+    pszPkgName = pTdnf->pArgs->ppszCmds[1];
+
+    //Check if package is installed before proceeding
+    if(nAlterType == ALTER_ERASE)
+    {
+        dwError = TDNFFindInstalledPkgByName(
+                      pTdnf->hSack,
+                      pszPkgName,
+                      &hPkgTemp);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(nAlterType == ALTER_AUTOERASE)
+    {
+        dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgListGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else if(nAlterType == ALTER_REINSTALL)
+    {
+        dwError = TDNFMatchForReinstall(
+                      pTdnf->hSack,
+                      pszPkgName,
+                      &hPkgListGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFGetSelector(
+                      pTdnf,
+                      pszPkgName,
+                      &hSelector);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(hSelector != NULL)
+        {
+            hPkgListGoal = hy_selector_matches(hSelector);
+        }
+        else
+        {
+            dwError = TDNFGetMatchingInstalledAndAvailable(
+                          pTdnf,
+                          nAlterType,
+                          pszPkgName,
+                          pSolvedPkgInfo,
+                          &hPkgListGoal);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(hy_packagelist_count(hPkgListGoal) > 0)
+    {
+        dwError = TDNFGoal(
+                      pTdnf,
+                      hPkgListGoal,
+                      hSelector,
+                      nAlterType,
+                      pSolvedPkgInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFAllocateMemory(
+                      sizeof(TDNF_PKG_INFO),
+                      (void**)&pSolvedPkgInfo->pPkgsNotAvailable);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateString(
+                      pszPkgName,
+                      &pSolvedPkgInfo->pPkgsNotAvailable->pszName);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if(hPkgTemp)
+    {
+         hy_package_free(hPkgTemp);
+    }
+    if(hSelector)
+    {
+        hy_selector_free(hSelector);
+    }
+    if(hPkgListGoal)
+    {
+        hy_packagelist_free(hPkgListGoal);
+    }
+    TDNF_SAFE_FREE_PKGLIST(hPkgList);
+    return dwError;
+
+error:
+    goto cleanup;
+}
