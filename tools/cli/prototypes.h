@@ -230,6 +230,25 @@ void
 ShowConsoleProps(
     );
 
+uint32_t
+GetConsoleWidth(
+    int* pnWidth
+    );
+
+int
+CalculateColumnWidth(
+    int nTotalWidth,
+    int nRequestedPercent,
+    int nMinVal
+    );
+
+uint32_t
+GetColumnWidths(
+    int nCount,
+    int* pnColPercents,
+    int* pnColWidths
+    );
+
 //parseargs.c
 uint32_t
 TDNFCopyOptions(
