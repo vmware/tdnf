@@ -218,6 +218,12 @@ TDNFPopulatePkgInfoArray(
     uint32_t* pdwCount
     );
 
+uint32_t
+TDNFPackageGetLatest(
+    HyPackageList hPkgList,
+    HyPackage* phPkgLatest
+    );
+
 //goal.c
 uint32_t
 TDNFGoalGetResultsIgnoreNoData(

@@ -635,3 +635,48 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszRelease);
     goto cleanup;
 }
+
+uint32_t
+TDNFPackageGetLatest(
+    HyPackageList hPkgList,
+    HyPackage* phPkgLatest
+    )
+{
+    uint32_t dwError = 0;
+    HyPackage hPkgLatest = NULL;
+    HyPackage hPkg = NULL;
+    int i = 0;
+
+    if(!hPkgList || !phPkgLatest)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hPkgLatest = hy_packagelist_get(hPkgList, 0);
+    if(!hPkgLatest)
+    {
+        dwError = ERROR_TDNF_PACKAGELIST_EMPTY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    FOR_PACKAGELIST(hPkg, hPkgList, i)
+    {
+        if(hy_package_evr_cmp(hPkg, hPkgLatest) > 0)
+        {
+            hPkgLatest = hPkg;
+        }
+    }
+
+    *phPkgLatest = hPkgLatest;
+
+cleanup:
+    return dwError;
+
+error:
+    if(phPkgLatest)
+    {
+        *phPkgLatest = NULL;
+    }
+    goto cleanup;
+}

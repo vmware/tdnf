@@ -63,6 +63,7 @@ TDNFGoal(
             dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
+
         hPkg = hy_packagelist_get(hPkgList, 0);
         if(!hPkg)
         {
@@ -88,7 +89,12 @@ TDNFGoal(
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
         case ALTER_REINSTALL:
+            dwError = hy_goal_install(hGoal, hPkg);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
         case ALTER_INSTALL:
+            dwError = TDNFPackageGetLatest(hPkgList, &hPkg);
+            BAIL_ON_TDNF_ERROR(dwError);
             dwError = hy_goal_install(hGoal, hPkg);
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
