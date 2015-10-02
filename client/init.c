@@ -69,7 +69,7 @@ TDNFInitSack(
 
     pszHawkeyCacheDir = pTdnf->pConf->pszCacheDir;
 
-    hSack = hy_sack_create(pszHawkeyCacheDir, NULL, "/", 0);
+    hSack = hy_sack_create(pszHawkeyCacheDir, NULL, NULL, "/", 0);
     if(!hSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
