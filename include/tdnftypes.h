@@ -55,7 +55,8 @@ typedef enum
     ALTER_INSTALL,
     ALTER_REINSTALL,
     ALTER_UPGRADE,
-    ALTER_UPGRADEALL
+    ALTER_UPGRADEALL,
+    ALTER_DISTRO_SYNC
 }TDNF_ALTERTYPE;
 
 typedef enum
@@ -152,6 +153,7 @@ typedef struct _TDNF_PKG_INFO
 typedef struct _TDNF_SOLVED_PKG_INFO
 {
     int nNeedAction;
+    int nNeedDownload;
     TDNF_ALTERTYPE nAlterType;
     PTDNF_PKG_INFO pPkgsNotAvailable;
     PTDNF_PKG_INFO pPkgsExisting;

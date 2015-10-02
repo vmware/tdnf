@@ -218,6 +218,12 @@ TDNFPopulatePkgInfoArray(
     uint32_t* pdwCount
     );
 
+uint32_t
+TDNFPackageGetLatest(
+    HyPackageList hPkgList,
+    HyPackage* phPkgLatest
+    );
+
 //goal.c
 uint32_t
 TDNFGoalGetResultsIgnoreNoData(
@@ -411,6 +417,18 @@ TDNFGetSelector(
     PTDNF pTdnf,
     const char* pszPkg,
     HySelector* phSelector
+    );
+
+uint32_t
+TDNFResolveAll(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+uint32_t
+TDNFResolvePackages(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
 //rpmtrans.c

@@ -39,7 +39,8 @@ TDNFCliShowHelp(
     printf("List of Main Commands\n");
     printf("\n");
 
-    printf("autoerase\n");
+    printf("autoerase                 Remove leaf packages\n");
+    printf("autoremove                Remove leaf packages\n");
     printf("check-local               Checks local rpm folder for problems\n");
     printf("check-update              Check for available package upgrades\n");
     printf("clean                     Remove cached data\n");
@@ -54,6 +55,7 @@ TDNFCliShowHelp(
     printf("list                      List a package or groups of packages\n");
     printf("makecache                 Generate the metadata cache\n");
     printf("provides                  Find what package provides the given value\n");
+    printf("remove                    Remove a package or packages from your system\n");
     printf("reinstall                 reinstall a package\n");
     printf("repolist                  Display the configured software repositories\n");
     printf("repository-packages       Run commands on top of all packages in given repository\n");

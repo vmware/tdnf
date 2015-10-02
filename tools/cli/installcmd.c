@@ -64,8 +64,32 @@ TDNFCliUpgradeCommand(
     )
 {
     uint32_t dwError = 0;
-    
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_UPGRADE);
+    int nAlterType = ALTER_UPGRADE;
+
+    if(pCmdArgs->nCmdCount == 1)
+    {
+        nAlterType = ALTER_UPGRADEALL;
+    }
+
+    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, nAlterType);
+    BAIL_ON_CLI_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliDistroSyncCommand(
+    PTDNF pTdnf,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+
+    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_DISTRO_SYNC);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -217,6 +241,10 @@ TDNFCliAlterCommand(
 
         if(pCmdArgs->nAssumeYes || chChoice == 'y')
         {
+            if(pSolvedPkgInfo->nNeedDownload)
+            {
+                fprintf(stdout, "\nDownloading:\n");
+            }
             dwError = TDNFAlterCommand(pTdnf, nAlterType, pSolvedPkgInfo);
             BAIL_ON_CLI_ERROR(dwError);
 
@@ -308,8 +336,15 @@ PrintAction(
     )
 {
     uint32_t dwError = 0;
-
     PTDNF_PKG_INFO pPkgInfo = NULL;
+
+    #define COL_COUNT 3
+    //Name | Arch | Version-Release
+    int nColPercents[COL_COUNT] = {50, 15, 25};
+    int nColWidths[COL_COUNT] = {0};
+
+    #define MAX_COL_LEN 256
+    char szVersionAndRelease[MAX_COL_LEN] = {0};
 
     if(!pPkgInfos)
     {
@@ -340,15 +375,32 @@ PrintAction(
     }
     printf("\n");
 
+    dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
+    BAIL_ON_CLI_ERROR(dwError);
+
     pPkgInfo = pPkgInfos;
     while(pPkgInfo)
     {
-        printf(
-            " %s\t%s\t%s-%s\n",
-            pPkgInfo->pszName,
-            pPkgInfo->pszArch,
+        memset(szVersionAndRelease, 0, MAX_COL_LEN);
+        if(snprintf(
+            szVersionAndRelease,
+            MAX_COL_LEN,
+            "%s-%s",
             pPkgInfo->pszVersion,
-            pPkgInfo->pszRelease);
+            pPkgInfo->pszRelease) < 0)
+        {
+            dwError = errno;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+
+        printf(
+            "%-*s%-*s%*s\n",
+            nColWidths[0],
+            pPkgInfo->pszName,
+            nColWidths[1],
+            pPkgInfo->pszArch,
+            nColWidths[2],
+            szVersionAndRelease);
         pPkgInfo = pPkgInfo->pNext;
     }
 

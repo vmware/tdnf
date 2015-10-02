@@ -82,6 +82,12 @@ TDNFCliUpgradeCommand(
     );
 
 uint32_t
+TDNFCliDistroSyncCommand(
+    PTDNF pTdnf,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
 TDNFCliDowngradeCommand(
     PTDNF pTdnf,
     PTDNF_CMD_ARGS pCmdArgs
@@ -222,6 +228,25 @@ TDNFCliValidateOptions(
 //output.c
 void
 ShowConsoleProps(
+    );
+
+uint32_t
+GetConsoleWidth(
+    int* pnWidth
+    );
+
+int
+CalculateColumnWidth(
+    int nTotalWidth,
+    int nRequestedPercent,
+    int nMinVal
+    );
+
+uint32_t
+GetColumnWidths(
+    int nCount,
+    int* pnColPercents,
+    int* pnColWidths
     );
 
 //parseargs.c

@@ -40,8 +40,11 @@ TDNFGoal(
     PTDNF_PKG_INFO pPkgsToReinstall = NULL;
 
     int nFlags = 0;
+    int nRequirePkgList =
+        (nResolveFor != ALTER_UPGRADEALL &&
+         nResolveFor != ALTER_DISTRO_SYNC);
 
-    if(!pTdnf || !hPkgList || !pInfo )
+    if(!pTdnf || !pInfo )
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -53,11 +56,20 @@ TDNFGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    hPkg = hy_packagelist_get(hPkgList, 0);
-    if(!hPkg)
+    if(nRequirePkgList)
     {
-        dwError = ERROR_TDNF_PACKAGELIST_EMPTY;
-        BAIL_ON_TDNF_ERROR(dwError);
+        if(!hPkgList)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        hPkg = hy_packagelist_get(hPkgList, 0);
+        if(!hPkg)
+        {
+            dwError = ERROR_TDNF_PACKAGELIST_EMPTY;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     hGoal = hy_goal_create(pTdnf->hSack);
@@ -77,7 +89,12 @@ TDNFGoal(
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
         case ALTER_REINSTALL:
+            dwError = hy_goal_install(hGoal, hPkg);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
         case ALTER_INSTALL:
+            dwError = TDNFPackageGetLatest(hPkgList, &hPkg);
+            BAIL_ON_TDNF_ERROR(dwError);
             dwError = hy_goal_install(hGoal, hPkg);
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
@@ -87,6 +104,10 @@ TDNFGoal(
             break;
         case ALTER_UPGRADEALL:
             dwError = hy_goal_upgrade_all(hGoal);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
+        case ALTER_DISTRO_SYNC:
+            dwError = hy_goal_distupgrade_all(hGoal);
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
         case ALTER_AUTOERASE:
