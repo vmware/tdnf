@@ -38,6 +38,7 @@ static struct option pstOptions[] =
     {"enablerepo",    required_argument, 0, 0},            //--enablerepo
     {"errorlevel",    required_argument, 0, 'e'},          //-e --errorlevel
     {"help",          no_argument, 0, 'h'},                //-h --help
+    {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
@@ -61,6 +62,7 @@ TDNFCliParseArgs(
     int nOptionIndex = 0;
     int nOption = 0;
     int nIndex = 0;
+    char* pszDefaultInstallRoot = "/";
 
     if(!ppCmdArgs)
     {
@@ -80,7 +82,7 @@ TDNFCliParseArgs(
             nOption = getopt_long (
                            argc,
                            argv,
-                           "46bCc:d:e:hqvxy",
+                           "46bCc:d:e:hiqvxy",
                            pstOptions,
                            &nOptionIndex);
             if (nOption == -1)
@@ -106,6 +108,12 @@ TDNFCliParseArgs(
                 case 'h':
                     _opt.nShowHelp = 1;
                 break;
+                case 'i':
+                    dwError = TDNFAllocateString(
+                             optarg,
+                             &pCmdArgs->pszInstallRoot);
+                    BAIL_ON_CLI_ERROR(dwError);
+                break;
                 case 'r':
                 break;
                 case 'y':
@@ -123,6 +131,14 @@ TDNFCliParseArgs(
                 //TODO: Handle unknown option, incomplete options
                 break;
             }
+    }
+
+    if(pCmdArgs->pszInstallRoot == NULL)
+    {
+        dwError = TDNFAllocateString(
+                    pszDefaultInstallRoot,
+                    &pCmdArgs->pszInstallRoot);
+                    BAIL_ON_CLI_ERROR(dwError);
     }
 
     dwError = TDNFCopyOptions(&_opt, pCmdArgs);
@@ -306,6 +322,15 @@ ParseOption(
             BAIL_ON_CLI_ERROR(dwError);
         }
         fprintf(stdout, "DisableRepo: %s\n", optarg);
+    }
+    else if(!strcasecmp(pszName, "installroot"))
+    {
+        if(!optarg)
+        {
+            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+        fprintf(stdout, "InstallRoot: %s\n", optarg);
     }
 cleanup:
     return dwError;
