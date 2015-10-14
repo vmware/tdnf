@@ -58,7 +58,6 @@ TDNFCheckLocalPackages(
     char* pszRPMPath = NULL;
     const char* pszFile = NULL;
     GDir* pDir = NULL;
-    HySack hSack = NULL;
     HyPackage hPkg = NULL;
     HyGoal hGoal = NULL;
     HyPackageList hPkgList = NULL;
@@ -77,14 +76,7 @@ TDNFCheckLocalPackages(
     }
     fprintf(stdout, "Checking all packages from: %s\n", pszLocalPath);
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
-    if(!hSack)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    hy_sack_create_cmdline_repo(hSack);
+    hy_sack_create_cmdline_repo(pTdnf->hSack);
     hPkgList = hy_packagelist_create();
     if(!hPkgList)
     {
@@ -99,7 +91,7 @@ TDNFCheckLocalPackages(
             continue;
         }
         pszRPMPath = g_build_filename(pszLocalPath, pszFile, NULL);
-        hPkg = hy_sack_add_cmdline_package(hSack, pszRPMPath);
+        hPkg = hy_sack_add_cmdline_package(pTdnf->hSack, pszRPMPath);
 
         g_free(pszRPMPath);
         pszRPMPath = NULL;
@@ -115,7 +107,7 @@ TDNFCheckLocalPackages(
 
     fprintf(stdout, "Found %d packages\n", hy_packagelist_count(hPkgList));
 
-    hGoal = hy_goal_create(hSack);
+    hGoal = hy_goal_create(pTdnf->hSack);
     if(!hGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -151,10 +143,6 @@ cleanup:
     if(hPkgList)
     {
         hy_packagelist_free(hPkgList);
-    } 
-    if(hSack)
-    {
-        hy_sack_free(hSack);
     } 
     return dwError;
 
@@ -725,7 +713,6 @@ TDNFSearchCommand(
     uint32_t* punCount
     )
 {
-    HySack hSack = NULL;
     HyQuery hQuery = NULL;
     HyPackage hPkg = NULL;
     HyPackageList hAccumPkgList = NULL;
@@ -760,17 +747,10 @@ TDNFSearchCommand(
         }
     }
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
-    if(!hSack)
-    {
-        unError = HY_E_IO;
-        BAIL_ON_TDNF_HAWKEY_ERROR(unError);
-    }
-
-    unError = hy_sack_load_system_repo(hSack, NULL, 0);
+    unError = hy_sack_load_system_repo(pTdnf->hSack, NULL, 0);
     BAIL_ON_TDNF_HAWKEY_ERROR(unError);
 
-    hQuery = hy_query_create(hSack);
+    hQuery = hy_query_create(pTdnf->hSack);
     if(!hQuery)
     {
       unError = HY_E_IO;
@@ -837,11 +817,6 @@ cleanup:
     if (hQuery != NULL)
     {
         hy_query_free(hQuery);
-    }
-
-    if (hSack != NULL)
-    {
-        hy_sack_free(hSack);
     }
 
     return unError;
