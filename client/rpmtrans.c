@@ -72,7 +72,8 @@ TDNFRpmExecTransaction(
     }
 
     ts.nTransFlags = rpmtsSetFlags (ts.pTS, RPMTRANS_FLAG_NONE);
-    if(rpmtsSetRootDir (ts.pTS, "/"))
+
+    if(rpmtsSetRootDir (ts.pTS, pTdnf->pArgs->pszInstallRoot))
     {
         dwError = ERROR_TDNF_RPMTS_BAD_ROOT_DIR;
         BAIL_ON_TDNF_ERROR(dwError);

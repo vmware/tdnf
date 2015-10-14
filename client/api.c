@@ -1017,6 +1017,8 @@ TDNFFreeCmdArgs(
         }
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
     }
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 
