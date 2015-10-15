@@ -69,7 +69,7 @@ TDNFInitSack(
 
     pszHawkeyCacheDir = pTdnf->pConf->pszCacheDir;
 
-    hSack = hy_sack_create(pszHawkeyCacheDir, NULL, "/", 0);
+    hSack = hy_sack_create(pszHawkeyCacheDir, NULL, pTdnf->pArgs->pszInstallRoot, 0);
     if(!hSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -125,6 +125,12 @@ TDNFCloneCmdArgs(
     pCmdArgs->nVerbose       = pCmdArgsIn->nVerbose;
     pCmdArgs->nIPv4          = pCmdArgsIn->nIPv4;
     pCmdArgs->nIPv6          = pCmdArgsIn->nIPv6;
+
+    dwError = TDNFAllocateString(
+                         pCmdArgsIn->pszInstallRoot,
+                         &pCmdArgs->pszInstallRoot);
+        BAIL_ON_TDNF_ERROR(dwError);
+
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
