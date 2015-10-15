@@ -725,7 +725,6 @@ TDNFSearchCommand(
     uint32_t* punCount
     )
 {
-    HySack hSack = NULL;
     HyQuery hQuery = NULL;
     HyPackage hPkg = NULL;
     HyPackageList hAccumPkgList = NULL;
@@ -760,17 +759,10 @@ TDNFSearchCommand(
         }
     }
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
-    if(!hSack)
-    {
-        unError = HY_E_IO;
-        BAIL_ON_TDNF_HAWKEY_ERROR(unError);
-    }
-
-    unError = hy_sack_load_system_repo(hSack, NULL, 0);
+    unError = hy_sack_load_system_repo(pTdnf->hSack, NULL, 0);
     BAIL_ON_TDNF_HAWKEY_ERROR(unError);
 
-    hQuery = hy_query_create(hSack);
+    hQuery = hy_query_create(pTdnf->hSack);
     if(!hQuery)
     {
       unError = HY_E_IO;
@@ -837,11 +829,6 @@ cleanup:
     if (hQuery != NULL)
     {
         hy_query_free(hQuery);
-    }
-
-    if (hSack != NULL)
-    {
-        hy_sack_free(hSack);
     }
 
     return unError;
