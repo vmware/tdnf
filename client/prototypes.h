@@ -339,7 +339,7 @@ TDNFGetGPGCheck(
     );
 
 uint32_t
-TDNFGetRepoByName(
+TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszName,
     PTDNF_REPO_DATA* ppRepo
