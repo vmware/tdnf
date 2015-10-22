@@ -116,6 +116,11 @@ cleanup:
 
 error:
     PrintError(dwError);
+    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO)
+    {
+        // Nothing to do should not return an error code
+        dwError = 0;
+    }
     goto cleanup;
 }
 
