@@ -338,9 +338,9 @@ PrintAction(
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
 
-    #define COL_COUNT 3
-    //Name | Arch | Version-Release
-    int nColPercents[COL_COUNT] = {50, 15, 25};
+    #define COL_COUNT 4
+    //Name | Arch | Version-Release | Install Size
+    int nColPercents[COL_COUNT] = {40, 15, 25, 10};
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
@@ -394,13 +394,15 @@ PrintAction(
         }
 
         printf(
-            "%-*s%-*s%*s\n",
+            "%-*s%-*s%-*s%*s\n",
             nColWidths[0],
             pPkgInfo->pszName,
             nColWidths[1],
             pPkgInfo->pszArch,
             nColWidths[2],
-            szVersionAndRelease);
+            szVersionAndRelease,
+            nColWidths[3],
+            pPkgInfo->pszFormattedSize);
         pPkgInfo = pPkgInfo->pNext;
     }
 

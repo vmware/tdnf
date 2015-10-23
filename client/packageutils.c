@@ -387,6 +387,12 @@ TDNFPopulatePkgInfos(
                       &pPkgInfo->pszSummary);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        pPkgInfo->dwInstallSizeBytes = hy_package_get_installsize(hPkg);
+        dwError = TDNFUtilsFormatSize(
+                      pPkgInfo->dwInstallSizeBytes,
+                      &pPkgInfo->pszFormattedSize);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         pPkgInfo->pNext = pPkgInfos;
         pPkgInfos = pPkgInfo;
         pPkgInfo = NULL;
