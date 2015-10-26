@@ -38,6 +38,7 @@ TDNFGoal(
     PTDNF_PKG_INFO pPkgsToRemove = NULL;
     PTDNF_PKG_INFO pPkgsUnNeeded = NULL;
     PTDNF_PKG_INFO pPkgsToReinstall = NULL;
+    PTDNF_PKG_INFO pPkgsObsoleted = NULL;
 
     int nFlags = 0;
     int nRequirePkgList =
@@ -95,6 +96,7 @@ TDNFGoal(
         case ALTER_INSTALL:
             dwError = TDNFPackageGetLatest(hPkgList, &hPkg);
             BAIL_ON_TDNF_ERROR(dwError);
+
             dwError = hy_goal_install(hGoal, hPkg);
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
@@ -157,6 +159,11 @@ TDNFGoal(
                   &pPkgsToRemove);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_obsoleted(hGoal),
+                  &pPkgsObsoleted);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if(nResolveFor == ALTER_AUTOERASE)
     {
         dwError = TDNFGoalGetResultsIgnoreNoData(
@@ -175,6 +182,7 @@ TDNFGoal(
     pInfo->pPkgsToRemove = pPkgsToRemove;
     pInfo->pPkgsUnNeeded = pPkgsUnNeeded;
     pInfo->pPkgsToReinstall = pPkgsToReinstall;
+    pInfo->pPkgsObsoleted = pPkgsObsoleted;
     pTdnf->hGoal = hGoal;
 
 cleanup:
@@ -209,6 +217,10 @@ error:
     if(pPkgsToReinstall)
     {
         TDNFFreePackageInfo(pPkgsToReinstall);
+    }
+    if(pPkgsObsoleted)
+    {
+        TDNFFreePackageInfo(pPkgsObsoleted);
     }
     goto cleanup;
 }
