@@ -331,7 +331,7 @@ TDNFGetGPGCheck(
     }
     if(!pTdnf->pArgs->nNoGPGCheck)
     {
-        dwError = TDNFGetRepoByName(pTdnf, pszRepo, &pRepo);
+        dwError = TDNFGetRepoById(pTdnf, pszRepo, &pRepo);
         if(dwError == ERROR_TDNF_NO_DATA)
         {
             dwError = 0;
@@ -365,11 +365,10 @@ error:
     goto cleanup;
 }
 
-//TODO: This needs to be GetRepoById.
 uint32_t
-TDNFGetRepoByName(
+TDNFGetRepoById(
     PTDNF pTdnf,
-    const char* pszName,
+    const char* pszId,
     PTDNF_REPO_DATA* ppRepo
     )
 {
@@ -377,7 +376,7 @@ TDNFGetRepoByName(
     PTDNF_REPO_DATA pRepo = NULL;
     PTDNF_REPO_DATA pRepos = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszName) || !ppRepo)
+    if(!pTdnf || IsNullOrEmptyString(pszId) || !ppRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -393,7 +392,7 @@ TDNFGetRepoByName(
 
     while(pRepos)
     {
-        if(!strcmp(pszName, pRepos->pszId))
+        if(!strcmp(pszId, pRepos->pszId))
         {
             pRepo = pRepos;
             break;

@@ -150,6 +150,13 @@ ReadGPGKey(
     }
 
     dwError = TDNFIsDir(pszFile, &nPathIsDir);
+    if(dwError)
+    {
+        fprintf(
+            stderr,
+            "Error: Accessing gpgkey at %s\n",
+            pszFile);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(nPathIsDir)
