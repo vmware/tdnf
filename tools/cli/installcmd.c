@@ -338,6 +338,9 @@ PrintAction(
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
 
+    uint32_t dwTotalInstallSize = 0;
+    char* pszTotalInstallSize = NULL;
+
     #define COL_COUNT 4
     //Name | Arch | Version-Release | Install Size
     int nColPercents[COL_COUNT] = {40, 15, 25, 10};
@@ -381,6 +384,7 @@ PrintAction(
     pPkgInfo = pPkgInfos;
     while(pPkgInfo)
     {
+        dwTotalInstallSize += pPkgInfo->dwInstallSizeBytes;
         memset(szVersionAndRelease, 0, MAX_COL_LEN);
         if(snprintf(
             szVersionAndRelease,
@@ -406,6 +410,10 @@ PrintAction(
         pPkgInfo = pPkgInfo->pNext;
     }
 
+    TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
+    printf("\nTotal installed size: %s\n", pszTotalInstallSize);
+
+    free(pszTotalInstallSize);
 cleanup:
     return dwError;
 
