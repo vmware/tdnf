@@ -82,7 +82,8 @@ typedef enum
     SCOPE_EXTRAS,
     SCOPE_OBSOLETES,
     SCOPE_RECENT,
-    SCOPE_UPGRADES
+    SCOPE_UPGRADES,
+    SCOPE_DOWNGRADES
 }TDNF_SCOPE;
 
 //availability - updateinfo
