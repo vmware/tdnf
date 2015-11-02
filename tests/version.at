@@ -1,0 +1,22 @@
+AT_BANNER([tdnf tests start])
+
+AT_SETUP([version])
+AT_KEYWORDS([version])
+AT_CHECK([$abs_top_builddir/tools/cli/tdnf --version],
+[0],
+[AT_PACKAGE_NAME: AT_PACKAGE_VERSION
+],
+[ignore])
+AT_CLEANUP
+
+AT_SETUP([list downgrades])
+AT_KEYWORDS([list downgrades])
+AT_CHECK([$abs_top_builddir/tools/cli/tdnf list downgrades],\
+ [0], [ignore], [ignore])
+AT_CLEANUP
+
+AT_SETUP([install non existent])
+AT_KEYWORDS([install non existent])
+AT_CHECK([$abs_top_builddir/tools/cli/tdnf install pkg-not-found],\
+ [65], [ignore], [ignore])
+AT_CLEANUP

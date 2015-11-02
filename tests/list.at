@@ -1,0 +1,18 @@
+/*
+ * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+AT_BANNER(tdnf list tests)
+
+# check tdnf list commands
+AT_SETUP([list])
+AT_KEYWORDS([list])
+AT_CHECK([$abs_top_builddir/tools/cli/tdnf list],\
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
+

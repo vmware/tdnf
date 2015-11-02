@@ -1,0 +1,8 @@
+AT_TESTED([tdnf])
+
+m4_define([TDNF_CHROOT_INIT],[[
+mkdir $abs_top_builddir/tests/testroot 
+rpm --root $abs_top_builddir/tests/testroot --initdb
+]])
+
+AT_INIT

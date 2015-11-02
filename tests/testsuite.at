@@ -1,17 +1,3 @@
-AT_INIT
-AT_BANNER([tdnf tests.])
-
-AT_SETUP([version])
-AT_KEYWORDS([version])
-AT_CHECK([$abs_top_builddir/tools/cli/tdnf --version], [0], [ignore], [ignore])
-AT_CLEANUP
-
-AT_SETUP([list downgrades])
-AT_KEYWORDS([list downgrades])
-AT_CHECK([$abs_top_builddir/tools/cli/tdnf list downgrades], [0], [ignore], [ignore])
-AT_CLEANUP
-
-AT_SETUP([install non existent])
-AT_KEYWORDS([install non existent])
-AT_CHECK([$abs_top_builddir/tools/cli/tdnf install pkg-not-found], [65], [ignore], [ignore])
-AT_CLEANUP
+m4_include([init.at])
+m4_include([version.at])
+m4_include([list.at])
