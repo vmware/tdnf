@@ -468,6 +468,12 @@ TDNFTransAddErasePkgs(
     );
 
 uint32_t
+TDNFTransAddObsoletedPkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
     HyPackage hPkg

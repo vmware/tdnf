@@ -110,7 +110,8 @@ ParseScope(
         {"obsoletes", SCOPE_OBSOLETES},
         {"recent",    SCOPE_RECENT},
         {"upgrades",  SCOPE_UPGRADES},
-        {"updates",   SCOPE_UPGRADES}
+        {"updates",   SCOPE_UPGRADES},
+        {"downgrades",SCOPE_DOWNGRADES}
     };
     int nCount = sizeof(stScopes)/sizeof(stScopes[0]);
     for(nIndex = 0; nIndex < nCount; ++nIndex)

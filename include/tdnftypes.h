@@ -56,7 +56,8 @@ typedef enum
     ALTER_REINSTALL,
     ALTER_UPGRADE,
     ALTER_UPGRADEALL,
-    ALTER_DISTRO_SYNC
+    ALTER_DISTRO_SYNC,
+    ALTER_OBSOLETED
 }TDNF_ALTERTYPE;
 
 typedef enum
@@ -81,7 +82,8 @@ typedef enum
     SCOPE_EXTRAS,
     SCOPE_OBSOLETES,
     SCOPE_RECENT,
-    SCOPE_UPGRADES
+    SCOPE_UPGRADES,
+    SCOPE_DOWNGRADES
 }TDNF_SCOPE;
 
 //availability - updateinfo
@@ -163,6 +165,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsToRemove;
     PTDNF_PKG_INFO pPkgsUnNeeded;
     PTDNF_PKG_INFO pPkgsToReinstall;
+    PTDNF_PKG_INFO pPkgsObsoleted;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
 typedef struct _TDNF_CMD_ARGS

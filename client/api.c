@@ -689,7 +689,8 @@ TDNFResolve(
         pSolvedPkgInfo->pPkgsToDowngrade ||
         pSolvedPkgInfo->pPkgsToRemove  ||
         pSolvedPkgInfo->pPkgsUnNeeded ||
-        pSolvedPkgInfo->pPkgsToReinstall;
+        pSolvedPkgInfo->pPkgsToReinstall ||
+        pSolvedPkgInfo->pPkgsObsoleted;
 
     pSolvedPkgInfo->nNeedDownload =
         pSolvedPkgInfo->pPkgsToInstall ||

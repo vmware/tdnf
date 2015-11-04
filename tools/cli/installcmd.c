@@ -227,6 +227,11 @@ TDNFCliAlterCommand(
         dwError = PrintAction(pSolvedPkgInfo->pPkgsToReinstall, ALTER_REINSTALL);
         BAIL_ON_CLI_ERROR(dwError);
     }
+    if(pSolvedPkgInfo->pPkgsObsoleted)
+    {
+        dwError = PrintAction(pSolvedPkgInfo->pPkgsObsoleted, ALTER_OBSOLETED);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
 
     if(pSolvedPkgInfo->nNeedAction)
     {
@@ -358,19 +363,22 @@ PrintAction(
     switch(nAlterType)
     {
         case ALTER_INSTALL:
-            printf("Installing:");
+            printf("\nInstalling:");
             break;
         case ALTER_UPGRADE:
-            printf("Upgrading:");
+            printf("\nUpgrading:");
             break;
         case ALTER_ERASE:
-            printf("Removing:");
+            printf("\nRemoving:");
             break;
         case ALTER_DOWNGRADE:
-            printf("Downgrading:");
+            printf("\nDowngrading:");
             break;
         case ALTER_REINSTALL:
-            printf("Reinstalling:");
+            printf("\nReinstalling:");
+            break;
+        case ALTER_OBSOLETED:
+            printf("\nObsoleting:");
             break;
         default:
             dwError = ERROR_TDNF_INVALID_PARAMETER;
