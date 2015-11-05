@@ -339,7 +339,7 @@ TDNFGetGPGCheck(
     );
 
 uint32_t
-TDNFGetRepoByName(
+TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszName,
     PTDNF_REPO_DATA* ppRepo
@@ -463,6 +463,12 @@ TDNFTransAddDowngradePkgs(
 
 uint32_t
 TDNFTransAddErasePkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFTransAddObsoletedPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf
     );

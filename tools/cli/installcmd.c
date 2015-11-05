@@ -227,6 +227,11 @@ TDNFCliAlterCommand(
         dwError = PrintAction(pSolvedPkgInfo->pPkgsToReinstall, ALTER_REINSTALL);
         BAIL_ON_CLI_ERROR(dwError);
     }
+    if(pSolvedPkgInfo->pPkgsObsoleted)
+    {
+        dwError = PrintAction(pSolvedPkgInfo->pPkgsObsoleted, ALTER_OBSOLETED);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
 
     if(pSolvedPkgInfo->nNeedAction)
     {
@@ -338,9 +343,12 @@ PrintAction(
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
 
-    #define COL_COUNT 3
-    //Name | Arch | Version-Release
-    int nColPercents[COL_COUNT] = {50, 15, 25};
+    uint32_t dwTotalInstallSize = 0;
+    char* pszTotalInstallSize = NULL;
+
+    #define COL_COUNT 4
+    //Name | Arch | Version-Release | Install Size
+    int nColPercents[COL_COUNT] = {40, 15, 25, 10};
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
@@ -355,19 +363,22 @@ PrintAction(
     switch(nAlterType)
     {
         case ALTER_INSTALL:
-            printf("Installing:");
+            printf("\nInstalling:");
             break;
         case ALTER_UPGRADE:
-            printf("Upgrading:");
+            printf("\nUpgrading:");
             break;
         case ALTER_ERASE:
-            printf("Removing:");
+            printf("\nRemoving:");
             break;
         case ALTER_DOWNGRADE:
-            printf("Downgrading:");
+            printf("\nDowngrading:");
             break;
         case ALTER_REINSTALL:
-            printf("Reinstalling:");
+            printf("\nReinstalling:");
+            break;
+        case ALTER_OBSOLETED:
+            printf("\nObsoleting:");
             break;
         default:
             dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -381,6 +392,7 @@ PrintAction(
     pPkgInfo = pPkgInfos;
     while(pPkgInfo)
     {
+        dwTotalInstallSize += pPkgInfo->dwInstallSizeBytes;
         memset(szVersionAndRelease, 0, MAX_COL_LEN);
         if(snprintf(
             szVersionAndRelease,
@@ -394,17 +406,26 @@ PrintAction(
         }
 
         printf(
-            "%-*s%-*s%*s\n",
+            "%-*s%-*s%-*s%*s\n",
             nColWidths[0],
             pPkgInfo->pszName,
             nColWidths[1],
             pPkgInfo->pszArch,
             nColWidths[2],
-            szVersionAndRelease);
+            szVersionAndRelease,
+            nColWidths[3],
+            pPkgInfo->pszFormattedSize);
         pPkgInfo = pPkgInfo->pNext;
     }
 
+    TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
+    printf("\nTotal installed size: %s\n", pszTotalInstallSize);
+
 cleanup:
+    if (pszTotalInstallSize)
+    {
+        free(pszTotalInstallSize);
+    }
     return dwError;
 
 error:

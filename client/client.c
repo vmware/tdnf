@@ -61,6 +61,9 @@ TDNFApplyScopeFilter(
         case SCOPE_RECENT:
             hy_query_filter_latest_per_arch(hQuery, 1);
             break;
+        case SCOPE_DOWNGRADES:
+            hy_query_filter_downgrades(hQuery, 1);
+            break;
 
         default:
             break;
