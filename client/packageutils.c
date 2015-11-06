@@ -686,3 +686,200 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFAppendPackages(
+    PTDNF_PKG_INFO* ppDest,
+    PTDNF_PKG_INFO pSource
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pDest = NULL;
+
+    if(!ppDest || !pSource)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pDest = *ppDest;
+    if(!pDest)
+    {
+        *ppDest = pSource;
+    }
+    else
+    {
+        while(pDest->pNext)
+        {
+            pDest = pDest->pNext;
+        }
+        pDest->pNext = pSource;
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppDest)
+    {
+        *ppDest = NULL;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFPackageGetDowngrade(
+    HyPackageList hPkgList,
+    HyPackage hPkgCurrent,
+    HyPackage* phPkgDowngrade
+    )
+{
+    uint32_t dwError = 0;
+    HyPackage hPkgDowngrade = NULL;
+    HyPackage hPkg = NULL;
+    int i = 0;
+
+    if(!hPkgList || !hPkgCurrent || !phPkgDowngrade)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    FOR_PACKAGELIST(hPkg, hPkgList, i)
+    {
+        if(hy_package_evr_cmp(hPkg, hPkgCurrent) < 0)
+        {
+            if(!hPkgDowngrade)
+            {
+                hPkgDowngrade = hPkg;
+            }
+            else if(hy_package_evr_cmp(hPkg, hPkgDowngrade) > 0)
+            {
+                hPkgDowngrade = hPkg;
+            }
+        }
+    }
+
+    if(!hPkgDowngrade)
+    {
+        dwError = ERROR_TDNF_NO_DOWNGRADES;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *phPkgDowngrade = hPkgDowngrade;
+
+cleanup:
+    return dwError;
+
+error:
+    if(phPkgDowngrade)
+    {
+        *phPkgDowngrade = NULL;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetGlobPackages(
+    PTDNF pTdnf,
+    char* pszPkgGlob,
+    HyPackageList* phPkgList
+    )
+{
+    uint32_t dwError = 0;
+    HyQuery hQuery = NULL;
+    HyPackageList hPkgList = NULL;
+    char* ppszPkgGlob[2] = {pszPkgGlob, 0};
+
+    if(!pTdnf || IsNullOrEmptyString(pszPkgGlob) || !phPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hQuery = hy_query_create(pTdnf->hSack);
+    if(!hQuery)
+    {
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+
+    dwError = TDNFApplyPackageFilter(hQuery, ppszPkgGlob);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    hPkgList = hy_query_run(hQuery);
+    if(!hPkgList)
+    {
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+
+    *phPkgList = hPkgList;
+
+cleanup:
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
+    return dwError;
+
+error:
+    if(phPkgList)
+    {
+        *phPkgList = NULL;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetDowngradeablePkgs(
+    PTDNF pTdnf,
+    HyPackageList* phPkgList
+    )
+{
+    uint32_t dwError = 0;
+    HyQuery hQuery = NULL;
+    HyPackageList hPkgList = NULL;
+
+    if(!pTdnf || !phPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hQuery = hy_query_create(pTdnf->hSack);
+    if(!hQuery)
+    {
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+
+    dwError = TDNFApplyScopeFilter(hQuery, SCOPE_DOWNGRADES);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    hPkgList = hy_query_run(hQuery);
+    if(!hPkgList)
+    {
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+
+    *phPkgList = hPkgList;
+
+cleanup:
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
+    return dwError;
+error:
+    if(phPkgList)
+    {
+        *phPkgList = NULL;
+    }
+    if(hPkgList)
+    {
+        hy_packagelist_free(hPkgList);
+    }
+    goto cleanup;
+}
+

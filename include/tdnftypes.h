@@ -51,6 +51,7 @@ typedef enum
 {
     ALTER_AUTOERASE,
     ALTER_DOWNGRADE,
+    ALTER_DOWNGRADEALL,
     ALTER_ERASE,
     ALTER_INSTALL,
     ALTER_REINSTALL,
@@ -166,6 +167,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsUnNeeded;
     PTDNF_PKG_INFO pPkgsToReinstall;
     PTDNF_PKG_INFO pPkgsObsoleted;
+    char** ppszPkgsNotResolved;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
 typedef struct _TDNF_CMD_ARGS

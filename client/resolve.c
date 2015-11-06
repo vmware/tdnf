@@ -21,76 +21,33 @@
 #include "includes.h"
 
 uint32_t
-TDNFGetMatchingInstalledAndAvailable(
-    PTDNF pTdnf,
-    int nAlterType,
-    const char* pszName,
+TDNFAddNotResolved(
     PTDNF_SOLVED_PKG_INFO pSolvedInfo,
-    HyPackageList* phPkgListGoal
+    const char* pszPkgName
     )
 {
-    uint32_t dwError = 0;
-    HyPackageList hPkgListGoal = NULL;
-    HyPackageList hPkgsInstalled = NULL;
-    HyPackageList hPkgsAvailable = NULL;
+    uint32_t dwError = 0 ;
+    int nIndex = 0;
 
-    if(!pTdnf || !pSolvedInfo || IsNullOrEmptyString(pszName) || !phPkgListGoal)
+    if(!pSolvedInfo ||
+       !pSolvedInfo->ppszPkgsNotResolved ||
+       IsNullOrEmptyString(pszPkgName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFGetMatching(
-                  pTdnf,
-                  1,//Installed
-                  pszName,
-                  &hPkgsInstalled);
+    while(pSolvedInfo->ppszPkgsNotResolved[nIndex++]);
+
+    dwError = TDNFAllocateString(
+                  pszPkgName,
+                  &pSolvedInfo->ppszPkgsNotResolved[--nIndex]);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGetMatching(
-                  pTdnf,
-                  0,//Available
-                  pszName,
-                  &hPkgsAvailable);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGetGoalPackageList(
-                  nAlterType,
-                  hPkgsInstalled,
-                  hPkgsAvailable,
-                  &hPkgListGoal);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if(hy_packagelist_count(hPkgsInstalled) > 0 && nAlterType == ALTER_INSTALL)
-    {
-        dwError = TDNFPopulatePkgInfos(
-                      hPkgsInstalled,
-                      &pSolvedInfo->pPkgsExisting);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    *phPkgListGoal = hPkgListGoal;
 
 cleanup:
-    if(hPkgsInstalled)
-    {
-        hy_packagelist_free(hPkgsInstalled);
-    }
-    if(hPkgsAvailable)
-    {
-        hy_packagelist_free(hPkgsAvailable);
-    }
     return dwError;
 
 error:
-    if(phPkgListGoal)
-    {
-        *phPkgListGoal = NULL;
-    }
-    if(hPkgListGoal)
-    {
-        hy_packagelist_free(hPkgListGoal);
-    }
     goto cleanup;
 }
 
@@ -157,61 +114,6 @@ error:
     TDNF_SAFE_FREE_PKGLIST(hPkgList);
     goto cleanup;
 }
-
-uint32_t
-TDNFGetGoalPackageList(
-    TDNF_ALTERTYPE nAlterType,
-    HyPackageList hPkgsInstalled,
-    HyPackageList hPkgsAvailable,
-    HyPackageList* phPkgList
-    )
-{
-    uint32_t dwError = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-    int i = 0;
-
-    hPkgList = hy_packagelist_create();
-    if(!hPkgList)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    if(nAlterType == ALTER_INSTALL)
-    {
-        FOR_PACKAGELIST(hPkg, hPkgsAvailable, i)
-        {
-            if(!hy_packagelist_has(hPkgsInstalled, hPkg))
-            {
-                hy_packagelist_push(hPkgList, hPkg);
-            }
-        }
-    }
-    else if(nAlterType == ALTER_ERASE || nAlterType == ALTER_AUTOERASE)
-    {
-        FOR_PACKAGELIST(hPkg, hPkgsInstalled, i)
-        {
-            hy_packagelist_push(hPkgList, hPkg);
-        }
-    }
-    else if(nAlterType == ALTER_UPGRADE || nAlterType == ALTER_DOWNGRADE)
-    {
-    }
-
-    *phPkgList = hPkgList;
-
-cleanup:
-    return dwError;
-
-error:
-    if(phPkgList)
-    {
-        *phPkgList = NULL;
-    }
-    TDNF_SAFE_FREE_PKGLIST(hPkgList);
-    goto cleanup;
-}
-
 
 uint32_t
 TDNFGetSelector(
@@ -361,49 +263,200 @@ error:
 }
 
 uint32_t
-TDNFResolveAll(
+TDNFPrepareAllPackages(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList* phPkgListGoal
     )
 {
     uint32_t dwError = 0;
+    HyPackageList hPkgListGoal = NULL;
+    HyPackageList hPkgListGlob = NULL;
+    HyPackage hPkgGlob = NULL;
 
-    if(!pTdnf || !pSolvedPkgInfo)
+    PTDNF_CMD_ARGS pCmdArgs = NULL;
+    int nCmdIndex = 0;
+    int nPkgIndex = 0;
+    char* pszPkgName = NULL;
+
+    if(!pTdnf || !pTdnf->pArgs || !pSolvedPkgInfo || !phPkgListGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFGoal(
-                  pTdnf,
-                  NULL,
-                  NULL,
-                  pSolvedPkgInfo->nAlterType,
-                  pSolvedPkgInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
+    pCmdArgs = pTdnf->pArgs;
+    hPkgListGoal = hy_packagelist_create();
+
+    if(pSolvedPkgInfo->nAlterType == ALTER_DOWNGRADEALL)
+    {
+        dwError = TDNFAddDowngradeable(pTdnf, pSolvedPkgInfo, hPkgListGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+    {
+        pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+        if(TDNFIsGlob(pszPkgName))
+        {
+            dwError = TDNFGetGlobPackages(pTdnf, pszPkgName, &hPkgListGlob);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            nPkgIndex = 0;
+            FOR_PACKAGELIST(hPkgGlob, hPkgListGlob, nPkgIndex)
+            {
+                dwError = TDNFPrepareAndAddPkg(
+                              pTdnf,
+                              hy_package_get_name(hPkgGlob),
+                              pSolvedPkgInfo,
+                              hPkgListGoal);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            if(nPkgIndex == 0)
+            {
+                dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        else
+        {
+            dwError = TDNFPrepareAndAddPkg(
+                          pTdnf,
+                          pszPkgName,
+                          pSolvedPkgInfo,
+                          hPkgListGoal);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    *phPkgListGoal = hPkgListGoal;
 
 cleanup:
+    if(hPkgListGlob)
+    {
+        hy_packagelist_free(hPkgListGlob);
+    }
     return dwError;
 
+error:
+    if(phPkgListGoal)
+    {
+        *phPkgListGoal = NULL;
+    }
+    if(hPkgListGoal)
+    {
+        hy_packagelist_free(hPkgListGoal);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFAddDowngradeable(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList hPkgListGoal
+    )
+{
+    uint32_t dwError = 0;
+    HyPackageList hPkgList = NULL;
+    HyPackage hPkg = NULL;
+    int nPkgIndex = 0;
+
+    if(!pTdnf || !pSolvedPkgInfo || !hPkgListGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    
+    dwError = TDNFGetDowngradeablePkgs(pTdnf, &hPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    nPkgIndex = 0;
+    FOR_PACKAGELIST(hPkg, hPkgList, nPkgIndex)
+    {
+        dwError = TDNFPrepareAndAddPkg(
+                      pTdnf,
+                      hy_package_get_name(hPkg),
+                      pSolvedPkgInfo,
+                      hPkgListGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if(hPkgList)
+    {
+        hy_packagelist_free(hPkgList);
+    }
+    return dwError;
 error:
     goto cleanup;
 }
 
 uint32_t
-TDNFResolvePackages(
+TDNFPrepareAndAddPkg(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList hPkgListGoal
     )
 {
     uint32_t dwError = 0;
     HyPackageList hPkgList = NULL;
-    HyPackageList hPkgListGoal = NULL;
-    HySelector hSelector = NULL;
-    HyPackage hPkgTemp = NULL;
-    const char* pszPkgName = NULL;
-    int nAlterType = -1;
+    HyPackage hPkg = NULL;
+    int nPkgIndex = 0;
 
-    if(!pTdnf || !pSolvedPkgInfo)
+    if( !pTdnf ||
+        IsNullOrEmptyString(pszPkgName) ||
+        !pSolvedPkgInfo ||
+        !hPkgListGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFPrepareSinglePkg(
+                  pTdnf,
+                  pszPkgName,
+                  pSolvedPkgInfo,
+                  &hPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(hPkgList)
+    {
+        FOR_PACKAGELIST(hPkg, hPkgList, nPkgIndex)
+        {
+            hy_packagelist_push(hPkgListGoal, hPkg);
+        }
+    }
+
+cleanup:
+    //do not free hPkgList as it is shallow copied to hPkgListGoal
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFPrepareSinglePkg(
+    PTDNF pTdnf,
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList* phPkgListGoal
+    )
+{
+    uint32_t dwError = 0;
+    HyPackageList hPkgListGoal = NULL;
+    HyPackageList hPkgListGoalTemp = NULL;
+    HyPackage hPkgTemp = NULL;
+    HyPackage hPkg = NULL;
+    HySelector hSelector = NULL;
+    int i = 0;
+    int nAlterType = 0;
+
+    if(!pTdnf
+       || IsNullOrEmptyString(pszPkgName)
+       || !pSolvedPkgInfo
+       || !phPkgListGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -411,8 +464,12 @@ TDNFResolvePackages(
 
     nAlterType = pSolvedPkgInfo->nAlterType;
 
-    //TODO: support multiple packages
-    pszPkgName = pTdnf->pArgs->ppszCmds[1];
+    //Check if this is a known package. If not add to unresolved
+    dwError = TDNFGetSelector(
+                  pTdnf,
+                  pszPkgName,
+                  &hSelector);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     //Check if package is installed before proceeding
     if(nAlterType == ALTER_ERASE)
@@ -437,68 +494,135 @@ TDNFResolvePackages(
                       &hPkgListGoal);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    else
+    else if(hSelector != NULL)
     {
-        dwError = TDNFGetSelector(
-                      pTdnf,
-                      pszPkgName,
-                      &hSelector);
-        BAIL_ON_TDNF_ERROR(dwError);
-        if(hSelector != NULL)
+        hPkgListGoalTemp = hy_selector_matches(hSelector);
+        hPkgListGoal = hy_packagelist_create();
+
+        if(nAlterType == ALTER_ERASE)
         {
-            hPkgListGoal = hy_selector_matches(hSelector);
+            FOR_PACKAGELIST(hPkg, hPkgListGoalTemp, i)
+            {
+                if(hy_package_installed(hPkg))
+                {
+                    hy_packagelist_push(hPkgListGoal, hPkg);
+                    break;
+                }
+            }
         }
-        else
+        else if (nAlterType == ALTER_INSTALL)
         {
-            dwError = TDNFGetMatchingInstalledAndAvailable(
-                          pTdnf,
-                          nAlterType,
-                          pszPkgName,
-                          pSolvedPkgInfo,
-                          &hPkgListGoal);
+            //Find if the package is installed from matching list
+            //TODO: Move to packageutils with appropriate name
+            FOR_PACKAGELIST(hPkg, hPkgListGoalTemp, i)
+            {
+                if(hy_package_installed(hPkg))
+                {
+                    break;
+                }
+            }
+
+            dwError = TDNFPackageGetLatest(hPkgListGoalTemp, &hPkgTemp);
             BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
 
-    if(hy_packagelist_count(hPkgListGoal) > 0)
-    {
-        dwError = TDNFGoal(
-                      pTdnf,
-                      hPkgListGoal,
-                      hSelector,
-                      nAlterType,
-                      pSolvedPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
+            if(hPkg)
+            {
+                if(hy_package_evr_cmp(hPkgTemp, hPkg))
+                {
+                    hy_packagelist_push(hPkgListGoal, hPkgTemp);
+                }
+            }
+            else
+            {
+                hy_packagelist_push(hPkgListGoal, hPkgTemp);
+            }
+        }
+        else if (nAlterType == ALTER_UPGRADE)
+        {
+            //Find installed package.
+            //TODO: Move to packageutils with appropriate name
+            FOR_PACKAGELIST(hPkg, hPkgListGoalTemp, i)
+            {
+                if(hy_package_installed(hPkg))
+                {
+                    break;
+                }
+            }
+            if(hPkg == NULL)
+            {
+                dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFPackageGetLatest(hPkgListGoalTemp, &hPkgTemp);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            hy_packagelist_push(hPkgListGoal, hPkgTemp);
+        }
+        else if (nAlterType == ALTER_DOWNGRADE || nAlterType == ALTER_DOWNGRADEALL)
+        {
+            //Find installed package.
+            //TODO: Move to packageutils with appropriate name
+            FOR_PACKAGELIST(hPkg, hPkgListGoalTemp, i)
+            {
+                if(hy_package_installed(hPkg))
+                {
+                    break;
+                }
+            }
+            if(hPkg == NULL)
+            {
+                dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFPackageGetDowngrade(hPkgListGoalTemp, hPkg, &hPkgTemp);
+            if(dwError == ERROR_TDNF_NO_DOWNGRADES)
+            {
+                dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            hy_packagelist_push(hPkgListGoal, hPkgTemp);
+        }
     }
     else
     {
-        dwError = TDNFAllocateMemory(
-                      sizeof(TDNF_PKG_INFO),
-                      (void**)&pSolvedPkgInfo->pPkgsNotAvailable);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFAllocateString(
-                      pszPkgName,
-                      &pSolvedPkgInfo->pPkgsNotAvailable->pszName);
+        //TODO: Shouldnt be here. Better error needed
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    *phPkgListGoal = hPkgListGoal;
 
 cleanup:
     if(hPkgTemp)
     {
-         hy_package_free(hPkgTemp);
+    //     hy_package_free(hPkgTemp);
     }
-    if(hSelector)
+    if(hPkgListGoalTemp)
     {
-        hy_selector_free(hSelector);
+//        hy_packagelist_free(hPkgListGoalTemp);
+    }
+    return dwError;
+
+error:
+    if(dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
+    {
+        dwError = 0;
+        if(TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName))
+        {
+            fprintf(stderr, "Error while adding not resolved packages\n");
+        }
+    }
+    if(phPkgListGoal)
+    {
+        *phPkgListGoal = NULL;
     }
     if(hPkgListGoal)
     {
         hy_packagelist_free(hPkgListGoal);
     }
-    TDNF_SAFE_FREE_PKGLIST(hPkgList);
-    return dwError;
-
-error:
     goto cleanup;
 }
+

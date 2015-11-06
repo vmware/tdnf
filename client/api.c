@@ -646,8 +646,7 @@ TDNFResolve(
 {
     uint32_t dwError = 0;
 
-    HyQuery hQuery = NULL;
-
+    HyPackageList hPkgListGoal = NULL;
 
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
 
@@ -659,13 +658,6 @@ TDNFResolve(
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    hQuery = hy_query_create(pTdnf->hSack);
-    if(!hQuery)
-    {
-        dwError = HY_E_FAILED;
-        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-    }
-
     dwError = TDNFAllocateMemory(
                 sizeof(TDNF_SOLVED_PKG_INFO),
                 (void**)&pSolvedPkgInfo);
@@ -673,15 +665,22 @@ TDNFResolve(
 
     pSolvedPkgInfo->nAlterType = nAlterType;
 
-    if(nAlterType == ALTER_UPGRADEALL || nAlterType == ALTER_DISTRO_SYNC)
-    {
-        dwError = TDNFResolveAll(pTdnf, pSolvedPkgInfo);
-    }
-    else
-    {
-        dwError = TDNFResolvePackages(pTdnf, pSolvedPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFAllocateMemory(
+                  sizeof(char*) * pTdnf->pArgs->nCmdCount,
+                  (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPrepareAllPackages(
+                  pTdnf,
+                  pSolvedPkgInfo,
+                  &hPkgListGoal);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoal(
+                  pTdnf,
+                  hPkgListGoal,
+                  pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction = 
         pSolvedPkgInfo->pPkgsToInstall ||
@@ -699,10 +698,11 @@ TDNFResolve(
         pSolvedPkgInfo->pPkgsToReinstall;
 
     *ppSolvedPkgInfo = pSolvedPkgInfo;
+
 cleanup:
-    if(hQuery)
+    if(hPkgListGoal)
     {
-        hy_query_free(hQuery);
+        hy_packagelist_free(hPkgListGoal);
     }
     return dwError;
 

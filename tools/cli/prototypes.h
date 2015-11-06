@@ -166,6 +166,11 @@ TDNFCliHelpCommand(
 
 //installcmd.c
 uint32_t
+PrintNotAvailable(
+    char** ppszPkgsNotAvailable
+    );
+
+uint32_t
 PrintExistingPackagesSkipped(
     PTDNF_PKG_INFO pPkgInfos
     );
