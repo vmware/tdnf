@@ -245,9 +245,28 @@ TDNFGetGlobPackages(
     );
 
 uint32_t
-TDNFGetDowngradeablePkgs(
+TDNFFilterPackages(
     PTDNF pTdnf,
+    int nScope,
     HyPackageList* phPkgList
+    );
+
+uint32_t
+TDNFAddPackagesForInstall(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFAddPackagesForUpgrade(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFAddPackagesForDowngrade(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
     );
 
 //goal.c
@@ -483,10 +502,17 @@ TDNFPrepareSinglePkg(
     );
 
 uint32_t
-TDNFAddDowngradeable(
+TDNFAddFilteredPkgs(
     PTDNF pTdnf,
+    int nScope,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
     HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFAddNotResolved(
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    const char* pszPkgName
     );
 
 //rpmtrans.c

@@ -831,8 +831,9 @@ error:
 }
 
 uint32_t
-TDNFGetDowngradeablePkgs(
+TDNFFilterPackages(
     PTDNF pTdnf,
+    int nScope,
     HyPackageList* phPkgList
     )
 {
@@ -840,7 +841,7 @@ TDNFGetDowngradeablePkgs(
     HyQuery hQuery = NULL;
     HyPackageList hPkgList = NULL;
 
-    if(!pTdnf || !phPkgList)
+    if(!pTdnf || nScope == SCOPE_NONE || !phPkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -853,7 +854,7 @@ TDNFGetDowngradeablePkgs(
         BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
     }
 
-    dwError = TDNFApplyScopeFilter(hQuery, SCOPE_DOWNGRADES);
+    dwError = TDNFApplyScopeFilter(hQuery, nScope);
     BAIL_ON_TDNF_ERROR(dwError);
 
     hPkgList = hy_query_run(hQuery);
@@ -883,3 +884,138 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFAddPackagesForInstall(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    )
+{
+    uint32_t dwError = 0;
+    HyPackage hPkg = NULL;
+    HyPackage hPkgTemp = NULL;
+    int i = 0;
+
+    if(!hPkgListSource || !hPkgListGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //Find if the package is installed from matching list
+    FOR_PACKAGELIST(hPkg, hPkgListSource, i)
+    {
+        if(hy_package_installed(hPkg))
+        {
+            break;
+        }
+    }
+
+    dwError = TDNFPackageGetLatest(hPkgListSource, &hPkgTemp);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(hPkg)
+    {
+        if(hy_package_evr_cmp(hPkgTemp, hPkg))
+        {
+            hy_packagelist_push(hPkgListGoal, hPkgTemp);
+        }
+    }
+    else
+    {
+        hy_packagelist_push(hPkgListGoal, hPkgTemp);
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFAddPackagesForUpgrade(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    )
+{
+    uint32_t dwError = 0;
+    HyPackage hPkg = NULL;
+    HyPackage hPkgTemp = NULL;
+    int i = 0;
+
+    if(!hPkgListSource || !hPkgListGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //Find installed package.
+    FOR_PACKAGELIST(hPkg, hPkgListSource, i)
+    {
+        if(hy_package_installed(hPkg))
+        {
+            break;
+        }
+    }
+
+    if(hPkg == NULL)
+    {
+        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFPackageGetLatest(hPkgListSource, &hPkgTemp);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    hy_packagelist_push(hPkgListGoal, hPkgTemp);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFAddPackagesForDowngrade(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    )
+{
+    uint32_t dwError = 0;
+    HyPackage hPkg = NULL;
+    HyPackage hPkgTemp = NULL;
+    int i = 0;
+
+    if(!hPkgListSource || !hPkgListGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    //Find installed package.
+    FOR_PACKAGELIST(hPkg, hPkgListSource, i)
+    {
+        if(hy_package_installed(hPkg))
+        {
+            break;
+        }
+    }
+    if(hPkg == NULL)
+    {
+        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFPackageGetDowngrade(hPkgListSource, hPkg, &hPkgTemp);
+    if(dwError == ERROR_TDNF_NO_DOWNGRADES)
+    {
+        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    hy_packagelist_push(hPkgListGoal, hPkgTemp);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}

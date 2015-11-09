@@ -157,7 +157,7 @@ TDNFAddGoal(
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
         case ALTER_AUTOERASE:
-            //dwError = TDNFGoalSetUserInstalled(hGoal, hPkgList);
+            dwError = hy_goal_userinstalled(hGoal, hPkg);
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
         default:
