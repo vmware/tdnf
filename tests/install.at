@@ -5,23 +5,26 @@
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
  */
-AT_BANNER(tdnf list tests)
+AT_BANNER(tdnf install tests)
 
-# check tdnf list commands
-AT_SETUP([list])
-AT_KEYWORDS([list])
+AT_SETUP([install filesystem])
+AT_KEYWORDS([install])
 AT_CHECK([
 TDNF_CHROOT_CLEAN
 TDNF_CHROOT_INIT
-TDNF_CLI_W_CHROOT list
+TDNF_CLI_W_CHROOT install filesystem -y --nogpgcheck
 ],
 [0],
 [ignore],
 [ignore])
 AT_CLEANUP
 
-AT_SETUP([list installed])
-AT_KEYWORDS([list])
-AT_CHECK([TDNF_CLI_W_CHROOT list installed],\
- [243], [ignore], [ignore])
+AT_SETUP([install non existent])
+AT_KEYWORDS([install])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install pkg-not-found
+],
+[65],
+[ignore],
+[ignore])
 AT_CLEANUP
