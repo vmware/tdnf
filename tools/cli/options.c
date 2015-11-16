@@ -121,11 +121,18 @@ _TDNFCliGetOptionByName(
 {
     uint32_t dwError = 0;
     struct option* pOption = NULL;
+    const char* OPTIONS_MARKER = "--";
+    int OPTIONS_MARKER_LEN = strlen(OPTIONS_MARKER);
 
     if(IsNullOrEmptyString(pszName) || !pKnownOptions || !ppOption)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    if(strncmp(pszName, OPTIONS_MARKER, OPTIONS_MARKER_LEN) == 0)
+    {
+        pszName += OPTIONS_MARKER_LEN;
     }
 
     while(pKnownOptions->name)

@@ -23,11 +23,9 @@ AC_CHECK_HEADERS(hawkey/sack.h)
 echo "Looking for hawkey libs"
 AC_CHECK_LIB(hawkey, hy_sack_count)
 
-CPPFLAGS="-I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
 #glib
-echo "Looking for glib headers"
-AC_CHECK_HEADERS(glib.h)
-AC_CHECK_HEADERS(glibconfig.h)
+PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_libglib=yes], [have_libglib=no])
+AM_CONDITIONAL([GLIB],  [test "$have_libglib" = "yes"])
 
 #librepo
 echo "Looking for librepo headers"

@@ -14,5 +14,4 @@ tdnf_SOURCES = \
     parseupdateinfo.c \
     updateinfocmd.c
 tdnf_LDADD =  \
-    $(top_builddir)/client/libtdnfclient.la \
-    -lhawkey
+    $(top_builddir)/client/libtdnfclient.la

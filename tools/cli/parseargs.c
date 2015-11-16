@@ -42,6 +42,7 @@ static struct option pstOptions[] =
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
+    {"setopt",        required_argument, 0, 0},            //--set or override options
     {"showduplicates",required_argument, 0, 0},            //--showduplicates
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
     {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
@@ -332,6 +333,15 @@ ParseOption(
         }
         fprintf(stdout, "InstallRoot: %s\n", optarg);
     }
+    else if(!strcasecmp(pszName, "setopt"))
+    {
+        if(!optarg)
+        {
+            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+        fprintf(stdout, "setopt: %s\n", optarg);
+    }
 cleanup:
     return dwError;
 
@@ -395,6 +405,10 @@ HandleOptionsError(
     if(dwError == ERROR_TDNF_CLI_OPTION_NAME_INVALID)
     {
        TDNFCliShowNoSuchOption(pszName);
+    }
+    else if(dwError == ERROR_TDNF_CLI_OPTION_ARG_REQUIRED)
+    {
+       fprintf(stderr, "Option %s requires an argument\n", pszName);
     }
     return dwError;
 }
