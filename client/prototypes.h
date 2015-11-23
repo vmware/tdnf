@@ -622,6 +622,11 @@ TDNFFreeMemory(
     void* pMemory
     );
 
+void
+TDNFFreeCmdOpt(
+    PTDNF_CMD_OPT pCmdOpt
+    );
+
 //search.c
 uint32_t
 TDNFQueryTermsHelper(

@@ -170,6 +170,13 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     char** ppszPkgsNotResolved;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
+typedef struct _TDNF_CMD_OPT
+{
+    char* pszOptName;
+    char* pszOptValue;
+    struct _TDNF_CMD_OPT* pNext;
+}TDNF_CMD_OPT, *PTDNF_CMD_OPT;
+
 typedef struct _TDNF_CMD_ARGS
 {
     //Represent options in the dnf cmd line.
@@ -199,6 +206,7 @@ typedef struct _TDNF_CMD_ARGS
     char** ppszEnabledRepos;
     //Disabled repositories
     char** ppszDisabledRepos;
+    PTDNF_CMD_OPT pSetOpt;
 }TDNF_CMD_ARGS, *PTDNF_CMD_ARGS;
 
 typedef struct _TDNF_CONF

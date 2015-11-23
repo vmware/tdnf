@@ -1014,6 +1014,7 @@ TDNFFreeCmdArgs(
     }
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
 
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 
@@ -1022,4 +1023,20 @@ TDNFGetVersion(
     )
 {
     return PACKAGE_VERSION;
+}
+
+void
+TDNFFreeCmdOpt(
+    PTDNF_CMD_OPT pCmdOpt
+    )
+{
+    PTDNF_CMD_OPT pCmdOptTemp = NULL;
+    while(pCmdOpt)
+    {
+        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptName);
+        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptValue);
+        pCmdOptTemp = pCmdOpt->pNext;
+        TDNF_SAFE_FREE_MEMORY(pCmdOpt);
+        pCmdOpt = pCmdOptTemp;
+    }
 }

@@ -255,6 +255,11 @@ TDNFFreeUpdateInfoSummary(
     PTDNF_UPDATEINFO_SUMMARY pSummary
     );
 
+void
+TDNFFreeCmdOpt(
+    PTDNF_CMD_OPT pCmdOpt
+    );
+
 #ifdef __cplusplus
 }
 #endif

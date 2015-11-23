@@ -340,7 +340,8 @@ ParseOption(
             dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
             BAIL_ON_CLI_ERROR(dwError);
         }
-        fprintf(stdout, "setopt: %s\n", optarg);
+        dwError = AddSetOpt(pCmdArgs, optarg);
+        BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:
     return dwError;
