@@ -24,53 +24,22 @@ uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     HyPackageList hPkgList,
-    HySelector hSelector,
-    TDNF_ALTERTYPE nResolveFor,
     PTDNF_SOLVED_PKG_INFO pInfo
     )
 {
     uint32_t dwError = 0;
+
     HyGoal hGoal = NULL;
     HyPackage hPkg = NULL;
-    PTDNF_PKG_INFO pPkgsToInstall = NULL;
-    PTDNF_PKG_INFO pPkgsToUpgrade = NULL;
-    PTDNF_PKG_INFO pPkgsToDowngrade = NULL;
-    PTDNF_PKG_INFO pPkgsToRemove = NULL;
-    PTDNF_PKG_INFO pPkgsUnNeeded = NULL;
-    PTDNF_PKG_INFO pPkgsToReinstall = NULL;
-    PTDNF_PKG_INFO pPkgsObsoleted = NULL;
+    PTDNF_SOLVED_PKG_INFO pInfoTemp = NULL;
 
     int nFlags = 0;
-    int nRequirePkgList =
-        (nResolveFor != ALTER_UPGRADEALL &&
-         nResolveFor != ALTER_DISTRO_SYNC);
+    int i = 0;
 
-    if(!pTdnf || !pInfo )
+    if(!pTdnf || !hPkgList || !pInfo )
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(nResolveFor == ALTER_UPGRADE && !hSelector)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(nRequirePkgList)
-    {
-        if(!hPkgList)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-
-        hPkg = hy_packagelist_get(hPkgList, 0);
-        if(!hPkg)
-        {
-            dwError = ERROR_TDNF_PACKAGELIST_EMPTY;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
     }
 
     hGoal = hy_goal_create(pTdnf->hSack);
@@ -79,46 +48,23 @@ TDNFGoal(
         dwError = ERROR_TDNF_GOAL_CREATE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    switch(nResolveFor)
-    {
-        case ALTER_DOWNGRADE:
-            dwError = hy_goal_downgrade_to(hGoal, hPkg);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_ERASE:
-            dwError = hy_goal_erase(hGoal, hPkg);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_REINSTALL:
-            dwError = hy_goal_install(hGoal, hPkg);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_INSTALL:
-            dwError = TDNFPackageGetLatest(hPkgList, &hPkg);
-            BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = hy_goal_install(hGoal, hPkg);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_UPGRADE:
-            dwError = hy_goal_upgrade_to_selector(hGoal, hSelector);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_UPGRADEALL:
-            dwError = hy_goal_upgrade_all(hGoal);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_DISTRO_SYNC:
-            dwError = hy_goal_distupgrade_all(hGoal);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        case ALTER_AUTOERASE:
-            dwError = TDNFGoalSetUserInstalled(hGoal, hPkgList);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-        default:
-            dwError = ERROR_TDNF_INVALID_RESOLVE_ARG;
-            BAIL_ON_TDNF_ERROR(dwError);
+    if(pInfo->nAlterType == ALTER_UPGRADEALL)
+    {
+        dwError = hy_goal_upgrade_all(hGoal);
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+    else if(pInfo->nAlterType == ALTER_DISTRO_SYNC)
+    {
+        dwError = hy_goal_distupgrade_all(hGoal);
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+    else
+    {
+        FOR_PACKAGELIST(hPkg, hPkgList, i)
+        {
+            TDNFAddGoal(pTdnf, pInfo->nAlterType, hGoal, hPkg);
+        }
     }
 
     if(pTdnf->pArgs->nBest)
@@ -126,8 +72,8 @@ TDNFGoal(
         nFlags = nFlags | HY_FORCE_BEST;
     }
     if(pTdnf->pArgs->nAllowErasing ||
-       nResolveFor == ALTER_ERASE ||
-       nResolveFor == ALTER_AUTOERASE)
+       pInfo->nAlterType == ALTER_ERASE ||
+       pInfo->nAlterType == ALTER_AUTOERASE)
     {
         nFlags = nFlags | HY_ALLOW_UNINSTALL;
     }
@@ -139,53 +85,24 @@ TDNFGoal(
     }
     BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
 
-    dwError = TDNFGoalGetResultsIgnoreNoData(
-                  hy_goal_list_installs(hGoal),
-                  &pPkgsToInstall);
+    dwError = TDNFGoalGetAllResultsIgnoreNoData(
+                  pInfo->nAlterType,
+                  hGoal,
+                  &pInfoTemp);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGoalGetResultsIgnoreNoData(
-                  hy_goal_list_upgrades(hGoal),
-                  &pPkgsToUpgrade);
-    BAIL_ON_TDNF_ERROR(dwError);
+    pInfo->pPkgsToInstall = pInfoTemp->pPkgsToInstall;
+    pInfo->pPkgsToUpgrade = pInfoTemp->pPkgsToUpgrade;
+    pInfo->pPkgsToDowngrade = pInfoTemp->pPkgsToDowngrade;
+    pInfo->pPkgsToRemove = pInfoTemp->pPkgsToRemove;
+    pInfo->pPkgsUnNeeded = pInfoTemp->pPkgsUnNeeded;
+    pInfo->pPkgsToReinstall = pInfoTemp->pPkgsToReinstall;
+    pInfo->pPkgsObsoleted = pInfoTemp->pPkgsObsoleted;
 
-    dwError = TDNFGoalGetResultsIgnoreNoData(
-                  hy_goal_list_downgrades(hGoal),
-                  &pPkgsToDowngrade);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGoalGetResultsIgnoreNoData(
-                  hy_goal_list_erasures(hGoal),
-                  &pPkgsToRemove);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGoalGetResultsIgnoreNoData(
-                  hy_goal_list_obsoleted(hGoal),
-                  &pPkgsObsoleted);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if(nResolveFor == ALTER_AUTOERASE)
-    {
-        dwError = TDNFGoalGetResultsIgnoreNoData(
-                      hy_goal_list_unneeded(hGoal),
-                      &pPkgsUnNeeded);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    dwError = TDNFGoalGetResultsIgnoreNoData(
-                  hy_goal_list_reinstalls(hGoal),
-                  &pPkgsToReinstall);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    pInfo->pPkgsToInstall = pPkgsToInstall;
-    pInfo->pPkgsToUpgrade = pPkgsToUpgrade;
-    pInfo->pPkgsToDowngrade = pPkgsToDowngrade;
-    pInfo->pPkgsToRemove = pPkgsToRemove;
-    pInfo->pPkgsUnNeeded = pPkgsUnNeeded;
-    pInfo->pPkgsToReinstall = pPkgsToReinstall;
-    pInfo->pPkgsObsoleted = pPkgsObsoleted;
     pTdnf->hGoal = hGoal;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pInfoTemp);
     return dwError;
 
 error:
@@ -194,33 +111,136 @@ error:
         TDNFGoalReportProblems(hGoal);
         hy_goal_free(hGoal);
     }
-    if(pPkgsToInstall)
+    goto cleanup;
+}
+
+uint32_t
+TDNFAddGoal(
+    PTDNF pTdnf,
+    int nAlterType,
+    HyGoal hGoal,
+    HyPackage hPkg
+    )
+{
+    uint32_t dwError = 0;
+    HySelector hSelector = NULL;
+    const char* pszPkg = NULL;
+
+    if(!hGoal || !hPkg)
     {
-        TDNFFreePackageInfo(pPkgsToInstall);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(pPkgsToUpgrade)
+
+    switch(nAlterType)
     {
-        TDNFFreePackageInfo(pPkgsToUpgrade);
+        case ALTER_DOWNGRADEALL:
+        case ALTER_DOWNGRADE:
+            dwError = hy_goal_downgrade_to(hGoal, hPkg);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
+        case ALTER_ERASE:
+            dwError = hy_goal_erase(hGoal, hPkg);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
+        case ALTER_REINSTALL:
+        case ALTER_INSTALL:
+            dwError = hy_goal_install(hGoal, hPkg);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
+        case ALTER_UPGRADE:
+            pszPkg = hy_package_get_name(hPkg);
+            TDNFGetSelector(pTdnf, pszPkg, &hSelector);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = hy_goal_upgrade_to_selector(hGoal, hSelector);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
+        case ALTER_AUTOERASE:
+            dwError = hy_goal_userinstalled(hGoal, hPkg);
+            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            break;
+        default:
+            dwError = ERROR_TDNF_INVALID_RESOLVE_ARG;
+            BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(pPkgsToDowngrade)
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFGoalGetAllResultsIgnoreNoData(
+    int nResolveFor,
+    HyGoal hGoal,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_SOLVED_PKG_INFO pInfo = NULL;
+
+    if(!hGoal || !ppInfo)
     {
-        TDNFFreePackageInfo(pPkgsToDowngrade);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(pPkgsToRemove)
+
+    dwError = TDNFAllocateMemory(
+                sizeof(TDNF_SOLVED_PKG_INFO),
+                (void**)&pInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_installs(hGoal),
+                  &pInfo->pPkgsToInstall);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_upgrades(hGoal),
+                  &pInfo->pPkgsToUpgrade);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_downgrades(hGoal),
+                  &pInfo->pPkgsToDowngrade);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_erasures(hGoal),
+                  &pInfo->pPkgsToRemove);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(nResolveFor == ALTER_AUTOERASE)
     {
-        TDNFFreePackageInfo(pPkgsToRemove);
+        dwError = TDNFGoalGetResultsIgnoreNoData(
+                      hy_goal_list_unneeded(hGoal),
+                      &pInfo->pPkgsUnNeeded);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(pPkgsUnNeeded)
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_reinstalls(hGoal),
+                  &pInfo->pPkgsToReinstall);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoalGetResultsIgnoreNoData(
+                  hy_goal_list_obsoleted(hGoal),
+                  &pInfo->pPkgsObsoleted);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppInfo = pInfo;
+cleanup:
+    return dwError;
+
+error:
+    if(ppInfo)
     {
-        TDNFFreePackageInfo(pPkgsUnNeeded);
+        *ppInfo = NULL;
     }
-    if(pPkgsToReinstall)
+    if(pInfo)
     {
-        TDNFFreePackageInfo(pPkgsToReinstall);
-    }
-    if(pPkgsObsoleted)
-    {
-        TDNFFreePackageInfo(pPkgsObsoleted);
+        TDNFFreeSolvedPackageInfo(pInfo);
     }
     goto cleanup;
 }

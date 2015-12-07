@@ -124,6 +124,7 @@ TDNFFreeSolvedPackageInfo(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     )
 {
+    int i = 0;
     if(pSolvedPkgInfo)
     {
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
@@ -135,6 +136,15 @@ TDNFFreeSolvedPackageInfo(
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+
+       if(pSolvedPkgInfo->ppszPkgsNotResolved)
+       {
+           while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
+           {
+               TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+           }
+       }
+       TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
     }
     TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }

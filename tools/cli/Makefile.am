@@ -12,7 +12,7 @@ tdnf_SOURCES = \
     parselistargs.c \
     parserepolistargs.c \
     parseupdateinfo.c \
+    setopt.c \
     updateinfocmd.c
 tdnf_LDADD =  \
-    $(top_builddir)/client/libtdnfclient.la \
-    -lhawkey
+    $(top_builddir)/client/libtdnfclient.la

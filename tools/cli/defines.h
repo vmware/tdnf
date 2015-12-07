@@ -32,6 +32,7 @@
 #define ERROR_TDNF_CLI_OPTION_NAME_INVALID     (ERROR_TDNF_CLI_BASE + 8)
 #define ERROR_TDNF_CLI_OPTION_ARG_REQUIRED     (ERROR_TDNF_CLI_BASE + 9)
 #define ERROR_TDNF_CLI_OPTION_ARG_UNEXPECTED   (ERROR_TDNF_CLI_BASE + 10)
+#define ERROR_TDNF_CLI_SETOPT_NO_EQUALS        (ERROR_TDNF_CLI_BASE + 11)
 
 
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
@@ -67,4 +68,5 @@ typedef uint32_t (*PFN_CMD)(PTDNF, PTDNF_CMD_ARGS);
     {ERROR_TDNF_CLI_OPTION_ARG_UNEXPECTED,   "ERROR_TDNF_CLI_OPTION_ARG_UNEXPECTED",  "Command line error: argument was unexpected."}, \
     {ERROR_TDNF_CLI_CHECKLOCAL_EXPECT_DIR,   "ERROR_TDNF_CLI_CHECKLOCAL_EXPECT_DIR",  "check-local requires path to rpm directory as a parameter"}, \
     {ERROR_TDNF_CLI_PROVIDES_EXPECT_ARG,     "ERROR_TDNF_CLI_PROVIDES_EXPECT_ARG",    "Need an item to match."}, \
+    {ERROR_TDNF_CLI_SETOPT_NO_EQUALS,        "ERROR_TDNF_CLI_SETOPT_NO_EQUALS",       "Missing equal sign in setopt argument. setopt requires an argument of the form key=value."}, \
 };
