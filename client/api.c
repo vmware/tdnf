@@ -502,11 +502,13 @@ TDNFOpenHandle(
     dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadConfig(TDNF_CONF_FILE, TDNF_CONF_GROUP, &pTdnf->pConf);
+    dwError = TDNFReadConfig(pTdnf,
+                  TDNF_CONF_FILE,
+                  TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFLoadRepoData(
-                  pTdnf->pConf,
+                  pTdnf,
                   REPOLISTFILTER_ENABLED,
                   &pTdnf->pRepos);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -623,7 +625,7 @@ TDNFRepoList(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFLoadRepoData(pTdnf->pConf, nFilter, &pReposAll);
+    dwError = TDNFLoadRepoData(pTdnf, nFilter, &pReposAll);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppReposAll = pReposAll;

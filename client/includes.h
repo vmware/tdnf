@@ -26,6 +26,9 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <fcntl.h>
+//
+#include <sys/utsname.h>
 //glib
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -54,6 +57,7 @@
 #include <rpm/rpmps.h>
 #include <rpm/rpmts.h>
 #include <rpm/rpmkeyring.h>
+#include <rpm/header.h>
 
 #include <tdnfclient.h>
 

@@ -155,3 +155,113 @@ TDNFFreeStringArray(
         TDNFFreeMemory(ppszArray);
     }
 }
+
+uint32_t
+TDNFAllocateStringN(
+    const char* pszSrc,
+    uint32_t dwNumElements,
+    char** ppszDst
+    )
+{
+    uint32_t dwError = 0;
+    char* pszDst = NULL;
+    uint32_t dwSrcLength = 0;
+
+    if(!pszSrc || !ppszDst)
+    {
+      dwError = ERROR_TDNF_INVALID_PARAMETER;
+      BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwSrcLength = strlen(pszSrc);
+    if(dwNumElements > dwSrcLength)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(dwNumElements + 1, (void**)&pszDst);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    strncpy(pszDst, pszSrc, dwNumElements);
+
+    *ppszDst = pszDst;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppszDst)
+    {
+      *ppszDst = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszDst);
+    goto cleanup;
+}
+
+uint32_t
+TDNFReplaceString(
+    const char* pszSource,
+    const char* pszSearch,
+    const char* pszReplace,
+    char** ppszDst
+    )
+{
+    uint32_t dwError = 0;
+    char* pszDst = NULL;
+    char* pszTemp = NULL;
+    char* pszTempReplace = NULL;
+    char* pszIndex = NULL;
+    int nSearchLen = 0;
+
+    if(IsNullOrEmptyString(pszSource) ||
+       IsNullOrEmptyString(pszSearch) ||
+       !pszReplace ||
+       !ppszDst)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nSearchLen = strlen(pszSearch);
+
+    dwError = TDNFAllocateString(pszSource, &pszDst);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    while((pszIndex = strstr(pszDst, pszSearch)) != NULL)
+    {
+        dwError = TDNFAllocateStringN(
+                      pszDst,
+                      pszIndex - pszDst,
+                      &pszTemp);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pszTempReplace,
+                      "%s%s%s",
+                      pszTemp,
+                      pszReplace,
+                      pszIndex + nSearchLen);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pszTemp);
+        TDNF_SAFE_FREE_MEMORY(pszDst);
+        pszDst = pszTempReplace;
+        pszTemp = NULL;
+        pszTempReplace = NULL;
+    }
+
+    *ppszDst = pszDst;
+cleanup:
+    return dwError;
+
+error:
+    if(ppszDst)
+    {
+        *ppszDst = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszDst);
+    TDNF_SAFE_FREE_MEMORY(pszTemp);
+    TDNF_SAFE_FREE_MEMORY(pszTempReplace);
+    goto cleanup;
+}

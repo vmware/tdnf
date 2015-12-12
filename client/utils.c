@@ -305,3 +305,133 @@ error:
     }
     goto cleanup;
 }
+
+//get package version using rpmlib
+uint32_t
+TDNFRawGetPackageVersion(
+   const char* pszRootDir,
+   const char* pszPkg,
+   char** ppszVersion
+   )
+{
+    uint32_t dwError = 0;
+    const char* pszVersionTemp = NULL;
+    char* pszVersion = NULL;
+    rpmts pTS = NULL;
+    Header pHeader = NULL;
+    rpmdbMatchIterator pIter = NULL;
+
+    if(IsNullOrEmptyString(pszRootDir) ||
+       IsNullOrEmptyString(pszPkg) ||
+       !ppszVersion)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = rpmReadConfigFiles(NULL, NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pTS = rpmtsCreate();
+    if(!pTS)
+    {
+        dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(rpmtsSetRootDir (pTS, pszRootDir))
+    {
+        dwError = ERROR_TDNF_RPMTS_BAD_ROOT_DIR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pIter = rpmtsInitIterator(pTS, RPMTAG_NAME, pszPkg, 0);
+    if(!pIter)
+    {
+        dwError = ERROR_TDNF_NO_DISTROVERPKG;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pHeader = rpmdbNextIterator(pIter);
+    if(!pHeader)
+    {
+        dwError = ERROR_TDNF_DISTROVERPKG_READ;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pHeader = headerLink(pHeader);
+    if(!pHeader)
+    {
+        dwError = ERROR_TDNF_DISTROVERPKG_READ;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pszVersionTemp = headerGetString(pHeader, RPMTAG_VERSION);
+    if(IsNullOrEmptyString(pszVersionTemp))
+    {
+        dwError = ERROR_TDNF_DISTROVERPKG_READ;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszVersionTemp, &pszVersion);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszVersion = pszVersion;
+cleanup:
+    if(pHeader)
+    {
+        headerFree(pHeader);
+    }
+    if(pIter)
+    {
+        rpmdbFreeIterator(pIter);
+    }
+    if(pTS)
+    {
+        rpmtsFree(pTS);
+    }
+    return dwError;
+
+error:
+    if(ppszVersion)
+    {
+        *ppszVersion = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszVersion);
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetKernelArch(
+   char** ppszArch
+   )
+{
+    uint32_t dwError = 0;
+    char* pszArch = NULL;
+    struct utsname stUtsName;
+
+    if(!ppszArch)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(uname(&stUtsName) != 0)
+    {
+        dwError = errno;
+    }
+    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+
+    dwError = TDNFAllocateString(stUtsName.machine, &pszArch);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszArch = pszArch;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppszArch)
+    {
+        *ppszArch = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszArch);
+    goto cleanup;
+}

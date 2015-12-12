@@ -54,9 +54,10 @@ extern "C" {
 #define ERROR_TDNF_NO_DOWNGRADES            1017
 #define ERROR_TDNF_AUTOERASE_UNSUPPORTED    1018
 //Config settings error
-#define ERROR_TDNF_SET_PROXY            1020
-#define ERROR_TDNF_SET_PROXY_USERPASS   1021
-
+#define ERROR_TDNF_SET_PROXY                1020
+#define ERROR_TDNF_SET_PROXY_USERPASS       1021
+#define ERROR_TDNF_NO_DISTROVERPKG          1022
+#define ERROR_TDNF_DISTROVERPKG_READ        1023
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300
