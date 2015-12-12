@@ -355,9 +355,14 @@ TDNFReadKeyValue(
 
 uint32_t
 TDNFReadConfig(
+    PTDNF pTdnf,
     char* pszConfFile,
-    char* pszConfGroup,
-    PTDNF_CONF* ppConf
+    char* pszConfGroup
+    );
+
+uint32_t
+TDNFConfigExpandVars(
+    PTDNF pTdnf
     );
 
 uint32_t
@@ -369,6 +374,12 @@ TDNFConfigReadProxySettings(
 void
 TDNFFreeConfig(
     PTDNF_CONF pConf
+    );
+
+uint32_t
+TDNFConfigReplaceVars(
+    PTDNF pTdnf,
+    char** pszString
     );
 
 //repo.c
@@ -407,13 +418,14 @@ TDNFGetRepoById(
 //repolist.c
 uint32_t
 TDNFLoadReposFromFile(
+    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA* ppRepos
     );
 
 uint32_t
 TDNFLoadRepoData(
-    PTDNF_CONF pConf,
+    PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
     );
@@ -684,6 +696,21 @@ TDNFAllocateStringPrintf(
     const char* pszFmt,
     ...
     );
+
+uint32_t
+TDNFAllocateStringN(
+    const char* pszSrc,
+    uint32_t dwNumElements,
+    char** ppszDst
+    );
+
+uint32_t
+TDNFReplaceString(
+    const char* pszSource,
+    const char* pszSearch,
+    const char* pszReplace,
+    char** ppszDst
+    );
 //updateinfo.c
 uint32_t
 TDNFGetUpdateInfoPackages(
@@ -732,6 +759,18 @@ uint32_t
 TDNFUtilsMakeDirs(
     const char* pszPath
     );
+
+uint32_t
+TDNFRawGetPackageVersion(
+   const char* pszRootDir,
+   const char* pszPkg,
+   char** ppszVersion
+   );
+
+uint32_t
+TDNFGetKernelArch(
+   char** ppszArch
+   );
 
 //validate.c
 uint32_t

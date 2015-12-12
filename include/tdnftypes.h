@@ -219,6 +219,10 @@ typedef struct _TDNF_CONF
     char* pszCacheDir;
     char* pszProxy;
     char* pszProxyUserPass;
+    char* pszDistroVerPkg;
+    char* pszBaseArch;
+    char* pszVarReleaseVer;
+    char* pszVarBaseArch;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_METADATA
