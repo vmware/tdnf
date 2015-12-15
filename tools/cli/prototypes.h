@@ -202,6 +202,11 @@ void
 TDNFCliShowVersion(
     );
 
+uint32_t
+TDNFCliVerboseShowEnv(
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
 //options.c
 uint32_t
 _TDNFCliGetOptionByName(
