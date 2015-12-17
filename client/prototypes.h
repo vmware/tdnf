@@ -49,12 +49,6 @@ TDNFApplyPackageFilter(
 
 //gpgcheck.c
 uint32_t
-ReadAllBytes(
-    const char* pszFileName,
-    char** pszFileContents
-    );
-
-uint32_t
 ReadGPGKey(
    const char* pszFile,
    char** ppszKeyData
@@ -646,12 +640,6 @@ TDNFQueryTermsHelper(
     HyQuery hQuery,
     int nKeyId,
     const char* pszMatch
-    );
-
-uint32_t
-TDNFCopyWithWildCards(
-    const char* pszSrc,
-    const char** ppszDst
     );
 
 uint32_t
