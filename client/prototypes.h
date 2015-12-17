@@ -643,12 +643,6 @@ TDNFQueryTermsHelper(
     );
 
 uint32_t
-TDNFCopyWithWildCards(
-    const char* pszSrc,
-    const char** ppszDst
-    );
-
-uint32_t
 QueryTermsInNameSummary(
     HyPackageList,
     HyQuery,
