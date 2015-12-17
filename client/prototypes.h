@@ -49,12 +49,6 @@ TDNFApplyPackageFilter(
 
 //gpgcheck.c
 uint32_t
-ReadAllBytes(
-    const char* pszFileName,
-    char** pszFileContents
-    );
-
-uint32_t
 ReadGPGKey(
    const char* pszFile,
    char** ppszKeyData
