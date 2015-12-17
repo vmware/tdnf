@@ -45,7 +45,7 @@ static struct option pstOptions[] =
     {"setopt",        required_argument, 0, 0},            //--set or override options
     {"showduplicates",required_argument, 0, 0},            //--showduplicates
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
-    {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
+    {"verbose",       no_argument, 0, 'v'},                //-v --verbose
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
     {0, 0, 0, 0}
@@ -125,6 +125,9 @@ TDNFCliParseArgs(
                 break;
                 case '6':
                     _opt.nIPv6 = 1;
+                break;
+                case 'v':
+                    _opt.nVerbose = 1;
                 break;
                 case '?':
                     dwError = HandleOptionsError(argv[optind-1], optarg, pstOptions);
