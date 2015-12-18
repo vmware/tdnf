@@ -160,7 +160,7 @@ TDNFLoadReposFromFile(
     {
         pszRepo = ppszRepos[i];
 
-        dwError = TDNFAllocateMemory(sizeof(TDNF_REPO_DATA), (void**)&pRepo);
+        dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAllocateString(pszRepo, &pRepo->pszId);

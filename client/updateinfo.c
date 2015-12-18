@@ -51,7 +51,8 @@ TDNFUpdateInfoSummary(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
-                   sizeof(TDNF_UPDATEINFO_SUMMARY) * (nTypeCount+1),
+                   nTypeCount + 1,
+                   sizeof(TDNF_UPDATEINFO_SUMMARY),
                    (void**)&pSummary);
     BAIL_ON_TDNF_ERROR(dwError);
     
@@ -198,6 +199,7 @@ TDNFGetUpdateInfoPackages(
         }
 
         dwError = TDNFAllocateMemory(
+                      1,
                       sizeof(TDNF_UPDATEINFO_PKG),
                       (void**)&pPkg);
         BAIL_ON_TDNF_ERROR(dwError);

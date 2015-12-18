@@ -39,6 +39,7 @@ TDNFCliParseListArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
     dwError = TDNFAllocateMemory(
+                            1,
                             sizeof(TDNF_LIST_ARGS),
                             (void**)&pListArgs);
     BAIL_ON_CLI_ERROR(dwError);
@@ -58,7 +59,8 @@ TDNFCliParseListArgs(
     //Copy the rest of the args as package name specs
     nPackageCount = pCmdArgs->nCmdCount - nStartIndex;
     dwError = TDNFAllocateMemory(
-                  sizeof(char*) * (nPackageCount + 1),
+                  nPackageCount + 1,
+                  sizeof(char*),
                   (void**)&pListArgs->ppszPackageNameSpecs);
     BAIL_ON_CLI_ERROR(dwError);
 

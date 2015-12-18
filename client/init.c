@@ -106,6 +106,7 @@ TDNFCloneCmdArgs(
     PTDNF_CMD_ARGS pCmdArgs = NULL;
 
     dwError = TDNFAllocateMemory(
+                            1,
                             sizeof(TDNF_CMD_ARGS),
                             (void**)&pCmdArgs);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -134,7 +135,8 @@ TDNFCloneCmdArgs(
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
-                            pCmdArgs->nCmdCount * sizeof(char*),
+                            pCmdArgs->nCmdCount,
+                            sizeof(char*),
                             (void**)&pCmdArgs->ppszCmds
                             );
     BAIL_ON_TDNF_ERROR(dwError);

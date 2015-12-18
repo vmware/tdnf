@@ -188,6 +188,7 @@ TDNFGoalGetAllResultsIgnoreNoData(
     }
 
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF_SOLVED_PKG_INFO),
                 (void**)&pInfo);
     BAIL_ON_TDNF_ERROR(dwError);

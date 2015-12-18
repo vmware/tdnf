@@ -85,7 +85,7 @@ GetOptionAndValue(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(sizeof(TDNF_CMD_OPT), (void**)&pCmdOpt);
+    dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void**)&pCmdOpt);
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = TDNFAllocateString(pszOptArg, &pCmdOpt->pszOptName);
