@@ -1,3 +1,11 @@
+#
+# Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+#
+# Licensed under the GNU Lesser General Public License v2.1 (the "License");
+# you may not use this file except in compliance with the License. The terms
+# of the License are located in the COPYING file of this distribution.
+#
+
 AT_TESTED([tdnf])
 
 m4_define([TDNF_CLI],[[$abs_top_builddir/tools/cli/tdnf]])
@@ -9,6 +17,29 @@ m4_define([TDNF_CLI_W_CHROOT],[[$abs_top_builddir/tools/cli/tdnf --installroot $
 m4_define([TDNF_CHROOT_INIT],[[
 mkdir $abs_top_builddir/tests/testroot
 rpm --root $abs_top_builddir/tests/testroot --initdb
+mkdir -p $abs_top_builddir/tests/testroot/var/cache/tdnf
+mkdir -p $abs_top_builddir/tests/testroot/etc/yum.repos.d
+mkdir -p $abs_top_builddir/tests/testroot/etc/tdnf
+mkdir $abs_top_builddir/tests/testroot/BUILD
+mkdir $abs_top_builddir/tests/testroot/RPMS
+mkdir $abs_top_builddir/tests/testroot/SRPMS
+cat << EOF > $abs_top_builddir/tests/testroot/etc/tdnf/tdnf.conf
+[main]
+repodir=$abs_top_builddir/tests/testroot/etc/yum.repos.d
+cachedir=$abs_top_builddir/tests/testroot/var/cache/tdnf
+EOF
+]])
+
+m4_define([TDNF_BUILD_INSTALL_RPMS],[[
+rpmbuild  --define "_topdir $abs_top_builddir/tests/testroot" -r $abs_top_builddir/tests/testroot -ba $abs_top_builddir/tests/specs/tdnf-test-one.spec
+createrepo $abs_top_builddir/tests/testroot/RPMS
+cat << EOF > $abs_top_builddir/tests/testroot/etc/yum.repos.d/basic.repo
+[basic]
+name=basic
+baseurl=file:///RPMS
+gpgcheck=0
+enabled=1
+EOF
 ]])
 
 m4_define([TDNF_CHROOT_CLEAN],[[
