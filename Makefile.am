@@ -5,4 +5,5 @@ include_HEADERS = include/tdnfclient.h include/tdnferror.h include/tdnftypes.h
 
 SUBDIRS = \
     client \
+    tests \
     tools

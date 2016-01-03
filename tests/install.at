@@ -1,0 +1,32 @@
+#
+# Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+#
+# Licensed under the GNU Lesser General Public License v2.1 (the "License");
+# you may not use this file except in compliance with the License. The terms
+# of the License are located in the COPYING file of this distribution.
+#
+
+AT_BANNER(tdnf install tests)
+
+AT_SETUP([install basic])
+AT_KEYWORDS([install])
+AT_CHECK([
+TDNF_CHROOT_CLEAN
+TDNF_CHROOT_INIT
+TDNF_BUILD_INSTALL_RPMS
+TDNF_CLI_W_CHROOT install tdnf-test-one -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
+
+AT_SETUP([install non existent])
+AT_KEYWORDS([install])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install pkg-not-found
+],
+[65],
+[ignore],
+[ignore])
+AT_CLEANUP

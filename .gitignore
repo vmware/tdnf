@@ -28,6 +28,9 @@ ar-lib
 /tools/cli/.deps
 /tools/cli/.libs
 /tools/cli/tdnf
+/tests/atconfig
+/tests/testsuite
+/tests/package.m4
 
 # Object files
 *.o
