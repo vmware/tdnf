@@ -29,7 +29,6 @@ AddSetOpt(
 {
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pCmdOpt = NULL;
-    PTDNF_CMD_OPT pCmdOptEnd = NULL;
 
     if(!pCmdArgs || IsNullOrEmptyString(pszOptArg))
     {
@@ -39,24 +38,24 @@ AddSetOpt(
     dwError = GetOptionAndValue(pszOptArg, &pCmdOpt);
     BAIL_ON_CLI_ERROR(dwError);
 
-    pCmdOptEnd = pCmdArgs->pSetOpt;
-    if(!pCmdOptEnd)
+    if(!strcmp(pCmdOpt->pszOptName, "tdnf.conf"))
     {
-        pCmdArgs->pSetOpt = pCmdOpt;
-    }
-    else
-    {
-        while(pCmdOptEnd->pNext)
-        {
-            pCmdOptEnd = pCmdOptEnd->pNext;
-        }
-        pCmdOptEnd->pNext = pCmdOpt;
+        TDNF_CLI_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
+        dwError = TDNFAllocateString(
+                      pCmdOpt->pszOptValue,
+                      &pCmdArgs->pszConfFile);
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
 cleanup:
+    if(pCmdOpt)
+    {
+        TDNFFreeCmdOpt(pCmdOpt);
+    }
     return dwError;
 
 error:
+    TDNF_CLI_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
     goto cleanup;
 }
 

@@ -196,6 +196,11 @@ TDNFCliAlterCommand(
     if(!pSolvedPkgInfo->nNeedAction)
     {
         dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
+        //If there are unresolved, error with no match
+        if(pSolvedPkgInfo->ppszPkgsNotResolved)
+        {
+            dwError = ERROR_TDNF_NO_MATCH;
+        }
         BAIL_ON_CLI_ERROR(dwError);
     }
 
