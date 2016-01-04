@@ -198,6 +198,7 @@ typedef struct _TDNF_CMD_ARGS
     int nIPv4;             //resolve to IPv4 addresses only
     int nIPv6;             //resolve to IPv6 addresses only
     char* pszInstallRoot;  //set install root
+    char* pszConfFile;     //set conf file location
 
     //Commands and args that do not fall in options
     char** ppszCmds;

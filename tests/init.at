@@ -12,7 +12,7 @@ m4_define([TDNF_CLI],[[$abs_top_builddir/tools/cli/tdnf]])
 
 m4_define([TDNF_CHROOT],[[$abs_top_builddir/tests/testroot]])
 
-m4_define([TDNF_CLI_W_CHROOT],[[$abs_top_builddir/tools/cli/tdnf --installroot $abs_top_builddir/tests/testroot]])
+m4_define([TDNF_CLI_W_CHROOT],[[$abs_top_builddir/tools/cli/tdnf --setopt "tdnf.conf=$abs_top_builddir/tests/testroot/etc/tdnf/tdnf.conf" --installroot $abs_top_builddir/tests/testroot]])
 
 m4_define([TDNF_CHROOT_INIT],[[
 mkdir $abs_top_builddir/tests/testroot
@@ -36,7 +36,7 @@ createrepo $abs_top_builddir/tests/testroot/RPMS
 cat << EOF > $abs_top_builddir/tests/testroot/etc/yum.repos.d/basic.repo
 [basic]
 name=basic
-baseurl=file:///RPMS
+baseurl=file://$abs_top_builddir/tests/testroot/RPMS
 gpgcheck=0
 enabled=1
 EOF

@@ -505,7 +505,7 @@ TDNFOpenHandle(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadConfig(pTdnf,
-                  TDNF_CONF_FILE,
+                  pTdnf->pArgs->pszConfFile,
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1021,6 +1021,7 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
     }
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
 
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);

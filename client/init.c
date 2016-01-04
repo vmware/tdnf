@@ -130,7 +130,22 @@ TDNFCloneCmdArgs(
     dwError = TDNFAllocateString(
                          pCmdArgsIn->pszInstallRoot,
                          &pCmdArgs->pszInstallRoot);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(IsNullOrEmptyString(pCmdArgsIn->pszConfFile))
+    {
+        dwError = TDNFAllocateString(
+                             TDNF_CONF_FILE,
+                             &pCmdArgs->pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFAllocateString(
+                             pCmdArgsIn->pszConfFile,
+                             &pCmdArgs->pszConfFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
