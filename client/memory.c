@@ -22,20 +22,27 @@
 
 uint32_t
 TDNFAllocateMemory(
-    size_t size,
+    size_t nNumElements,
+    size_t nSize,
     void** ppMemory
     )
 {
     uint32_t dwError = 0;
     void* pMemory = NULL;
 
-    if (!ppMemory || !size)
+    if (!ppMemory || !nSize || !nNumElements)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pMemory = calloc(1, size);
+    if(nNumElements > SIZE_MAX/nSize)
+    {
+        dwError = ERROR_TDNF_INVALID_ALLOCSIZE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pMemory = calloc(nNumElements, nSize);
     if (!pMemory)
     {
         dwError = ERROR_TDNF_OUT_OF_MEMORY;

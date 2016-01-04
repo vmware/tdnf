@@ -48,7 +48,7 @@ TDNFUtilsFormatSize(
         nIndex++;
     }
 
-    dwError = TDNFAllocateMemory(nMaxSize, (void**)&pszFormattedSize);
+    dwError = TDNFAllocateMemory(1, nMaxSize, (void**)&pszFormattedSize);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(sprintf(pszFormattedSize, "%.2f %c", dSize, pszSizes[nIndex]) < 0)

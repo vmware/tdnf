@@ -617,17 +617,6 @@ TDNFFreePackageInfoContents(
     PTDNF_PKG_INFO pPkgInfo
     );
 
-uint32_t
-TDNFAllocateMemory(
-    size_t size,
-    void** ppMemory
-    );
-
-void
-TDNFFreeMemory(
-    void* pMemory
-    );
-
 void
 TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt

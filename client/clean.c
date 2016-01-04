@@ -53,7 +53,8 @@ TDNFCopyEnabledRepos(
     }
 
     dwError = TDNFAllocateMemory(
-                  sizeof(char**) * (nCount + 1),
+                  nCount + 1,
+                  sizeof(char**),
                   (void**)&ppszReposUsed);
     BAIL_ON_TDNF_ERROR(dwError);
 

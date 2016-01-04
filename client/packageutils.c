@@ -356,6 +356,7 @@ TDNFPopulatePkgInfos(
     FOR_PACKAGELIST(hPkg, hPkgList, nIndex)
     {
         dwError = TDNFAllocateMemory(
+                      1,
                       sizeof(TDNF_PKG_INFO),
                       (void**)&pPkgInfo);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -456,7 +457,8 @@ TDNFPopulatePkgInfoArray(
     }
 
     dwError = TDNFAllocateMemory(
-                sizeof(TDNF_PKG_INFO) * dwCount,
+                dwCount,
+                sizeof(TDNF_PKG_INFO),
                 (void**)&pPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 

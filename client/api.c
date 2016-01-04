@@ -228,6 +228,7 @@ TDNFClean(
     }
 
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF_CLEAN_INFO),
                 (void**)&pCleanInfo);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -495,6 +496,7 @@ TDNFOpenHandle(
     }
 
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF),
                 (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -503,7 +505,7 @@ TDNFOpenHandle(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadConfig(pTdnf,
-                  TDNF_CONF_FILE,
+                  pTdnf->pArgs->pszConfFile,
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -668,6 +670,7 @@ TDNFResolve(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF_SOLVED_PKG_INFO),
                 (void**)&pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -675,7 +678,8 @@ TDNFResolve(
     pSolvedPkgInfo->nAlterType = nAlterType;
 
     dwError = TDNFAllocateMemory(
-                  sizeof(char*) * pTdnf->pArgs->nCmdCount,
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
                   (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -812,7 +816,8 @@ TDNFSearchCommand(
     }
 
     unError = TDNFAllocateMemory(
-                sizeof(TDNF_PKG_INFO) * unCount,
+                unCount,
+                sizeof(TDNF_PKG_INFO),
                 (void**)&pPkgInfo);
 
     BAIL_ON_TDNF_ERROR(unError);
@@ -902,6 +907,7 @@ TDNFUpdateInfo(
         for(iAdv = 0; iAdv < nCount; iAdv++)
         {
             dwError = TDNFAllocateMemory(
+                          1,
                           sizeof(TDNF_UPDATEINFO),
                           (void**)&pInfo);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -1015,6 +1021,7 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
     }
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
 
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
