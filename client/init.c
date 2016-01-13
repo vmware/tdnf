@@ -106,6 +106,7 @@ TDNFCloneCmdArgs(
     PTDNF_CMD_ARGS pCmdArgs = NULL;
 
     dwError = TDNFAllocateMemory(
+                            1,
                             sizeof(TDNF_CMD_ARGS),
                             (void**)&pCmdArgs);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -129,12 +130,28 @@ TDNFCloneCmdArgs(
     dwError = TDNFAllocateString(
                          pCmdArgsIn->pszInstallRoot,
                          &pCmdArgs->pszInstallRoot);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(IsNullOrEmptyString(pCmdArgsIn->pszConfFile))
+    {
+        dwError = TDNFAllocateString(
+                             TDNF_CONF_FILE,
+                             &pCmdArgs->pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFAllocateString(
+                             pCmdArgsIn->pszConfFile,
+                             &pCmdArgs->pszConfFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
-                            pCmdArgs->nCmdCount * sizeof(char*),
+                            pCmdArgs->nCmdCount,
+                            sizeof(char*),
                             (void**)&pCmdArgs->ppszCmds
                             );
     BAIL_ON_TDNF_ERROR(dwError);

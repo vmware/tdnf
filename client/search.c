@@ -83,39 +83,37 @@ TDNFQueryTerms(
     TDNFQueryTermsFunction pfQueryTerms
     )
 {
-    uint32_t unError = 0;
+    uint32_t dwError = 0;
     int nArgIndex = 0;
-    const char* pszSearchTerm = NULL;
+    char* pszSearchTerm = NULL;
 
     if(!hAccumPkgList || !pCmdArgs || !hQuery)
     {
-        unError = ERROR_TDNF_INVALID_PARAMETER;
-        goto error;
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (nArgIndex = nStartArgIndex; nArgIndex < pCmdArgs->nCmdCount && unError == 0; nArgIndex++)
+    for (nArgIndex = nStartArgIndex; nArgIndex < pCmdArgs->nCmdCount; nArgIndex++)
     {
         // Convert 'searchTerm' to '*searchTerm*'
-        unError = TDNFCopyWithWildCards(
-            pCmdArgs->ppszCmds[nArgIndex],
-            (const char**)&pszSearchTerm);
+        dwError = TDNFAllocateStringPrintf(
+                     &pszSearchTerm,
+                     "*%s*",
+                     pCmdArgs->ppszCmds[nArgIndex]);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-        if (unError != 0)
-        {
-            goto error;
-        }
+        dwError = pfQueryTerms(hAccumPkgList, hQuery, pszSearchTerm);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-        unError = pfQueryTerms(hAccumPkgList, hQuery, pszSearchTerm);
-
-        if (pszSearchTerm != NULL)
-        {
-            TDNFFreeMemory((void *)pszSearchTerm);
-        }
+        TDNF_SAFE_FREE_MEMORY(pszSearchTerm);
+        pszSearchTerm = NULL;
     }
 
 cleanup:
-    return unError;
+    return dwError;
+
 error:
+    TDNF_SAFE_FREE_MEMORY(pszSearchTerm);
     goto cleanup;
 }
 
@@ -171,39 +169,6 @@ cleanup:
         hy_query_clear(hQuery);
     }
 
-    return unError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFCopyWithWildCards(
-    const char* pszSrc,
-    const char** ppszDst
-    )
-{
-    uint32_t unError = 0;
-    char* pszNewDst = NULL;
-
-    if(!pszSrc || !ppszDst)
-    {
-        unError = ERROR_TDNF_INVALID_PARAMETER;
-        goto error;
-    }
-
-    unError = TDNFAllocateMemory(
-                           3 + strlen(pszSrc),
-                           (void**)&pszNewDst);
-    if (unError == 0)
-    {
-        strncpy((char *)pszNewDst, "*", 1);
-        strncpy((char *)pszNewDst + 1, pszSrc, strlen(pszSrc));
-        strncpy((char *)pszNewDst + strlen(pszSrc) + 1, "*", 1);
-
-        *ppszDst = pszNewDst;
-    }
-
-cleanup:
     return unError;
 error:
     goto cleanup;

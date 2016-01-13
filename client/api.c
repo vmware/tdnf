@@ -228,6 +228,7 @@ TDNFClean(
     }
 
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF_CLEAN_INFO),
                 (void**)&pCleanInfo);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -495,6 +496,7 @@ TDNFOpenHandle(
     }
 
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF),
                 (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -502,11 +504,13 @@ TDNFOpenHandle(
     dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadConfig(TDNF_CONF_FILE, TDNF_CONF_GROUP, &pTdnf->pConf);
+    dwError = TDNFReadConfig(pTdnf,
+                  pTdnf->pArgs->pszConfFile,
+                  TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFLoadRepoData(
-                  pTdnf->pConf,
+                  pTdnf,
                   REPOLISTFILTER_ENABLED,
                   &pTdnf->pRepos);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -623,7 +627,7 @@ TDNFRepoList(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFLoadRepoData(pTdnf->pConf, nFilter, &pReposAll);
+    dwError = TDNFLoadRepoData(pTdnf, nFilter, &pReposAll);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppReposAll = pReposAll;
@@ -646,8 +650,7 @@ TDNFResolve(
 {
     uint32_t dwError = 0;
 
-    HyQuery hQuery = NULL;
-
+    HyPackageList hPkgListGoal = NULL;
 
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
 
@@ -656,32 +659,41 @@ TDNFResolve(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    if(nAlterType == ALTER_AUTOERASE)
+    {
+        dwError = ERROR_TDNF_AUTOERASE_UNSUPPORTED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    hQuery = hy_query_create(pTdnf->hSack);
-    if(!hQuery)
-    {
-        dwError = HY_E_FAILED;
-        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-    }
-
     dwError = TDNFAllocateMemory(
+                1,
                 sizeof(TDNF_SOLVED_PKG_INFO),
                 (void**)&pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nAlterType = nAlterType;
 
-    if(nAlterType == ALTER_UPGRADEALL || nAlterType == ALTER_DISTRO_SYNC)
-    {
-        dwError = TDNFResolveAll(pTdnf, pSolvedPkgInfo);
-    }
-    else
-    {
-        dwError = TDNFResolvePackages(pTdnf, pSolvedPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFAllocateMemory(
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPrepareAllPackages(
+                  pTdnf,
+                  pSolvedPkgInfo,
+                  &hPkgListGoal);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoal(
+                  pTdnf,
+                  hPkgListGoal,
+                  pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction = 
         pSolvedPkgInfo->pPkgsToInstall ||
@@ -699,10 +711,11 @@ TDNFResolve(
         pSolvedPkgInfo->pPkgsToReinstall;
 
     *ppSolvedPkgInfo = pSolvedPkgInfo;
+
 cleanup:
-    if(hQuery)
+    if(hPkgListGoal)
     {
-        hy_query_free(hQuery);
+        hy_packagelist_free(hPkgListGoal);
     }
     return dwError;
 
@@ -803,7 +816,8 @@ TDNFSearchCommand(
     }
 
     unError = TDNFAllocateMemory(
-                sizeof(TDNF_PKG_INFO) * unCount,
+                unCount,
+                sizeof(TDNF_PKG_INFO),
                 (void**)&pPkgInfo);
 
     BAIL_ON_TDNF_ERROR(unError);
@@ -893,6 +907,7 @@ TDNFUpdateInfo(
         for(iAdv = 0; iAdv < nCount; iAdv++)
         {
             dwError = TDNFAllocateMemory(
+                          1,
                           sizeof(TDNF_UPDATEINFO),
                           (void**)&pInfo);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -1006,7 +1021,9 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
     }
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
 
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 
@@ -1015,4 +1032,20 @@ TDNFGetVersion(
     )
 {
     return PACKAGE_VERSION;
+}
+
+void
+TDNFFreeCmdOpt(
+    PTDNF_CMD_OPT pCmdOpt
+    )
+{
+    PTDNF_CMD_OPT pCmdOptTemp = NULL;
+    while(pCmdOpt)
+    {
+        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptName);
+        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptValue);
+        pCmdOptTemp = pCmdOpt->pNext;
+        TDNF_SAFE_FREE_MEMORY(pCmdOpt);
+        pCmdOpt = pCmdOptTemp;
+    }
 }

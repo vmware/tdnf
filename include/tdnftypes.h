@@ -51,6 +51,7 @@ typedef enum
 {
     ALTER_AUTOERASE,
     ALTER_DOWNGRADE,
+    ALTER_DOWNGRADEALL,
     ALTER_ERASE,
     ALTER_INSTALL,
     ALTER_REINSTALL,
@@ -166,7 +167,15 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsUnNeeded;
     PTDNF_PKG_INFO pPkgsToReinstall;
     PTDNF_PKG_INFO pPkgsObsoleted;
+    char** ppszPkgsNotResolved;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
+
+typedef struct _TDNF_CMD_OPT
+{
+    char* pszOptName;
+    char* pszOptValue;
+    struct _TDNF_CMD_OPT* pNext;
+}TDNF_CMD_OPT, *PTDNF_CMD_OPT;
 
 typedef struct _TDNF_CMD_ARGS
 {
@@ -189,6 +198,7 @@ typedef struct _TDNF_CMD_ARGS
     int nIPv4;             //resolve to IPv4 addresses only
     int nIPv6;             //resolve to IPv6 addresses only
     char* pszInstallRoot;  //set install root
+    char* pszConfFile;     //set conf file location
 
     //Commands and args that do not fall in options
     char** ppszCmds;
@@ -197,6 +207,7 @@ typedef struct _TDNF_CMD_ARGS
     char** ppszEnabledRepos;
     //Disabled repositories
     char** ppszDisabledRepos;
+    PTDNF_CMD_OPT pSetOpt;
 }TDNF_CMD_ARGS, *PTDNF_CMD_ARGS;
 
 typedef struct _TDNF_CONF
@@ -209,6 +220,10 @@ typedef struct _TDNF_CONF
     char* pszCacheDir;
     char* pszProxy;
     char* pszProxyUserPass;
+    char* pszDistroVerPkg;
+    char* pszBaseArch;
+    char* pszVarReleaseVer;
+    char* pszVarBaseArch;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_METADATA

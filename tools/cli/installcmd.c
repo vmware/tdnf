@@ -106,8 +106,14 @@ TDNFCliDowngradeCommand(
     )
 {
     uint32_t dwError = 0;
+    int nAlterType = ALTER_DOWNGRADE;
+
+    if(pCmdArgs->nCmdCount == 1)
+    {
+        nAlterType = ALTER_DOWNGRADEALL;
+    }
     
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_DOWNGRADE);
+    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, nAlterType);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -181,9 +187,20 @@ TDNFCliAlterCommand(
     dwError = TDNFResolve(pTdnf, nAlterType, &pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
+    if(pSolvedPkgInfo->ppszPkgsNotResolved)
+    {
+        dwError = PrintNotAvailable(pSolvedPkgInfo->ppszPkgsNotResolved);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     if(!pSolvedPkgInfo->nNeedAction)
     {
         dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
+        //If there are unresolved, error with no match
+        if(pSolvedPkgInfo->ppszPkgsNotResolved)
+        {
+            dwError = ERROR_TDNF_NO_MATCH;
+        }
         BAIL_ON_CLI_ERROR(dwError);
     }
 
@@ -266,6 +283,35 @@ cleanup:
     TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
     return dwError;
 
+error:
+    goto cleanup;
+}
+
+uint32_t
+PrintNotAvailable(
+    char** ppszPkgsNotAvailable
+    )
+{
+    uint32_t dwError = 0;
+    int i = 0;
+    #define BOLD "\033[1m\033[30m"
+    #define RESET   "\033[0m"
+
+    if(!ppszPkgsNotAvailable)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    while(ppszPkgsNotAvailable[i])
+    {
+        printf(
+            "No package " BOLD "%s " RESET "available\n",
+            ppszPkgsNotAvailable[i]);
+        ++i;
+    }
+cleanup:
+    return dwError;
 error:
     goto cleanup;
 }

@@ -49,12 +49,6 @@ TDNFApplyPackageFilter(
 
 //gpgcheck.c
 uint32_t
-ReadAllBytes(
-    const char* pszFileName,
-    char** pszFileContents
-    );
-
-uint32_t
 ReadGPGKey(
    const char* pszFile,
    char** ppszKeyData
@@ -224,6 +218,51 @@ TDNFPackageGetLatest(
     HyPackage* phPkgLatest
     );
 
+uint32_t
+TDNFAppendPackages(
+    PTDNF_PKG_INFO* ppDest,
+    PTDNF_PKG_INFO pSource
+    );
+
+uint32_t
+TDNFPackageGetDowngrade(
+    HyPackageList hPkgList,
+    HyPackage hPkgCurrent,
+    HyPackage* phPkgDowngrade
+    );
+
+uint32_t
+TDNFGetGlobPackages(
+    PTDNF pTdnf,
+    char* pszPkgGlob,
+    HyPackageList* phPkgList
+    );
+
+uint32_t
+TDNFFilterPackages(
+    PTDNF pTdnf,
+    int nScope,
+    HyPackageList* phPkgList
+    );
+
+uint32_t
+TDNFAddPackagesForInstall(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFAddPackagesForUpgrade(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFAddPackagesForDowngrade(
+    HyPackageList hPkgListSource,
+    HyPackageList hPkgListGoal
+    );
+
 //goal.c
 uint32_t
 TDNFGoalGetResultsIgnoreNoData(
@@ -247,8 +286,6 @@ uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     HyPackageList hPkgList,
-    HySelector hSelector,
-    TDNF_ALTERTYPE nResolveFor,
     PTDNF_SOLVED_PKG_INFO pInfo
     );
 
@@ -256,6 +293,22 @@ uint32_t
 TDNFGoalReportProblems(
     HyGoal hGoal
     );
+
+uint32_t
+TDNFAddGoal(
+    PTDNF pTdnf,
+    int nAlterType,
+    HyGoal hGoal,
+    HyPackage hPkg
+    );
+
+uint32_t
+TDNFGoalGetAllResultsIgnoreNoData(
+    int nResolveFor,
+    HyGoal hGoal,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
+    );
+
 //config.c
 int
 TDNFConfGetRpmVerbosity(
@@ -296,9 +349,14 @@ TDNFReadKeyValue(
 
 uint32_t
 TDNFReadConfig(
+    PTDNF pTdnf,
     char* pszConfFile,
-    char* pszConfGroup,
-    PTDNF_CONF* ppConf
+    char* pszConfGroup
+    );
+
+uint32_t
+TDNFConfigExpandVars(
+    PTDNF pTdnf
     );
 
 uint32_t
@@ -310,6 +368,12 @@ TDNFConfigReadProxySettings(
 void
 TDNFFreeConfig(
     PTDNF_CONF pConf
+    );
+
+uint32_t
+TDNFConfigReplaceVars(
+    PTDNF pTdnf,
+    char** pszString
     );
 
 //repo.c
@@ -348,13 +412,14 @@ TDNFGetRepoById(
 //repolist.c
 uint32_t
 TDNFLoadReposFromFile(
+    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA* ppRepos
     );
 
 uint32_t
 TDNFLoadRepoData(
-    PTDNF_CONF pConf,
+    PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
     );
@@ -420,15 +485,40 @@ TDNFGetSelector(
     );
 
 uint32_t
-TDNFResolveAll(
+TDNFPrepareAllPackages(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList* phPkgListGoal
     );
 
 uint32_t
-TDNFResolvePackages(
+TDNFPrepareAndAddPkg(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFPrepareSinglePkg(
+    PTDNF pTdnf,
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList* phPkgListGoal
+    );
+
+uint32_t
+TDNFAddFilteredPkgs(
+    PTDNF pTdnf,
+    int nScope,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    HyPackageList hPkgListGoal
+    );
+
+uint32_t
+TDNFAddNotResolved(
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    const char* pszPkgName
     );
 
 //rpmtrans.c
@@ -527,15 +617,9 @@ TDNFFreePackageInfoContents(
     PTDNF_PKG_INFO pPkgInfo
     );
 
-uint32_t
-TDNFAllocateMemory(
-    size_t size,
-    void** ppMemory
-    );
-
 void
-TDNFFreeMemory(
-    void* pMemory
+TDNFFreeCmdOpt(
+    PTDNF_CMD_OPT pCmdOpt
     );
 
 //search.c
@@ -545,12 +629,6 @@ TDNFQueryTermsHelper(
     HyQuery hQuery,
     int nKeyId,
     const char* pszMatch
-    );
-
-uint32_t
-TDNFCopyWithWildCards(
-    const char* pszSrc,
-    const char** ppszDst
     );
 
 uint32_t
@@ -594,6 +672,21 @@ TDNFAllocateStringPrintf(
     char** ppszDst,
     const char* pszFmt,
     ...
+    );
+
+uint32_t
+TDNFAllocateStringN(
+    const char* pszSrc,
+    uint32_t dwNumElements,
+    char** ppszDst
+    );
+
+uint32_t
+TDNFReplaceString(
+    const char* pszSource,
+    const char* pszSearch,
+    const char* pszReplace,
+    char** ppszDst
     );
 //updateinfo.c
 uint32_t
@@ -643,6 +736,18 @@ uint32_t
 TDNFUtilsMakeDirs(
     const char* pszPath
     );
+
+uint32_t
+TDNFRawGetPackageVersion(
+   const char* pszRootDir,
+   const char* pszPkg,
+   char** ppszVersion
+   );
+
+uint32_t
+TDNFGetKernelArch(
+   char** ppszArch
+   );
 
 //validate.c
 uint32_t

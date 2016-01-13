@@ -35,9 +35,9 @@ TDNFConfGetRpmVerbosity(
 
 uint32_t
 TDNFReadConfig(
+    PTDNF pTdnf,
     char* pszFile,
-    char* pszGroup,
-    PTDNF_CONF* ppConf
+    char* pszGroup
     )
 {
     uint32_t dwError = 0;
@@ -46,6 +46,14 @@ TDNFReadConfig(
     char* pszValue = NULL;
 
     PTDNF_CONF pConf = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszFile) ||
+       IsNullOrEmptyString(pszGroup))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pKeyFile = g_key_file_new(); 
     if(!pKeyFile)
@@ -66,6 +74,7 @@ TDNFReadConfig(
     if(g_key_file_has_group(pKeyFile, pszGroup))
     {
         dwError = TDNFAllocateMemory(
+                    1,
                     sizeof(TDNF_CONF),
                     (void**)&pConf);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -135,6 +144,21 @@ TDNFReadConfig(
                       &pConf->pszCacheDir);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        dwError = TDNFReadKeyValue(
+                      pKeyFile,
+                      pszGroup,
+                      TDNF_CONF_KEY_DISTROVERPKG,
+                      TDNF_DEFAULT_DISTROVERPKG,
+                      &pConf->pszDistroVerPkg);
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = TDNFAllocateString(
+                          TDNF_DEFAULT_DISTROVERPKG,
+                          &pConf->pszDistroVerPkg);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFConfigReadProxySettings(
                       pKeyFile,
                       pszGroup,
@@ -143,7 +167,7 @@ TDNFReadConfig(
 
     }
 
-    *ppConf = pConf;
+    pTdnf->pConf = pConf;
 
 cleanup:
     if(pKeyFile)
@@ -157,14 +181,52 @@ cleanup:
     return dwError;
 
 error:
-    if(ppConf)
+    if(pTdnf)
     {
-        *ppConf = NULL;
+        pTdnf->pConf = NULL;
     }
     if(pConf)
     {
         TDNFFreeConfig(pConf);
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFConfigExpandVars(
+    PTDNF pTdnf
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CONF pConf = NULL;
+
+    if(!pTdnf || !pTdnf->pConf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pConf = pTdnf->pConf;
+
+    if(!pConf->pszVarReleaseVer &&
+       !IsNullOrEmptyString(pConf->pszDistroVerPkg))
+    {
+        dwError = TDNFRawGetPackageVersion(
+                      pTdnf->pArgs->pszInstallRoot,
+                      pConf->pszDistroVerPkg,
+                      &pConf->pszVarReleaseVer);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(!pConf->pszVarBaseArch)
+    {
+        dwError = TDNFGetKernelArch(&pConf->pszVarBaseArch);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
     goto cleanup;
 }
 
@@ -279,7 +341,7 @@ TDNFReadKeyValue(
         pszVal = g_strdup(pszDefault);
         if(!pszVal)
         {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY; 
+            dwError = ERROR_TDNF_OUT_OF_MEMORY;
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
@@ -320,6 +382,66 @@ TDNFFreeConfig(
        TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
        TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
        TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
+       TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
+       TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
+       TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
        TDNF_SAFE_FREE_MEMORY(pConf);
     }
+}
+
+uint32_t
+TDNFConfigReplaceVars(
+    PTDNF pTdnf,
+    char** ppszString
+    )
+{
+    uint32_t dwError = 0;
+    char* pszDst = NULL;
+    char* pszReplacedTemp = NULL;
+    PTDNF_CONF pConf = NULL;
+
+    if(!pTdnf || !ppszString || IsNullOrEmptyString(*ppszString))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //fill variable values such as release and basearch
+    //if required
+    if(strstr(*ppszString, TDNF_VAR_RELEASEVER) ||
+       strstr(*ppszString, TDNF_VAR_BASEARCH))
+    {
+        dwError = TDNFConfigExpandVars(pTdnf);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        goto cleanup;
+    }
+
+    pConf = pTdnf->pConf;
+    dwError = TDNFReplaceString(
+                  *ppszString,
+                  TDNF_VAR_RELEASEVER,
+                  pConf->pszVarReleaseVer,
+                  &pszReplacedTemp);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReplaceString(
+                  pszReplacedTemp,
+                  TDNF_VAR_BASEARCH,
+                  pConf->pszVarBaseArch,
+                  &pszDst);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    TDNFFreeMemory(*ppszString);
+    *ppszString = pszDst;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszReplacedTemp);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszDst);
+    goto cleanup;
 }

@@ -20,41 +20,46 @@ extern "C" {
 #endif
 
 //TDNF specific errors(1000 to 1999)
-#define ERROR_TDNF_BASE                 1000
+#define ERROR_TDNF_BASE                     1000
 //TDNF errors 1000 to 1299
 //A package was required in command args in order to process
 //and was not found. Could not proceed
-#define ERROR_TDNF_PACKAGE_REQUIRED     1001
+#define ERROR_TDNF_PACKAGE_REQUIRED         1001
 //There was an error reading the tdnf conf file
 //usually at /etc/tdnf/tdnf.conf
-#define ERROR_TDNF_CONF_FILE_LOAD       1002
+#define ERROR_TDNF_CONF_FILE_LOAD           1002
 //There was an error loading a repo file
-#define ERROR_TDNF_REPO_FILE_LOAD       1003
+#define ERROR_TDNF_REPO_FILE_LOAD           1003
 //invalid repo file
-#define ERROR_TDNF_INVALID_REPO_FILE    1004
+#define ERROR_TDNF_INVALID_REPO_FILE        1004
 //could not open repo dir
-#define ERROR_TDNF_REPO_DIR_OPEN        1005
+#define ERROR_TDNF_REPO_DIR_OPEN            1005
 //Repository handle operation failed
-#define ERROR_TDNF_REPO_PERFORM         1006
+#define ERROR_TDNF_REPO_PERFORM             1006
 //Repository getinfo operation failed
-#define ERROR_TDNF_REPO_GETINFO         1007
+#define ERROR_TDNF_REPO_GETINFO             1007
 //No repositories configured. Check /etc/yum.repos.d
-#define ERROR_TDNF_NO_REPOS             1008
+#define ERROR_TDNF_NO_REPOS                 1008
 //Repo was not found
-#define ERROR_TDNF_REPO_NOT_FOUND       1009
+#define ERROR_TDNF_REPO_NOT_FOUND           1009
 //Configuration data was not loaded
-#define ERROR_TDNF_INVALID_CONF         1010
-#define ERROR_TDNF_NO_MATCH             1011
+#define ERROR_TDNF_INVALID_CONF             1010
+#define ERROR_TDNF_NO_MATCH                 1011
 //There were no enabled repos
-#define ERROR_TDNF_NO_ENABLED_REPOS     1012
-#define ERROR_TDNF_PACKAGELIST_EMPTY    1013
-#define ERROR_TDNF_GOAL_CREATE          1014
-#define ERROR_TDNF_INVALID_RESOLVE_ARG  1015
-#define ERROR_TDNF_CLEAN_UNSUPPORTED    1016
+#define ERROR_TDNF_NO_ENABLED_REPOS         1012
+#define ERROR_TDNF_PACKAGELIST_EMPTY        1013
+#define ERROR_TDNF_GOAL_CREATE              1014
+#define ERROR_TDNF_INVALID_RESOLVE_ARG      1015
+#define ERROR_TDNF_CLEAN_UNSUPPORTED        1016
+#define ERROR_TDNF_NO_DOWNGRADES            1017
+#define ERROR_TDNF_AUTOERASE_UNSUPPORTED    1018
 //Config settings error
-#define ERROR_TDNF_SET_PROXY            1020
-#define ERROR_TDNF_SET_PROXY_USERPASS   1021
-
+#define ERROR_TDNF_SET_PROXY                1020
+#define ERROR_TDNF_SET_PROXY_USERPASS       1021
+#define ERROR_TDNF_NO_DISTROVERPKG          1022
+#define ERROR_TDNF_DISTROVERPKG_READ        1023
+//
+#define ERROR_TDNF_INVALID_ALLOCSIZE        1024
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300

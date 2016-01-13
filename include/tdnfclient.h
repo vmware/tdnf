@@ -189,7 +189,8 @@ TDNFUtilsFormatSize(
 //apis to allocate and free memory 
 uint32_t
 TDNFAllocateMemory(
-    size_t size,
+    size_t nNumElements,
+    size_t nSize,
     void** ppMemory
     );
 
@@ -253,6 +254,11 @@ TDNFFreeUpdateInfo(
 void
 TDNFFreeUpdateInfoSummary(
     PTDNF_UPDATEINFO_SUMMARY pSummary
+    );
+
+void
+TDNFFreeCmdOpt(
+    PTDNF_CMD_OPT pCmdOpt
     );
 
 #ifdef __cplusplus

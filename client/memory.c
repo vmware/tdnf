@@ -22,20 +22,27 @@
 
 uint32_t
 TDNFAllocateMemory(
-    size_t size,
+    size_t nNumElements,
+    size_t nSize,
     void** ppMemory
     )
 {
     uint32_t dwError = 0;
     void* pMemory = NULL;
 
-    if (!ppMemory || !size)
+    if (!ppMemory || !nSize || !nNumElements)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pMemory = calloc(1, size);
+    if(nNumElements > SIZE_MAX/nSize)
+    {
+        dwError = ERROR_TDNF_INVALID_ALLOCSIZE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pMemory = calloc(nNumElements, nSize);
     if (!pMemory)
     {
         dwError = ERROR_TDNF_OUT_OF_MEMORY;
@@ -124,6 +131,7 @@ TDNFFreeSolvedPackageInfo(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     )
 {
+    int i = 0;
     if(pSolvedPkgInfo)
     {
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
@@ -135,6 +143,15 @@ TDNFFreeSolvedPackageInfo(
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+
+       if(pSolvedPkgInfo->ppszPkgsNotResolved)
+       {
+           while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
+           {
+               TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+           }
+       }
+       TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
     }
     TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }

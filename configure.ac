@@ -1,8 +1,10 @@
-AC_INIT(tdnf, 1.0.5)
+AC_INIT(tdnf, 1.0.6)
 AC_MSG_NOTICE([tdnf configuration])
 
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+
+AC_CONFIG_TESTDIR(tests)
 
 AM_PROG_AR
 
@@ -23,11 +25,9 @@ AC_CHECK_HEADERS(hawkey/sack.h)
 echo "Looking for hawkey libs"
 AC_CHECK_LIB(hawkey, hy_sack_count)
 
-CPPFLAGS="-I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
 #glib
-echo "Looking for glib headers"
-AC_CHECK_HEADERS(glib.h)
-AC_CHECK_HEADERS(glibconfig.h)
+PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_libglib=yes], [have_libglib=no])
+AM_CONDITIONAL([GLIB],  [test "$have_libglib" = "yes"])
 
 #librepo
 echo "Looking for librepo headers"
@@ -46,6 +46,7 @@ AC_CHECK_LIB(rpm, rpmtsCreate)
 #makefiles
 AC_CONFIG_FILES([Makefile
                  client/Makefile
+                 tests/Makefile
                  tools/Makefile
                  tools/cli/Makefile
                 ])

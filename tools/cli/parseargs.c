@@ -42,9 +42,10 @@ static struct option pstOptions[] =
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
+    {"setopt",        required_argument, 0, 0},            //--set or override options
     {"showduplicates",required_argument, 0, 0},            //--showduplicates
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
-    {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
+    {"verbose",       no_argument, 0, 'v'},                //-v --verbose
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
     {0, 0, 0, 0}
@@ -71,6 +72,7 @@ TDNFCliParseArgs(
     }
 
     dwError = TDNFAllocateMemory(
+                            1,
                             sizeof(TDNF_CMD_ARGS),
                             (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
@@ -125,6 +127,9 @@ TDNFCliParseArgs(
                 case '6':
                     _opt.nIPv6 = 1;
                 break;
+                case 'v':
+                    _opt.nVerbose = 1;
+                break;
                 case '?':
                     dwError = HandleOptionsError(argv[optind-1], optarg, pstOptions);
                     BAIL_ON_CLI_ERROR(dwError);
@@ -149,7 +154,8 @@ TDNFCliParseArgs(
     {
         pCmdArgs->nCmdCount = argc-optind;
         dwError = TDNFAllocateMemory(
-                                pCmdArgs->nCmdCount * sizeof(char*),
+                                pCmdArgs->nCmdCount,
+                                sizeof(char*),
                                 (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);
         
@@ -251,7 +257,8 @@ TDNFCliParsePackageArgs(
     }
 
     dwError = TDNFAllocateMemory(
-                  sizeof(char*) * (nPackageCount + 1),
+                  nPackageCount + 1,
+                  sizeof(char*),
                   (void**)&ppszPackageArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -332,6 +339,16 @@ ParseOption(
         }
         fprintf(stdout, "InstallRoot: %s\n", optarg);
     }
+    else if(!strcasecmp(pszName, "setopt"))
+    {
+        if(!optarg)
+        {
+            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+        dwError = AddSetOpt(pCmdArgs, optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
 cleanup:
     return dwError;
 
@@ -395,6 +412,10 @@ HandleOptionsError(
     if(dwError == ERROR_TDNF_CLI_OPTION_NAME_INVALID)
     {
        TDNFCliShowNoSuchOption(pszName);
+    }
+    else if(dwError == ERROR_TDNF_CLI_OPTION_ARG_REQUIRED)
+    {
+       fprintf(stderr, "Option %s requires an argument\n", pszName);
     }
     return dwError;
 }

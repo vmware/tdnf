@@ -166,6 +166,11 @@ TDNFCliHelpCommand(
 
 //installcmd.c
 uint32_t
+PrintNotAvailable(
+    char** ppszPkgsNotAvailable
+    );
+
+uint32_t
 PrintExistingPackagesSkipped(
     PTDNF_PKG_INFO pPkgInfos
     );
@@ -195,6 +200,11 @@ TDNFCliGetErrorString(
 
 void
 TDNFCliShowVersion(
+    );
+
+uint32_t
+TDNFCliVerboseShowEnv(
+    PTDNF_CMD_ARGS pCmdArgs
     );
 
 //options.c
@@ -374,4 +384,17 @@ TDNFCliUpdateInfoSummary(
 void
 TDNFFreeListArgs(
     PTDNF_LIST_ARGS pListArgs
+    );
+
+//setopt.c
+uint32_t
+AddSetOpt(
+    PTDNF_CMD_ARGS pCmdArgs,
+    const char* pszOptArg
+    );
+
+uint32_t
+GetOptionAndValue(
+    const char* pszOptArg,
+    PTDNF_CMD_OPT* ppCmdOpt
     );

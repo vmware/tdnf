@@ -88,6 +88,12 @@ int main(int argc, char* argv[])
                 dwError = TDNFOpenHandle(pCmdArgs, &pTdnf);
                 BAIL_ON_CLI_ERROR(dwError);
 
+                if(pCmdArgs->nVerbose)
+                {
+                    dwError = TDNFCliVerboseShowEnv(pCmdArgs);
+                    BAIL_ON_CLI_ERROR(dwError);
+                }
+
                 dwError = arCmdMap[nCommandCount].pFnCmd(pTdnf, pCmdArgs);
                 BAIL_ON_CLI_ERROR(dwError);
                 break;
@@ -660,4 +666,36 @@ TDNFCliShowVersion(
     )
 {
     fprintf(stdout, "%s: %s\n", PACKAGE_NAME, TDNFGetVersion());
+}
+
+uint32_t
+TDNFCliVerboseShowEnv(
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pOpt = NULL;
+
+    if(!pCmdArgs)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    pOpt = pCmdArgs->pSetOpt;
+    if(pOpt)
+    {
+        fprintf(stdout, "Setting options:\n");
+        while(pOpt)
+        {
+            fprintf(stdout, "\t%s = %s\n", pOpt->pszOptName, pOpt->pszOptValue);
+            pOpt = pOpt->pNext;
+        }
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }

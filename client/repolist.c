@@ -23,7 +23,7 @@
 
 uint32_t
 TDNFLoadRepoData(
-    PTDNF_CONF pConf,
+    PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
     )
@@ -35,14 +35,16 @@ TDNFLoadRepoData(
     PTDNF_REPO_DATA pReposAll = NULL;
     PTDNF_REPO_DATA pReposTemp = NULL; 
     PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_CONF pConf = NULL;
 
     GDir* pDir = NULL;
 
-    if(!pConf || !ppReposAll)
+    if(!pTdnf || !pTdnf->pConf || !ppReposAll)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    pConf = pTdnf->pConf;
 
     pDir = g_dir_open(pConf->pszRepoDir, 0, NULL);
     if(!pDir)
@@ -59,7 +61,7 @@ TDNFLoadRepoData(
         }
         pszRepoFilePath = g_build_filename(pConf->pszRepoDir, pszFile, NULL);
 
-        dwError = TDNFLoadReposFromFile(pszRepoFilePath, &pRepos);
+        dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, &pRepos);
         BAIL_ON_TDNF_ERROR(dwError);
 
         g_free(pszRepoFilePath);
@@ -116,6 +118,7 @@ error:
 
 uint32_t
 TDNFLoadReposFromFile(
+    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA* ppRepos
     )
@@ -157,7 +160,7 @@ TDNFLoadReposFromFile(
     {
         pszRepo = ppszRepos[i];
 
-        dwError = TDNFAllocateMemory(sizeof(TDNF_REPO_DATA), (void**)&pRepo);
+        dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAllocateString(pszRepo, &pRepo->pszId);
@@ -234,6 +237,21 @@ TDNFLoadReposFromFile(
                       NULL,
                       &pRepo->pszPass);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        if(pRepo->nEnabled)
+        {
+            if(pRepo->pszBaseUrl)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            if(pRepo->pszMetaLink)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
 
         pRepo->pNext = pRepos;
         pRepos = pRepo;

@@ -51,68 +51,6 @@ error:
 }
 
 uint32_t
-ReadAllBytes(
-    const char* pszFile,
-    char** ppszData
-    )
-{
-    uint32_t dwError = 0;
-    size_t fsize = 0;
-    char* pszData = NULL;
-    FILE* fp = NULL;
-
-    if(IsNullOrEmptyString(pszFile) || !ppszData)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    fp = fopen(pszFile, "r");
-    if(!fp)
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    if(fseek(fp, 0, SEEK_END))
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-    fsize = ftell(fp);
-    if(fseek(fp, 0, SEEK_SET))
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    dwError = TDNFAllocateMemory(fsize+1, (void**)&pszData);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if(!fread(pszData, fsize, 1, fp))
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    *ppszData = pszData;
-cleanup:
-    if(fp)
-    {
-        fclose(fp);
-    }
-    return dwError;
-
-error:
-    if(!ppszData)
-    {
-        *ppszData = NULL;
-    }
-    TDNF_SAFE_FREE_MEMORY(pszData);
-    goto cleanup;
-}
-
-uint32_t
 ReadGPGKey(
    const char* pszKeyUrl,
    char** ppszKeyData
@@ -165,8 +103,11 @@ ReadGPGKey(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = ReadAllBytes(pszFile, &pszKeyData);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if(g_file_get_contents(pszFile, &pszKeyData, NULL, NULL) != TRUE)
+    {
+        dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     *ppszKeyData = pszKeyData;
 

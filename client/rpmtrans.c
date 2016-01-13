@@ -195,11 +195,7 @@ doCheck(PTDNFRPMTS pTS)
       while(rpmpsNextIterator(psi) >= 0)
       {
         prob = rpmpsGetProblem(psi);
-        printf("Prob = %s, type = %d, nevr1=%s, nevr2=%s\n",
-            rpmProblemGetStr(prob),
-            rpmProblemGetType(prob),
-            rpmProblemGetPkgNEVR(prob),
-            rpmProblemGetAltNEVR(prob));
+        printf("%s\n", rpmProblemString(prob));
         rpmProblemFree(prob);
       }
       rpmpsFreeIterator(psi);
