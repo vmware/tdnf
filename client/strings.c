@@ -113,7 +113,7 @@ TDNFAllocateStringPrintf(
     }
 
     nSize = nSize + 1;
-    dwError = TDNFAllocateMemory(nSize, (void**)&pszDst);
+    dwError = TDNFAllocateMemory(1, nSize, (void**)&pszDst);
     BAIL_ON_TDNF_ERROR(dwError);
 
     va_start(argList, pszFmt);
@@ -180,7 +180,7 @@ TDNFAllocateStringN(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(dwNumElements + 1, (void**)&pszDst);
+    dwError = TDNFAllocateMemory(dwNumElements + 1, 1, (void**)&pszDst);
     BAIL_ON_TDNF_ERROR(dwError);
 
     strncpy(pszDst, pszSrc, dwNumElements);

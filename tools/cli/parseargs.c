@@ -72,6 +72,7 @@ TDNFCliParseArgs(
     }
 
     dwError = TDNFAllocateMemory(
+                            1,
                             sizeof(TDNF_CMD_ARGS),
                             (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
@@ -153,7 +154,8 @@ TDNFCliParseArgs(
     {
         pCmdArgs->nCmdCount = argc-optind;
         dwError = TDNFAllocateMemory(
-                                pCmdArgs->nCmdCount * sizeof(char*),
+                                pCmdArgs->nCmdCount,
+                                sizeof(char*),
                                 (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);
         
@@ -255,7 +257,8 @@ TDNFCliParsePackageArgs(
     }
 
     dwError = TDNFAllocateMemory(
-                  sizeof(char*) * (nPackageCount + 1),
+                  nPackageCount + 1,
+                  sizeof(char*),
                   (void**)&ppszPackageArgs);
     BAIL_ON_CLI_ERROR(dwError);
 

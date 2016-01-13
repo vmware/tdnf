@@ -74,6 +74,7 @@ TDNFReadConfig(
     if(g_key_file_has_group(pKeyFile, pszGroup))
     {
         dwError = TDNFAllocateMemory(
+                    1,
                     sizeof(TDNF_CONF),
                     (void**)&pConf);
         BAIL_ON_TDNF_ERROR(dwError);

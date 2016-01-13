@@ -58,6 +58,8 @@ extern "C" {
 #define ERROR_TDNF_SET_PROXY_USERPASS       1021
 #define ERROR_TDNF_NO_DISTROVERPKG          1022
 #define ERROR_TDNF_DISTROVERPKG_READ        1023
+//
+#define ERROR_TDNF_INVALID_ALLOCSIZE        1024
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300

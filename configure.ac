@@ -1,8 +1,10 @@
-AC_INIT(tdnf, 1.0.5)
+AC_INIT(tdnf, 1.0.6)
 AC_MSG_NOTICE([tdnf configuration])
 
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+
+AC_CONFIG_TESTDIR(tests)
 
 AM_PROG_AR
 
@@ -44,6 +46,7 @@ AC_CHECK_LIB(rpm, rpmtsCreate)
 #makefiles
 AC_CONFIG_FILES([Makefile
                  client/Makefile
+                 tests/Makefile
                  tools/Makefile
                  tools/cli/Makefile
                 ])
