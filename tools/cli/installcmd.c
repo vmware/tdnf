@@ -197,7 +197,8 @@ TDNFCliAlterCommand(
     {
         dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
         //If there are unresolved, error with no match
-        if(pSolvedPkgInfo->ppszPkgsNotResolved)
+        if(pSolvedPkgInfo->ppszPkgsNotResolved &&
+           *pSolvedPkgInfo->ppszPkgsNotResolved)
         {
             dwError = ERROR_TDNF_NO_MATCH;
         }
