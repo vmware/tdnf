@@ -184,6 +184,10 @@ TDNFCheckUpdates(
                ppszPackageNameSpecs,
                ppPkgInfo,
                pdwCount);
+    if(dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = 0;
+    }
 
 cleanup:
     return dwError;
