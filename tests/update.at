@@ -6,37 +6,27 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-AT_BANNER(tdnf install tests)
+AT_BANNER(tdnf update tests)
 
-AT_SETUP([install basic])
-AT_KEYWORDS([install])
+AT_SETUP([update check])
+AT_KEYWORDS([update])
 AT_CHECK([
 TDNF_CHROOT_CLEAN
 TDNF_CHROOT_INIT
 TDNF_BUILD_INSTALL_RPMS
-TDNF_CLI_W_CHROOT install tdnf-test-one -y
+TDNF_CLI_W_CHROOT check-update
 ],
 [0],
 [ignore],
 [ignore])
 AT_CLEANUP
 
-AT_SETUP([install existing])
-AT_KEYWORDS([install])
+AT_SETUP([update all])
+AT_KEYWORDS([update])
 AT_CHECK([
-TDNF_CLI_W_CHROOT install tdnf-test-one -y
+TDNF_CLI_W_CHROOT update -y
 ],
 [0],
-[ignore],
-[ignore])
-AT_CLEANUP
-
-AT_SETUP([install non existent])
-AT_KEYWORDS([install])
-AT_CHECK([
-TDNF_CLI_W_CHROOT install pkg-not-found
-],
-[243],
 [ignore],
 [ignore])
 AT_CLEANUP
