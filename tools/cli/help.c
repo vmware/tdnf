@@ -39,17 +39,13 @@ TDNFCliShowHelp(
     printf("List of Main Commands\n");
     printf("\n");
 
-    printf("autoerase                 Remove leaf packages\n");
-    printf("autoremove                Remove leaf packages\n");
     printf("check-local               Checks local rpm folder for problems\n");
     printf("check-update              Check for available package upgrades\n");
     printf("clean                     Remove cached data\n");
     printf("distro-sync               Synchronize installed packages to the latest available versions\n");
     printf("downgrade                 downgrade a package\n");
     printf("erase                     Remove a package or packages from your system\n");
-    printf("group                     Display, or use, the groups information\n");
     printf("help                      Display a helpful usage message\n");
-    printf("history                   Display, or use, the transaction history\n");
     printf("info                      Display details about a package or group of packages\n");
     printf("install                   Install a package or packages on your system\n");
     printf("list                      List a package or groups of packages\n");
@@ -58,7 +54,6 @@ TDNFCliShowHelp(
     printf("remove                    Remove a package or packages from your system\n");
     printf("reinstall                 reinstall a package\n");
     printf("repolist                  Display the configured software repositories\n");
-    printf("repository-packages       Run commands on top of all packages in given repository\n");
     printf("search                    Search package details for the given string\n");
     printf("updateinfo                Display advisories about packages\n");
     printf("upgrade                   Upgrade a package or packages on your system\n");
