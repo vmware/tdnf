@@ -207,6 +207,15 @@ TDNFConfigExpandVars(
     }
     pConf = pTdnf->pConf;
 
+    //Allow --releasever overrides
+    if(!pConf->pszVarReleaseVer &&
+       !IsNullOrEmptyString(pTdnf->pArgs->pszReleaseVer))
+    {
+        dwError = TDNFAllocateString(pTdnf->pArgs->pszReleaseVer,
+                      &pConf->pszVarReleaseVer);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     if(!pConf->pszVarReleaseVer &&
        !IsNullOrEmptyString(pConf->pszDistroVerPkg))
     {

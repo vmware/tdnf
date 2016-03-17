@@ -147,6 +147,13 @@ TDNFCloneCmdArgs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(!IsNullOrEmptyString(pCmdArgsIn->pszReleaseVer))
+    {
+        dwError = TDNFAllocateString(
+                      pCmdArgsIn->pszReleaseVer,
+                      &pCmdArgs->pszReleaseVer);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
