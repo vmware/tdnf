@@ -1026,6 +1026,7 @@ TDNFFreeCmdArgs(
     }
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
 
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
