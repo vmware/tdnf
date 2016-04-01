@@ -43,7 +43,6 @@ TDNFReadConfig(
     uint32_t dwError = 0;
 
     GKeyFile* pKeyFile = NULL;
-    char* pszValue = NULL;
 
     PTDNF_CONF pConf = NULL;
 
@@ -173,10 +172,6 @@ cleanup:
     if(pKeyFile)
     {
         g_key_file_free(pKeyFile);
-    }
-    if(pszValue)
-    {
-        g_free(pszValue);
     }
     return dwError;
 

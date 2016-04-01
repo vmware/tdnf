@@ -331,10 +331,6 @@ TDNFGoalReportProblems(
         }
     }
 cleanup:
-    if(pszProblem)
-    {
-        hy_free(pszProblem);
-    }
     return dwError;
 
 error:

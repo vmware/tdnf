@@ -37,51 +37,67 @@ typedef enum
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 
 #define BAIL_ON_TDNF_ERROR(dwError) \
-    if (dwError)                                                   \
-    {                                                              \
-        goto error;                                                \
-    }
+    do {                                                           \
+        if (dwError)                                               \
+        {                                                          \
+            goto error;                                            \
+        }                                                          \
+    } while(0)
 
 #define BAIL_ON_TDNF_SYSTEM_ERROR(dwError) \
-    if (dwError)                                                   \
-    {                                                              \
-        dwError = ERROR_TDNF_SYSTEM_BASE + dwError;                \
-        goto error;                                                \
-    }
+    do {                                                           \
+        if (dwError)                                               \
+        {                                                          \
+            dwError = ERROR_TDNF_SYSTEM_BASE + dwError;            \
+            goto error;                                            \
+        }                                                          \
+    } while(0)
 
 #define BAIL_ON_TDNF_HAWKEY_ERROR(dwError) \
-    if (dwError)                                                   \
-    {                                                              \
-        dwError = ERROR_TDNF_HAWKEY_BASE + dwError;                \
-        goto error;                                                \
-    }
+    do {                                                           \
+        if (dwError)                                               \
+        {                                                          \
+            dwError = ERROR_TDNF_HAWKEY_BASE + dwError;            \
+            goto error;                                            \
+        }                                                          \
+    } while(0)
 
 #define BAIL_ON_TDNF_RPM_ERROR(dwError) \
-    if (dwError)                                                   \
-    {                                                              \
-        dwError = ERROR_TDNF_RPM_BASE + dwError;                   \
-        goto error;                                                \
-    }
+    do {                                                           \
+        if (dwError)                                               \
+        {                                                          \
+            dwError = ERROR_TDNF_RPM_BASE + dwError;               \
+            goto error;                                            \
+        }                                                          \
+    } while(0)
 
 #define TDNF_SAFE_FREE_MEMORY(pMemory) \
-    if (pMemory) { \
-    TDNFFreeMemory(pMemory); \
-    }
+    do {                                                           \
+        if (pMemory) {                                             \
+            TDNFFreeMemory(pMemory);                               \
+        }                                                          \
+    } while(0)
 
 #define TDNF_SAFE_FREE_PKGLIST(hPkgList) \
-    if (hPkgList) { \
-    hy_packagelist_free(hPkgList); \
-    }
+    do {                                                           \
+        if (hPkgList) {                                            \
+            hy_packagelist_free(hPkgList);                         \
+        }                                                          \
+    } while(0)
 
 #define TDNF_SAFE_FREE_STRINGARRAY(ppArray) \
-    if (ppArray) { \
-    TDNFFreeStringArray(ppArray); \
-    }
+    do {                                                           \
+        if (ppArray) {                                             \
+            TDNFFreeStringArray(ppArray);                          \
+        }                                                          \
+    } while(0)
 
 #define TDNF_SAFE_FREE_PKGINFO(pPkgInfo) \
-    if (pPkgInfo) { \
-    TDNFFreePackageInfo(pPkgInfo); \
-    }
+    do {                                                           \
+        if (pPkgInfo) {                                            \
+            TDNFFreePackageInfo(pPkgInfo);                         \
+        }                                                          \
+    } while(0)
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
 
