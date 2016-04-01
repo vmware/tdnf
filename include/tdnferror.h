@@ -60,6 +60,7 @@ extern "C" {
 #define ERROR_TDNF_DISTROVERPKG_READ        1023
 //
 #define ERROR_TDNF_INVALID_ALLOCSIZE        1024
+#define ERROR_TDNF_STRING_TOO_LONG          1025
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300

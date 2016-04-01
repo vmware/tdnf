@@ -117,6 +117,7 @@ typedef enum
 #define TDNF_CONF_KEY_KEEP_CACHE          "keepcache"
 #define TDNF_CONF_KEY_DISTROVERPKG        "distroverpkg"
 #define TDNF_CONF_KEY_DISTROARCHPKG       "distroarchpkg"
+#define TDNF_CONF_KEY_MAX_STRING_LEN      "maxstringlen"
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"
@@ -133,6 +134,7 @@ typedef enum
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
 #define TDNF_DEFAULT_DISTROVERPKG         "photon-release"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
+#define TDNF_DEFAULT_MAX_STRING_LEN       16384000
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
 //var names
@@ -154,6 +156,7 @@ typedef enum
     {ERROR_TDNF_NO_DISTROVERPKG,     "ERROR_TDNF_NO_DISTROVERPKG",     "distroverpkg config entry is set to a package that is not installed. Check /etc/tdnf/tdnf.conf"}, \
     {ERROR_TDNF_DISTROVERPKG_READ,   "ERROR_TDNF_DISTROVERPKG_READ",   "There was an error reading version of distroverpkg"}, \
     {ERROR_TDNF_INVALID_ALLOCSIZE,   "ERROR_TDNF_INVALID_ALLOCSIZE",   "A memory allocation was requested with an invalid size"}, \
+    {ERROR_TDNF_STRING_TOO_LONG,     "ERROR_TDNF_STRING_TOO_LONG",     "Requested string allocation size was too long."}, \
     {ERROR_TDNF_NO_ENABLED_REPOS,    "ERROR_TDNF_NO_ENABLED_REPOS",    "There are no enabled repos.\n Run ""tdnf repolist all"" to see the repos you have.\n You can enable repos by editing repo files in your repodir(usually /etc/yum.repos.d)"}, \
     {ERROR_TDNF_PACKAGELIST_EMPTY,   "ERROR_TDNF_PACKAGELIST_EMPTY",   "Packagelist was empty"}, \
     {ERROR_TDNF_GOAL_CREATE,         "ERROR_TDNF_GOAL_CREATE",         "Error creating goal"}, \
