@@ -135,6 +135,12 @@ TDNFCliUpdateInfoCommand(
     PTDNF pTdnf,
     PTDNF_CMD_ARGS pCmdArgs
     );
+
+uint32_t
+TDNFCliUpdateInfoInfo(
+    PTDNF_UPDATEINFO pInfo
+    );
+
 //help.c
 void
 TDNFCliShowUsage(

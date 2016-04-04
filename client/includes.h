@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 //
 #include <sys/utsname.h>
 //glib

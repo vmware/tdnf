@@ -243,16 +243,16 @@ TDNFGetInstalled(
 
     *phPkgList = hPkgList;
 cleanup:
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
     return dwError;
 
 error:
     if(phPkgList)
     {
         *phPkgList = NULL;
-    }
-    if(hQuery)
-    {
-        hy_query_free(hQuery);
     }
     goto cleanup;
 }
