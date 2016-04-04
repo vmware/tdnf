@@ -879,15 +879,19 @@ TDNFUpdateInfo(
     int nCount = 0;
     int iPkg = 0;
     int iAdv = 0;
+    time_t dwUpdated = 0;
 
     PTDNF_UPDATEINFO pUpdateInfos = NULL;
     PTDNF_UPDATEINFO pInfo = NULL;
     const char* pszTemp = NULL;
+    const int DATELEN = 200;
+    char szDate[DATELEN];
 
     HyPackage hPkg = NULL;
     HyPackageList hPkgList = NULL;
     HyAdvisoryList hAdvList = NULL;
     HyAdvisory hAdv = NULL;
+    struct tm* pLocalTime = NULL;
 
     if(!pTdnf || !ppszPackageNameSpecs || !ppUpdateInfo)
     {
@@ -930,6 +934,33 @@ TDNFUpdateInfo(
                 dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
+            pszTemp = hy_advisory_get_description(hAdv);
+            if(pszTemp)
+            {
+                dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwUpdated = hy_advisory_get_updated(hAdv);
+            if(dwUpdated > 0)
+            {
+                pLocalTime = localtime(&dwUpdated);
+                if(!pLocalTime)
+                {
+                    dwError = errno;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+                memset(szDate, 0, DATELEN);
+                dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
+                if(dwError == 0)
+                {
+                    dwError = ERROR_TDNF_INVALID_PARAMETER;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+                dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
 
             dwError = TDNFGetUpdateInfoPackages(hAdv, &pInfo->pPackages);
             BAIL_ON_TDNF_ERROR(dwError);
