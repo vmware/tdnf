@@ -93,6 +93,10 @@ cleanup:
     return dwError;
 
 error:
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
     goto cleanup;
 }
 
