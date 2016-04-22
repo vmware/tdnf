@@ -27,8 +27,6 @@ int main(int argc, char* argv[])
     PTDNF_CMD_ARGS pCmdArgs = NULL;
     TDNF_CLI_CMD_MAP arCmdMap[] = 
     {
-        {"autoerase",          TDNFCliAutoEraseCommand},
-        {"autoremove",         TDNFCliAutoEraseCommand},
         {"check-local",        TDNFCliCheckLocalCommand},
         {"check-update",       TDNFCliCheckUpdateCommand},
         {"clean",              TDNFCliCleanCommand},
