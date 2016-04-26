@@ -85,7 +85,7 @@ TDNFCliParseArgs(
             nOption = getopt_long (
                            argc,
                            argv,
-                           "46bCc:d:e:hiqvxy",
+                           "46bCc:d:e:hi:qvxy",
                            pstOptions,
                            &nOptionIndex);
             if (nOption == -1)
@@ -94,7 +94,6 @@ TDNFCliParseArgs(
             switch (nOption)
             {
                 case 0:
-                case 'i':
                     dwError = ParseOption(
                                   pstOptions[nOptionIndex].name,
                                   optarg,
@@ -104,6 +103,13 @@ TDNFCliParseArgs(
                 case 'b':
                     _opt.nBest = 1;
                 break;
+                case 'c':
+                    dwError = ParseOption(
+                                  "config",
+                                  optarg,
+                                  pCmdArgs);
+                    BAIL_ON_CLI_ERROR(dwError);
+                break;
                 case 'e':
                 break;
                 case 'C':
@@ -111,6 +117,13 @@ TDNFCliParseArgs(
                 break;
                 case 'h':
                     _opt.nShowHelp = 1;
+                break;
+                case 'i':
+                    dwError = ParseOption(
+                                  "installroot",
+                                  optarg,
+                                  pCmdArgs);
+                    BAIL_ON_CLI_ERROR(dwError);
                 break;
                 case 'r':
                 break;
@@ -296,7 +309,14 @@ ParseOption(
     dwError = TDNFCliValidateOptions(pszName, pszArg, pstOptions);
     BAIL_ON_CLI_ERROR(dwError);
 
-    if(!strcasecmp(pszName, "rpmverbosity"))
+    if(!strcasecmp(pszName, "config"))
+    {
+        dwError = TDNFAllocateString(
+                      optarg,
+                      &pCmdArgs->pszConfFile);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "rpmverbosity"))
     {
         dwError = ParseRpmVerbosity(
                       pszArg,

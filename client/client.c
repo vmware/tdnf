@@ -83,6 +83,8 @@ TDNFApplyPackageFilter(
     )
 {
     uint32_t dwError = 0;
+    int nCmpType = HY_GLOB;
+
     if(!hQuery || !ppszPackageNameSpecs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -92,12 +94,20 @@ TDNFApplyPackageFilter(
     {
         if(TDNFIsGlob(*ppszPackageNameSpecs))
         {
-            hy_query_filter(hQuery, HY_PKG_NAME, HY_GLOB, *ppszPackageNameSpecs);
+            nCmpType = HY_GLOB;
         }
         else
         {
-            hy_query_filter(hQuery, HY_PKG_NAME, HY_EQ, *ppszPackageNameSpecs);
+            nCmpType = HY_EQ;
         }
+
+        dwError = hy_query_filter(
+                      hQuery,
+                      HY_PKG_NAME,
+                      nCmpType,
+                      *ppszPackageNameSpecs);
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+
         ++ppszPackageNameSpecs;
     }
 

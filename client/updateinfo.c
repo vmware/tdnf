@@ -141,6 +141,7 @@ TDNFFreeUpdateInfo(
 
         TDNFFreeUpdateInfoReferences(pUpdateInfo->pReferences);
         TDNFFreeUpdateInfoPackages(pUpdateInfo->pPackages);
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo);
     }
 }
 
@@ -254,6 +255,10 @@ error:
     if(ppPkgs)
     {
         *ppPkgs = NULL;
+    }
+    if(pPkg)
+    {
+        TDNFFreeUpdateInfoPackages(pPkg);
     }
     if(pPkgs)
     {

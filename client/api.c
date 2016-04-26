@@ -101,9 +101,6 @@ TDNFCheckLocalPackages(
         pszRPMPath = g_build_filename(pszLocalPath, pszFile, NULL);
         hPkg = hy_sack_add_cmdline_package(hSack, pszRPMPath);
 
-        g_free(pszRPMPath);
-        pszRPMPath = NULL;
-
         if(!hPkg)
         {
             dwError = ERROR_TDNF_INVALID_PARAMETER; 
@@ -111,6 +108,9 @@ TDNFCheckLocalPackages(
         }
         hy_packagelist_push(hPkgList, hPkg);
         hPkg = NULL;
+
+        g_free(pszRPMPath);
+        pszRPMPath = NULL;
     }
 
     fprintf(stdout, "Found %d packages\n", hy_packagelist_count(hPkgList));
@@ -879,15 +879,19 @@ TDNFUpdateInfo(
     int nCount = 0;
     int iPkg = 0;
     int iAdv = 0;
+    time_t dwUpdated = 0;
 
     PTDNF_UPDATEINFO pUpdateInfos = NULL;
     PTDNF_UPDATEINFO pInfo = NULL;
     const char* pszTemp = NULL;
+    const int DATELEN = 200;
+    char szDate[DATELEN];
 
     HyPackage hPkg = NULL;
     HyPackageList hPkgList = NULL;
     HyAdvisoryList hAdvList = NULL;
     HyAdvisory hAdv = NULL;
+    struct tm* pLocalTime = NULL;
 
     if(!pTdnf || !ppszPackageNameSpecs || !ppUpdateInfo)
     {
@@ -930,6 +934,33 @@ TDNFUpdateInfo(
                 dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
+            pszTemp = hy_advisory_get_description(hAdv);
+            if(pszTemp)
+            {
+                dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwUpdated = hy_advisory_get_updated(hAdv);
+            if(dwUpdated > 0)
+            {
+                pLocalTime = localtime(&dwUpdated);
+                if(!pLocalTime)
+                {
+                    dwError = errno;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+                memset(szDate, 0, DATELEN);
+                dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
+                if(dwError == 0)
+                {
+                    dwError = ERROR_TDNF_INVALID_PARAMETER;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+                dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
 
             dwError = TDNFGetUpdateInfoPackages(hAdv, &pInfo->pPackages);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -943,6 +974,12 @@ TDNFUpdateInfo(
         }
         hy_advisorylist_free(hAdvList);
         hAdvList = NULL;
+    }
+
+    if(!pUpdateInfos)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     *ppUpdateInfo = pUpdateInfos;
@@ -1023,13 +1060,13 @@ TDNFFreeCmdArgs(
             TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
         }
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
-    }
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
 
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs);
+    }
 }
 
 const char*

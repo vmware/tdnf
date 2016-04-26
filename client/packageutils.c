@@ -118,10 +118,6 @@ error:
     {
         *phPkg = NULL;
     }
-    if(hPkg)
-    {
-        hy_package_free(hPkg);
-    }
     goto cleanup;
 }
 
@@ -205,10 +201,6 @@ error:
     {
         *phPkg = NULL;
     }
-    if(hPkg)
-    {
-        hy_package_free(hPkg);
-    }
     goto cleanup;
 }
 
@@ -251,20 +243,16 @@ TDNFGetInstalled(
 
     *phPkgList = hPkgList;
 cleanup:
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
     return dwError;
 
 error:
     if(phPkgList)
     {
         *phPkgList = NULL;
-    }
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
-    if(hQuery)
-    {
-        hy_query_free(hQuery);
     }
     goto cleanup;
 }
@@ -314,10 +302,6 @@ error:
     if(phPkgList)
     {
         *phPkgList = NULL;
-    }
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
     }
     if(hPkgAvailable)
     {
@@ -878,10 +862,6 @@ error:
     if(phPkgList)
     {
         *phPkgList = NULL;
-    }
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
     }
     goto cleanup;
 }

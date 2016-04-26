@@ -76,7 +76,7 @@ cleanup:
     return dwError;
 
 error:
-    if(!pppszReposUsed)
+    if(pppszReposUsed)
     {
         *pppszReposUsed = NULL;
     }

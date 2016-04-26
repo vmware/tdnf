@@ -205,7 +205,7 @@ TDNFRepoRemoveCache(
     char* pszFilePath = NULL;
     GDir* pDir = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepoId))
+    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -233,16 +233,21 @@ TDNFRepoRemoveCache(
     while ((pszFile = g_dir_read_name (pDir)) != NULL)
     {
         pszFilePath = g_build_filename(pszRepoCacheDir, pszFile, NULL);
-
-        if(unlink(pszFilePath))
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
         if(pszFilePath)
         {
+            if(unlink(pszFilePath))
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+
             g_free(pszFilePath);
             pszFilePath = NULL;
+        }
+        else
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
     }
     if(rmdir(pszRepoCacheDir))

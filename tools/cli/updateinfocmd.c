@@ -22,7 +22,6 @@
 #include "includes.h"
 
 
-
 char*
 TDNFGetUpdateInfoType(
     int nType
@@ -79,6 +78,11 @@ TDNFCliUpdateInfoCommand(
             dwError = TDNFCliUpdateInfoList(pUpdateInfo);
             BAIL_ON_CLI_ERROR(dwError);
         }
+        else if(pInfoArgs->nMode == OUTPUT_INFO)
+        {
+            dwError = TDNFCliUpdateInfoInfo(pUpdateInfo);
+            BAIL_ON_CLI_ERROR(dwError);
+        }
     }
 cleanup:
     if(pInfoArgs)
@@ -89,6 +93,10 @@ cleanup:
     return dwError;
 
 error:
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
     goto cleanup;
 }
 
@@ -163,6 +171,48 @@ TDNFCliUpdateInfoList(
                 TDNFGetUpdateInfoType(pInfo->nType),
                 pPkg->pszFileName);
             
+            pPkg = pPkg->pNext;
+        }
+        pInfo = pInfo->pNext;
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliUpdateInfoInfo(
+    PTDNF_UPDATEINFO pInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+
+    if(!pInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    while(pInfo)
+    {
+        pPkg = pInfo->pPackages;
+        while(pPkg)
+        {
+            fprintf(stdout, "       Name : %s\n",
+                pPkg->pszFileName);
+            fprintf(stdout, "  Update ID : %s\n",
+                pInfo->pszID);
+            fprintf(stdout, "       Type : %s\n",
+                TDNFGetUpdateInfoType(pInfo->nType));
+            fprintf(stdout, "    Updated : %s\n",
+                pInfo->pszDate);
+            fprintf(stdout, "Description : %s\n",
+                pInfo->pszDescription);
+
             pPkg = pPkg->pNext;
         }
         pInfo = pInfo->pNext;
