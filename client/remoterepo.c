@@ -134,6 +134,7 @@ TDNFDownloadPackage(
     fprintf(stdout, "\n");
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
+    TDNF_SAFE_FREE_MEMORY(pszUserPass);
     if(pRepoHandle)
     {
         lr_handle_free(pRepoHandle);

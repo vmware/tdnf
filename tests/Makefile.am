@@ -29,10 +29,11 @@ EXTRA_DIST += $(TESTSUITE_AT)
 DISTCLEANFILES = atconfig testsuite
 
 check-local: atconfig $(TESTSUITE)
-	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
+	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(abs_top_srcdir)/tools/cli' \
+	$(TESTSUITEFLAGS)
      
 installcheck-local: atconfig $(TESTSUITE)
-	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir)' \
+	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(abs_top_srcdir)/tools/cli' \
 	$(TESTSUITEFLAGS)
      
 clean-local:

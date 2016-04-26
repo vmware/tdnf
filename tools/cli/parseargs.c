@@ -41,6 +41,7 @@ static struct option pstOptions[] =
     {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
+    {"releasever",    required_argument, 0, 0},            //--releasever
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
     {"setopt",        required_argument, 0, 0},            //--set or override options
     {"showduplicates",required_argument, 0, 0},            //--showduplicates
@@ -84,7 +85,7 @@ TDNFCliParseArgs(
             nOption = getopt_long (
                            argc,
                            argv,
-                           "46bCc:d:e:hiqvxy",
+                           "46bCc:d:e:hi:qvxy",
                            pstOptions,
                            &nOptionIndex);
             if (nOption == -1)
@@ -102,6 +103,13 @@ TDNFCliParseArgs(
                 case 'b':
                     _opt.nBest = 1;
                 break;
+                case 'c':
+                    dwError = ParseOption(
+                                  "config",
+                                  optarg,
+                                  pCmdArgs);
+                    BAIL_ON_CLI_ERROR(dwError);
+                break;
                 case 'e':
                 break;
                 case 'C':
@@ -111,9 +119,10 @@ TDNFCliParseArgs(
                     _opt.nShowHelp = 1;
                 break;
                 case 'i':
-                    dwError = TDNFAllocateString(
-                             optarg,
-                             &pCmdArgs->pszInstallRoot);
+                    dwError = ParseOption(
+                                  "installroot",
+                                  optarg,
+                                  pCmdArgs);
                     BAIL_ON_CLI_ERROR(dwError);
                 break;
                 case 'r':
@@ -300,44 +309,39 @@ ParseOption(
     dwError = TDNFCliValidateOptions(pszName, pszArg, pstOptions);
     BAIL_ON_CLI_ERROR(dwError);
 
-    if(!strcasecmp(pszName, "rpmverbosity"))
+    if(!strcasecmp(pszName, "config"))
     {
-        if(!optarg)
-        {
-            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
-        dwError = ParseRpmVerbosity(
+        dwError = TDNFAllocateString(
                       optarg,
+                      &pCmdArgs->pszConfFile);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "rpmverbosity"))
+    {
+        dwError = ParseRpmVerbosity(
+                      pszArg,
                       &pCmdArgs->nRpmVerbosity);
         BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "enablerepo"))
     {
-        if(!optarg)
-        {
-            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
-        fprintf(stdout, "EnableRepo: %s\n", optarg);
     }
     else if(!strcasecmp(pszName, "disablerepo"))
     {
-        if(!optarg)
-        {
-            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
-        fprintf(stdout, "DisableRepo: %s\n", optarg);
     }
     else if(!strcasecmp(pszName, "installroot"))
     {
-        if(!optarg)
-        {
-            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
-        fprintf(stdout, "InstallRoot: %s\n", optarg);
+        dwError = TDNFAllocateString(
+                      optarg,
+                      &pCmdArgs->pszInstallRoot);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "releasever"))
+    {
+        dwError = TDNFAllocateString(
+                      optarg,
+                      &pCmdArgs->pszReleaseVer);
+        BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "setopt"))
     {

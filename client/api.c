@@ -101,9 +101,6 @@ TDNFCheckLocalPackages(
         pszRPMPath = g_build_filename(pszLocalPath, pszFile, NULL);
         hPkg = hy_sack_add_cmdline_package(hSack, pszRPMPath);
 
-        g_free(pszRPMPath);
-        pszRPMPath = NULL;
-
         if(!hPkg)
         {
             dwError = ERROR_TDNF_INVALID_PARAMETER; 
@@ -111,6 +108,9 @@ TDNFCheckLocalPackages(
         }
         hy_packagelist_push(hPkgList, hPkg);
         hPkg = NULL;
+
+        g_free(pszRPMPath);
+        pszRPMPath = NULL;
     }
 
     fprintf(stdout, "Found %d packages\n", hy_packagelist_count(hPkgList));
@@ -1023,12 +1023,13 @@ TDNFFreeCmdArgs(
             TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
         }
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
-    }
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
 
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs);
+    }
 }
 
 const char*

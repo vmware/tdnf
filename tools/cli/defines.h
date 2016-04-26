@@ -38,20 +38,29 @@
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 
 #define BAIL_ON_CLI_ERROR(unError) \
-    if (unError)                                                   \
-    {                                                              \
-        goto error;                                                \
-    }
+    do {                                                           \
+        if (unError)                                               \
+        {                                                          \
+            goto error;                                            \
+        }                                                          \
+    }                                                              \
+    while(0)
 
 #define TDNF_CLI_SAFE_FREE_MEMORY(pMemory) \
-    if (pMemory) { \
-    TDNFFreeMemory(pMemory); \
-    }
+    do {                                                           \
+        if (pMemory) {                                             \
+            TDNFFreeMemory(pMemory);                               \
+        }                                                          \
+    }                                                              \
+    while(0)
 
 #define TDNF_CLI_SAFE_FREE_STRINGARRAY(ppArray) \
-    if (ppArray) { \
-    TDNFFreeStringArray(ppArray); \
-    }
+    do {                                                           \
+        if (ppArray) {                                             \
+            TDNFFreeStringArray(ppArray);                          \
+        }                                                          \
+    }                                                              \
+    while(0)
 
 typedef uint32_t (*PFN_CMD)(PTDNF, PTDNF_CMD_ARGS);
 

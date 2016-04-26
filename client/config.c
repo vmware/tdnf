@@ -43,7 +43,6 @@ TDNFReadConfig(
     uint32_t dwError = 0;
 
     GKeyFile* pKeyFile = NULL;
-    char* pszValue = NULL;
 
     PTDNF_CONF pConf = NULL;
 
@@ -174,10 +173,6 @@ cleanup:
     {
         g_key_file_free(pKeyFile);
     }
-    if(pszValue)
-    {
-        g_free(pszValue);
-    }
     return dwError;
 
 error:
@@ -206,6 +201,15 @@ TDNFConfigExpandVars(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pConf = pTdnf->pConf;
+
+    //Allow --releasever overrides
+    if(!pConf->pszVarReleaseVer &&
+       !IsNullOrEmptyString(pTdnf->pArgs->pszReleaseVer))
+    {
+        dwError = TDNFAllocateString(pTdnf->pArgs->pszReleaseVer,
+                      &pConf->pszVarReleaseVer);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     if(!pConf->pszVarReleaseVer &&
        !IsNullOrEmptyString(pConf->pszDistroVerPkg))

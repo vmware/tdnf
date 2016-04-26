@@ -35,6 +35,12 @@ TDNFAllocateString(
       BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(strlen(pszSrc) > TDNF_DEFAULT_MAX_STRING_LEN)
+    {
+        dwError = ERROR_TDNF_STRING_TOO_LONG;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pszDst = strdup(pszSrc);
     if(!pszDst)
     {
@@ -111,8 +117,14 @@ TDNFAllocateStringPrintf(
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-
     nSize = nSize + 1;
+
+    if(nSize > TDNF_DEFAULT_MAX_STRING_LEN)
+    {
+        dwError = ERROR_TDNF_STRING_TOO_LONG;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFAllocateMemory(1, nSize, (void**)&pszDst);
     BAIL_ON_TDNF_ERROR(dwError);
 
