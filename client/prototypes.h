@@ -186,6 +186,13 @@ TDNFFindInstalledPkgByName(
     );
 
 uint32_t
+TDNFFindInstalledPkgByPkg(
+    HySack hSack,
+    HyPackage hPkgToFind,
+    HyPackage* phPkg
+    );
+
+uint32_t
 TDNFGetInstalled(
     HySack hSack,
     HyPackageList* phPkgList
@@ -253,12 +260,14 @@ TDNFAddPackagesForInstall(
 
 uint32_t
 TDNFAddPackagesForUpgrade(
+    HySack hSack,
     HyPackageList hPkgListSource,
     HyPackageList hPkgListGoal
     );
 
 uint32_t
 TDNFAddPackagesForDowngrade(
+    HySack hSack,
     HyPackageList hPkgListSource,
     HyPackageList hPkgListGoal
     );

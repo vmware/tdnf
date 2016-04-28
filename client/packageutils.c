@@ -747,7 +747,7 @@ TDNFPackageGetDowngrade(
 
     if(!hPkgDowngrade)
     {
-        dwError = ERROR_TDNF_NO_DOWNGRADES;
+        dwError = ERROR_TDNF_NO_DOWNGRADE_PATH;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -914,7 +914,51 @@ error:
 }
 
 uint32_t
+TDNFFindInstalledPkgByPkg(
+    HySack hSack,
+    HyPackage hPkgToFind,
+    HyPackage* phPkg
+    )
+{
+    uint32_t dwError = 0;
+    HyPackage hPkg = NULL;
+    const char* pszPkgName = NULL;
+
+    if(!hSack || !hPkgToFind || !phPkg)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszPkgName = hy_package_get_name(hPkgToFind);
+    if(IsNullOrEmptyString(pszPkgName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFFindInstalledPkgByName(
+                  hSack,
+                  pszPkgName,
+                  &hPkg);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *phPkg = hPkg;
+
+cleanup:
+    return dwError;
+
+error:
+    if(phPkg)
+    {
+        *phPkg = NULL;
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFAddPackagesForUpgrade(
+    HySack hSack,
     HyPackageList hPkgListSource,
     HyPackageList hPkgListGoal
     )
@@ -922,9 +966,10 @@ TDNFAddPackagesForUpgrade(
     uint32_t dwError = 0;
     HyPackage hPkg = NULL;
     HyPackage hPkgTemp = NULL;
+    HyPackage hPkgInstalled = NULL;
     int i = 0;
 
-    if(!hPkgListSource || !hPkgListGoal)
+    if(!hSack || !hPkgListSource || !hPkgListGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -939,18 +984,45 @@ TDNFAddPackagesForUpgrade(
         }
     }
 
-    if(hPkg == NULL)
+    if(hPkg != NULL)
     {
-        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        dwError = TDNFPackageGetLatest(hPkgListSource, &hPkgTemp);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else
+    {
+        hPkgTemp = hy_packagelist_get(hPkgListSource, 0);
+        //this could be instruction to upgrade to a specific
+        //version so find out which version is installed.
+        dwError = TDNFFindInstalledPkgByPkg(
+                      hSack,
+                      hPkgTemp,
+                      &hPkgInstalled);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFPackageGetLatest(hPkgListSource, &hPkgTemp);
-    BAIL_ON_TDNF_ERROR(dwError);
+        //If installed pkg is newer than the upgrade dest,
+        //there is no upgrade path
+        if(hy_package_cmp(hPkgInstalled, hPkgTemp) > 0)
+        {
+            hPkgTemp = NULL;
+            dwError = ERROR_TDNF_NO_UPGRADE_PATH;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(!hPkgTemp)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     hy_packagelist_push(hPkgListGoal, hPkgTemp);
 
 cleanup:
+    if(hPkgInstalled)
+    {
+        hy_package_free(hPkgInstalled);
+    }
     return dwError;
 error:
     goto cleanup;
@@ -958,6 +1030,7 @@ error:
 
 uint32_t
 TDNFAddPackagesForDowngrade(
+    HySack hSack,
     HyPackageList hPkgListSource,
     HyPackageList hPkgListGoal
     )
@@ -965,9 +1038,10 @@ TDNFAddPackagesForDowngrade(
     uint32_t dwError = 0;
     HyPackage hPkg = NULL;
     HyPackage hPkgTemp = NULL;
+    HyPackage hPkgInstalled = NULL;
     int i = 0;
 
-    if(!hPkgListSource || !hPkgListGoal)
+    if(!hSack || !hPkgListSource || !hPkgListGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -980,22 +1054,46 @@ TDNFAddPackagesForDowngrade(
             break;
         }
     }
-    if(hPkg == NULL)
+
+    if(hPkg != NULL)
     {
-        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        dwError = TDNFPackageGetDowngrade(hPkgListSource, hPkg, &hPkgTemp);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = TDNFPackageGetDowngrade(hPkgListSource, hPkg, &hPkgTemp);
-    if(dwError == ERROR_TDNF_NO_DOWNGRADES)
+    else
     {
-        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        hPkgTemp = hy_packagelist_get(hPkgListSource, 0);
+        //this could be instruction to downgrade to a specific
+        //version so find out which version is installed.
+        dwError = TDNFFindInstalledPkgByPkg(
+                      hSack,
+                      hPkgTemp,
+                      &hPkgInstalled);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        //If installed pkg is lesser than the downgrade dest,
+        //there is no downgrade path
+        if(hy_package_cmp(hPkgInstalled, hPkgTemp) < 0)
+        {
+            hPkgTemp = NULL;
+            dwError = ERROR_TDNF_NO_DOWNGRADE_PATH;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
-    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!hPkgTemp)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     hy_packagelist_push(hPkgListGoal, hPkgTemp);
 
 cleanup:
+    if(hPkgInstalled)
+    {
+        hy_package_free(hPkgInstalled);
+    }
     return dwError;
 
 error:
