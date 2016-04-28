@@ -124,7 +124,7 @@ TDNFAddGoal(
 {
     uint32_t dwError = 0;
     HySelector hSelector = NULL;
-    const char* pszPkg = NULL;
+    char* pszPkg = NULL;
 
     if(!hGoal || !hPkg)
     {
@@ -149,8 +149,13 @@ TDNFAddGoal(
             BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
             break;
         case ALTER_UPGRADE:
-            pszPkg = hy_package_get_name(hPkg);
-            TDNFGetSelector(pTdnf, pszPkg, &hSelector);
+            pszPkg = hy_package_get_nevra(hPkg);
+            if(IsNullOrEmptyString(pszPkg))
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            dwError = TDNFGetSelector(pTdnf, pszPkg, &hSelector);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = hy_goal_upgrade_to_selector(hGoal, hSelector);
@@ -165,6 +170,10 @@ TDNFAddGoal(
             BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
+    if(pszPkg)
+    {
+        hy_free(pszPkg);
+    }
     return dwError;
 
 error:
