@@ -24,6 +24,10 @@ EXTRA_DIST = init.at $(srcdir)/package.m4 $(TESTSUITE)
 TESTSUITE_AT = testsuite.at
 TESTSUITE_AT += version.at
 TESTSUITE_AT += list.at
+TESTSUITE_AT += install.at
+TESTSUITE_AT += erase.at
+TESTSUITE_AT += update.at
+TESTSUITE_AT += downgrade.at
 EXTRA_DIST += $(TESTSUITE_AT)
 
 DISTCLEANFILES = atconfig testsuite

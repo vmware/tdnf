@@ -199,6 +199,7 @@ doCheck(PTDNFRPMTS pTS)
         rpmProblemFree(prob);
       }
       rpmpsFreeIterator(psi);
+      nResult = ERROR_TDNF_RPM_CHECK;
     }
   }
   return nResult;

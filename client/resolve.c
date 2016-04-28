@@ -529,6 +529,7 @@ TDNFPrepareSinglePkg(
         else if (nAlterType == ALTER_UPGRADE)
         {
             dwError = TDNFAddPackagesForUpgrade(
+                          pTdnf->hSack,
                           hPkgListGoalTemp,
                           hPkgListGoal);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -537,6 +538,7 @@ TDNFPrepareSinglePkg(
                  nAlterType == ALTER_DOWNGRADEALL)
         {
             dwError = TDNFAddPackagesForDowngrade(
+                          pTdnf->hSack,
                           hPkgListGoalTemp,
                           hPkgListGoal);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -567,6 +569,16 @@ cleanup:
     return dwError;
 
 error:
+    if(dwError == ERROR_TDNF_NO_UPGRADE_PATH)
+    {
+        dwError = 0;
+        fprintf(stderr, "There is no upgrade path for %s.\n", pszPkgName);
+    }
+    if(dwError == ERROR_TDNF_NO_DOWNGRADE_PATH)
+    {
+        dwError = 0;
+        fprintf(stderr, "There is no downgrade path for %s.\n", pszPkgName);
+    }
     if(dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
     {
         dwError = 0;

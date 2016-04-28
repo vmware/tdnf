@@ -32,7 +32,7 @@ EOF
 ]])
 
 m4_define([TDNF_BUILD_INSTALL_RPMS],[[
-rpmbuild  --define "_topdir $abs_top_builddir/tests/testroot" -r $abs_top_builddir/tests/testroot -ba $abs_top_builddir/tests/specs/tdnf-test-one.spec
+rpmbuild  --define "_topdir $abs_top_builddir/tests/testroot" -r $abs_top_builddir/tests/testroot -ba $abs_top_builddir/tests/specs/*.spec
 createrepo $abs_top_builddir/tests/testroot/RPMS
 cat << EOF > $abs_top_builddir/tests/testroot/etc/yum.repos.d/basic.repo
 [basic]
