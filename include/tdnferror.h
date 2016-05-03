@@ -61,6 +61,10 @@ extern "C" {
 //
 #define ERROR_TDNF_INVALID_ALLOCSIZE        1024
 #define ERROR_TDNF_STRING_TOO_LONG          1025
+//alter errors
+#define ERROR_TDNF_ALREADY_INSTALLED        1026
+#define ERROR_TDNF_NO_UPGRADE_PATH          1027
+#define ERROR_TDNF_NO_DOWNGRADE_PATH        1028
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300
@@ -111,8 +115,6 @@ extern "C" {
 #define ERROR_TDNF_RPM_GPG_PARSE_FAILED      1513
 #define ERROR_TDNF_RPM_GPG_NO_MATCH          1514
 #define ERROR_TDNF_RPM_CHECK                 1515
-#define ERROR_TDNF_NO_UPGRADE_PATH           1516
-#define ERROR_TDNF_NO_DOWNGRADE_PATH         1517
 
 //RPM Transaction
 #define ERROR_TDNF_TRANS_INCOMPLETE     1525
