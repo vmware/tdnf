@@ -901,6 +901,11 @@ TDNFAddPackagesForInstall(
         {
             hy_packagelist_push(hPkgListGoal, hPkgTemp);
         }
+        else
+        {
+            dwError = ERROR_TDNF_ALREADY_INSTALLED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
     else
     {

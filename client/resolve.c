@@ -569,6 +569,11 @@ cleanup:
     return dwError;
 
 error:
+    if(dwError == ERROR_TDNF_ALREADY_INSTALLED)
+    {
+        dwError = 0;
+        fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+    }
     if(dwError == ERROR_TDNF_NO_UPGRADE_PATH)
     {
         dwError = 0;
