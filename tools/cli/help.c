@@ -36,6 +36,14 @@ TDNFCliShowHelp(
     printf("usage: tdnf [options] COMMAND\n");
     printf("\n");
 
+    printf("options    [-c [config file]]\n");
+    printf("           [--debugsolver]\n");
+    printf("           [--rpmverbosity [debug level name]] [-v] [-y] [--assumeno]\n");
+    printf("           [--version] [--installroot [path]]\n");
+    printf("           [--nogpgcheck]\n");
+    printf("           [--releasever RELEASEVER] [--setopt SETOPTS]\n");
+    printf("           [--refresh] [-4] [-6] [-h]\n");
+
     printf("List of Main Commands\n");
     printf("\n");
 
@@ -58,21 +66,6 @@ TDNFCliShowHelp(
     printf("updateinfo                Display advisories about packages\n");
     printf("upgrade                   Upgrade a package or packages on your system\n");
     printf("upgrade-to                Upgrade a package on your system to the specified version\n");
-}
-
-void
-TDNFCliShowOptionsUsage(
-    )
-{
-    printf("usage: dnf [--allowerasing] [-b] [-C] [-c [config file]] [-d [debug level]]\n");
-    printf("           [--debugsolver] [--showduplicates] [-e ERRORLEVEL]\n");
-    printf("           [--rpmverbosity [debug level name]] [-q] [-v] [-y] [--assumeno]\n");
-    printf("           [--version] [--installroot [path]] [--enablerepo [repo]]\n");
-    printf("           [--disablerepo [repo]] [-x [package]] [--disableexcludes [repo]]\n");
-    printf("           [--obsoletes] [--noplugins] [--nogpgcheck]\n");
-    printf("           [--disableplugin [plugin]] [--color COLOR]\n");
-    printf("           [--releasever RELEASEVER] [--setopt SETOPTS] [--refresh] [-4] [-6]\n");
-    printf("           [-h]\n");
 }
 
 void
