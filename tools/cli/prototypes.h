@@ -151,10 +151,6 @@ TDNFCliShowHelp(
     );
 
 void
-TDNFCliShowOptionsUsage(
-    );
-
-void
 TDNFCliShowNoSuchCommand(
     const char* pszCmd
     );
