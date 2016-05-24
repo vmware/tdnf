@@ -83,33 +83,37 @@ TDNFApplyPackageFilter(
     )
 {
     uint32_t dwError = 0;
-    int nCmpType = HY_GLOB;
+    int nCmpType = HY_EQ;
+    char** ppszPackagesTemp = NULL;
 
     if(!hQuery || !ppszPackageNameSpecs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    while(*ppszPackageNameSpecs)
+
+    if(!*ppszPackageNameSpecs)
     {
-        if(TDNFIsGlob(*ppszPackageNameSpecs))
+        goto cleanup;
+    }
+
+    ppszPackagesTemp = ppszPackageNameSpecs;
+    while(ppszPackagesTemp && *ppszPackagesTemp)
+    {
+        if(TDNFIsGlob(*ppszPackagesTemp))
         {
             nCmpType = HY_GLOB;
+            break;
         }
-        else
-        {
-            nCmpType = HY_EQ;
-        }
-
-        dwError = hy_query_filter(
-                      hQuery,
-                      HY_PKG_NAME,
-                      nCmpType,
-                      *ppszPackageNameSpecs);
-        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-
-        ++ppszPackageNameSpecs;
+        ++ppszPackagesTemp;
     }
+
+    dwError = hy_query_filter_in(
+                  hQuery,
+                  HY_PKG_NAME,
+                  nCmpType,
+                  (const char**)ppszPackageNameSpecs);
+    BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
 
 cleanup:
     return dwError;

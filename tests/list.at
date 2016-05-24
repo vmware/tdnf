@@ -27,3 +27,12 @@ AT_KEYWORDS([list])
 AT_CHECK([TDNF_CLI_W_CHROOT list installed],\
  [243], [ignore], [ignore])
 AT_CLEANUP
+
+AT_SETUP([list multi])
+AT_KEYWORDS([list])
+AT_CHECK([TDNF_CLI_W_CHROOT list tdnf-test-one tdnf-test-tw* | cut -d' ' -f1],\
+[0],
+[tdnf-test-one.x86_64
+tdnf-test-two.x86_64
+], [ignore])
+AT_CLEANUP
