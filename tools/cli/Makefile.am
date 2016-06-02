@@ -15,4 +15,5 @@ tdnf_SOURCES = \
     setopt.c \
     updateinfocmd.c
 tdnf_LDADD =  \
+    $(top_builddir)/common/libcommon.la \
     $(top_builddir)/client/libtdnfclient.la

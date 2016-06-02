@@ -186,20 +186,6 @@ TDNFUtilsFormatSize(
     char** ppszFormattedSize
     );
 
-//apis to allocate and free memory 
-uint32_t
-TDNFAllocateMemory(
-    size_t nNumElements,
-    size_t nSize,
-    void** ppMemory
-    );
-
-uint32_t
-TDNFAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
 void
 TDNFCloseHandle(
     PTDNF pTdnf
@@ -213,11 +199,6 @@ TDNFFreeCleanInfo(
 void
 TDNFFreeCmdArgs(
     PTDNF_CMD_ARGS pCmdArgs
-    );
-
-void
-TDNFFreeMemory(
-    void* pMemory
     );
 
 void
