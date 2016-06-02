@@ -12,6 +12,8 @@ AC_PROG_CC
 #LT_INIT
 AC_PROG_LIBTOOL
 
+CPPFLAGS="$CPPFLAGS -D_REENTRANT -D_GNU_SOURCE -fPIC"
+
 AM_CPPFLAGS="$AM_CPPFLAGS -I${top_srcdir}/include"
 AM_CFLAGS="$AM_CFLAGS -Wall -Werror -fno-strict-aliasing"
 
@@ -45,6 +47,7 @@ AC_CHECK_LIB(rpm, rpmtsCreate)
 
 #makefiles
 AC_CONFIG_FILES([Makefile
+                 common/Makefile
                  client/Makefile
                  tests/Makefile
                  tools/Makefile

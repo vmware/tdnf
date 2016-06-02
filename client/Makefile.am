@@ -11,7 +11,6 @@ libtdnfclient_la_SOURCES = \
     goal.c \
     gpgcheck.c \
     init.c \
-    memory.c \
     packageutils.c \
     repo.c \
     remoterepo.c \
@@ -19,13 +18,13 @@ libtdnfclient_la_SOURCES = \
     repoutils.c \
     resolve.c \
     rpmtrans.c \
-    strings.c \
     updateinfo.c \
     utils.c \
     search.c \
     validate.c
 
 libtdnfclient_la_LIBADD =  \
+    $(top_builddir)/common/libcommon.la \
     -lhawkey \
     -lrepo \
     -lrpm

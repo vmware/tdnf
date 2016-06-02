@@ -134,7 +134,6 @@ typedef enum
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
 #define TDNF_DEFAULT_DISTROVERPKG         "photon-release"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
-#define TDNF_DEFAULT_MAX_STRING_LEN       16384000
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
 //var names
