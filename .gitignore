@@ -23,6 +23,8 @@ ltmain.sh
 libtool
 ar-lib
 
+/common/.deps
+/common/.libs
 /client/.deps
 /client/.libs
 /tools/cli/.deps
