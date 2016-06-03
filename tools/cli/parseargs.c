@@ -325,9 +325,19 @@ ParseOption(
     }
     else if(!strcasecmp(pszName, "enablerepo"))
     {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                                      CMDOPT_ENABLEREPO,
+                                      ENABLEREPO,
+                                      optarg);
+        BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "disablerepo"))
     {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                                      CMDOPT_DISABLEREPO,
+                                      DISABLEREPO,
+                                      optarg);
+        BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "installroot"))
     {

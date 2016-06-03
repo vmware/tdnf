@@ -34,6 +34,8 @@
 #define ERROR_TDNF_CLI_OPTION_ARG_UNEXPECTED   (ERROR_TDNF_CLI_BASE + 10)
 #define ERROR_TDNF_CLI_SETOPT_NO_EQUALS        (ERROR_TDNF_CLI_BASE + 11)
 
+#define ENABLEREPO        "enablerepo"
+#define DISABLEREPO       "disablerepo"
 
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 

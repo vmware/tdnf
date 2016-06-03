@@ -81,6 +81,12 @@ TDNFCloneCmdArgs(
     );
 
 uint32_t
+TDNFCloneSetOpts(
+    PTDNF_CMD_OPT pCmdOptIn,
+    PTDNF_CMD_OPT* ppCmdOpt
+    );
+
+uint32_t
 TDNFInitSack(
     PTDNF pTdnf,
     HySack* phSack,
@@ -431,6 +437,24 @@ TDNFLoadRepoData(
     PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
+    );
+
+uint32_t
+TDNFRepoListFinalize(
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFAlterRepoState(
+    PTDNF_REPO_DATA pRepos,
+    int nEnable,
+    const char* pszId
+    );
+
+uint32_t
+TDNFCloneRepo(
+    PTDNF_REPO_DATA pRepoIn,
+    PTDNF_REPO_DATA* ppRepo
     );
 
 //resolve.c

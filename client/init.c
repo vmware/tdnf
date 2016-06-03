@@ -171,6 +171,13 @@ TDNFCloneCmdArgs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(pCmdArgsIn->pSetOpt)
+    {
+        dwError = TDNFCloneSetOpts(pCmdArgsIn->pSetOpt,
+                                   &pCmdArgs->pSetOpt);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
@@ -182,6 +189,55 @@ error:
         *ppCmdArgs = NULL;
     }
     TDNFFreeCmdArgs(pCmdArgs);
+    goto cleanup;
+}
+
+uint32_t
+TDNFCloneSetOpts(
+    PTDNF_CMD_OPT pCmdOptIn,
+    PTDNF_CMD_OPT* ppCmdOpt
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pCmdOpt = NULL;
+    PTDNF_CMD_OPT pCmdOptCurrent = NULL;
+    PTDNF_CMD_OPT* ppCmdOptCurrent = NULL;
+
+    if(!pCmdOptIn || !ppCmdOpt)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppCmdOptCurrent = &pCmdOpt;
+    while(pCmdOptIn)
+    {
+        dwError = TDNFAllocateMemory(1,
+                                     sizeof(TDNF_CMD_OPT),
+                                     (void**)ppCmdOptCurrent);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pCmdOptCurrent = *ppCmdOptCurrent;
+
+        pCmdOptCurrent->nType = pCmdOptIn->nType;
+
+        dwError = TDNFAllocateString(pCmdOptIn->pszOptName,
+                                     &pCmdOptCurrent->pszOptName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
+                                     &pCmdOptCurrent->pszOptValue);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        ppCmdOptCurrent = &(pCmdOptCurrent->pNext);
+        pCmdOptIn = pCmdOptIn->pNext;
+    }
+
+    *ppCmdOpt = pCmdOpt;
+cleanup:
+    return dwError;
+
+error:
     goto cleanup;
 }
 

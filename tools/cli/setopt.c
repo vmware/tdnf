@@ -60,6 +60,62 @@ error:
 }
 
 uint32_t
+AddSetOptWithValues(
+    PTDNF_CMD_ARGS pCmdArgs,
+    int nType,
+    const char* pszOptArg,
+    const char* pszOptValue
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pCmdOpt = NULL;
+    PTDNF_CMD_OPT pSetOptTemp = NULL;
+
+    if(!pCmdArgs ||
+       IsNullOrEmptyString(pszOptArg) ||
+       IsNullOrEmptyString(pszOptValue))
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void**)&pCmdOpt);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    pCmdOpt->nType = nType;
+
+    dwError = TDNFAllocateString(pszOptArg, &pCmdOpt->pszOptName);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pszOptValue, &pCmdOpt->pszOptValue);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    pSetOptTemp = pCmdArgs->pSetOpt;
+    if(!pSetOptTemp)
+    {
+        pCmdArgs->pSetOpt = pCmdOpt;
+    }
+    else
+    {
+        while(pSetOptTemp->pNext)
+        {
+            pSetOptTemp = pSetOptTemp->pNext;
+        }
+        pSetOptTemp->pNext = pCmdOpt;
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(pCmdOpt)
+    {
+        TDNFFreeCmdOpt(pCmdOpt);
+    }
+    goto cleanup;
+}
+
+uint32_t
 GetOptionAndValue(
     const char* pszOptArg,
     PTDNF_CMD_OPT* ppCmdOpt
@@ -87,6 +143,7 @@ GetOptionAndValue(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void**)&pCmdOpt);
     BAIL_ON_CLI_ERROR(dwError);
 
+    pCmdOpt->nType = CMDOPT_KEYVALUE;
     dwError = TDNFAllocateString(pszOptArg, &pCmdOpt->pszOptName);
     BAIL_ON_CLI_ERROR(dwError);
 

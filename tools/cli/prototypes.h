@@ -396,6 +396,14 @@ AddSetOpt(
     );
 
 uint32_t
+AddSetOptWithValues(
+    PTDNF_CMD_ARGS pCmdArgs,
+    int nType,
+    const char* pszOptArg,
+    const char* pszOptValue
+    );
+
+uint32_t
 GetOptionAndValue(
     const char* pszOptArg,
     PTDNF_CMD_OPT* ppCmdOpt
