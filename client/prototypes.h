@@ -771,6 +771,11 @@ TDNFUtilsMakeDirs(
     );
 
 uint32_t
+TDNFTouchFile(
+    const char* pszFile
+    );
+
+uint32_t
 TDNFRawGetPackageVersion(
    const char* pszRootDir,
    const char* pszPkg,
@@ -781,6 +786,24 @@ uint32_t
 TDNFGetKernelArch(
    char** ppszArch
    );
+
+uint32_t
+TDNFUpdateMetadataMarkerFile(
+    const char* pszRepoDataFolder
+    );
+
+uint32_t
+TDNFParseMetadataExpire(
+    const char* pszMetadataExpire,
+    long* plMetadataExpire
+    );
+
+uint32_t
+TDNFShouldSyncMetadata(
+    const char* pszRepoDataFolder,
+    long lMetadataExpire,
+    int* pnShouldSync
+    );
 
 //validate.c
 uint32_t

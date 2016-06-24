@@ -130,6 +130,7 @@ TDNFLoadReposFromFile(
     char** ppszRepos = NULL;
     char* pszRepo = NULL;
     char* pszValue = NULL;
+    char* pszMetadataExpire = NULL;
 
     PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_REPO_DATA pRepo = NULL;
@@ -238,6 +239,32 @@ TDNFLoadReposFromFile(
                       &pRepo->pszPass);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        dwError = TDNFRepoGetKeyValue(
+                      pKeyFile,
+                      pszRepo,
+                      TDNF_REPO_KEY_METADATA_EXPIRE,
+                      NULL,
+                      &pszMetadataExpire);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        //Set
+        if(IsNullOrEmptyString(pszMetadataExpire))
+        {
+            TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
+            dwError = TDNFAllocateString(
+                          TDNF_REPO_DEFAULT_METADATA_EXPIRE,
+                          &pszMetadataExpire);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        dwError = TDNFParseMetadataExpire(
+                      pszMetadataExpire,
+                      &pRepo->lMetadataExpire);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
+        pszMetadataExpire = NULL;
+
         pRepo->pNext = pRepos;
         pRepos = pRepo;
         pRepo = NULL;
@@ -252,6 +279,7 @@ cleanup:
     }
     g_free(pszValue);
     g_strfreev(ppszRepos);
+    TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
     return dwError;
 
 error:

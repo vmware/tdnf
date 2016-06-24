@@ -306,6 +306,64 @@ error:
     goto cleanup;
 }
 
+//update time if file exists
+//create if not
+uint32_t
+TDNFTouchFile(
+    const char* pszFile
+    )
+{
+    uint32_t dwError = 0;
+    struct stat st = {0};
+    int fd = -1;
+    struct utimbuf times = {0};
+
+    if(IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(stat(pszFile, &st) == -1)
+    {
+        if(errno == ENOENT)
+        {
+            fd = creat(pszFile,
+                       S_IRUSR | S_IRGRP | S_IROTH);
+            if(fd == -1)
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            else
+            {
+                close(fd);
+            }
+        }
+        else
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+    }
+    else
+    {
+        times.actime = st.st_atime;
+        times.modtime = time(NULL);
+        if(utime(pszFile, &times))
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 //get package version using rpmlib
 uint32_t
 TDNFRawGetPackageVersion(
@@ -433,5 +491,133 @@ error:
         *ppszArch = NULL;
     }
     TDNF_SAFE_FREE_MEMORY(pszArch);
+    goto cleanup;
+}
+
+uint32_t
+TDNFParseMetadataExpire(
+    const char* pszMetadataExpire,
+    long* plMetadataExpire
+    )
+{
+    uint32_t dwError = 0;
+    long lMetadataExpire = -1;
+    char* pszError = NULL;
+
+    if(!lMetadataExpire || IsNullOrEmptyString(pszMetadataExpire))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(!strcasecmp(TDNF_REPO_METADATA_EXPIRE_NEVER, pszMetadataExpire))
+    {
+        lMetadataExpire = -1;
+    }
+    else
+    {
+        lMetadataExpire = strtol(pszMetadataExpire, &pszError, 10);
+        if(lMetadataExpire < 0)
+        {
+            lMetadataExpire = -1;
+        }
+        else if(lMetadataExpire > 0)
+        {
+            char chMultiplier = 's';
+            int nMultiplier = 1;
+            if(pszError && *pszError)
+            {
+                chMultiplier = *pszError;
+            }
+            switch(chMultiplier)
+            {
+                case 's': nMultiplier = 1; break;
+                case 'm': nMultiplier = 60; break;
+                case 'h': nMultiplier = 60*60; break;
+                case 'd': nMultiplier = 60*60*24; break;
+                default:
+                    dwError = ERROR_TDNF_METADATA_EXPIRE_PARSE;
+                    BAIL_ON_TDNF_ERROR(dwError);
+            }
+            lMetadataExpire *= nMultiplier;
+        }
+        else if(pszError && *pszError)
+        {
+            dwError = ERROR_TDNF_METADATA_EXPIRE_PARSE;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    *plMetadataExpire = lMetadataExpire;
+
+cleanup:
+    return dwError;
+
+error:
+    if(plMetadataExpire)
+    {
+        *plMetadataExpire = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFShouldSyncMetadata(
+    const char* pszRepoDataFolder,
+    long lMetadataExpire,
+    int* pnShouldSync
+    )
+{
+    uint32_t dwError = 0;
+    int nShouldSync = 0;
+    struct stat st = {0};
+    time_t tCurrent = time(NULL);
+    char* pszMarkerFile = NULL;
+
+    if(!pnShouldSync || IsNullOrEmptyString(pszRepoDataFolder))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszMarkerFile,
+                  "%s/%s",
+                  pszRepoDataFolder,
+                  TDNF_REPO_METADATA_MARKER);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    //Look for the metadata marker file
+    if(stat(pszMarkerFile, &st) == -1)
+    {
+        if(errno == ENOENT)
+        {
+            nShouldSync = 1;
+        }
+        else
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+    }
+    else
+    {
+        if(difftime(tCurrent, st.st_ctime) > lMetadataExpire)
+        {
+            nShouldSync = 1;
+        }
+    }
+
+    *pnShouldSync = nShouldSync;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszMarkerFile);
+    return dwError;
+
+error:
+    if(pnShouldSync)
+    {
+        *pnShouldSync = 0;
+    }
     goto cleanup;
 }
