@@ -37,6 +37,7 @@ TDNFInitRepo(
     char* pszRepoCacheDir = NULL;
     char* pszRepoDataDir = NULL;
     char* pszUserPass = NULL;
+    char* pszLastRefreshMarker = NULL;
 
     char* ppszRepoUrls[] = {NULL, NULL};
     char* ppszLocalUrls[] = {NULL, NULL};
@@ -173,8 +174,19 @@ TDNFInitRepo(
     dwError = TDNFInitRepoFromMetaData(hRepo, pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFAllocateStringPrintf(
+                  &pszLastRefreshMarker,
+                  "%s/%s",
+                  pszRepoCacheDir,
+                  TDNF_REPO_METADATA_MARKER);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFTouchFile(pszLastRefreshMarker);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     *phRepo = hRepo;
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
     if(pszRepoDataDir)
     {
         g_free(pszRepoDataDir);

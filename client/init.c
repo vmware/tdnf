@@ -250,6 +250,7 @@ TDNFRefreshSack(
     uint32_t dwError = 0;
     HyRepo hRepo = NULL;
     int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
+    char* pszRepoCacheDir = NULL;
 
     if(!pTdnf)
     {
@@ -272,9 +273,30 @@ TDNFRefreshSack(
         PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
         while(pTempRepo)
         {
+            int nMetadataExpired = 0;
             if(pTempRepo->nEnabled)
             {
-                if(nCleanMetadata)
+                //Check if expired since last sync per metadata_expire
+                if(!nCleanMetadata && pTempRepo->lMetadataExpire >= 0)
+                {
+                    dwError = TDNFAllocateStringPrintf(
+                                  &pszRepoCacheDir,
+                                  "%s/%s",
+                                  pTdnf->pConf->pszCacheDir,
+                                  pTempRepo->pszId);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    dwError = TDNFShouldSyncMetadata(
+                                  pszRepoCacheDir,
+                                  pTempRepo->lMetadataExpire,
+                                  &nMetadataExpired);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+                    pszRepoCacheDir = NULL;
+                }
+
+                if(nCleanMetadata || nMetadataExpired)
                 {
                     fprintf(stdout,
                             "Refreshing metadata for: '%s'\n",
@@ -318,6 +340,7 @@ TDNFRefreshSack(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     return dwError;
 
 error:
