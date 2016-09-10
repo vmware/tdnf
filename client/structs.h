@@ -38,3 +38,9 @@ typedef struct _TDNF_RPM_TS_
   FD_t               pFD;
   GArray*            pCachedRpmsArray;
 }TDNFRPMTS, *PTDNFRPMTS;
+
+typedef struct _TDNF_ENV_
+{
+    pthread_mutex_t mutexInitialize;
+    int nInitialized;
+}TDNF_ENV, *PTDNF_ENV;

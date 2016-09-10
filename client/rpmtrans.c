@@ -46,9 +46,6 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = rpmReadConfigFiles(NULL, NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     rpmSetVerbosity(TDNFConfGetRpmVerbosity(pTdnf));
 
     //Allow downgrades
@@ -110,6 +107,7 @@ cleanup:
         }
         TDNFFreeCachedRpmsArray(ts.pCachedRpmsArray);
     }
+    rpmFreeRpmrc();
     return dwError;
 
 error:

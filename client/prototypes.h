@@ -810,3 +810,7 @@ uint32_t
 TDNFValidateCmdArgs(
     PTDNF pTdnf
     );
+
+uint32_t
+TDNFIsInitialized(
+    );
