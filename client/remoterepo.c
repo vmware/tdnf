@@ -41,6 +41,42 @@ lrProgressCB(
     return 0;
 }
 
+uint32_t
+set_progress_cb(
+    LrHandle *pRepoHandle,
+    const char *pszPkgName
+    )
+{
+    uint32_t dwError = 0;
+    gboolean bRet = FALSE;
+
+    if(!pRepoHandle || IsNullOrEmptyString(pszPkgName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSCB, lrProgressCB);
+    if(bRet == FALSE)
+    {
+        //TODO: Add repo specific
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSDATA, pszPkgName);
+    if(bRet == FALSE)
+    {
+        //TODO: Add repo specific
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
 
 uint32_t
 TDNFDownloadPackage(
@@ -59,12 +95,15 @@ TDNFDownloadPackage(
     char* pszUserPass = NULL;
     char* pszBaseUrl = NULL;
     const char* pszPkgName = NULL;
+    int nSilent = 0;
     
-    if(!pTdnf || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
+    if(!pTdnf || !pTdnf->pArgs || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    nSilent = pTdnf->pArgs->nNoOutput;
 
     pRepoHandle = lr_handle_init();
 
@@ -97,18 +136,10 @@ TDNFDownloadPackage(
     {
         lr_handle_setopt(pRepoHandle, NULL, LRO_USERPWD, pszUserPass);
     }
-    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSCB, lrProgressCB);
-    if(bRet == FALSE)
+
+    if(!nSilent)
     {
-        //TODO: Add repo specific
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSDATA, pszPkgName);
-    if(bRet == FALSE)
-    {
-        //TODO: Add repo specific
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        dwError = set_progress_cb(pRepoHandle, pszPkgName);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
