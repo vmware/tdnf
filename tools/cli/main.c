@@ -85,6 +85,9 @@ int main(int argc, char* argv[])
                     pCmdArgs->nRefresh = 1;
                 }
 
+                dwError = TDNFInit();
+                BAIL_ON_CLI_ERROR(dwError);
+
                 dwError = TDNFOpenHandle(pCmdArgs, &pTdnf);
                 BAIL_ON_CLI_ERROR(dwError);
 
@@ -118,6 +121,7 @@ cleanup:
     {
         TDNFFreeCmdArgs(pCmdArgs);
     }
+    TDNFUninit();
     return dwError;
 
 error:

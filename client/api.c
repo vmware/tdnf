@@ -20,6 +20,96 @@
 
 #include "includes.h"
 
+static TDNF_ENV gEnv = {0};
+
+uint32_t
+TDNFInit(
+    )
+{
+    uint32_t dwError = 0;
+    int nLocked = 0;
+
+    pthread_mutex_lock (&gEnv.mutexInitialize);
+    nLocked = 1;
+    if(!gEnv.nInitialized)
+    {
+        dwError = rpmReadConfigFiles(NULL, NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        gEnv.nInitialized = 1;
+    }
+
+cleanup:
+    if(nLocked)
+    {
+        pthread_mutex_unlock(&gEnv.mutexInitialize);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFIsInitialized(
+    int *pnInitialized
+    )
+{
+    uint32_t dwError = 0;
+    int nInitialized = 0;
+    int nLocked = 0;
+
+    if(!pnInitialized)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pthread_mutex_lock (&gEnv.mutexInitialize);
+    nLocked = 1;
+
+    nInitialized = gEnv.nInitialized;
+
+    *pnInitialized = nInitialized;
+
+cleanup:
+    if(nLocked)
+    {
+        pthread_mutex_unlock(&gEnv.mutexInitialize);
+    }
+    return dwError;
+
+error:
+    if(pnInitialized)
+    {
+        *pnInitialized = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFUninit(
+    )
+{
+    uint32_t dwError = 0;
+    int nLocked = 0;
+
+    pthread_mutex_lock (&gEnv.mutexInitialize);
+    nLocked = 1;
+
+    if(gEnv.nInitialized)
+    {
+        rpmFreeRpmrc();
+    }
+    gEnv.nInitialized = 0;
+
+    if(nLocked)
+    {
+        pthread_mutex_unlock(&gEnv.mutexInitialize);
+    }
+    return dwError;
+}
+
 //All alter commands such as install/update/erase
 uint32_t
 TDNFAlterCommand(
