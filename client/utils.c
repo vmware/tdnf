@@ -387,9 +387,6 @@ TDNFRawGetPackageVersion(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = rpmReadConfigFiles(NULL, NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     pTS = rpmtsCreate();
     if(!pTS)
     {
