@@ -118,6 +118,8 @@ TDNFCloneCmdArgs(
     pCmdArgs->nCacheOnly     = pCmdArgsIn->nCacheOnly;
     pCmdArgs->nDebugSolver   = pCmdArgsIn->nDebugSolver;
     pCmdArgs->nNoGPGCheck    = pCmdArgsIn->nNoGPGCheck;
+    pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
+    pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;
     pCmdArgs->nRefresh       = pCmdArgsIn->nRefresh;
     pCmdArgs->nRpmVerbosity  = pCmdArgsIn->nRpmVerbosity;
     pCmdArgs->nShowDuplicates= pCmdArgsIn->nShowDuplicates;
