@@ -24,6 +24,11 @@ extern "C" {
 
 //api.c
 
+//global init.
+uint32_t
+TDNFInit(
+    );
+
 //Open a handle using initial args 
 //args can define a command, have config overrides
 uint32_t
@@ -241,6 +246,12 @@ void
 TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
     );
+
+//free global resources.
+void
+TDNFUninit(
+    );
+
 
 #ifdef __cplusplus
 }
