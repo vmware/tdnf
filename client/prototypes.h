@@ -81,6 +81,12 @@ TDNFCloneCmdArgs(
     );
 
 uint32_t
+TDNFCloneSetOpts(
+    PTDNF_CMD_OPT pCmdOptIn,
+    PTDNF_CMD_OPT* ppCmdOpt
+    );
+
+uint32_t
 TDNFInitSack(
     PTDNF pTdnf,
     HySack* phSack,
@@ -433,6 +439,24 @@ TDNFLoadRepoData(
     PTDNF_REPO_DATA* ppReposAll
     );
 
+uint32_t
+TDNFRepoListFinalize(
+    PTDNF pTdnf
+    );
+
+uint32_t
+TDNFAlterRepoState(
+    PTDNF_REPO_DATA pRepos,
+    int nEnable,
+    const char* pszId
+    );
+
+uint32_t
+TDNFCloneRepo(
+    PTDNF_REPO_DATA pRepoIn,
+    PTDNF_REPO_DATA* ppRepo
+    );
+
 //resolve.c
 HySubject
 hy_subject_create(
@@ -747,6 +771,11 @@ TDNFUtilsMakeDirs(
     );
 
 uint32_t
+TDNFTouchFile(
+    const char* pszFile
+    );
+
+uint32_t
 TDNFRawGetPackageVersion(
    const char* pszRootDir,
    const char* pszPkg,
@@ -758,8 +787,30 @@ TDNFGetKernelArch(
    char** ppszArch
    );
 
+uint32_t
+TDNFUpdateMetadataMarkerFile(
+    const char* pszRepoDataFolder
+    );
+
+uint32_t
+TDNFParseMetadataExpire(
+    const char* pszMetadataExpire,
+    long* plMetadataExpire
+    );
+
+uint32_t
+TDNFShouldSyncMetadata(
+    const char* pszRepoDataFolder,
+    long lMetadataExpire,
+    int* pnShouldSync
+    );
+
 //validate.c
 uint32_t
 TDNFValidateCmdArgs(
     PTDNF pTdnf
+    );
+
+uint32_t
+TDNFIsInitialized(
     );

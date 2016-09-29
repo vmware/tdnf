@@ -167,6 +167,12 @@ TDNFCliHelpCommand(
     );
 
 //installcmd.c
+
+uint32_t
+PrintSolvedInfo(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
 uint32_t
 PrintNotAvailable(
     char** ppszPkgsNotAvailable
@@ -393,6 +399,14 @@ uint32_t
 AddSetOpt(
     PTDNF_CMD_ARGS pCmdArgs,
     const char* pszOptArg
+    );
+
+uint32_t
+AddSetOptWithValues(
+    PTDNF_CMD_ARGS pCmdArgs,
+    int nType,
+    const char* pszOptArg,
+    const char* pszOptValue
     );
 
 uint32_t

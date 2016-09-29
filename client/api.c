@@ -20,6 +20,96 @@
 
 #include "includes.h"
 
+static TDNF_ENV gEnv = {0};
+
+uint32_t
+TDNFInit(
+    )
+{
+    uint32_t dwError = 0;
+    int nLocked = 0;
+
+    pthread_mutex_lock (&gEnv.mutexInitialize);
+    nLocked = 1;
+    if(!gEnv.nInitialized)
+    {
+        dwError = rpmReadConfigFiles(NULL, NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        gEnv.nInitialized = 1;
+    }
+
+cleanup:
+    if(nLocked)
+    {
+        pthread_mutex_unlock(&gEnv.mutexInitialize);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFIsInitialized(
+    int *pnInitialized
+    )
+{
+    uint32_t dwError = 0;
+    int nInitialized = 0;
+    int nLocked = 0;
+
+    if(!pnInitialized)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pthread_mutex_lock (&gEnv.mutexInitialize);
+    nLocked = 1;
+
+    nInitialized = gEnv.nInitialized;
+
+    *pnInitialized = nInitialized;
+
+cleanup:
+    if(nLocked)
+    {
+        pthread_mutex_unlock(&gEnv.mutexInitialize);
+    }
+    return dwError;
+
+error:
+    if(pnInitialized)
+    {
+        *pnInitialized = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFUninit(
+    )
+{
+    uint32_t dwError = 0;
+    int nLocked = 0;
+
+    pthread_mutex_lock (&gEnv.mutexInitialize);
+    nLocked = 1;
+
+    if(gEnv.nInitialized)
+    {
+        rpmFreeRpmrc();
+    }
+    gEnv.nInitialized = 0;
+
+    if(nLocked)
+    {
+        pthread_mutex_unlock(&gEnv.mutexInitialize);
+    }
+    return dwError;
+}
+
 //All alter commands such as install/update/erase
 uint32_t
 TDNFAlterCommand(
@@ -515,8 +605,11 @@ TDNFOpenHandle(
 
     dwError = TDNFLoadRepoData(
                   pTdnf,
-                  REPOLISTFILTER_ENABLED,
+                  REPOLISTFILTER_ALL,
                   &pTdnf->pRepos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRepoListFinalize(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRefreshSack(pTdnf, pTdnf->pArgs->nRefresh);
@@ -624,15 +717,54 @@ TDNFRepoList(
 {
     uint32_t dwError = 0;
     PTDNF_REPO_DATA pReposAll = NULL;
+    PTDNF_REPO_DATA pRepoTemp = NULL;
+    PTDNF_REPO_DATA pRepoCurrent = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
+    int nAdd = 0;
 
-    if(!pTdnf || !pTdnf->pConf || !ppReposAll)
+    if(!pTdnf || !pTdnf->pRepos || !ppReposAll)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFLoadRepoData(pTdnf, nFilter, &pReposAll);
-    BAIL_ON_TDNF_ERROR(dwError);
+    pRepos = pTdnf->pRepos;
+
+    while(pRepos)
+    {
+        nAdd = 0;
+        if(nFilter == REPOLISTFILTER_ALL)
+        {
+            nAdd = 1;
+        }
+        else if(nFilter == REPOLISTFILTER_ENABLED && pRepos->nEnabled)
+        {
+            nAdd = 1;
+        }
+        else if(nFilter == REPOLISTFILTER_DISABLED && !pRepos->nEnabled)
+        {
+            nAdd = 1;
+        }
+        if(nAdd)
+        {
+            dwError = TDNFCloneRepo(pRepos, &pRepoTemp);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if(!pReposAll)
+            {
+                pReposAll = pRepoTemp;
+                pRepoCurrent = pReposAll;
+            }
+            else
+            {
+                pRepoCurrent->pNext = pRepoTemp;
+                pRepoCurrent = pRepoCurrent->pNext;
+            }
+            pRepoTemp = NULL;
+        }
+
+        pRepos = pRepos->pNext;
+    }
 
     *ppReposAll = pReposAll;
 
@@ -640,6 +772,14 @@ cleanup:
     return dwError;
 
 error:
+    if(ppReposAll)
+    {
+        *ppReposAll = NULL;
+    }
+    if(pReposAll)
+    {
+        TDNFFreeRepos(pReposAll);
+    }
     goto cleanup;
 }
 
@@ -1064,7 +1204,10 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
 
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
+        if(pCmdArgs->pSetOpt)
+        {
+            TDNFFreeCmdOpt(pCmdArgs->pSetOpt);
+        }
         TDNF_SAFE_FREE_MEMORY(pCmdArgs);
     }
 }

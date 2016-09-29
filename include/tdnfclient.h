@@ -24,6 +24,11 @@ extern "C" {
 
 //api.c
 
+//global init.
+uint32_t
+TDNFInit(
+    );
+
 //Open a handle using initial args 
 //args can define a command, have config overrides
 uint32_t
@@ -186,20 +191,6 @@ TDNFUtilsFormatSize(
     char** ppszFormattedSize
     );
 
-//apis to allocate and free memory 
-uint32_t
-TDNFAllocateMemory(
-    size_t nNumElements,
-    size_t nSize,
-    void** ppMemory
-    );
-
-uint32_t
-TDNFAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
 void
 TDNFCloseHandle(
     PTDNF pTdnf
@@ -213,11 +204,6 @@ TDNFFreeCleanInfo(
 void
 TDNFFreeCmdArgs(
     PTDNF_CMD_ARGS pCmdArgs
-    );
-
-void
-TDNFFreeMemory(
-    void* pMemory
     );
 
 void
@@ -260,6 +246,12 @@ void
 TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
     );
+
+//free global resources.
+uint32_t
+TDNFUninit(
+    );
+
 
 #ifdef __cplusplus
 }

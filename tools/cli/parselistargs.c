@@ -67,7 +67,7 @@ TDNFCliParseListArgs(
     for(nIndex = 0; nIndex < nPackageCount; ++nIndex)
     {
         dwError = TDNFAllocateString(
-                      pCmdArgs->ppszCmds[nStartIndex],
+                      pCmdArgs->ppszCmds[nStartIndex + nIndex],
                       &pListArgs->ppszPackageNameSpecs[nIndex]);
         BAIL_ON_CLI_ERROR(dwError);
     }

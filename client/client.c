@@ -83,37 +83,123 @@ TDNFApplyPackageFilter(
     )
 {
     uint32_t dwError = 0;
-    int nCmpType = HY_GLOB;
+    int nCmpType = HY_EQ;
+    char** ppszPackagesTemp = NULL;
 
     if(!hQuery || !ppszPackageNameSpecs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    while(*ppszPackageNameSpecs)
+
+    if(!*ppszPackageNameSpecs)
     {
-        if(TDNFIsGlob(*ppszPackageNameSpecs))
+        goto cleanup;
+    }
+
+    ppszPackagesTemp = ppszPackageNameSpecs;
+    while(ppszPackagesTemp && *ppszPackagesTemp)
+    {
+        if(TDNFIsGlob(*ppszPackagesTemp))
         {
             nCmpType = HY_GLOB;
+            break;
         }
-        else
-        {
-            nCmpType = HY_EQ;
-        }
-
-        dwError = hy_query_filter(
-                      hQuery,
-                      HY_PKG_NAME,
-                      nCmpType,
-                      *ppszPackageNameSpecs);
-        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-
-        ++ppszPackageNameSpecs;
+        ++ppszPackagesTemp;
     }
+
+    dwError = hy_query_filter_in(
+                  hQuery,
+                  HY_PKG_NAME,
+                  nCmpType,
+                  (const char**)ppszPackageNameSpecs);
+    BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
 
 cleanup:
     return dwError;
 
 error:
     goto cleanup;
+}
+
+void
+TDNFFreePackageInfo(
+    PTDNF_PKG_INFO pPkgInfo
+    )
+{
+    while(pPkgInfo)
+    {
+        PTDNF_PKG_INFO pPkgInfoTemp = pPkgInfo;
+        pPkgInfo = pPkgInfo->pNext;
+
+        TDNFFreePackageInfoContents(pPkgInfoTemp);
+        TDNFFreeMemory(pPkgInfoTemp);
+    }
+}
+
+void
+TDNFFreePackageInfoArray(
+    PTDNF_PKG_INFO pPkgInfoArray,
+    uint32_t unLength
+    )
+{
+    uint32_t unIndex = 0;
+    if(pPkgInfoArray && unLength > 0)
+    {
+      for(unIndex = 0; unIndex < unLength; ++unIndex)
+      {
+        TDNFFreePackageInfoContents(&pPkgInfoArray[unIndex]);
+      }
+    }
+    TDNF_SAFE_FREE_MEMORY(pPkgInfoArray);
+}
+
+void
+TDNFFreePackageInfoContents(
+    PTDNF_PKG_INFO pPkgInfo
+    )
+{
+    if(pPkgInfo)
+    {
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszName);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRepoName);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszVersion);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszArch);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszSummary);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszURL);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLicense);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszDescription);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
+      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
+    }
+}
+
+void
+TDNFFreeSolvedPackageInfo(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    )
+{
+    int i = 0;
+    if(pSolvedPkgInfo)
+    {
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsExisting);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToInstall);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToUpgrade);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToDowngrade);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToRemove);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+
+       if(pSolvedPkgInfo->ppszPkgsNotResolved)
+       {
+           while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
+           {
+               TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+           }
+       }
+       TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
+    }
+    TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }

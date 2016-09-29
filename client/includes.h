@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <utime.h>
+#include <fnmatch.h>
 //
 #include <sys/utsname.h>
 //glib
@@ -65,3 +67,4 @@
 #include "defines.h"
 #include "structs.h"
 #include "prototypes.h"
+#include "../common/prototypes.h"

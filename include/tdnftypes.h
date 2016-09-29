@@ -133,6 +133,15 @@ typedef enum
     REPOLISTFILTER_DISABLED
 }TDNF_REPOLISTFILTER;
 
+//CmdOpt Types
+typedef enum
+{
+    CMDOPT_NONE = -1,
+    CMDOPT_KEYVALUE,
+    CMDOPT_ENABLEREPO,
+    CMDOPT_DISABLEREPO
+}TDNF_CMDOPT_TYPE;
+
 typedef struct _TDNF_ *PTDNF;
 typedef struct _HyRepo * HyRepo;
 
@@ -172,6 +181,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
 
 typedef struct _TDNF_CMD_OPT
 {
+    int nType;
     char* pszOptName;
     char* pszOptValue;
     struct _TDNF_CMD_OPT* pNext;
@@ -194,6 +204,8 @@ typedef struct _TDNF_CMD_ARGS
     int nShowDuplicates;   //show dups in list/search
     int nShowVersion;      //show version and exit
     int nNoGPGCheck;       //skip gpg check
+    int nNoOutput;         //if quiet and assumeyes are provided
+    int nQuiet;            //quiet option
     int nVerbose;          //print debug info
     int nIPv4;             //resolve to IPv4 addresses only
     int nIPv6;             //resolve to IPv6 addresses only
@@ -204,10 +216,6 @@ typedef struct _TDNF_CMD_ARGS
     //Commands and args that do not fall in options
     char** ppszCmds;
     int nCmdCount;
-    //Enabled repositories
-    char** ppszEnabledRepos;
-    //Disabled repositories
-    char** ppszDisabledRepos;
     PTDNF_CMD_OPT pSetOpt;
 }TDNF_CMD_ARGS, *PTDNF_CMD_ARGS;
 
@@ -239,6 +247,7 @@ typedef struct _TDNF_REPO_DATA
     int nEnabled;
     int nSkipIfUnavailable;
     int nGPGCheck;
+    long lMetadataExpire;
     char* pszId;
     char* pszName;
     char* pszBaseUrl;

@@ -1,4 +1,4 @@
-AC_INIT(tdnf, 1.0.9)
+AC_INIT(tdnf, 1.1.0)
 AC_MSG_NOTICE([tdnf configuration])
 
 AC_CANONICAL_SYSTEM
@@ -11,6 +11,8 @@ AM_PROG_AR
 AC_PROG_CC
 #LT_INIT
 AC_PROG_LIBTOOL
+
+CPPFLAGS="$CPPFLAGS -D_REENTRANT -D_GNU_SOURCE -fPIC"
 
 AM_CPPFLAGS="$AM_CPPFLAGS -I${top_srcdir}/include"
 AM_CFLAGS="$AM_CFLAGS -Wall -Werror -fno-strict-aliasing"
@@ -45,6 +47,7 @@ AC_CHECK_LIB(rpm, rpmtsCreate)
 
 #makefiles
 AC_CONFIG_FILES([Makefile
+                 common/Makefile
                  client/Makefile
                  tests/Makefile
                  tools/Makefile

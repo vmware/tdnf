@@ -118,6 +118,8 @@ TDNFCloneCmdArgs(
     pCmdArgs->nCacheOnly     = pCmdArgsIn->nCacheOnly;
     pCmdArgs->nDebugSolver   = pCmdArgsIn->nDebugSolver;
     pCmdArgs->nNoGPGCheck    = pCmdArgsIn->nNoGPGCheck;
+    pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
+    pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;
     pCmdArgs->nRefresh       = pCmdArgsIn->nRefresh;
     pCmdArgs->nRpmVerbosity  = pCmdArgsIn->nRpmVerbosity;
     pCmdArgs->nShowDuplicates= pCmdArgsIn->nShowDuplicates;
@@ -171,6 +173,13 @@ TDNFCloneCmdArgs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(pCmdArgsIn->pSetOpt)
+    {
+        dwError = TDNFCloneSetOpts(pCmdArgsIn->pSetOpt,
+                                   &pCmdArgs->pSetOpt);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
@@ -186,6 +195,55 @@ error:
 }
 
 uint32_t
+TDNFCloneSetOpts(
+    PTDNF_CMD_OPT pCmdOptIn,
+    PTDNF_CMD_OPT* ppCmdOpt
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pCmdOpt = NULL;
+    PTDNF_CMD_OPT pCmdOptCurrent = NULL;
+    PTDNF_CMD_OPT* ppCmdOptCurrent = NULL;
+
+    if(!pCmdOptIn || !ppCmdOpt)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppCmdOptCurrent = &pCmdOpt;
+    while(pCmdOptIn)
+    {
+        dwError = TDNFAllocateMemory(1,
+                                     sizeof(TDNF_CMD_OPT),
+                                     (void**)ppCmdOptCurrent);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pCmdOptCurrent = *ppCmdOptCurrent;
+
+        pCmdOptCurrent->nType = pCmdOptIn->nType;
+
+        dwError = TDNFAllocateString(pCmdOptIn->pszOptName,
+                                     &pCmdOptCurrent->pszOptName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
+                                     &pCmdOptCurrent->pszOptValue);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        ppCmdOptCurrent = &(pCmdOptCurrent->pNext);
+        pCmdOptIn = pCmdOptIn->pNext;
+    }
+
+    *ppCmdOpt = pCmdOpt;
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFRefreshSack(
     PTDNF pTdnf,
     int nCleanMetadata
@@ -194,6 +252,7 @@ TDNFRefreshSack(
     uint32_t dwError = 0;
     HyRepo hRepo = NULL;
     int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
+    char* pszRepoCacheDir = NULL;
 
     if(!pTdnf)
     {
@@ -216,9 +275,30 @@ TDNFRefreshSack(
         PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
         while(pTempRepo)
         {
+            int nMetadataExpired = 0;
             if(pTempRepo->nEnabled)
             {
-                if(nCleanMetadata)
+                //Check if expired since last sync per metadata_expire
+                if(!nCleanMetadata && pTempRepo->lMetadataExpire >= 0)
+                {
+                    dwError = TDNFAllocateStringPrintf(
+                                  &pszRepoCacheDir,
+                                  "%s/%s",
+                                  pTdnf->pConf->pszCacheDir,
+                                  pTempRepo->pszId);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    dwError = TDNFShouldSyncMetadata(
+                                  pszRepoCacheDir,
+                                  pTempRepo->lMetadataExpire,
+                                  &nMetadataExpired);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+                    pszRepoCacheDir = NULL;
+                }
+
+                if(nCleanMetadata || nMetadataExpired)
                 {
                     fprintf(stdout,
                             "Refreshing metadata for: '%s'\n",
@@ -262,6 +342,7 @@ TDNFRefreshSack(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     return dwError;
 
 error:

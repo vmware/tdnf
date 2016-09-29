@@ -46,9 +46,6 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = rpmReadConfigFiles(NULL, NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     rpmSetVerbosity(TDNFConfGetRpmVerbosity(pTdnf));
 
     //Allow downgrades
@@ -212,6 +209,15 @@ TDNFRunTransaction(
     )
 {
     uint32_t dwError = 0;
+    int nSilent = 0;
+
+    if(!pTS || !pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nSilent = pTdnf->pArgs->nNoOutput;
 
     dwError = rpmtsOrder(pTS->pTS);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -221,13 +227,21 @@ TDNFRunTransaction(
 
     rpmtsClean(pTS->pTS);
 
-    fprintf(stdout, "Testing transaction\n");
+    //TODO do callbacks for output
+    if(!nSilent)
+    {
+        fprintf(stdout, "Testing transaction\n");
+    }
 
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    fprintf(stdout, "Running transaction\n");
+    //TODO do callbacks for output
+    if(!nSilent)
+    {
+        fprintf(stdout, "Running transaction\n");
+    }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_NONE);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
     BAIL_ON_TDNF_ERROR(dwError);

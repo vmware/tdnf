@@ -65,6 +65,7 @@ extern "C" {
 #define ERROR_TDNF_ALREADY_INSTALLED        1026
 #define ERROR_TDNF_NO_UPGRADE_PATH          1027
 #define ERROR_TDNF_NO_DOWNGRADE_PATH        1028
+#define ERROR_TDNF_METADATA_EXPIRE_PARSE    1029
 
 //Hawkey errors 1300 to 1399
 #define ERROR_TDNF_HAWKEY_BASE          1300
