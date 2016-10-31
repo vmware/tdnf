@@ -25,7 +25,7 @@ uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepoData,
-    HyRepo* phRepo
+    PSolvRepo* phRepo
     )
 {
     uint32_t dwError = 0;
@@ -42,8 +42,6 @@ TDNFInitRepo(
     char* ppszLocalUrls[] = {NULL, NULL};
     char* ppszDownloadList[] = {"primary", "filelists", "updateinfo", NULL};
     PTDNF_CONF pConf = NULL;
-
-    HyRepo hRepo = NULL;
 
     if(!pTdnf || !pTdnf->pConf || !pRepoData || !phRepo)
     {
@@ -162,18 +160,9 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Create and set repo properties   
-    hRepo = hy_repo_create(pRepoData->pszId);
-    if(!hRepo)
-    {
-        dwError = ERROR_TDNF_HAWKEY_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFInitRepoFromMetaData(hRepo, pRepo);
+    dwError = TDNFInitRepoFromMetaData(pTdnf, NULL, pRepoData->pszId, pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    *phRepo = hRepo;
 cleanup:
     if(pszRepoDataDir)
     {
@@ -214,50 +203,29 @@ error:
     {
         *phRepo = NULL;
     }
-    if(hRepo)
-    {
-       hy_repo_free(hRepo);
-    }
     goto cleanup;
 }
 
 uint32_t
 TDNFInitRepoFromMetaData(
-    HyRepo hRepo,
+    PTDNF pTdnf,
+    PSolvRepo hRepo,
+    const char* repo_name,
     LrYumRepo* pRepo
     )
 {
     uint32_t dwError = 0;
     const char* pszValue = NULL;
-    
-    if(!pRepo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    const char* pszValue2 = NULL;
+    const char* pszValue3 = NULL;
 
-    hy_repo_set_string(hRepo, HY_REPO_MD_FN, pRepo->repomd);
     pszValue = lr_yum_repo_path(pRepo, "primary");
-    if(pszValue)
-    {
-        hy_repo_set_string(hRepo, HY_REPO_PRIMARY_FN, pszValue);
-    }
-    pszValue = lr_yum_repo_path(pRepo, "filelists");
-    if(pszValue != NULL)
-    {
-        hy_repo_set_string(hRepo, HY_REPO_FILELISTS_FN, pszValue);
-    }
-    pszValue = lr_yum_repo_path(pRepo, "updateinfo");
-    if(pszValue != NULL)
-    {
-        hy_repo_set_string (hRepo, HY_REPO_UPDATEINFO_FN, pszValue);
-    }
+    pszValue2 = lr_yum_repo_path(pRepo, "filelists");
+    pszValue3 = lr_yum_repo_path(pRepo, "updateinfo");
+    SolvReadYumRepo(pTdnf->pSack, repo_name, 
+        pRepo->repomd, pszValue, pszValue2, pszValue3);
 
-cleanup:
     return dwError;
-
-error:
-    goto cleanup;
 }
 
 uint32_t

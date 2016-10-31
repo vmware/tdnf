@@ -21,79 +21,6 @@
 #include "includes.h"
 
 
-uint32_t
-TDNFLoadYumRepo(
-    HySack hSack,
-    HyRepo hRepo,
-    int nFlags
-    )
-{
-    uint32_t dwError = 0;
-
-    if(!hSack || !hRepo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = hy_sack_load_yum_repo(hSack, hRepo, nFlags);
-    BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-
-cleanup:
-    return dwError;
-
-error:
-    if(hSack)
-    {
-        hy_sack_free(hSack);
-    }
-    goto cleanup;
-}
-
-uint32_t
-TDNFInitSack(
-    PTDNF pTdnf,
-    HySack* phSack,
-    int nFlags
-    )
-{
-    uint32_t dwError = 0;
-    HySack hSack = NULL;
-    char* pszHawkeyCacheDir = NULL;
-
-    if(!pTdnf || !pTdnf->pConf || !phSack)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pszHawkeyCacheDir = pTdnf->pConf->pszCacheDir;
-
-    hSack = hy_sack_create(pszHawkeyCacheDir, NULL, pTdnf->pArgs->pszInstallRoot, 0);
-    if(!hSack)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = hy_sack_load_system_repo(hSack, NULL, nFlags);
-    BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-
-    *phSack = hSack;
-cleanup:
-    return dwError;
-
-error:
-    if(hSack)
-    {
-        hy_sack_free(hSack);
-    }
-    if(phSack)
-    {
-        *phSack = NULL;
-    }
-    goto cleanup;
-}
 
 uint32_t
 TDNFCloneCmdArgs(
@@ -192,23 +119,12 @@ TDNFRefreshSack(
     )
 {
     uint32_t dwError = 0;
-    HyRepo hRepo = NULL;
-    int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
-
+    PSolvRepo hRepo = NULL;
     if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    if(pTdnf->hSack)
-    {
-        hy_sack_free(pTdnf->hSack);
-        pTdnf->hSack = NULL;
-    }
-
-    dwError = TDNFInitSack(pTdnf, &pTdnf->hSack, HY_LOAD_FILELISTS);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     //If there is an empty repo directory, do nothing
     if(pTdnf->pRepos)
@@ -243,19 +159,6 @@ TDNFRefreshSack(
                     }
                 }
                 BAIL_ON_TDNF_ERROR(dwError);
-
-                if(pTempRepo->nEnabled)
-                {
-                    if(pTempRepo->hRepo)
-                    {
-                        hy_repo_free(pTempRepo->hRepo);
-                        pTempRepo->hRepo = NULL;
-                    }
-                    pTempRepo->hRepo = hRepo;
-
-                    dwError = TDNFLoadYumRepo(pTdnf->hSack, hRepo, nYumFlags);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
             }
             pTempRepo = pTempRepo->pNext;
         }

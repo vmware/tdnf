@@ -150,6 +150,7 @@ typedef struct _TDNF_PKG_INFO
     char* pszDescription;
     char* pszFormattedSize;
     char* pszRelease;
+    char* pszLocation;
     struct _TDNF_PKG_INFO* pNext;
 }TDNF_PKG_INFO, *PTDNF_PKG_INFO;
 

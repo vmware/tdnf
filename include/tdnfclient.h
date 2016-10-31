@@ -145,7 +145,7 @@ TDNFSearchCommand(
     uint32_t* pdwCount
     );
 
-//invoke hawkey goal dependency resolution
+//invoke solv goal dependency resolution
 //return solved pkg info which has descriptive
 //info about steps to reach current goal.
 //usually the SolvedPkgInfo is used to display
@@ -171,7 +171,7 @@ TDNFAlterCommand(
 
 //Show a descriptive error message
 //divided into different areas like 
-//hawkey, repo, rpm and generic tdnf errors.
+//solv, repo, rpm and generic tdnf errors.
 uint32_t
 TDNFGetErrorString(
     uint32_t dwErrorCode,

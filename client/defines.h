@@ -23,8 +23,8 @@
 typedef
 uint32_t
 (*TDNFQueryTermsFunction)(
-    HyPackageList,
-    HyQuery,
+    PSolvPackageList,
+    PSolvQuery,
     const char*);
 
 typedef enum
@@ -53,11 +53,11 @@ typedef enum
         }                                                          \
     } while(0)
 
-#define BAIL_ON_TDNF_HAWKEY_ERROR(dwError) \
+#define BAIL_ON_TDNF_SOLV_ERROR(dwError) \
     do {                                                           \
         if (dwError)                                               \
         {                                                          \
-            dwError = ERROR_TDNF_HAWKEY_BASE + dwError;            \
+            dwError = ERROR_TDNF_SOLV_BASE + dwError;            \
             goto error;                                            \
         }                                                          \
     } while(0)
@@ -162,17 +162,17 @@ typedef enum
     {ERROR_TDNF_GOAL_CREATE,         "ERROR_TDNF_GOAL_CREATE",         "Error creating goal"}, \
     {ERROR_TDNF_INVALID_RESOLVE_ARG, "ERROR_TDNF_INVALID_RESOLVE_ARG", "Invalid argument in resolve"}, \
     {ERROR_TDNF_CLEAN_UNSUPPORTED,   "ERROR_TDNF_CLEAN_UNSUPPORTED",   "Clean type specified is not supported in this release. Please try clean all."}, \
-    {ERROR_TDNF_HAWKEY_BASE,         "ERROR_TDNF_HAWKEY_BASE",         "Hawkey base error"}, \
-    {ERROR_TDNF_HAWKEY_FAILED,       "ERROR_TDNF_HAWKEY_FAILED",       "Hawkey general runtime error"}, \
-    {ERROR_TDNF_HAWKEY_OP,           "ERROR_TDNF_HAWKEY_OP",           "Hawkey client programming error"}, \
-    {ERROR_TDNF_HAWKEY_LIBSOLV,      "ERROR_TDNF_HAWKEY_LIBSOLV",      "Hawkey error propagted from libsolv"}, \
-    {ERROR_TDNF_HAWKEY_IO,           "ERROR_TDNF_HAWKEY_IO",           "Hawkey - I/O error"}, \
-    {ERROR_TDNF_HAWKEY_CACHE_WRITE,  "ERROR_TDNF_HAWKEY_CACHE_WRITE",  "Hawkey - cache write error"}, \
-    {ERROR_TDNF_HAWKEY_QUERY,        "ERROR_TDNF_HAWKEY_QUERY",        "Hawkey - ill formed query"}, \
-    {ERROR_TDNF_HAWKEY_ARCH,         "ERROR_TDNF_HAWKEY_ARCH",         "Hawkey - unknown arch"}, \
-    {ERROR_TDNF_HAWKEY_VALIDATION,   "ERROR_TDNF_HAWKEY_VALIDATION",   "Hawkey - validation check failed"}, \
-    {ERROR_TDNF_HAWKEY_NO_SOLUTION,  "ERROR_TDNF_HAWKEY_NO_SOLUTION",  "Hawkey - goal found no solutions"}, \
-    {ERROR_TDNF_HAWKEY_NO_CAPABILITY,"ERROR_TDNF_HAWKEY_NO_CAPABILITY","Hawkey - the capability was not available"}, \
+    {ERROR_TDNF_SOLV_BASE,           "ERROR_TDNF_SOLV_BASE",           "Solv base error"}, \
+    {ERROR_TDNF_SOLV_FAILED,         "ERROR_TDNF_SOLV_FAILED",         "Solv general runtime error"}, \
+    {ERROR_TDNF_SOLV_OP,             "ERROR_TDNF_SOLV_OP",             "Solv client programming error"}, \
+    {ERROR_TDNF_SOLV_LIBSOLV,        "ERROR_TDNF_SOLV_LIBSOLV",        "Solv error propagted from libsolv"}, \
+    {ERROR_TDNF_SOLV_IO,             "ERROR_TDNF_SOLV_IO",             "Solv - I/O error"}, \
+    {ERROR_TDNF_SOLV_CACHE_WRITE,    "ERROR_TDNF_SOLV_CACHE_WRITE",    "Solv - cache write error"}, \
+    {ERROR_TDNF_SOLV_QUERY,          "ERROR_TDNF_SOLV_QUERY",          "Solv - ill formed query"}, \
+    {ERROR_TDNF_SOLV_ARCH,           "ERROR_TDNF_SOLV_ARCH",           "Solv - unknown arch"}, \
+    {ERROR_TDNF_SOLV_VALIDATION,     "ERROR_TDNF_SOLV_VALIDATION",     "Solv - validation check failed"}, \
+    {ERROR_TDNF_SOLV_NO_SOLUTION,    "ERROR_TDNF_SOLV_NO_SOLUTION",    "Solv - goal found no solutions"}, \
+    {ERROR_TDNF_SOLV_NO_CAPABILITY,  "ERROR_TDNF_SOLV_NO_CAPABILITY",  "Solv - the capability was not available"}, \
     {ERROR_TDNF_REPO_BASE,           "ERROR_TDNF_REPO_BASE",           "Repo error base"}, \
     {ERROR_TDNF_REPO_PERFORM,        "ERROR_TDNF_REPO_PERFORM",        "Error during repo handle execution"}, \
     {ERROR_TDNF_REPO_GETINFO,        "ERROR_TDNF_REPO_GETINFO",        "Repo during repo result getinfo"}, \

@@ -45,7 +45,7 @@ lrProgressCB(
 uint32_t
 TDNFDownloadPackage(
     PTDNF pTdnf,
-    HyPackage hPkg,
+    PTDNF_PKG_INFO pInfo,
     const char* pszRpmCacheDir
     )
 {
@@ -60,7 +60,7 @@ TDNFDownloadPackage(
     char* pszBaseUrl = NULL;
     const char* pszPkgName = NULL;
     
-    if(!pTdnf || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
+    if(!pTdnf || !pInfo || IsNullOrEmptyString(pszRpmCacheDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -76,9 +76,9 @@ TDNFDownloadPackage(
     }
 
     //Get package details
-    pszHyPackage = hy_package_get_location(hPkg);
-    pszPkgName = hy_package_get_name(hPkg);
-    pszRepo = hy_package_get_reponame(hPkg);
+    pszHyPackage = pInfo->pszLocation;
+    pszPkgName = pInfo->pszName;
+    pszRepo = pInfo->pszRepoName;
 
     dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -138,10 +138,6 @@ cleanup:
     if(pRepoHandle)
     {
         lr_handle_free(pRepoHandle);
-    }
-    if(pszHyPackage)
-    {
-        hy_free(pszHyPackage);
     }
     return dwError;
 

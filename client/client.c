@@ -22,13 +22,13 @@
 
 uint32_t
 TDNFApplyScopeFilter(
-    HyQuery hQuery,
+    PSolvQuery pQuery,
     TDNF_SCOPE nScope
     )
 {
     uint32_t dwError = 0;
 
-    if(!hQuery || nScope == SCOPE_NONE)
+    if(!pQuery || nScope == SCOPE_NONE)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -37,32 +37,13 @@ TDNFApplyScopeFilter(
     switch(nScope)
     {
         case SCOPE_INSTALLED:
-            dwError = hy_query_filter(
-                          hQuery,
-                          HY_PKG_REPONAME,
-                          HY_EQ,
-                          HY_SYSTEM_REPO_NAME);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+            dwError = SolvAddSystemRepoFilter(pQuery);
+            BAIL_ON_TDNF_ERROR(dwError);
             break;
 
         case SCOPE_AVAILABLE:
-            dwError = hy_query_filter(
-                          hQuery,
-                          HY_PKG_REPONAME,
-                          HY_NEQ,
-                          HY_SYSTEM_REPO_NAME);
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-            break;
-           
-        case SCOPE_UPGRADES:
-            hy_query_filter_upgrades(hQuery, 1);
-            break;
-
-        case SCOPE_RECENT:
-            hy_query_filter_latest_per_arch(hQuery, 1);
-            break;
-        case SCOPE_DOWNGRADES:
-            hy_query_filter_downgrades(hQuery, 1);
+            dwError = SolvAddAvailableRepoFilter(pQuery);
+            BAIL_ON_TDNF_ERROR(dwError);
             break;
 
         default:
@@ -76,48 +57,3 @@ error:
     goto cleanup;
 }
 
-uint32_t
-TDNFApplyPackageFilter(
-    HyQuery hQuery,
-    char** ppszPackageNameSpecs
-    )
-{
-    uint32_t dwError = 0;
-    int nCmpType = HY_EQ;
-    char** ppszPackagesTemp = NULL;
-
-    if(!hQuery || !ppszPackageNameSpecs)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(!*ppszPackageNameSpecs)
-    {
-        goto cleanup;
-    }
-
-    ppszPackagesTemp = ppszPackageNameSpecs;
-    while(ppszPackagesTemp && *ppszPackagesTemp)
-    {
-        if(TDNFIsGlob(*ppszPackagesTemp))
-        {
-            nCmpType = HY_GLOB;
-            break;
-        }
-        ++ppszPackagesTemp;
-    }
-
-    dwError = hy_query_filter_in(
-                  hQuery,
-                  HY_PKG_NAME,
-                  nCmpType,
-                  (const char**)ppszPackageNameSpecs);
-    BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}

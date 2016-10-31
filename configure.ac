@@ -15,15 +15,17 @@ AC_PROG_LIBTOOL
 AM_CPPFLAGS="$AM_CPPFLAGS -I${top_srcdir}/include"
 AM_CFLAGS="$AM_CFLAGS -Wall -Werror -fno-strict-aliasing"
 
+CPPFLAGS="$CPPFLAGS -D_REENTRANT -D_GNU_SOURCE -fPIC"
 AC_SUBST(AM_CPPFLAGS)
 AC_SUBST(AM_CFLAGS)
 
-#hawkey lib
-echo "Looking for hawkey headers"
-AC_CHECK_HEADERS(hawkey/sack.h)
+#libsolv
+echo "Looking for libsolv headers"
+AC_CHECK_HEADERS(solv/pool.h)
 
-echo "Looking for hawkey libs"
-AC_CHECK_LIB(hawkey, hy_sack_count)
+echo "Looking for libsolv libs"
+AC_CHECK_LIB(solv, pool_create)
+
 
 #glib
 PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_libglib=yes], [have_libglib=no])
@@ -45,6 +47,7 @@ AC_CHECK_LIB(rpm, rpmtsCreate)
 
 #makefiles
 AC_CONFIG_FILES([Makefile
+                 solv/Makefile
                  client/Makefile
                  tests/Makefile
                  tools/Makefile

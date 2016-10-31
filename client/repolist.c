@@ -299,10 +299,6 @@ TDNFFreeRepos(
     TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
     TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
     TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-    if(pRepo->hRepo)
-    {
-        hy_repo_free(pRepo->hRepo);
-    }
 
     pRepos = pRepo->pNext;
     TDNF_SAFE_FREE_MEMORY(pRepo);

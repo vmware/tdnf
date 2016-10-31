@@ -26,6 +26,8 @@ libtdnfclient_la_SOURCES = \
     validate.c
 
 libtdnfclient_la_LIBADD =  \
-    -lhawkey \
+    @top_builddir@/solv/libtdnfsolv.la \
     -lrepo \
-    -lrpm
+    -lrpm  \
+    -lsolv \
+    -lsolvext
