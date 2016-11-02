@@ -63,6 +63,58 @@ error:
     goto cleanup;
 }
 
+static uint32_t
+GetTransResultsWithType(
+    Transaction *trans,
+    Id type,
+    PSolvPackageList pPkgList
+    )
+{
+    uint32_t  dwError = 0;
+    Id pkg = 0;
+    Id pkgType = 0; 
+    Queue solvedPackages;
+    queue_init(&solvedPackages);
+    if(!pPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (!trans)
+    {
+        dwError = ERROR_TDNF_SOLV_NO_SOLUTION;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (int i = 0; i < trans->steps.count; ++i)
+    {
+        pkg = trans->steps.elements[i];
+
+        switch (type)
+        {
+            case SOLVER_TRANSACTION_OBSOLETED:
+                pkgType =  transaction_type(trans, pkg, SOLVER_TRANSACTION_SHOW_OBSOLETES);
+                break;
+            default:
+                pkgType  = transaction_type(trans, pkg, 
+                     SOLVER_TRANSACTION_SHOW_ACTIVE|
+                     SOLVER_TRANSACTION_SHOW_ALL);
+                break;
+        }
+
+        if (type == pkgType)
+            queue_push(&solvedPackages, pkg);
+    }
+    queue_insertn(&pPkgList->packages, pPkgList->packages.count,
+             solvedPackages.count, solvedPackages.elements);
+cleanup:
+    queue_free(&solvedPackages);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 uint32_t
 SolvGetListResult(
     PSolvQuery pQuery,
@@ -130,10 +182,6 @@ SolvGetInstallResult(
     )
 {
     uint32_t dwError = 0;
-    Id pkg = 0;
-    Id type = 0;
-    Queue tmp;
-    queue_init(&tmp);
     if(!pPkgList || !pQuery || !pQuery->pTrans)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -141,23 +189,10 @@ SolvGetInstallResult(
     }
 
     Transaction *pTrans = pQuery->pTrans;
-    for (int i = 0; i < pTrans->steps.count; ++i)
-    {
-        pkg = pTrans->steps.elements[i];
 
-        type  = transaction_type(pTrans, pkg, SOLVER_TRANSACTION_SHOW_ACTIVE|
-                     SOLVER_TRANSACTION_SHOW_ALL);
-
-        if (type == SOLVER_TRANSACTION_INSTALL)
-        {
-            queue_push(&tmp, pkg);
-        }
-    }
-
-    queue_insertn(&pPkgList->packages, pPkgList->packages.count, tmp.count, tmp.elements);
+    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_INSTALL, pPkgList);
 
 cleanup: 
-    queue_free(&tmp);
     return dwError;
 error:
     goto cleanup;
@@ -170,10 +205,6 @@ SolvGetReinstallResult(
     )
 {
     uint32_t dwError = 0;
-    Id pkg = 0;
-    Id type = 0;
-    Queue tmp;
-    queue_init(&tmp);
     if(!pPkgList || !pQuery || !pQuery->pTrans)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -181,23 +212,10 @@ SolvGetReinstallResult(
     }
 
     Transaction *pTrans = pQuery->pTrans;
-    for (int i = 0; i < pTrans->steps.count; ++i)
-    {
-        pkg = pTrans->steps.elements[i];
 
-        type  = transaction_type(pTrans, pkg, SOLVER_TRANSACTION_SHOW_ACTIVE|
-                     SOLVER_TRANSACTION_SHOW_ALL);
-
-        if (type == SOLVER_TRANSACTION_REINSTALL)
-        {
-            queue_push(&tmp, pkg);
-        }
-    }
-
-    queue_insertn(&pPkgList->packages, pPkgList->packages.count, tmp.count, tmp.elements);
+    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_REINSTALL, pPkgList);
 
 cleanup: 
-    queue_free(&tmp);
     return dwError;
 error:
     goto cleanup;
@@ -210,10 +228,6 @@ SolvGetUpgradeResult(
     )
 {
     uint32_t dwError = 0;
-    Id pkg = 0;
-    Id type = 0;
-    Queue tmp;
-    queue_init(&tmp);
     if(!pPkgList || !pQuery || !pQuery->pTrans)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -221,23 +235,10 @@ SolvGetUpgradeResult(
     }
 
     Transaction *pTrans = pQuery->pTrans;
-    for (int i = 0; i < pTrans->steps.count; ++i)
-    {
-        pkg = pTrans->steps.elements[i];
 
-        type  = transaction_type(pTrans, pkg, SOLVER_TRANSACTION_SHOW_ACTIVE|
-                     SOLVER_TRANSACTION_SHOW_ALL);
-
-        if (type == SOLVER_TRANSACTION_UPGRADE)
-        {
-            queue_push(&tmp, pkg);
-        }
-    }
-
-    queue_insertn(&pPkgList->packages, pPkgList->packages.count, tmp.count, tmp.elements);
+    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_UPGRADE, pPkgList);
 
 cleanup: 
-    queue_free(&tmp);
     return dwError;
 error:
     goto cleanup;
@@ -250,10 +251,6 @@ SolvGetDowngradeResult(
     )
 {
     uint32_t dwError = 0;
-    Id pkg = 0;
-    Id type = 0;
-    Queue tmp;
-    queue_init(&tmp);
     if(!pPkgList || !pQuery || !pQuery->pTrans)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -261,23 +258,10 @@ SolvGetDowngradeResult(
     }
 
     Transaction *pTrans = pQuery->pTrans;
-    for (int i = 0; i < pTrans->steps.count; ++i)
-    {
-        pkg = pTrans->steps.elements[i];
 
-        type  = transaction_type(pTrans, pkg, SOLVER_TRANSACTION_SHOW_ACTIVE|
-                     SOLVER_TRANSACTION_SHOW_ALL);
-
-        if (type == SOLVER_TRANSACTION_DOWNGRADE)
-        {
-            queue_push(&tmp, pkg);
-        }
-    }
-
-    queue_insertn(&pPkgList->packages, pPkgList->packages.count, tmp.count, tmp.elements);
+    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_DOWNGRADE, pPkgList);
 
 cleanup: 
-    queue_free(&tmp);
     return dwError;
 error:
     goto cleanup;

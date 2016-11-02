@@ -153,8 +153,10 @@ TDNFRepoApplyProxySettings(
 uint32_t
 TDNFDownloadPackage(
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo,
-    const char* pszCacheDir
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepo,
+    const char* pszRpmCacheDir
     );
 
 //packageutils.c
@@ -500,13 +502,14 @@ TDNFTransAddErasePkgs(
 uint32_t
 TDNFTransAddObsoletedPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo
     );
 
 uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
-    char* pkgName
+    const char* pkgName
     );
 
 uint32_t
@@ -520,7 +523,9 @@ uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
     int nUpgrade
     );
 
