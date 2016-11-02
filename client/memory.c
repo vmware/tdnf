@@ -144,7 +144,8 @@ TDNFFreeSolvedPackageInfo(
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
-
+       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
+       
        if(pSolvedPkgInfo->ppszPkgsNotResolved)
        {
            while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
