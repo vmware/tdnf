@@ -45,7 +45,9 @@ lrProgressCB(
 uint32_t
 TDNFDownloadPackage(
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
     const char* pszRpmCacheDir
     )
 {
@@ -54,13 +56,13 @@ TDNFDownloadPackage(
     GError* pError = NULL;
     gboolean bRet = FALSE;
     char* ppszUrls[] = {NULL, NULL};
-    char* pszHyPackage = NULL;
-    const char* pszRepo = NULL;
     char* pszUserPass = NULL;
     char* pszBaseUrl = NULL;
-    const char* pszPkgName = NULL;
-    
-    if(!pTdnf || !pInfo || IsNullOrEmptyString(pszRpmCacheDir))
+
+    if(!pTdnf || IsNullOrEmptyString(pszRpmCacheDir) ||
+        IsNullOrEmptyString(pszPackageLocation) ||
+        IsNullOrEmptyString(pszPkgName) ||
+        IsNullOrEmptyString(pszRepoName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -75,12 +77,7 @@ TDNFDownloadPackage(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Get package details
-    pszHyPackage = pInfo->pszLocation;
-    pszPkgName = pInfo->pszName;
-    pszRepo = pInfo->pszRepoName;
-
-    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &pszBaseUrl);
+    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepoName, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
     ppszUrls[0] = pszBaseUrl;
@@ -90,7 +87,7 @@ TDNFDownloadPackage(
     lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYPEER, 1);
     lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYHOST, 2);
 
-    dwError = TDNFRepoGetUserPass(pTdnf, pszRepo, &pszUserPass);
+    dwError = TDNFRepoGetUserPass(pTdnf, pszRepoName, &pszUserPass);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(!IsNullOrEmptyString(pszUserPass))
@@ -117,7 +114,7 @@ TDNFDownloadPackage(
 
     bRet = lr_download_package (
                          pRepoHandle,
-                         pszHyPackage,
+                         pszPackageLocation,
                          pszRpmCacheDir,
                          LR_CHECKSUM_UNKNOWN,
                          NULL,
