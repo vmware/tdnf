@@ -161,6 +161,10 @@ SolvGetPkgLocationFromId(
     PSolvSack pSack,
     int pkgId);
 
+const char*
+SolvGetPkgNevrFromId(
+    PSolvSack pSack,
+    int pkgId);
 
 uint32_t
 SolvSplitEvr(
