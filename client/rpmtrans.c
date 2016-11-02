@@ -20,7 +20,6 @@
 
 #include "includes.h"
 
-
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
@@ -116,6 +115,36 @@ error:
 }
 
 uint32_t
+TDNFTransAddErasePkgs(
+    PTDNFRPMTS pTS,
+    PTDNF_PKG_INFO pInfo)
+{
+    uint32_t dwError = 0;
+    if(!pInfo)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
+        pInfo = pInfo->pNext;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    goto cleanup;
+}
+
+
+uint32_t
 TDNFPopulateTransaction(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
@@ -123,7 +152,6 @@ TDNFPopulateTransaction(
     )
 {
     uint32_t dwError = 0;
-
     if(pSolvedInfo->pPkgsToInstall)
     {
         dwError = TDNFTransAddInstallPkgs(
@@ -131,6 +159,14 @@ TDNFPopulateTransaction(
                       pTdnf,
                       pSolvedInfo->pPkgsToInstall);
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(pSolvedInfo->pPkgsToReinstall)
+    {
+        dwError = TDNFTransAddInstallPkgs(
+                      pTS,
+                      pTdnf,
+                      pSolvedInfo->pPkgsToReinstall);
+        BAIL_ON_TDNF_ERROR(dwError);    
     }
     if(pSolvedInfo->pPkgsToUpgrade)
     {
@@ -151,16 +187,24 @@ TDNFPopulateTransaction(
     {
         dwError = TDNFTransAddObsoletedPkgs(
                       pTS,
-                      pTdnf);
+                      pTdnf,
+                      pSolvedInfo->pPkgsObsoleted);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToDowngrade)
     {
-        dwError = TDNFTransAddDowngradePkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
                       pSolvedInfo->pPkgsToDowngrade);
         BAIL_ON_TDNF_ERROR(dwError);
+        if(pSolvedInfo->pPkgsRemovedByDowngrade)
+        {
+            dwError = TDNFTransAddErasePkgs(
+                      pTS,
+                      pSolvedInfo->pPkgsRemovedByDowngrade);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
 cleanup:
@@ -243,7 +287,6 @@ TDNFTransAddInstallPkgs(
     )
 {
     uint32_t dwError = 0;
-
     if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
@@ -251,8 +294,10 @@ TDNFTransAddInstallPkgs(
     }
     while(pInfo)
     {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo, 0);
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo->pszLocation, pInfo->pszName,
+                    pInfo->pszRepoName, 0);
         pInfo = pInfo->pNext;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
@@ -264,14 +309,25 @@ error:
         dwError = 0;
     }
     goto cleanup;
+}
 
+uint32_t
+TDNFTransAddReInstallPkgs(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo
+    )
+{
+    return TDNFTransAddInstallPkgs(pTS, pTdnf, pInfo);
 }
 
 uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
     int nUpgrade
     )
 {
@@ -287,11 +343,11 @@ TDNFTransAddInstallPkg(
     pszRpmCacheDir = g_build_filename(
                            G_DIR_SEPARATOR_S,
                            pTdnf->pConf->pszCacheDir,
-                           pInfo->pszRepoName,
+                           pszRepoName,
                            "rpms",
                            G_DIR_SEPARATOR_S,
                            NULL);
-    pszFilePath = g_build_filename(pszRpmCacheDir, pInfo->pszLocation, NULL);
+    pszFilePath = g_build_filename(pszRpmCacheDir, pszPackageLocation, NULL);
     if(pTS->pCachedRpmsArray)
     {
         if(!g_array_append_val(pTS->pCachedRpmsArray, pszFilePath))
@@ -327,7 +383,8 @@ TDNFTransAddInstallPkg(
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
-        dwError = TDNFDownloadPackage(pTdnf, pInfo, pszDownloadCacheDir);
+        dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
+            pszRepoName, pszDownloadCacheDir);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     //A download could have been triggered.
@@ -340,7 +397,7 @@ TDNFTransAddInstallPkg(
 
     //Check override, then repo config and launch
     //gpg check if needed
-    dwError = TDNFGetGPGCheck(pTdnf, pInfo->pszRepoName, &nGPGCheck, &pszUrlGPGKey);
+    dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);
     if(nGPGCheck)
     {
@@ -402,11 +459,9 @@ uint32_t
 TDNFTransAddUpgradePkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
-    )
+    PTDNF_PKG_INFO pInfo)
 {
     uint32_t dwError = 0;
-
     if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
@@ -414,40 +469,10 @@ TDNFTransAddUpgradePkgs(
     }
     while(pInfo)
     {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo, 1);
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo->pszLocation, pInfo->pszName,
+                    pInfo->pszRepoName, 1);
         pInfo = pInfo->pNext;
-    }
-
-cleanup:
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-
-
-}
-
-uint32_t
-TDNFTransAddErasePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo
-    )
-{
-    uint32_t dwError = 0;
-
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
-    }
-    while(pInfo)
-    {
-        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
-        pInfo = pInfo->pNext;
     }
 
 cleanup:
@@ -464,10 +489,32 @@ error:
 uint32_t
 TDNFTransAddObsoletedPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo
     )
 {
-    return 1;
+    uint32_t dwError = 0;
+    if(!pInfo)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
+        pInfo = pInfo->pNext;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    goto cleanup;
 }
 
 uint32_t
@@ -495,7 +542,8 @@ TDNFTransAddDowngradePkgs(
     while(pInfo)
     {
         SolvEmptyPackageList(pInstalledPkgList);
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo, 0);
+        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo->pszLocation, pInfo->pszName,
+                    pInfo->pszRepoName, 0);
         BAIL_ON_TDNF_ERROR(dwError);
 
         //Downgrade is a removal of existing and installing old.
@@ -528,11 +576,10 @@ error:
     goto cleanup;
 }
 
-
 uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
-    char* pkgName
+    const char* pkgName
     )
 {
     uint32_t dwError = 0;
@@ -567,8 +614,6 @@ cleanup:
 error:
     goto cleanup;
 }
-
-
 
 void*
 TDNFRpmCB(
