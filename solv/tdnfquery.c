@@ -7,9 +7,76 @@
 #define MODE_VERIFY      5
 #define MODE_PATCH       6
 
-PSolvQuery
+uint32_t
+SolvAddUpgradeAllJob(
+    Queue* jobs
+    )
+{
+    queue_push2(jobs, SOLVER_UPDATE|SOLVER_SOLVABLE_ALL, 0);
+    return 0;
+}
+
+uint32_t
+SolvAddDistUpgradeJob(
+    Queue* jobs
+    )
+{
+    queue_push2(jobs, SOLVER_DISTUPGRADE|SOLVER_SOLVABLE_ALL, 0);
+    return 0;
+}
+
+uint32_t
+SolvAddFlagsToJobs(
+    Queue* jobs,
+    int flags)
+{
+    for (int i = 0; i < jobs->count; i += 2)
+    {
+        jobs->elements[i] |= flags;//SOLVER_FORCEBEST;
+    }
+    return 0;
+}
+
+uint32_t
+SolvAddPkgInstallJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, id);
+    return 0;
+}
+
+uint32_t
+SolvAddPkgDowngradeJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, id);
+    return 0;
+}
+
+uint32_t
+SolvAddPkgEraseJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_ERASE, id);
+    return 0;
+}
+
+uint32_t
+SolvAddPkgUserInstalledJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, id);
+    return 0;
+}
+
+uint32_t
 SolvCreateQuery(
-    PSolvSack pSack)
+    PSolvSack pSack,
+    PSolvQuery* ppQuery)
 {
     uint32_t dwError = 0;
     PSolvQuery pQuery = NULL;
@@ -25,17 +92,19 @@ SolvCreateQuery(
         dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    pQuery->pSack = pSack;
-    queue_init(&pQuery->job);
     pQuery->pSolv = NULL;
     pQuery->pTrans = NULL;
-    pQuery->packageNames = NULL;
-    queue_init(&pQuery->repoFilter);
-    queue_init(&pQuery->kindFilter);
-    queue_init(&pQuery->archFilter);
-    queue_init(&pQuery->result);
+    pQuery->ppszPackageNames = NULL;
+
+    pQuery->pSack = pSack;
+    queue_init(&pQuery->queueJob);
+    queue_init(&pQuery->queueRepoFilter);
+    queue_init(&pQuery->queueKindFilter);
+    queue_init(&pQuery->queueArchFilter);
+    queue_init(&pQuery->queueResult);
+    *ppQuery = pQuery;
 cleanup: 
-    return pQuery;
+    return dwError;
 
 error:
     goto cleanup;
@@ -45,7 +114,7 @@ void
 SolvFreeQuery(
     PSolvQuery pQuery)
 {
-    char** tmpNames = NULL;
+    char** ppszTmpNames = NULL;
     if(pQuery)
     {
         if(pQuery->pTrans)
@@ -58,20 +127,20 @@ SolvFreeQuery(
             solver_free(pQuery->pSolv);
         }
 
-        queue_free(&pQuery->job);
-        queue_free(&pQuery->repoFilter);
-        queue_free(&pQuery->kindFilter);
-        queue_free(&pQuery->archFilter);
-        queue_free(&pQuery->result);
-        if(pQuery->packageNames)
+        queue_free(&pQuery->queueJob);
+        queue_free(&pQuery->queueRepoFilter);
+        queue_free(&pQuery->queueKindFilter);
+        queue_free(&pQuery->queueArchFilter);
+        queue_free(&pQuery->queueResult);
+        if(pQuery->ppszPackageNames)
         {
-            tmpNames = pQuery->packageNames;
-            while(*tmpNames)
+            ppszTmpNames = pQuery->ppszPackageNames;
+            while(*ppszTmpNames)
             {
-                solv_free(*tmpNames);
-                tmpNames++;
+                solv_free(*ppszTmpNames);
+                ppszTmpNames++;
             }
-            solv_free(pQuery->packageNames);
+            solv_free(pQuery->ppszPackageNames);
         }
         solv_free(pQuery);
     }
@@ -101,7 +170,7 @@ SolvApplySinglePackageFilter(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppCopyOfpkgNames = pkgName;
-    pQuery->packageNames = ppCopyOfpkgNames;
+    pQuery->ppszPackageNames = ppCopyOfpkgNames;
 
 cleanup:
   
@@ -159,7 +228,7 @@ SolvApplyPackageFilter(
             tmpNames++;
             ppszPackageNames++;
         }
-        pQuery->packageNames = ppCopyOfpkgNames;
+        pQuery->ppszPackageNames = ppCopyOfpkgNames;
     }
 cleanup:
   
@@ -192,7 +261,8 @@ SolvAddSystemRepoFilter(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
     pool = pQuery->pSack->pPool;
-    queue_push2(&pQuery->repoFilter, SOLVER_SOLVABLE_REPO | SOLVER_SETREPO, pool->installed->repoid);
+    queue_push2(&pQuery->queueRepoFilter, SOLVER_SOLVABLE_REPO | SOLVER_SETREPO,
+            pool->installed->repoid);
 
 cleanup: 
     return dwError;
@@ -220,7 +290,9 @@ SolvAddAvailableRepoFilter(
     {
         if (strcasecmp(SYSTEM_REPO_NAME, pRepo->name))
         {
-            queue_push2(&pQuery->repoFilter, SOLVER_SOLVABLE_REPO | SOLVER_SETREPO | SOLVER_SETVENDOR, pRepo->repoid);
+            queue_push2(&pQuery->queueRepoFilter,
+                        SOLVER_SOLVABLE_REPO | SOLVER_SETREPO | SOLVER_SETVENDOR,
+                        pRepo->repoid);
         }
     }
 
@@ -236,7 +308,7 @@ SolvGenerateCommonJob(
     PSolvQuery pQuery)
 {
     uint32_t dwError = 0;
-    char** pkgNames = pQuery->packageNames;
+    char** pkgNames = pQuery->ppszPackageNames;
     Pool *pPool = NULL;
     Queue job2;
     queue_init(&job2);
@@ -258,23 +330,23 @@ SolvGenerateCommonJob(
             flags = SELECTION_NAME|SELECTION_PROVIDES|SELECTION_GLOB;
             flags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
                 rflags = selection_make(pPool, &job2, *pkgNames, flags);
-            if (pQuery->repoFilter.count)
-                selection_filter(pPool, &job2, &pQuery->repoFilter);
-            if (pQuery->archFilter.count)
-                selection_filter(pPool, &job2, &pQuery->archFilter);
-            if (pQuery->kindFilter.count)
-                selection_filter(pPool, &job2, &pQuery->kindFilter);
+            if (pQuery->queueRepoFilter.count)
+                selection_filter(pPool, &job2, &pQuery->queueRepoFilter);
+            if (pQuery->queueArchFilter.count)
+                selection_filter(pPool, &job2, &pQuery->queueArchFilter);
+            if (pQuery->queueKindFilter.count)
+                selection_filter(pPool, &job2, &pQuery->queueKindFilter);
             if (!job2.count)
             {
                 flags |= SELECTION_NOCASE;
 
                 rflags = selection_make(pPool, &job2, *pkgNames, flags);
-                if (pQuery->repoFilter.count)
-                    selection_filter(pPool, &job2, &pQuery->repoFilter);
-                if (pQuery->archFilter.count)
-                    selection_filter(pPool, &job2, &pQuery->archFilter);
-                if (pQuery->kindFilter.count)
-                    selection_filter(pPool, &job2, &pQuery->kindFilter);
+                if (pQuery->queueRepoFilter.count)
+                    selection_filter(pPool, &job2, &pQuery->queueRepoFilter);
+                if (pQuery->queueArchFilter.count)
+                    selection_filter(pPool, &job2, &pQuery->queueArchFilter);
+                if (pQuery->queueKindFilter.count)
+                    selection_filter(pPool, &job2, &pQuery->queueKindFilter);
                 if (job2.count)
                     printf("[ignoring case for '%s']\n", *pkgNames);
             }
@@ -284,24 +356,24 @@ SolvGenerateCommonJob(
                     printf("[using file list match for '%s']\n", *pkgNames);
                 if (rflags & SELECTION_PROVIDES)
                     printf("[using capability match for '%s']\n", *pkgNames);
-                queue_insertn(&pQuery->job, pQuery->job.count, job2.count, job2.elements);
+                queue_insertn(&pQuery->queueJob, pQuery->queueJob.count, job2.count, job2.elements);
             }
             pkgNames++;
         }
     }
-    else if(pQuery->repoFilter.count || 
-            pQuery->archFilter.count || 
-            pQuery->kindFilter.count)
+    else if(pQuery->queueRepoFilter.count || 
+            pQuery->queueArchFilter.count || 
+            pQuery->queueKindFilter.count)
     {
         queue_empty(&job2);
         queue_push2(&job2, SOLVER_SOLVABLE_ALL, 0);
-        if (pQuery->repoFilter.count)
-            selection_filter(pPool, &job2, &pQuery->repoFilter);
-        if (pQuery->archFilter.count)
-            selection_filter(pPool, &job2, &pQuery->archFilter);
-        if (pQuery->kindFilter.count)
-            selection_filter(pPool, &job2, &pQuery->kindFilter);
-        queue_insertn(&pQuery->job, pQuery->job.count, job2.count, job2.elements);
+        if (pQuery->queueRepoFilter.count)
+            selection_filter(pPool, &job2, &pQuery->queueRepoFilter);
+        if (pQuery->queueArchFilter.count)
+            selection_filter(pPool, &job2, &pQuery->queueArchFilter);
+        if (pQuery->queueKindFilter.count)
+            selection_filter(pPool, &job2, &pQuery->queueKindFilter);
+        queue_insertn(&pQuery->queueJob, pQuery->queueJob.count, job2.count, job2.elements);
     }
 
 
@@ -416,20 +488,20 @@ SolvApplyListQuery(
     queue_init(&tmp);
     dwError = SolvGenerateCommonJob(pQuery);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    if(pQuery->job.count > 0)
+    if(pQuery->queueJob.count > 0)
     {
-        for (i = 0; i < pQuery->job.count ; i += 2)
+        for (i = 0; i < pQuery->queueJob.count ; i += 2)
         {
             queue_empty(&tmp);
             pool_job2solvables(pQuery->pSack->pPool, &tmp,
-                             pQuery->job.elements[i],
-                             pQuery->job.elements[i + 1]);
-            queue_insertn(&pQuery->result, pQuery->result.count, tmp.count, tmp.elements);
+                             pQuery->queueJob.elements[i],
+                             pQuery->queueJob.elements[i + 1]);
+            queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, tmp.count, tmp.elements);
         }
     }
-    else if(pQuery->packageNames == NULL)
+    else if(pQuery->ppszPackageNames == NULL)
     {
-        pool_job2solvables(pQuery->pSack->pPool, &pQuery->result, SOLVER_SOLVABLE_ALL, 0);
+        pool_job2solvables(pQuery->pSack->pPool, &pQuery->queueResult, SOLVER_SOLVABLE_ALL, 0);
     }
 
 cleanup: 
@@ -454,7 +526,7 @@ SolvApplyAlterQuery(
     dwError = SolvGenerateCommonJob(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvRunSolv(pQuery, mainMode, mode, &pQuery->job, &pSolv);
+    dwError = SolvRunSolv(pQuery, mainMode, mode, &pQuery->queueJob, &pSolv);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTrans = solver_create_transaction(pSolv);
@@ -464,174 +536,10 @@ SolvApplyAlterQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
+    queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, pTrans->steps.count, pTrans->steps.elements);
     //transaction_print(pTrans);
     //pQuery->nNewPackages = transaction_installedresult(pTrans, &pQuery->result);
 cleanup:
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-uint32_t
-SolvApplyEraseQuery(
-    PSolvQuery pQuery
-    )
-{
-    return SolvApplyAlterQuery(pQuery, MODE_ERASE, SOLVER_ERASE);
-}
-
-uint32_t
-SolvApplyInstallQuery(
-    PSolvQuery pQuery
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    Id recent = 0;
-    Queue tmp;
-    Queue tmp2;
-    Queue jobs;
-    queue_init(&tmp);
-    queue_init(&tmp2);
-    queue_init(&jobs);
-    dwError = SolvApplyListQuery(pQuery);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    queue_insertn(&tmp, tmp.count, pQuery->result.count, pQuery->result.elements);
-    while(tmp.count > 0 )
-    {
-        dwError = SolvGetLatest(pQuery->pSack, &tmp, tmp.elements[0], &recent);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_push2(&jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, recent);
-        dwError = SolvRemovePkgWithSameName(pQuery->pSack, &tmp,
-                 tmp.elements[0], &tmp2);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_empty(&tmp);
-        queue_insertn(&tmp, tmp.count, tmp2.count, tmp2.elements);
-        queue_empty(&tmp2);
-    }
-
-    dwError = SolvRunSolv(pQuery, MODE_INSTALL, SOLVER_INSTALL, &jobs, &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
-    transaction_print(pTrans);
-cleanup:
-    queue_free(&jobs);
-    queue_free(&tmp);
-    queue_free(&tmp2);
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-
-uint32_t
-SolvApplyReinstallQuery(
-    PSolvQuery pQuery
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    int pkgIndex = 0;
-    Queue jobs;
-    queue_init(&jobs);
-    for(pkgIndex = 0 ; pkgIndex < pQuery->result.count; pkgIndex++)
-    {
-        queue_push2(&jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, pQuery->result.elements[pkgIndex]);
-    }
-    dwError = SolvRunSolv(pQuery, MODE_INSTALL, SOLVER_INSTALL, &jobs, &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
-    transaction_print(pTrans);
-cleanup:
-    queue_free(&jobs);
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-uint32_t
-SolvApplyUpdateQuery(
-    PSolvQuery pQuery
-    )
-{
-    return SolvApplyAlterQuery(pQuery, MODE_UPDATE, SOLVER_UPDATE);
-}
-
-uint32_t
-SolvApplyDowngradeQuery(
-    PSolvQuery pQuery
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    Id recent = 0;
-    Queue tmp;
-    Queue tmp2;
-    Queue jobs;
-    queue_init(&tmp);
-    queue_init(&tmp2);
-    queue_init(&jobs);
-
-    queue_insertn(&tmp, tmp.count, pQuery->result.count, pQuery->result.elements);
-    while(tmp.count > 0 )
-    {
-        dwError = SolvGetLatest(pQuery->pSack, &tmp, tmp.elements[0], &recent);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_push2(&jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, recent);
-        dwError = SolvRemovePkgWithSameName(pQuery->pSack, &tmp,
-                 tmp.elements[0], &tmp2);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_empty(&tmp);
-        queue_insertn(&tmp, tmp.count, tmp2.count, tmp2.elements);
-        queue_empty(&tmp2);
-    }
-
-    dwError = SolvRunSolv(pQuery, MODE_INSTALL, SOLVER_INSTALL, &jobs, &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
-    transaction_print(pTrans);
-cleanup:
-    queue_free(&jobs);
-    queue_free(&tmp);
-    queue_free(&tmp2);
     if(pSolv)
         solver_free(pSolv);
     return dwError;
@@ -693,7 +601,7 @@ SolvApplySearch(
         //if (repofilter.count)
         //    selection_filter(pool, &sel, &repofilter);
         selection_solvables(pool, &sel, &q);
-        queue_insertn(&pQuery->result, pQuery->result.count, q.count, q.elements);
+        queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, q.count, q.elements);
     }
 cleanup:
     queue_free(&sel); 

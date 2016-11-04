@@ -167,12 +167,12 @@ SolvReadYumRepo(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    if( SolvLoadRepomd(pRepo, pszRepomd) || 
-        SolvLoadRepomdPrimary(pRepo, pszPrimary))
-    {
-        dwError = ERROR_TDNF_SOLV_IO;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
+    dwError = SolvLoadRepomd(pRepo, pszRepomd);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+
+    dwError = SolvLoadRepomdPrimary(pRepo, pszPrimary);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if(pszFilelists)
     {
@@ -185,6 +185,7 @@ SolvReadYumRepo(
         dwError = SolvLoadRepomdUpdateinfo(pRepo, pszUpdateinfo);
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
+
     pool_createwhatprovides(pPool);
 
 cleanup: 
@@ -201,16 +202,28 @@ error:
 
 uint32_t
 SolvCountPackages(
-    PSolvSack pSack
+    PSolvSack pSack,
+    uint32_t* pdwCount
     )
 {
+    uint32_t dwError = 0;
     uint32_t cnt = 0;
     Id p = 0;
+    if(!pSack || !pSack->pPool || !pdwCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
     Pool* pool = pSack->pPool;
     FOR_POOL_SOLVABLES(p)
     {
         cnt++;
     }
-    return cnt;
+    *pdwCount = cnt;
+cleanup: 
+    return dwError;
+error:
+    goto cleanup;
+
 }
 

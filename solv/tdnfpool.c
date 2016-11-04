@@ -1,9 +1,15 @@
 #include "includes.h"
 
-PSolvSack
-SolvCreateSack()
+uint32_t 
+SolvCreateSack(PSolvSack* ppSack)
 {
     uint32_t dwError = 0;
+    if(!ppSack)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
     PSolvSack pSack = solv_calloc(1, sizeof(SolvSack));
     if(!pSack)
     {
@@ -12,12 +18,14 @@ SolvCreateSack()
     }
 
     pSack->pPool = NULL;;
-    pSack->pCommandLinePkgs = NULL;
-    pSack->numOfCommandPkgs = 0;
+    pSack->pdwCommandLinePkgs = NULL;
+    pSack->dwNumOfCommandPkgs = 0;
     pSack->pszCacheDir = NULL;
     pSack->pszRootDir = NULL;
+
+    *ppSack = pSack;
 cleanup: 
-    return pSack;
+    return dwError;
 
 error:
     goto cleanup;
@@ -34,9 +42,9 @@ SolvFreeSack(
         {
             pool_free(pPool);
         }
-            if(pSack->pCommandLinePkgs)
+        if(pSack->pdwCommandLinePkgs)
         {
-            solv_free(pSack->pCommandLinePkgs);
+            solv_free(pSack->pdwCommandLinePkgs);
         }
         if(pSack->pszCacheDir)
         {
@@ -61,7 +69,7 @@ SolvReadInstalledRpms(
     uint32_t dwError = 0;
     Repo *pRepo = NULL;
     FILE *pCacheFile = NULL;
-    int flags = 0;
+    int  dwFlags = 0;
     if(!pPool || !ppRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -80,8 +88,8 @@ SolvReadInstalledRpms(
         pCacheFile = fopen(pszCacheFileName, "r");
     }
 
-    flags = REPO_REUSE_REPODATA | RPM_ADD_WITH_HDRID | REPO_USE_ROOTDIR;
-    dwError = repo_add_rpmdb_reffp(pRepo, pCacheFile, flags);
+    dwFlags = REPO_REUSE_REPODATA | RPM_ADD_WITH_HDRID | REPO_USE_ROOTDIR;
+    dwError = repo_add_rpmdb_reffp(pRepo, pCacheFile, dwFlags);
 
     if (dwError)
     {
@@ -97,7 +105,9 @@ cleanup:
 
 error:
     if(pRepo)
+    {
         repo_free(pRepo, 1);
+    }
     goto cleanup;
 }
 
@@ -120,12 +130,7 @@ SolvInitSack(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pSack = SolvCreateSack();
-    if(!pSack)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
+    dwError = SolvCreateSack(&pSack);
 
     if (pszCacheDir != NULL)
     {
@@ -143,6 +148,7 @@ SolvInitSack(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
+
     if(pszRootDir != NULL)
     {
         pool_set_rootdir(pPool, pszRootDir);
@@ -158,11 +164,8 @@ SolvInitSack(
     pool_set_flag(pPool, POOL_FLAG_ADDFILEPROVIDESFILTERED, 1);
 
     dwError = SolvReadInstalledRpms(pPool, &pRepo, pszCacheDir);
-    if (dwError) 
-    {
-        dwError = ERROR_TDNF_SOLV_IO;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
     pool_set_installed(pPool, pRepo);
 
     pSack->pPool = pPool;

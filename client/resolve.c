@@ -51,3 +51,297 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFPrepareAllPackages(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    Queue* qGoal
+    )
+{
+    uint32_t dwError = 0;
+    Queue qGlob;
+    queue_init(&qGlob);
+
+    PTDNF_CMD_ARGS pCmdArgs = NULL;
+    int nCmdIndex = 0;
+    int nPkgIndex = 0;
+    char* pszPkgName = NULL;
+    const char* pszName = NULL;
+
+
+    if(!pTdnf || !pTdnf->pArgs || !pSolvedPkgInfo || !qGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pCmdArgs = pTdnf->pArgs;
+
+    if(pSolvedPkgInfo->nAlterType == ALTER_DOWNGRADEALL || 
+        pSolvedPkgInfo->nAlterType == ALTER_AUTOERASE)
+    {
+        dwError =  TDNFFilterPackages(
+                        pTdnf, 
+                        pSolvedPkgInfo,
+                        qGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+    {
+        pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+        if(TDNFIsGlob(pszPkgName))
+        {
+            queue_empty(&qGlob);
+            dwError = TDNFGetGlobPackages(pTdnf, pszPkgName, &qGlob);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            nPkgIndex = 0;
+            for(nPkgIndex = 0; nPkgIndex < qGlob.count; nPkgIndex++)
+            {
+                dwError = SolvGetPkgNameFromId(pTdnf->pSack,
+                                qGlob.elements[nPkgIndex],
+                                &pszName);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                dwError = TDNFPrepareAndAddPkg(
+                                pTdnf,
+                                pszName,
+                                pSolvedPkgInfo,
+                                qGoal);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            if(qGlob.count == 0)
+            {
+                dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        else
+        {
+            dwError = TDNFPrepareAndAddPkg(
+                          pTdnf,
+                          pszPkgName,
+                          pSolvedPkgInfo,
+                          qGoal);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+cleanup:
+    queue_free(&qGlob);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t TDNFFilterPackages(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    Queue* qGoal)
+{
+    uint32_t dwError = 0;
+    Id installedId = 0;
+    uint32_t pkgIndex = 0;
+    uint32_t dwSize = 0;
+    PSolvPackageList pInstalledPkgList = NULL;
+    const char* pszName = NULL;
+
+    if(!pTdnf || !qGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvCreatePackageList(&pInstalledPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvFindAllInstalled(pTdnf->pSack, pInstalledPkgList);
+    if(dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = 0;
+    }
+
+    dwError = SolvGetPackageListSize(pInstalledPkgList, &dwSize);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(pkgIndex = 0; pkgIndex < dwSize; pkgIndex++)
+    {
+        SolvGetPackageId(pInstalledPkgList, pkgIndex, &installedId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgNameFromId(pTdnf->pSack,
+                        installedId,
+                        &pszName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFPrepareAndAddPkg(
+                      pTdnf,
+                      pszName,
+                      pSolvedPkgInfo,
+                      qGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if(pInstalledPkgList)
+    {
+        SolvFreePackageList(pInstalledPkgList);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFPrepareAndAddPkg(
+    PTDNF pTdnf,
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    Queue* qGoal
+    )
+{
+    uint32_t dwError = 0;
+    if( !pTdnf ||
+        IsNullOrEmptyString(pszPkgName) ||
+        !pSolvedPkgInfo ||
+        !qGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFPrepareSinglePkg(
+                  pTdnf,
+                  pszPkgName,
+                  pSolvedPkgInfo,
+                  qGoal);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFPrepareSinglePkg(
+    PTDNF pTdnf,
+    const char* pszPkgName,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    Queue* qGoal
+    )
+{
+    uint32_t dwError = 0;
+    PSolvPackageList pInstalledPkgList = NULL;
+    uint32_t dwCount = 0;
+    int nAlterType = 0;
+
+    if(!pTdnf
+       || IsNullOrEmptyString(pszPkgName)
+       || !pSolvedPkgInfo
+       || !qGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nAlterType = pSolvedPkgInfo->nAlterType;
+
+    //Check if this is a known package. If not add to unresolved
+    dwError = SolvCountPkgByName(pTdnf->pSack, pszPkgName, &dwCount);
+    if(dwError || dwCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(nAlterType == ALTER_REINSTALL)
+    {
+        dwError = TDNFMatchForReinstall(
+                      pTdnf->pSack,
+                      pszPkgName,
+                      qGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(nAlterType == ALTER_ERASE ||
+        nAlterType == ALTER_AUTOERASE)
+    {
+        dwError = SolvCreatePackageList(&pInstalledPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvFindInstalledPkgByName(
+                      pTdnf->pSack,
+                      pszPkgName,
+                      pInstalledPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAddPackagesForErase(
+                      pTdnf,
+                      qGoal,
+                      pszPkgName);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else if (nAlterType == ALTER_INSTALL)
+    {
+        dwError = TDNFAddPackagesForInstall(
+                      pTdnf,
+                      qGoal,
+                      pszPkgName);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else if (nAlterType == ALTER_UPGRADE)
+    {
+        dwError = TDNFAddPackagesForUpgrade(
+                      pTdnf,
+                      qGoal,
+                      pszPkgName);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else if (nAlterType == ALTER_DOWNGRADE ||
+             nAlterType == ALTER_DOWNGRADEALL)
+    {
+        dwError = TDNFAddPackagesForDowngrade(
+                      pTdnf,
+                      qGoal,
+                      pszPkgName);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if(pInstalledPkgList)
+    {
+        SolvFreePackageList(pInstalledPkgList);
+    }
+    return dwError;
+
+error:
+    if(dwError == ERROR_TDNF_ALREADY_INSTALLED)
+    {
+        dwError = 0;
+        fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+    }
+    if(dwError == ERROR_TDNF_NO_UPGRADE_PATH)
+    {
+        dwError = 0;
+        fprintf(stderr, "There is no upgrade path for %s.\n", pszPkgName);
+    }
+    if(dwError == ERROR_TDNF_NO_DOWNGRADE_PATH)
+    {
+        dwError = 0;
+        fprintf(stderr, "There is no downgrade path for %s.\n", pszPkgName);
+    }
+    if(dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
+    {
+        dwError = 0;
+        if(TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName))
+        {
+            fprintf(stderr, "Error while adding not resolved packages\n");
+        }
+    }
+    goto cleanup;
+}
+
