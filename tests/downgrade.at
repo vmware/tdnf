@@ -22,13 +22,13 @@ TDNF_CLI_W_CHROOT downgrade -y
 [ignore])
 AT_CLEANUP
 
-#AT_SETUP([downgrade by version])
-#AT_KEYWORDS([downgrade])
-#AT_CHECK([
-#TDNF_CLI_W_CHROOT install tdnf-test-multiversion -y
-#TDNF_CLI_W_CHROOT downgrade tdnf-test-multiversion-1.0.1 -y
-#],
-#[0],
-#[ignore],
-#[ignore])
-#AT_CLEANUP
+AT_SETUP([downgrade by version])
+AT_KEYWORDS([downgrade])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion -y
+TDNF_CLI_W_CHROOT downgrade tdnf-test-multiversion-1.0.1 -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP

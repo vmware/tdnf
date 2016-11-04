@@ -22,7 +22,7 @@
 //checklocal.c
 uint32_t
 TDNFCheckLocalPackagesInternal(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszLocalPath
     );
 
@@ -36,33 +36,32 @@ TDNFCopyEnabledRepos(
 //client.c
 uint32_t
 TDNFApplyScopeFilter(
-    PSolvQuery hQuery,
-    TDNF_SCOPE nScope
+    PSolvQuery  qQuery,
+    TDNF_SCOPE  nScope
     );
-
 
 //gpgcheck.c
 uint32_t
 ReadGPGKey(
-   const char* pszFile,
-   char** ppszKeyData
+   const char*  pszFile,
+   char**       ppszKeyData
    );
 
 uint32_t
 AddKeyToKeyRing(
     const char* pszFile,
-    rpmKeyring pKeyring
+    rpmKeyring  pKeyring
     );
 
 uint32_t
 VerifyRpmSig(
-    rpmKeyring pKeyring,
+    rpmKeyring  pKeyring,
     const char* pszPkgFile
     );
 
 uint32_t
 TDNFGPGCheck(
-    rpmKeyring pKeyring,
+    rpmKeyring  pKeyring,
     const char* pszUrlKeyFile,
     const char* pszPackage
     );
@@ -70,27 +69,20 @@ TDNFGPGCheck(
 //init.c
 uint32_t
 TDNFCloneCmdArgs(
-    PTDNF_CMD_ARGS pCmdArgsIn,
+    PTDNF_CMD_ARGS  pCmdArgsIn,
     PTDNF_CMD_ARGS* ppCmdArgs
     );
 
 uint32_t
-TDNFInitSack(
-    PTDNF pTdnf,
-    PSolvSack* phSack,
-    int nFlags
-    );
-
-uint32_t
 TDNFRefreshSack(
-    PTDNF pTdnf,
-    int nCleanMetadata
+    PTDNF   pTdnf,
+    int     nCleanMetadata
     );
 
 //makecache.c
 uint32_t
 TDNFRefreshCache(
-    PTDNF pTdnf
+    PTDNF   pTdnf
     );
 
 //repoutils.c
@@ -101,58 +93,58 @@ TDNFRepoMakeCacheDirs(
 
 uint32_t
 TDNFRepoGetBaseUrl(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszRepo,
-    char** ppszBaseUrl
+    char**      ppszBaseUrl
     );
 
 uint32_t
 TDNFRepoGetUserPass(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszRepo,
-    char** ppszUserPass
+    char**      ppszUserPass
     );
 
 uint32_t
 TDNFRepoGetRpmCacheDir(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszRepo,
-    char** ppszRpmCacheDir
+    char**      ppszRpmCacheDir
     );
 
 uint32_t
 TDNFRepoRemoveCache(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszRepoId
     );
 
 uint32_t
 TDNFRepoGetKeyValue(
-    GKeyFile* pKeyFile,
+    GKeyFile*   pKeyFile,
     const char* pszGroup,
     const char* pszKeyName,
     const char* pszDefault,
-    char** ppszValue
+    char**      ppszValue
     );
 
 uint32_t
 TDNFRepoGetKeyValueBoolean(
-    GKeyFile* pKeyFile,
+    GKeyFile*   pKeyFile,
     const char* pszGroup,
     const char* pszKeyName,
-    int nDefault,
-    int* pnValue
+    int         nDefault,
+    int*        pnValue
     );
 
 uint32_t
 TDNFRepoApplyProxySettings(
-    PTDNF_CONF pConf,
-    LrHandle* pRepoHandle
+    PTDNF_CONF  pConf,
+    LrHandle*   pRepoHandle
     );
 //remoterepo.c
 uint32_t
 TDNFDownloadPackage(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
     const char* pszRepo,
@@ -160,198 +152,233 @@ TDNFDownloadPackage(
     );
 
 //packageutils.c
-uint32_t
-TDNFFindInstalledPkgByPkg(
-    PSolvSack hSack,
-    PSolvPackage hPkgToFind,
-    PSolvPackage* phPkg
-    );
-
 
 uint32_t
 TDNFMatchForReinstall(
-    PTDNF pTdnf,
-    PSolvQuery pQuery
-    );
-
-uint32_t
-TDNFMatchForDowngrade(
-    PTDNF pTdnf,
-    PSolvQuery pQuery
-    );
-
-uint32_t
-TDNFMatchForDowngradeAll(
-    PTDNF pTdnf,
-    PSolvQuery pQuery
+    PSolvSack   pSack,
+    const char* pszName,
+    Queue*      pQueueGoal
     );
 
 uint32_t
 TDNFPopulatePkgInfos(
-    PSolvSack pSack,
-    PSolvPackageList pPkgList,
-    PTDNF_PKG_INFO* ppPkgInfo
+    PSolvSack           pSack,
+    PSolvPackageList    pPkgList,
+    PTDNF_PKG_INFO*     ppPkgInfo
     );
 
 uint32_t
 TDNFPopulatePkgInfoArray(
-    PSolvSack pSack,
-    PSolvPackageList pPkgList,
-    TDNF_PKG_DETAIL nDetail,
-    PTDNF_PKG_INFO* ppPkgInfo,
-    uint32_t* pdwCount
-    );
-
-uint32_t
-TDNFPackageGetLatest(
-    PSolvPackageList hPkgList,
-    PSolvPackage* phPkgLatest
+    PSolvSack           pSack,
+    PSolvPackageList    pPkgList,
+    TDNF_PKG_DETAIL     nDetail,
+    PTDNF_PKG_INFO*     ppPkgInfo,
+    uint32_t*           pdwCount
     );
 
 uint32_t
 TDNFAppendPackages(
-    PTDNF_PKG_INFO* ppDest,
-    PTDNF_PKG_INFO pSource
+    PTDNF_PKG_INFO*     ppDest,
+    PTDNF_PKG_INFO      pSource
     );
 
 uint32_t
 TDNFPackageGetDowngrade(
-    PSolvPackageList hPkgList,
-    PSolvPackage hPkgCurrent,
-    PSolvPackage* phPkgDowngrade
+    Id          current,
+    PTDNF       pTdnf,
+    Id*         pkgId,
+    const char* pszPkgName
+    );
+
+uint32_t
+TDNFGetGlobPackages(
+    PTDNF       pTdnf,
+    char*       pszPkgGlob,
+    Queue*      pQueueGlob
+    );
+
+uint32_t
+TDNFFilterPackages(
+    PTDNF                   pTdnf,
+    PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
+    Queue*                  pQueueGoal
     );
 
 uint32_t
 TDNFAddPackagesForInstall(
-    PSolvPackageList hPkgListSource,
-    PSolvPackageList hPkgListGoal
+    PTDNF pTdnf,
+    Queue* qGoal,
+    const char* pszPkgName
+    );
+
+uint32_t
+TDNFAddPackagesForErase(
+    PTDNF       pTdnf,
+    Queue*      pQueueGoal,
+    const char* pszPkgName
     );
 
 uint32_t
 TDNFAddPackagesForUpgrade(
-    PSolvSack hSack,
-    PSolvPackageList hPkgListSource,
-    PSolvPackageList hPkgListGoal
+    PTDNF       pTdnf,
+    Queue*      pQueueGoal,
+    const char* pszPkgName
     );
 
 uint32_t
 TDNFAddPackagesForDowngrade(
-    PSolvSack hSack,
-    PSolvPackageList hPkgListSource,
-    PSolvPackageList hPkgListGoal
+    PTDNF       pTdnf,
+    Queue*      pQueueGoal,
+    const char* pszPkgName
     );
-
 //goal.c
-uint32_t
-TDNFGoalGetResultsIgnoreNoData(
-    PSolvPackageList hPkgList,
-    PTDNF_PKG_INFO* ppPkgInfoResults
-    );
-
-uint32_t
-TDNFGoalGetResults(
-    PSolvPackageList hPkgList,
-    PTDNF_PKG_INFO* ppPkgInfoResults
-    );
-
-uint32_t
-TDNFGoalSetUserInstalled(
-    PSolvGoal hGoal,
-    PSolvPackageList hPkgList
-    );
 
 uint32_t
 TDNFGoal(
-    PTDNF pTdnf,
-    PSolvPackageList hPkgList,
+    PTDNF       pTdnf,
+    Queue*      pkgList,
     PTDNF_SOLVED_PKG_INFO pInfo
     );
 
 uint32_t
-TDNFGoalReportProblems(
-    PSolvGoal hGoal
-    );
-
-uint32_t
 TDNFAddGoal(
-    PTDNF pTdnf,
-    int nAlterType,
-    PSolvGoal hGoal,
-    PSolvPackage hPkg
+    PTDNF   pTdnf,
+    int     nAlterType,
+    Queue*  pQueueJobs,
+    Id      dwId
     );
 
 uint32_t
-TDNFGetAllResultsIgnoreNoData(
-    int nResolveFor,
-    PSolvQuery pQuery,
-    PTDNF_SOLVED_PKG_INFO* ppInfo
+TDNFGoalGetAllResultsIgnoreNoData(
+    int                     nResolveFor,
+    Transaction*            pTrans,
+    Solver*                 pSolv,
+    PTDNF_SOLVED_PKG_INFO*  ppInfo,
+    PTDNF                   pTdnf
+    );
+
+uint32_t
+TDNFGetPackagesWithSpecifiedType(
+    Transaction*    pTrans,
+    PTDNF           pTdnf, 
+    PTDNF_PKG_INFO* pPkgInfo,
+    Id              dwType
+    );
+
+uint32_t
+TDNFGetInstallPackages(
+    Transaction*    pTrans,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo
+    );
+
+uint32_t
+TDNFGetReinstallPackages(
+    Transaction*    pTrans,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo
+    );
+
+uint32_t
+TDNFGetUpgradePackages(
+    Transaction*    pTrans,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo);
+
+uint32_t
+TDNFGetErasePackages(
+    Transaction*    pTrans,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo
+    );
+
+uint32_t
+TDNFGetObsoletedPackages(
+    Transaction*    pTrans,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo
+    );
+
+uint32_t
+TDNFGetUnneededPackages(
+    Solver*         pSolv,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo
+    );
+
+uint32_t
+TDNFGetDownGradePackages(
+    Transaction*    pTrans,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO* pPkgInfo,
+    PTDNF_PKG_INFO* pRemovePkgInfo
     );
 
 //config.c
 int
 TDNFConfGetRpmVerbosity(
-    PTDNF pTdnf
+    PTDNF   pTdnf
     );
 
 uint32_t
 TDNFConfSetFlag(
-    TDNF_CONF_FLAG nFlag,
-    int nValue //0 or 1
+    TDNF_CONF_FLAG  nFlag,
+    int             nValue //0 or 1
     );
 
 uint32_t
 TDNFConfGetFlag(
-    TDNF_CONF_FLAG nFlag,
-    int nValue //0 or 1
+    TDNF_CONF_FLAG  nFlag,
+    int             nValue //0 or 1
     );
 
 uint32_t
 TDNFConfSetValue(
-    TDNF_CONF_TYPE nType,
-    const char* pszValue
+    TDNF_CONF_TYPE  nType,
+    const char*     pszValue
     );
 
 uint32_t
 TDNFConfGetValue(
-    TDNF_CONF_TYPE nType,
-    char** ppszValue
+    TDNF_CONF_TYPE  nType,
+    char**          ppszValue
     );
 uint32_t
 TDNFReadKeyValue(
-    GKeyFile* pKeyFile,
-    char* pszGroupName,
-    char* pszKeyName,
-    char* pszDefault,
-    char** ppszValue
+    GKeyFile*       pKeyFile,
+    char*           pszGroupName,
+    char*           pszKeyName,
+    char*           pszDefault,
+    char**          packageutilspszValue
     );
 
 uint32_t
 TDNFReadConfig(
-    PTDNF pTdnf,
-    char* pszConfFile,
-    char* pszConfGroup
+    PTDNF       pTdnf,
+    char*       pszConfFile,
+    char*       pszConfGroup
     );
 
 uint32_t
 TDNFConfigExpandVars(
-    PTDNF pTdnf
+    PTDNF   pTdnf
     );
 
 uint32_t
 TDNFConfigReadProxySettings(
-    GKeyFile* pKeyFile,
-    char* pszGroup,
-    PTDNF_CONF pConf);
+    GKeyFile*   pKeyFile,
+    char*       pszGroup,
+    PTDNF_CONF  pConf);
 
 void
 TDNFFreeConfig(
-    PTDNF_CONF pConf
+    PTDNF_CONF  pConf
     );
 
 uint32_t
 TDNFConfigReplaceVars(
-    PTDNF pTdnf,
-    char** pszString
+    PTDNF       pTdnf,
+    char**      pszString
     );
 
 //repo.c
@@ -362,194 +389,173 @@ TDNFPrintRepoMetadata(
 
 uint32_t
 TDNFInitRepoFromMetaData(
-    PTDNF pTdnf,
-    PSolvRepo hRepo,
+    PTDNF       pTdnf,
     const char* repo_name,
-    LrYumRepo* pRepo);
+    LrYumRepo*  pRepo);
 
 uint32_t
 TDNFInitRepo(
-    PTDNF pTdnf,
+    PTDNF           pTdnf,
     PTDNF_REPO_DATA pRepoData,
-    PSolvRepo* phRepo
+    PSolvRepo*      ppRepo
     );
 
 uint32_t
 TDNFGetGPGCheck(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszRepo,
-    int* pnGPGCheck,
-    char** ppszUrlGPGKey
+    int*        pnGPGCheck,
+    char**      ppszUrlGPGKey
     );
 
 uint32_t
 TDNFGetRepoById(
-    PTDNF pTdnf,
-    const char* pszName,
-    PTDNF_REPO_DATA* ppRepo
+    PTDNF               pTdnf,
+    const char*         pszName,
+    PTDNF_REPO_DATA*    ppRepo
     );
 
 //repolist.c
 uint32_t
 TDNFLoadReposFromFile(
-    PTDNF pTdnf,
-    char* pszRepoFile,
-    PTDNF_REPO_DATA* ppRepos
+    PTDNF               pTdnf,
+    char*               pszRepoFile,
+    PTDNF_REPO_DATA*    ppRepos
     );
 
 uint32_t
 TDNFLoadRepoData(
-    PTDNF pTdnf,
+    PTDNF               pTdnf,
     TDNF_REPOLISTFILTER nFilter,
-    PTDNF_REPO_DATA* ppReposAll
+    PTDNF_REPO_DATA*    ppReposAll
     );
 
 //resolve.c
-PSolvSubject
-hy_subject_create(
-    const char * pattern
-    );
-
-PSolvPossibilities
-hy_subject_nevra_possibilities_real(
-    PSolvSubject subject,
-    PSolvForm *forms, PSolvSack sack, int flags
-    );
-
 uint32_t
-TDNFGetMatchingInstalledAndAvailable(
-    PTDNF pTdnf,
-    int nAlterType,
-    const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
-    PSolvPackageList* phPkgListGoal
-    );
-
-uint32_t
-TDNFGetMatching(
-    PTDNF pTdnf,
-    int nSystem,
-    const char* pszName,
-    PSolvPackageList* phPkgList
-    );
-
-uint32_t
-TDNFGetGoalPackageList(
-    TDNF_ALTERTYPE nAlterType,
-    PSolvPackageList hPkgsInstalled,
-    PSolvPackageList hPkgsAvailable,
-    PSolvPackageList* phPkgList
-    );
-
-uint32_t
-TDNFGetSelector(
-    PTDNF pTdnf,
-    const char* pszPkg,
-    PSolvSelector* phSelector
+TDNFPrepareAllPackages(
+    PTDNF                   pTdnf,
+    PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
+    Queue*                  pQueueGoal
     );
 
 uint32_t
 TDNFPrepareAndAddPkg(
-    PTDNF pTdnf,
-    const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
-    PSolvPackageList hPkgListGoal
+    PTDNF                   pTdnf,
+    const char*             pszPkgName,
+    PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
+    Queue*                  pQueueGoal
+    );
+
+uint32_t
+TDNFPrepareSinglePkg(
+    PTDNF                   pTdnf,
+    const char*             pszPkgName,
+    PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
+    Queue*                  pQueueGoal
+    );
+
+uint32_t
+TDNFAddFilteredPkgs(
+    PTDNF                   pTdnf,
+    int                     nScope,
+    PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
+    Queue*                  pQueueGoal
     );
 
 uint32_t
 TDNFAddNotResolved(
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
-    const char* pszPkgName
+    PTDNF_SOLVED_PKG_INFO   pSolvedInfo,
+    const char*             pszPkgName
     );
 
 //rpmtrans.c
 uint32_t
 TDNFRpmExecTransaction(
-    PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    PTDNF                   pTdnf,
+    PTDNF_SOLVED_PKG_INFO   pInfo
     );
 
 void*
 TDNFRpmCB(
-     const void* pArg,
-     const rpmCallbackType what,
-     const rpm_loff_t amount,
-     const rpm_loff_t total,
-     fnpyKey key,
-     void* data
-     );
-
-uint32_t
-TDNFPopulateTransaction(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    const void* pArg,
+    const rpmCallbackType what,
+    const rpm_loff_t amount,
+    const rpm_loff_t total,
+    fnpyKey key,
+    void* data
     );
 
 uint32_t
-TDNFTransAddDowngradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+TDNFPopulateTransaction(
+    PTDNFRPMTS              pTS,
+    PTDNF                   pTdnf,
+    PTDNF_SOLVED_PKG_INFO   pInfo
     );
 
 uint32_t
 TDNFTransAddErasePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo
+    PTDNFRPMTS      pTS,
+    PTDNF_PKG_INFO  pInfo
     );
 
 uint32_t
 TDNFTransAddObsoletedPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNFRPMTS      pTS,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO  pInfo
     );
 
 uint32_t
 TDNFTransAddErasePkg(
-    PTDNFRPMTS pTS,
-    const char* pkgName
+    PTDNFRPMTS      pTS,
+    const char*     pkgName
     );
 
 uint32_t
 TDNFTransAddInstallPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNFRPMTS      pTS,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO  pInfo
+    );
+
+uint32_t
+TDNFTransAddReInstallPkgs(
+    PTDNFRPMTS      pTS,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO  pInfo
     );
 
 uint32_t
 TDNFTransAddInstallPkg(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
+    PTDNFRPMTS  pTS,
+    PTDNF       pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
     const char* pszRepoName,
-    int nUpgrade
+    int         nUpgrade
     );
 
 uint32_t
 TDNFTransAddUpgradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNFRPMTS      pTS,
+    PTDNF           pTdnf,
+    PTDNF_PKG_INFO  pInfo
     );
 
 uint32_t
 TDNFRunTransaction(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf
+    PTDNFRPMTS      pTS,
+    PTDNF           pTdnf
     );
 
 uint32_t
 TDNFRemoveCachedRpms(
-    GArray* pCachedRpmsArray
+    GArray*     pCachedRpmsArray
     );
 
 void
 TDNFFreeCachedRpmsArray(
-    GArray* pArray
+    GArray*     pArray
     );
 
 //memory.c
@@ -564,36 +570,6 @@ TDNFFreeCmdOpt(
     );
 
 //search.c
-uint32_t
-TDNFQueryTermsHelper(
-    PSolvPackageList hAccumPkgList,
-    PSolvQuery hQuery,
-    int nKeyId,
-    const char* pszMatch
-    );
-
-uint32_t
-QueryTermsInNameSummary(
-    PSolvPackageList,
-    PSolvQuery,
-    const char*
-    );
-
-uint32_t
-QueryTermsInDescUrl(
-    PSolvPackageList,
-    PSolvQuery,
-    const char*
-    );
-
-uint32_t
-TDNFQueryTerms(
-    PSolvPackageList hAccumPkgList,
-    PTDNF_CMD_ARGS pCmdArgs,
-    PSolvQuery hQuery,
-    int nStartArgIndex,
-    TDNFQueryTermsFunction pfQueryTerms
-    );
 
 //strings.c
 uint32_t
@@ -687,8 +663,8 @@ TDNFRawGetPackageVersion(
 
 uint32_t
 TDNFGetKernelArch(
-   char** ppszArch
-   );
+    char** ppszArch
+    );
 
 //validate.c
 uint32_t

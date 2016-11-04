@@ -20,8 +20,6 @@
 
 #include "includes.h"
 
-
-
 uint32_t
 TDNFCloneCmdArgs(
     PTDNF_CMD_ARGS pCmdArgsIn,
@@ -119,7 +117,7 @@ TDNFRefreshSack(
     )
 {
     uint32_t dwError = 0;
-    PSolvRepo hRepo = NULL;
+    PSolvRepo pRepo = NULL;
     if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -147,7 +145,7 @@ TDNFRefreshSack(
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
 
-                dwError = TDNFInitRepo(pTdnf, pTempRepo, &hRepo);
+                dwError = TDNFInitRepo(pTdnf, pTempRepo, &pRepo);
                 if(dwError)
                 {
                     if(pTempRepo->nSkipIfUnavailable)

@@ -134,7 +134,6 @@ typedef enum
 }TDNF_REPOLISTFILTER;
 
 typedef struct _TDNF_ *PTDNF;
-typedef struct _HyRepo * HyRepo;
 
 typedef struct _TDNF_PKG_INFO
 {
@@ -248,7 +247,6 @@ typedef struct _TDNF_REPO_DATA
     char* pszUrlGPGKey;
     char* pszUser;
     char* pszPass;
-    HyRepo hRepo;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;

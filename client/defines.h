@@ -20,13 +20,6 @@
 
 #pragma once
 
-typedef
-uint32_t
-(*TDNFQueryTermsFunction)(
-    PSolvPackageList,
-    PSolvQuery,
-    const char*);
-
 typedef enum
 {
     DETAIL_LIST,
@@ -75,13 +68,6 @@ typedef enum
     do {                                                           \
         if (pMemory) {                                             \
             TDNFFreeMemory(pMemory);                               \
-        }                                                          \
-    } while(0)
-
-#define TDNF_SAFE_FREE_PKGLIST(hPkgList) \
-    do {                                                           \
-        if (hPkgList) {                                            \
-            hy_packagelist_free(hPkgList);                         \
         }                                                          \
     } while(0)
 
