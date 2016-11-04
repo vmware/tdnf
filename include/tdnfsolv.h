@@ -208,31 +208,6 @@ SolvApplyListQuery(
     );
 
 uint32_t
-SolvApplyEraseQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplyInstallQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplyReinstallQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplyUpdateQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplyDowngradeQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
 SolvApplyDistroSyncQuery(
     PSolvQuery pQuery
     );
@@ -326,36 +301,6 @@ SolvGetSearchResult(
     );
 
 uint32_t
-SolvGetEraseResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    );
-
-uint32_t
-SolvGetInstallResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    );
-
-uint32_t
-SolvGetReinstallResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    );
-
-uint32_t
-SolvGetUpgradeResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    );
-
-uint32_t
-SolvGetDowngradeResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    );
-
-uint32_t
 SolvCmpEvr(
     PSolvSack pSack,
     Id pkg1,
@@ -370,13 +315,6 @@ SolvGetLatest(
     Id* result);
 
 uint32_t
-SolvRemovePkgWithSameName(
-    PSolvSack pSack,
-    Queue* pPkgList,
-    Id pkg,
-    Queue* pNewQueue);
-
-uint32_t
 SolvRemovePkgWithHigherorEqualEvr(
     PSolvSack pSack,
     Queue* pPkgList,
@@ -387,13 +325,6 @@ uint32_t
 SolvFindAllInstalled(
     PSolvSack pSack,
     PSolvPackageList pPkgList
-    );
-
-uint32_t
-SolvFindDowngradeCandidate(
-    PSolvSack pSack,
-    Id installed,
-    Id* candidate
     );
 
 uint32_t
@@ -410,6 +341,54 @@ SolvFindInstalledPkgByName(
     PSolvPackageList pPkgList
     );
 
+uint32_t
+SolvCountPkgByName(
+    PSolvSack pSack,
+    const char* pszName,
+    int* count
+    );
+
+uint32_t
+SolvGetTransResultsWithType(
+    Transaction *trans,
+    Id type,
+    PSolvPackageList pPkgList
+    );
+
+uint32_t
+SolvAddUpgradeAllJob(
+    Queue* jobs
+    );
+
+uint32_t
+SolvAddDistUpgradeJob(
+    Queue* jobs
+    );
+
+uint32_t
+SolvAddFlagsToJobs(
+    Queue* jobs,
+    int flags);
+
+uint32_t
+SolvAddPkgInstallJob(
+    Queue* jobs,
+    Id id);
+
+uint32_t
+SolvAddPkgDowngradeJob(
+    Queue* jobs,
+    Id id);
+
+uint32_t
+SolvAddPkgEraseJob(
+    Queue* jobs,
+    Id id);
+
+uint32_t
+SolvAddPkgUserInstalledJob(
+    Queue* jobs,
+    Id id);
 
 #ifdef __cplusplus
 }

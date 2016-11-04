@@ -518,65 +518,6 @@ error:
 }
 
 uint32_t
-TDNFTransAddDowngradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
-    )
-{
-    uint32_t dwError = 0;
-    PSolvPackageList pInstalledPkgList = NULL;
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pInstalledPkgList = SolvCreatePackageList();
-    if(!pInstalledPkgList)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    while(pInfo)
-    {
-        SolvEmptyPackageList(pInstalledPkgList);
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo->pszLocation, pInfo->pszName,
-                    pInfo->pszRepoName, 0);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        //Downgrade is a removal of existing and installing old.
-        if(IsNullOrEmptyString(pInfo->pszName))
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-
-        dwError = SolvFindInstalledPkgByName(pTdnf->pSack, pInfo->pszName, pInstalledPkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
-
-        pInfo = pInfo->pNext;
-    }
-
-cleanup:
-    if(pInstalledPkgList)
-    {
-        SolvFreePackageList(pInstalledPkgList);
-    }
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
     const char* pkgName

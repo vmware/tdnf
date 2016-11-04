@@ -78,13 +78,6 @@ typedef enum
         }                                                          \
     } while(0)
 
-#define TDNF_SAFE_FREE_PKGLIST(hPkgList) \
-    do {                                                           \
-        if (hPkgList) {                                            \
-            hy_packagelist_free(hPkgList);                         \
-        }                                                          \
-    } while(0)
-
 #define TDNF_SAFE_FREE_STRINGARRAY(ppArray) \
     do {                                                           \
         if (ppArray) {                                             \

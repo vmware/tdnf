@@ -35,7 +35,6 @@ TDNFAlterCommand(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
     dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -632,10 +631,10 @@ TDNFResolve(
     )
 {
     uint32_t dwError = 0;
-    PSolvQuery pQuery = NULL;
+    Queue tmpGoal;
+    queue_init(&tmpGoal);
+
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
-    char** ppszPackages = NULL;
-    //int nCmdIndex = 0;
 
     if(!pTdnf || !ppSolvedPkgInfo)
     {
@@ -652,65 +651,31 @@ TDNFResolve(
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pQuery = SolvCreateQuery(pTdnf->pSack);
-    if(!pQuery)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(pTdnf->pArgs->nCmdCount > 1 && nAlterType != ALTER_REINSTALL)
-    {
-        ppszPackages = pTdnf->pArgs->ppszCmds;
-        dwError = SolvApplyPackageFilter(pQuery, ++ppszPackages);
-    }
-    switch(nAlterType)
-    {
-        case ALTER_ERASE:
-            dwError = TDNFApplyScopeFilter(pQuery, SCOPE_INSTALLED);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = SolvApplyEraseQuery(pQuery);
-            break;
-        case ALTER_INSTALL:
-            dwError = TDNFApplyScopeFilter(pQuery, SCOPE_AVAILABLE);
-            dwError = SolvApplyInstallQuery(pQuery);
-            break;
-        case ALTER_UPGRADE:
-        case ALTER_UPGRADEALL:
-            dwError = SolvApplyUpdateQuery(pQuery);
-            break;
-        case ALTER_DOWNGRADE:
-
-            dwError = TDNFMatchForDowngrade(pTdnf, pQuery);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = SolvApplyDowngradeQuery(pQuery);
-            break;
-        case ALTER_DOWNGRADEALL:
-            dwError = TDNFMatchForDowngradeAll(pTdnf, pQuery);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = SolvApplyDowngradeQuery(pQuery);
-            break;
-        case ALTER_DISTRO_SYNC:
-            dwError = SolvApplyDistroSyncQuery(pQuery);
-            break;
-        case ALTER_REINSTALL:
-            dwError = TDNFMatchForReinstall(pTdnf, pQuery);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = SolvApplyReinstallQuery(pQuery);
-            break;
-        default:
-            break;
-    }
-
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;//ERROR_TDNF_NO_MATCH;
-    }
+    dwError = TDNFAllocateMemory(
+                1,
+                sizeof(TDNF_SOLVED_PKG_INFO),
+                (void**)&pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetAllResultsIgnoreNoData(nAlterType, pQuery, &pSolvedPkgInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
     pSolvedPkgInfo->nAlterType = nAlterType;
+
+    dwError = TDNFAllocateMemory(
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPrepareAllPackages(
+                  pTdnf,
+                  pSolvedPkgInfo,
+                  &tmpGoal);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGoal(
+                  pTdnf,
+                  &tmpGoal,
+                  pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction = 
         pSolvedPkgInfo->pPkgsToInstall ||
@@ -730,6 +695,7 @@ TDNFResolve(
     *ppSolvedPkgInfo = pSolvedPkgInfo;
 
 cleanup:
+    queue_free(&tmpGoal);
     return dwError;
 
 error:

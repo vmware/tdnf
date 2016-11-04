@@ -63,58 +63,6 @@ error:
     goto cleanup;
 }
 
-static uint32_t
-GetTransResultsWithType(
-    Transaction *trans,
-    Id type,
-    PSolvPackageList pPkgList
-    )
-{
-    uint32_t  dwError = 0;
-    Id pkg = 0;
-    Id pkgType = 0; 
-    Queue solvedPackages;
-    queue_init(&solvedPackages);
-    if(!pPkgList)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    if (!trans)
-    {
-        dwError = ERROR_TDNF_SOLV_NO_SOLUTION;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    for (int i = 0; i < trans->steps.count; ++i)
-    {
-        pkg = trans->steps.elements[i];
-
-        switch (type)
-        {
-            case SOLVER_TRANSACTION_OBSOLETED:
-                pkgType =  transaction_type(trans, pkg, SOLVER_TRANSACTION_SHOW_OBSOLETES);
-                break;
-            default:
-                pkgType  = transaction_type(trans, pkg, 
-                     SOLVER_TRANSACTION_SHOW_ACTIVE|
-                     SOLVER_TRANSACTION_SHOW_ALL);
-                break;
-        }
-
-        if (type == pkgType)
-            queue_push(&solvedPackages, pkg);
-    }
-    queue_insertn(&pPkgList->packages, pPkgList->packages.count,
-             solvedPackages.count, solvedPackages.elements);
-cleanup:
-    queue_free(&solvedPackages);
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
 uint32_t
 SolvGetListResult(
     PSolvQuery pQuery,
@@ -125,6 +73,11 @@ SolvGetListResult(
     if(!pPkgList || !pQuery)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(pQuery->result.count == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
         BAIL_ON_TDNF_ERROR(dwError);
     }
     queue_insertn(&pPkgList->packages, pPkgList->packages.count, pQuery->result.count, pQuery->result.elements);
@@ -148,118 +101,6 @@ SolvGetSearchResult(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     queue_insertn(&pPkgList->packages, pPkgList->packages.count, pQuery->result.count, pQuery->result.elements);
-
-cleanup: 
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-SolvGetEraseResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    )
-{
-    uint32_t dwError = 0;
-    if(!pPkgList || !pQuery)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    queue_insertn(&pPkgList->packages, pPkgList->packages.count, pQuery->result.count, pQuery->result.elements);
-
-cleanup: 
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-SolvGetInstallResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    )
-{
-    uint32_t dwError = 0;
-    if(!pPkgList || !pQuery || !pQuery->pTrans)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    Transaction *pTrans = pQuery->pTrans;
-
-    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_INSTALL, pPkgList);
-
-cleanup: 
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-SolvGetReinstallResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    )
-{
-    uint32_t dwError = 0;
-    if(!pPkgList || !pQuery || !pQuery->pTrans)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    Transaction *pTrans = pQuery->pTrans;
-
-    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_REINSTALL, pPkgList);
-
-cleanup: 
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-SolvGetUpgradeResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    )
-{
-    uint32_t dwError = 0;
-    if(!pPkgList || !pQuery || !pQuery->pTrans)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    Transaction *pTrans = pQuery->pTrans;
-
-    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_UPGRADE, pPkgList);
-
-cleanup: 
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-SolvGetDowngradeResult(
-    PSolvQuery pQuery,
-    PSolvPackageList pPkgList
-    )
-{
-    uint32_t dwError = 0;
-    if(!pPkgList || !pQuery || !pQuery->pTrans)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    Transaction *pTrans = pQuery->pTrans;
-
-    dwError = GetTransResultsWithType(pTrans, SOLVER_TRANSACTION_DOWNGRADE, pPkgList);
 
 cleanup: 
     return dwError;
@@ -564,6 +405,33 @@ error:
 }
 
 const char*
+SolvGetPkgNevrFromId(
+    PSolvSack pSack,
+    int pkgId)
+{
+    uint32_t dwError = 0;
+    const char* pNevr = NULL;
+    Solvable *pSolv = NULL;
+    if(!pSack)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, pkgId);
+    if(pSolv)
+    {
+        pNevr = pool_solvable2str(pSack->pPool, pSolv);
+    }
+
+cleanup: 
+    return pNevr;
+
+error:
+    goto cleanup;
+}
+
+const char*
 SolvGetPkgLocationFromId(
     PSolvSack pSack,
     int pkgId)
@@ -598,7 +466,7 @@ SolvGetPackageId(
     )
 {
     uint32_t dwError = 0;
-    if(!pPkgList || pkgIndex < 0 || pkgIndex > pPkgList->packages.count)
+    if(!pPkgList || pkgIndex < 0 || pkgIndex >= pPkgList->packages.count)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -716,122 +584,6 @@ error:
 }
 
 uint32_t
-SolvRemovePkgWithSameName(
-    PSolvSack pSack,
-    Queue* pPkgList,
-    Id pkg,
-    Queue* pNewQueue)
-{
-    uint32_t dwError = 0;
-    Solvable    *pSolv1 = NULL;
-    Solvable    *pSolv2 = NULL;
-    const char  *pszName1  = NULL;
-    const char  *pszName2  = NULL;
-    int pkgIter  = 0;
-
-    if(!pSack || !pPkgList || !pNewQueue || pkg < 0)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-
-    queue_empty(pNewQueue);
-    pSolv1 = pool_id2solvable(pSack->pPool, pkg);
-    if(!pSolv1)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-
-    pszName1 = pool_id2str(pSack->pPool, pSolv1->name);
-    for( ; pkgIter < pPkgList->count;  pkgIter++)
-    {
-        pSolv2 = pool_id2solvable(pSack->pPool, pPkgList->elements[pkgIter]);
-        if(!pSolv2)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-        }
-
-        pszName2 = pool_id2str(pSack->pPool, pSolv2->name);
-
-        if(strcmp(pszName1, pszName2))
-        {
-            queue_push(pNewQueue, pPkgList->elements[pkgIter]);
-        }
-    }
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-
-}
-
-uint32_t
-SolvRemovePkgWithHigherorEqualEvr(
-    PSolvSack pSack,
-    Queue* pPkgList,
-    Id pkg,
-    Queue* pNewQueue)
-{
-    uint32_t dwError = 0;
-    Solvable    *pSolv1 = NULL;
-    Solvable    *pSolv2 = NULL;
-    const char  *pszEvr1 = NULL;
-    const char  *pszEvr2 = NULL;
-    const char  *pszName1  = NULL;
-    const char  *pszName2  = NULL;
-    int pkgIter  = 0;
-    int compareResult = 0;
-
-    if(!pSack || pkg <= 0 || !pPkgList)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-
-    queue_empty(pNewQueue);
-    pSolv1 = pool_id2solvable(pSack->pPool, pkg);
-    if(!pSolv1)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-
-    pszName1 = pool_id2str(pSack->pPool, pSolv1->name);
-    pszEvr1 = solvable_lookup_str(pSolv1, SOLVABLE_EVR);
-    for( ; pkgIter < pPkgList->count;  pkgIter++)
-    {
-        pSolv2 = pool_id2solvable(pSack->pPool, pPkgList->elements[pkgIter]);
-        if(!pSolv2)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-        }
-
-        pszName2 = pool_id2str(pSack->pPool, pSolv2->name);
-
-        if(!strcmp(pszName1, pszName2))
-        {
-            pszEvr2 = solvable_lookup_str(pSolv2, SOLVABLE_EVR);
-
-            compareResult = pool_evrcmp_str(pSack->pPool, pszEvr2, pszEvr1, EVRCMP_COMPARE);
-            if(compareResult == 1 || compareResult == 0)
-            {
-                queue_push(pNewQueue, pPkgList->elements[pkgIter]);
-            }
-        }
-    }
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-
-}
-
-uint32_t
 SolvFindAllInstalled(
     PSolvSack pSack,
     PSolvPackageList pPkgList)
@@ -867,6 +619,63 @@ cleanup:
         SolvFreeQuery(pQuery);
     }
     return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvCountPkgByName(
+    PSolvSack pSack,
+    const char* pszName,
+    int* count
+    )
+{
+    uint32_t dwError = 0;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+
+    if(!pSack || !pszName)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pQuery = SolvCreateQuery(pSack);
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvApplySinglePackageFilter(pQuery, pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pPkgList = SolvCreatePackageList();
+    if(!pPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetListResult(pQuery, pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *count = SolvGetPackageListSize(pPkgList);
+
+cleanup:
+    if(pPkgList)
+    {
+        SolvFreePackageList(pPkgList);
+    }
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    return dwError;
+
 error:
     goto cleanup;
 }
@@ -964,65 +773,53 @@ error:
 }
 
 uint32_t
-SolvFindDowngradeCandidate(
-    PSolvSack pSack,
-    Id installedId,
-    Id* candidate
+SolvGetTransResultsWithType(
+    Transaction *trans,
+    Id type,
+    PSolvPackageList pPkgList
     )
 {
-    uint32_t dwError = 0;
-    PSolvPackageList pPkgList = NULL;
-    int evrCompare = 0;
-    int pkgIndex = 0;
-    Id availableId = 0;
-    Queue tmp;
-    queue_init(&tmp);
-
-    if(!pSack)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pPkgList = SolvCreatePackageList();
+    uint32_t  dwError = 0;
+    Id pkg = 0;
+    Id pkgType = 0; 
+    Queue solvedPackages;
+    queue_init(&solvedPackages);
     if(!pPkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = SolvFindAvailablePkgByName(pSack, SolvGetPkgNameFromId(pSack, installedId), pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for(pkgIndex = 0; pkgIndex < SolvGetPackageListSize(pPkgList); pkgIndex++)
+    if (!trans)
     {
-        SolvGetPackageId(pPkgList, pkgIndex, &availableId);
-        dwError = SolvCmpEvr(pSack, installedId, availableId, &evrCompare);
-        if(dwError == 0 && evrCompare > 0)
+        dwError = ERROR_TDNF_SOLV_NO_SOLUTION;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (int i = 0; i < trans->steps.count; ++i)
+    {
+        pkg = trans->steps.elements[i];
+
+        switch (type)
         {
-            queue_push(&tmp, availableId);
+            case SOLVER_TRANSACTION_OBSOLETED:
+                pkgType =  transaction_type(trans, pkg, SOLVER_TRANSACTION_SHOW_OBSOLETES);
+                break;
+            default:
+                pkgType  = transaction_type(trans, pkg, 
+                     SOLVER_TRANSACTION_SHOW_ACTIVE|
+                     SOLVER_TRANSACTION_SHOW_ALL);
+                break;
         }
-    }
 
-    if(tmp.count > 0)
-    {
-        dwError = SolvGetLatest(pSack, &tmp, tmp.elements[0], candidate);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (type == pkgType)
+            queue_push(&solvedPackages, pkg);
     }
-    else
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
+    queue_insertn(&pPkgList->packages, pPkgList->packages.count,
+             solvedPackages.count, solvedPackages.elements);
 cleanup:
-    queue_free(&tmp);
-    if(pPkgList)
-    {
-        SolvFreePackageList(pPkgList);
-    }
+    queue_free(&solvedPackages);
     return dwError;
 
 error:
-    goto cleanup;;
+    goto cleanup;
 }

@@ -7,6 +7,72 @@
 #define MODE_VERIFY      5
 #define MODE_PATCH       6
 
+uint32_t
+SolvAddUpgradeAllJob(
+    Queue* jobs
+    )
+{
+    queue_push2(jobs, SOLVER_UPDATE|SOLVER_SOLVABLE_ALL, 0);
+    return 0;
+}
+
+uint32_t
+SolvAddDistUpgradeJob(
+    Queue* jobs
+    )
+{
+    queue_push2(jobs, SOLVER_DISTUPGRADE|SOLVER_SOLVABLE_ALL, 0);
+    return 0;
+}
+
+uint32_t
+SolvAddFlagsToJobs(
+    Queue* jobs,
+    int flags)
+{
+    for (int i = 0; i < jobs->count; i += 2)
+    {
+        jobs->elements[i] |= flags;//SOLVER_FORCEBEST;
+    }
+    return 0;
+}
+
+uint32_t
+SolvAddPkgInstallJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, id);
+    return 0;
+}
+
+uint32_t
+SolvAddPkgDowngradeJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, id);
+    return 0;
+}
+
+uint32_t
+SolvAddPkgEraseJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_ERASE, id);
+    return 0;
+}
+
+uint32_t
+SolvAddPkgUserInstalledJob(
+    Queue* jobs,
+    Id id)
+{
+    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, id);
+    return 0;
+}
+
 PSolvQuery
 SolvCreateQuery(
     PSolvSack pSack)
@@ -468,170 +534,6 @@ SolvApplyAlterQuery(
     //transaction_print(pTrans);
     //pQuery->nNewPackages = transaction_installedresult(pTrans, &pQuery->result);
 cleanup:
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-uint32_t
-SolvApplyEraseQuery(
-    PSolvQuery pQuery
-    )
-{
-    return SolvApplyAlterQuery(pQuery, MODE_ERASE, SOLVER_ERASE);
-}
-
-uint32_t
-SolvApplyInstallQuery(
-    PSolvQuery pQuery
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    Id recent = 0;
-    Queue tmp;
-    Queue tmp2;
-    Queue jobs;
-    queue_init(&tmp);
-    queue_init(&tmp2);
-    queue_init(&jobs);
-    dwError = SolvApplyListQuery(pQuery);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    queue_insertn(&tmp, tmp.count, pQuery->result.count, pQuery->result.elements);
-    while(tmp.count > 0 )
-    {
-        dwError = SolvGetLatest(pQuery->pSack, &tmp, tmp.elements[0], &recent);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_push2(&jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, recent);
-        dwError = SolvRemovePkgWithSameName(pQuery->pSack, &tmp,
-                 tmp.elements[0], &tmp2);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_empty(&tmp);
-        queue_insertn(&tmp, tmp.count, tmp2.count, tmp2.elements);
-        queue_empty(&tmp2);
-    }
-
-    dwError = SolvRunSolv(pQuery, MODE_INSTALL, SOLVER_INSTALL, &jobs, &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
-    transaction_print(pTrans);
-cleanup:
-    queue_free(&jobs);
-    queue_free(&tmp);
-    queue_free(&tmp2);
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-
-uint32_t
-SolvApplyReinstallQuery(
-    PSolvQuery pQuery
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    int pkgIndex = 0;
-    Queue jobs;
-    queue_init(&jobs);
-    for(pkgIndex = 0 ; pkgIndex < pQuery->result.count; pkgIndex++)
-    {
-        queue_push2(&jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, pQuery->result.elements[pkgIndex]);
-    }
-    dwError = SolvRunSolv(pQuery, MODE_INSTALL, SOLVER_INSTALL, &jobs, &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
-    transaction_print(pTrans);
-cleanup:
-    queue_free(&jobs);
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-uint32_t
-SolvApplyUpdateQuery(
-    PSolvQuery pQuery
-    )
-{
-    return SolvApplyAlterQuery(pQuery, MODE_UPDATE, SOLVER_UPDATE);
-}
-
-uint32_t
-SolvApplyDowngradeQuery(
-    PSolvQuery pQuery
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    Id recent = 0;
-    Queue tmp;
-    Queue tmp2;
-    Queue jobs;
-    queue_init(&tmp);
-    queue_init(&tmp2);
-    queue_init(&jobs);
-
-    queue_insertn(&tmp, tmp.count, pQuery->result.count, pQuery->result.elements);
-    while(tmp.count > 0 )
-    {
-        dwError = SolvGetLatest(pQuery->pSack, &tmp, tmp.elements[0], &recent);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_push2(&jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, recent);
-        dwError = SolvRemovePkgWithSameName(pQuery->pSack, &tmp,
-                 tmp.elements[0], &tmp2);
-        BAIL_ON_TDNF_ERROR(dwError);
-        queue_empty(&tmp);
-        queue_insertn(&tmp, tmp.count, tmp2.count, tmp2.elements);
-        queue_empty(&tmp2);
-    }
-
-    dwError = SolvRunSolv(pQuery, MODE_INSTALL, SOLVER_INSTALL, &jobs, &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->result, pQuery->result.count, pTrans->steps.count, pTrans->steps.elements);
-    transaction_print(pTrans);
-cleanup:
-    queue_free(&jobs);
-    queue_free(&tmp);
-    queue_free(&tmp2);
     if(pSolv)
         solver_free(pSolv);
     return dwError;

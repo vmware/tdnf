@@ -25,7 +25,7 @@ uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepoData,
-    PSolvRepo* phRepo
+    PSolvRepo* ppRepo
     )
 {
     uint32_t dwError = 0;
@@ -43,7 +43,7 @@ TDNFInitRepo(
     char* ppszDownloadList[] = {"primary", "filelists", "updateinfo", NULL};
     PTDNF_CONF pConf = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !pRepoData || !phRepo)
+    if(!pTdnf || !pTdnf->pConf || !pRepoData || !ppRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -160,7 +160,7 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFInitRepoFromMetaData(pTdnf, NULL, pRepoData->pszId, pRepo);
+    dwError = TDNFInitRepoFromMetaData(pTdnf, pRepoData->pszId, pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -199,9 +199,9 @@ error:
             TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
         }
     }
-    if(phRepo)
+    if(ppRepo)
     {
-        *phRepo = NULL;
+        *ppRepo = NULL;
     }
     goto cleanup;
 }
@@ -209,7 +209,6 @@ error:
 uint32_t
 TDNFInitRepoFromMetaData(
     PTDNF pTdnf,
-    PSolvRepo hRepo,
     const char* repo_name,
     LrYumRepo* pRepo
     )

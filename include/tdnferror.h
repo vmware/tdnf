@@ -66,7 +66,6 @@ extern "C" {
 #define ERROR_TDNF_NO_UPGRADE_PATH          1027
 #define ERROR_TDNF_NO_DOWNGRADE_PATH        1028
 
-//Hawkey errors 1300 to 1399
 #define ERROR_TDNF_SOLV_BASE          1300
 // general runtime error
 #define ERROR_TDNF_SOLV_FAILED        (ERROR_TDNF_SOLV_BASE + 1)

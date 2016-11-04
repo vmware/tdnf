@@ -21,15 +21,15 @@ TDNF_CLI_W_CHROOT check-update
 [ignore])
 AT_CLEANUP
 
-#AT_SETUP([update all])
-#AT_KEYWORDS([update])
-#AT_CHECK([
-#TDNF_CLI_W_CHROOT update -y
-#],
-#[0],
-#[ignore],
-#[ignore])
-#AT_CLEANUP
+AT_SETUP([update all])
+AT_KEYWORDS([update])
+AT_CHECK([
+TDNF_CLI_W_CHROOT update -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
 
 AT_SETUP([update by version])
 AT_KEYWORDS([update])

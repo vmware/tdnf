@@ -21,15 +21,15 @@ TDNF_CLI_W_CHROOT install tdnf-test-one -y
 [ignore])
 AT_CLEANUP
 
-#AT_SETUP([install existing])
-#AT_KEYWORDS([install])
-#AT_CHECK([
-#TDNF_CLI_W_CHROOT install tdnf-test-one -y
-#],
-#[0],
-#[ignore],
-#[ignore])
-#AT_CLEANUP
+AT_SETUP([install existing])
+AT_KEYWORDS([install])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-one -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
 
 AT_SETUP([install non existent])
 AT_KEYWORDS([install])
@@ -41,13 +41,13 @@ TDNF_CLI_W_CHROOT install pkg-not-found
 [ignore])
 AT_CLEANUP
 
-#AT_SETUP([install by version])
-#AT_KEYWORDS([install])
-#AT_CHECK([
-#TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
-#TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.2 -y
-#],
-#[0],
-#[ignore],
-#[ignore])
-#AT_CLEANUP
+AT_SETUP([install by version])
+AT_KEYWORDS([install])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.2 -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
