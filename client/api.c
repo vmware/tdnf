@@ -80,10 +80,6 @@ cleanup:
     return dwError;
 
 error:
-    if(pnInitialized)
-    {
-        *pnInitialized = 0;
-    }
     goto cleanup;
 }
 
@@ -1079,7 +1075,7 @@ TDNFUpdateInfo(
                 pLocalTime = localtime(&dwUpdated);
                 if(!pLocalTime)
                 {
-                    dwError = errno;
+                    dwError = ERROR_TDNF_INVALID_PARAMETER;
                     BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
                 }
                 memset(szDate, 0, DATELEN);

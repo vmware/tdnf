@@ -189,15 +189,9 @@ TDNFUtilsMakeDir(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(access(pszDir, F_OK))
+    if(mkdir(pszDir, 755))
     {
-        if(errno != ENOENT)
-        {
-            dwError = errno;
-        }
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-
-        if(mkdir(pszDir, 755))
+        if(errno != EEXIST)
         {
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -324,20 +318,17 @@ TDNFTouchFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(stat(pszFile, &st) == -1)
+    fd = creat(pszFile, S_IRUSR | S_IRGRP | S_IROTH);
+    if(fd == -1)
     {
-        if(errno == ENOENT)
+        if(errno == EEXIST)
         {
-            fd = creat(pszFile,
-                       S_IRUSR | S_IRGRP | S_IROTH);
-            if(fd == -1)
+            times.actime = st.st_atime;
+            times.modtime = time(NULL);
+            if(utime(pszFile, &times))
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-            else
-            {
-                close(fd);
             }
         }
         else
@@ -346,18 +337,12 @@ TDNFTouchFile(
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
     }
-    else
-    {
-        times.actime = st.st_atime;
-        times.modtime = time(NULL);
-        if(utime(pszFile, &times))
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-    }
 
 cleanup:
+    if(fd != -1)
+    {
+        close(fd);
+    }
     return dwError;
 
 error:

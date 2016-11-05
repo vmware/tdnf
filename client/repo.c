@@ -103,21 +103,13 @@ TDNFInitRepo(
     }
     else
     {
-        //Look for the repo root cache dir. If not there,
-        //try to create and download into it.
-        if(access(pszRepoCacheDir, F_OK))
+        if(mkdir(pszRepoCacheDir, 755))
         {
-            if(errno != ENOENT)
-            {
-                dwError = errno;
-            }
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-
-            if(mkdir(pszRepoCacheDir, 755))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
+             if(errno != EEXIST)
+             {
+                 dwError = errno;
+                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+             }
         }
 
         lr_handle_setopt(hLibRepo, NULL, LRO_URLS, ppszRepoUrls);

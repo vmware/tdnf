@@ -250,7 +250,10 @@ cleanup:
     return dwError;
 
 error:
-    doCheck(pTS);
+    if(pTS)
+    {
+        doCheck(pTS);
+    }
     goto cleanup;
 }
 
@@ -750,7 +753,7 @@ TDNFRemoveCachedRpms(
     for(dwIndex = 0; dwIndex < pCachedRpmsArray->len; ++dwIndex)
     {
         pszCachedRpm = g_array_index(pCachedRpmsArray, char*, dwIndex);
-        if(access(pszCachedRpm, F_OK) != -1)
+        if(IsNullOrEmptyString(pszCachedRpm))
         {
             if(unlink(pszCachedRpm))
             {
