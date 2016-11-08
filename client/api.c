@@ -317,7 +317,6 @@ TDNFList(
     dwError = SolvGetListResult(pQuery, pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-
     dwError = TDNFPopulatePkgInfoArray(
                   pTdnf->pSack,
                   pPkgList,
@@ -612,8 +611,7 @@ TDNFSearchCommand(
     int nIndex = 0;
     uint32_t unCount  = 0;
     Id  pkgId = 0;
-    const char* pszName = NULL;
-    const char* pszSummary = NULL;
+
     if(!pTdnf || !pCmdArgs || !ppPkgInfo || !punCount || !pTdnf->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -657,27 +655,20 @@ TDNFSearchCommand(
                 unCount,
                 sizeof(TDNF_PKG_INFO),
                 (void**)&pPkgInfo);
-
     BAIL_ON_TDNF_ERROR(dwError);
 
     for(nIndex = 0; nIndex < unCount; nIndex++)
     {
+        PTDNF_PKG_INFO pPkg = &pPkgInfo[nIndex];
+
         dwError = SolvGetPackageId(pPkgList, nIndex, &pkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        PTDNF_PKG_INFO pPkg = &pPkgInfo[nIndex];
-        dwError = SolvGetPkgNameFromId(pTdnf->pSack, pkgId, &pszName);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFSafeAllocateString(pszName, &pPkg->pszName);
+        dwError = SolvGetPkgNameFromId(pTdnf->pSack, pkgId, &pPkg->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgSummaryFromId(pTdnf->pSack,
                     pkgId,
-                    &pszSummary);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFSafeAllocateString(pszSummary, 
                     &pPkg->pszSummary);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -695,6 +686,7 @@ cleanup:
         SolvFreePackageList(pPkgList);
     }
     return dwError;
+
 error:
     if(ppPkgInfo)
     {
@@ -707,7 +699,6 @@ error:
     TDNFFreePackageInfoArray(pPkgInfo, unCount);
 
     goto cleanup;
-
 }
 
 //TODO: Refactor UpdateInfoSummary into one function

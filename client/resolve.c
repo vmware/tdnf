@@ -66,7 +66,7 @@ TDNFPrepareAllPackages(
     int nCmdIndex = 0;
     int nPkgIndex = 0;
     char* pszPkgName = NULL;
-    const char* pszName = NULL;
+    char* pszName = NULL;
 
 
     if(!pTdnf || !pTdnf->pArgs || !pSolvedPkgInfo || !qGoal)
@@ -129,6 +129,7 @@ TDNFPrepareAllPackages(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszName);
     queue_free(&qGlob);
     return dwError;
 
@@ -146,7 +147,7 @@ uint32_t TDNFFilterPackages(
     uint32_t pkgIndex = 0;
     uint32_t dwSize = 0;
     PSolvPackageList pInstalledPkgList = NULL;
-    const char* pszName = NULL;
+    char* pszName = NULL;
 
     if(!pTdnf || !qGoal)
     {
@@ -185,6 +186,7 @@ uint32_t TDNFFilterPackages(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszName);
     if(pInstalledPkgList)
     {
         SolvFreePackageList(pInstalledPkgList);

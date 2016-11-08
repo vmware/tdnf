@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #include "includes.h"
 
 #define MODE_INSTALL     1
@@ -80,21 +88,15 @@ SolvCreateQuery(
 {
     uint32_t dwError = 0;
     PSolvQuery pQuery = NULL;
-    if(!pSack)
+
+    if(!pSack || !ppQuery)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pQuery = solv_calloc(1, sizeof(SolvQuery));
-    if(!pQuery)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pSolv = NULL;
-    pQuery->pTrans = NULL;
-    pQuery->ppszPackageNames = NULL;
+    dwError = TDNFAllocateMemory(1, sizeof(SolvQuery), (void **)&pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pQuery->pSack = pSack;
     queue_init(&pQuery->queueJob);
@@ -103,10 +105,16 @@ SolvCreateQuery(
     queue_init(&pQuery->queueArchFilter);
     queue_init(&pQuery->queueResult);
     *ppQuery = pQuery;
-cleanup: 
+
+cleanup:
     return dwError;
 
 error:
+    if(ppQuery)
+    {
+        *ppQuery = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pQuery);
     goto cleanup;
 }
 
@@ -114,7 +122,6 @@ void
 SolvFreeQuery(
     PSolvQuery pQuery)
 {
-    char** ppszTmpNames = NULL;
     if(pQuery)
     {
         if(pQuery->pTrans)
@@ -132,17 +139,9 @@ SolvFreeQuery(
         queue_free(&pQuery->queueKindFilter);
         queue_free(&pQuery->queueArchFilter);
         queue_free(&pQuery->queueResult);
-        if(pQuery->ppszPackageNames)
-        {
-            ppszTmpNames = pQuery->ppszPackageNames;
-            while(*ppszTmpNames)
-            {
-                solv_free(*ppszTmpNames);
-                ppszTmpNames++;
-            }
-            solv_free(pQuery->ppszPackageNames);
-        }
-        solv_free(pQuery);
+
+        TDNFFreeStringArray(pQuery->ppszPackageNames);
+        TDNF_SAFE_FREE_MEMORY(pQuery);
     }
 }
 
@@ -153,98 +152,75 @@ SolvApplySinglePackageFilter(
     )
 {
     uint32_t dwError = 0;
-    char* pkgName = NULL;
-    char** tmpNames = NULL;
-    char** ppCopyOfpkgNames = NULL;
-    if(!pQuery || !pszPackageName)
+    char** ppszPkgNames = NULL;
+
+    if(!pQuery || IsNullOrEmptyString(pszPackageName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ppCopyOfpkgNames = solv_calloc(2, sizeof(char*));
-    pkgName = solv_strdup(pszPackageName);
-    if(!pkgName)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    *ppCopyOfpkgNames = pkgName;
-    pQuery->ppszPackageNames = ppCopyOfpkgNames;
+    dwError = TDNFAllocateMemory(2,
+                                 sizeof(char *),
+                                 (void **)&ppszPkgNames);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pszPackageName, &ppszPkgNames[0]);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pQuery->ppszPackageNames = ppszPkgNames;
 
 cleanup:
-  
     return dwError;
+
 error:
-    if(ppCopyOfpkgNames)
-    {
-        tmpNames = ppCopyOfpkgNames;
-        while(*tmpNames)
-        {
-            solv_free(*tmpNames);
-            tmpNames++;
-        }
-        solv_free(ppCopyOfpkgNames);
-    }
+    TDNFFreeStringArray(ppszPkgNames);
     goto cleanup;
 }
 
 uint32_t
 SolvApplyPackageFilter(
     PSolvQuery pQuery,
-    char** ppszPackageNames)
+    char** ppszPkgNames
+    )
 {
     uint32_t dwError = 0;
-    int pkgs = 0;
-    char** tmpNames = NULL;
-    char** ppCopyOfpkgNames = NULL;
-    char* pkgName = NULL;
-    if(!pQuery || !ppszPackageNames)
+    int i = 0;
+    int nPkgCount = 0;
+    char** ppszTemp = NULL;
+    char** ppszCopyOfPkgNames = NULL;
+
+    if(!pQuery || !ppszPkgNames)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    tmpNames = ppszPackageNames;
-    while(*tmpNames)
+    ppszTemp = ppszPkgNames;
+    while(*ppszTemp)
     {
-        pkgs++;
-        tmpNames++;
+        ++ppszTemp;
+        ++nPkgCount;
     }
 
-    if (pkgs != 0)
+    dwError = TDNFAllocateMemory(nPkgCount + 1,
+                                 sizeof(char **),
+                                 (void **)&ppszCopyOfPkgNames);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(i = 0; i < nPkgCount; ++i)
     {
-        ppCopyOfpkgNames = solv_calloc(pkgs + 1, sizeof(char*));
-        tmpNames = ppCopyOfpkgNames;
-        while(*ppszPackageNames)
-        {
-            pkgName = solv_strdup(*ppszPackageNames);
-            if(!pkgName)
-            {
-                dwError = ERROR_TDNF_OUT_OF_MEMORY;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            *tmpNames = pkgName;
-            tmpNames++;
-            ppszPackageNames++;
-        }
-        pQuery->ppszPackageNames = ppCopyOfpkgNames;
+        dwError = TDNFAllocateString(ppszPkgNames[i], &ppszCopyOfPkgNames[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    pQuery->ppszPackageNames = ppszCopyOfPkgNames;
+
 cleanup:
-  
     return dwError;
-error:
-    if(ppCopyOfpkgNames)
-    {
-        tmpNames = ppCopyOfpkgNames;
-        while(*tmpNames)
-        {
-            solv_free(*tmpNames);
-            tmpNames++;
-        }
-        solv_free(ppCopyOfpkgNames);
-    }
 
+error:
+    TDNFFreeStringArray(ppszCopyOfPkgNames);
     goto cleanup;
 }
 
@@ -255,16 +231,19 @@ SolvAddSystemRepoFilter(
 {
     uint32_t dwError = 0;
     Pool *pool = NULL;
+
     if(!pQuery || !pQuery->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    pool = pQuery->pSack->pPool;
-    queue_push2(&pQuery->queueRepoFilter, SOLVER_SOLVABLE_REPO | SOLVER_SETREPO,
-            pool->installed->repoid);
 
-cleanup: 
+    pool = pQuery->pSack->pPool;
+    queue_push2(&pQuery->queueRepoFilter,
+                SOLVER_SOLVABLE_REPO | SOLVER_SETREPO,
+                pool->installed->repoid);
+
+cleanup:
     return dwError;
 
 error:
@@ -280,11 +259,13 @@ SolvAddAvailableRepoFilter(
     Repo *pRepo = NULL;
     Pool *pool = NULL;
     int i = 0;
+
     if(!pQuery || !pQuery->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
+
     pool = pQuery->pSack->pPool;
     FOR_REPOS(i, pRepo)
     {
@@ -296,7 +277,7 @@ SolvAddAvailableRepoFilter(
         }
     }
 
-cleanup: 
+cleanup:
     return dwError;
 
 error:
@@ -305,19 +286,22 @@ error:
 
 static uint32_t
 SolvGenerateCommonJob(
-    PSolvQuery pQuery)
+    PSolvQuery pQuery
+    )
 {
     uint32_t dwError = 0;
-    char** pkgNames = pQuery->ppszPackageNames;
+    char** pkgNames = NULL;
     Pool *pPool = NULL;
-    Queue job2;
-    queue_init(&job2);
+    Queue job2 = {0};
+
     if(!pQuery || !pQuery->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    
+
+    pkgNames = pQuery->ppszPackageNames;
+    queue_init(&job2);
     pPool = pQuery->pSack->pPool;
     if(pkgNames)
     {
@@ -361,8 +345,8 @@ SolvGenerateCommonJob(
             pkgNames++;
         }
     }
-    else if(pQuery->queueRepoFilter.count || 
-            pQuery->queueArchFilter.count || 
+    else if(pQuery->queueRepoFilter.count ||
+            pQuery->queueArchFilter.count ||
             pQuery->queueKindFilter.count)
     {
         queue_empty(&job2);
@@ -376,8 +360,7 @@ SolvGenerateCommonJob(
         queue_insertn(&pQuery->queueJob, pQuery->queueJob.count, job2.count, job2.elements);
     }
 
-
-cleanup: 
+cleanup:
     queue_free(&job2);
     return dwError;
 
@@ -485,9 +468,18 @@ SolvApplyListQuery(
     uint32_t dwError = 0;
     int i = 0;
     Queue tmp;
+
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
     queue_init(&tmp);
+
     dwError = SolvGenerateCommonJob(pQuery);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
     if(pQuery->queueJob.count > 0)
     {
         for (i = 0; i < pQuery->queueJob.count ; i += 2)
@@ -499,12 +491,13 @@ SolvApplyListQuery(
             queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, tmp.count, tmp.elements);
         }
     }
-    else if(pQuery->ppszPackageNames == NULL)
+    else if(!pQuery->ppszPackageNames ||
+            IsNullOrEmptyString(pQuery->ppszPackageNames[0]))
     {
         pool_job2solvables(pQuery->pSack->pPool, &pQuery->queueResult, SOLVER_SOLVABLE_ALL, 0);
     }
 
-cleanup: 
+cleanup:
     queue_free(&tmp);
     return dwError;
 
@@ -539,6 +532,7 @@ SolvApplyAlterQuery(
     queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, pTrans->steps.count, pTrans->steps.elements);
     //transaction_print(pTrans);
     //pQuery->nNewPackages = transaction_installedresult(pTrans, &pQuery->result);
+
 cleanup:
     if(pSolv)
         solver_free(pSolv);
@@ -603,8 +597,9 @@ SolvApplySearch(
         selection_solvables(pool, &sel, &q);
         queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, q.count, q.elements);
     }
+
 cleanup:
-    queue_free(&sel); 
+    queue_free(&sel);
     queue_free(&q);
     return dwError;
 
@@ -615,60 +610,102 @@ error:
 uint32_t
 SolvSplitEvr(
     PSolvSack pSack,
-    const char *pEVRstring,
-    char **ppEpoch,
-    char **ppVersion,
-    char **ppRelease)
+    const char *pszEVRstring,
+    char **ppszEpoch,
+    char **ppszVersion,
+    char **ppszRelease)
 {
 
     uint32_t dwError = 0;
-    char *pEvr = NULL;
+    char *pszEvr = NULL;
     int eIndex = 0;
     int rIndex = 0;
-    if(!pSack || !pEVRstring || !ppEpoch || !ppVersion || !ppRelease)
+    char *pszTempEpoch = NULL;
+    char *pszTempVersion = NULL;
+    char *pszTempRelease = NULL;
+    char *pszEpoch = NULL;
+    char *pszVersion = NULL;
+    char *pszRelease = NULL;
+    char *pszIt = NULL;
+
+    if(!pSack || !pszEVRstring || !ppszEpoch || !ppszVersion || !ppszRelease)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    pEvr = pool_alloctmpspace(pSack->pPool, strlen(pEVRstring) + 1);
-    if(!pEvr)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-    strcpy(pEvr, pEVRstring);
+
+    dwError = TDNFAllocateString(pszEVRstring, &pszEvr);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     // EVR string format: epoch : version-release
-    char* it = pEvr;
-    for( ; *it != '\0'; it++)
+    pszIt = pszEvr;
+    for( ; *pszIt != '\0'; pszIt++)
     {
-        if(*it == ':')
+        if(*pszIt == ':')
         {
-            eIndex = it - pEvr;
+            eIndex = pszIt - pszEvr;
         }
-        else if(*it == '-')
+        else if(*pszIt == '-')
         {
-            rIndex = it - pEvr;
+            rIndex = pszIt - pszEvr;
         }
     }
 
-    *ppVersion = pEvr;
-    *ppEpoch = NULL;
-    *ppRelease = NULL;
+    pszTempVersion = pszEvr;
+    pszTempEpoch = NULL;
+    pszTempRelease = NULL;
     if(eIndex != 0)
     {
-        *ppEpoch = pEvr;
-        *(pEvr + eIndex) = '\0';
-        *ppVersion = pEvr + eIndex + 1;
+        pszTempEpoch = pszEvr;
+        *(pszEvr + eIndex) = '\0';
+        pszTempVersion = pszEvr + eIndex + 1;
     }
 
     if(rIndex != 0 && rIndex > eIndex)
     {
-        *ppRelease = pEvr + rIndex + 1;
-        *(pEvr + rIndex) = '\0';
+        pszTempRelease = pszEvr + rIndex + 1;
+        *(pszEvr + rIndex) = '\0';
     }
-cleanup: 
+
+    if(!IsNullOrEmptyString(pszTempEpoch))
+    {
+        dwError = TDNFAllocateString(pszTempEpoch, &pszEpoch);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(!IsNullOrEmptyString(pszTempVersion))
+    {
+        dwError = TDNFAllocateString(pszTempVersion, &pszVersion);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(!IsNullOrEmptyString(pszTempRelease))
+    {
+        dwError = TDNFAllocateString(pszTempRelease, &pszRelease);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppszEpoch = pszEpoch;
+    *ppszVersion = pszVersion;
+    *ppszRelease = pszRelease;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszEvr);
     return dwError;
+
 error:
+    if(ppszEpoch)
+    {
+        *ppszEpoch = NULL;
+    }
+    if(ppszVersion)
+    {
+        *ppszVersion = NULL;
+    }
+    if(ppszRelease)
+    {
+        *ppszRelease = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszEpoch);
+    TDNF_SAFE_FREE_MEMORY(pszVersion);
+    TDNF_SAFE_FREE_MEMORY(pszRelease);
     goto cleanup;
 }

@@ -2,25 +2,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <stdint.h>
-#include <sys/utsname.h>
-// libsolv
-#include <solv/evr.h>
-#include <solv/pool.h>
-#include <solv/poolarch.h>
-#include <solv/repo.h>
-#include <solv/repo_deltainfoxml.h>
-#include <solv/repo_repomdxml.h>
-#include <solv/repo_updateinfoxml.h>
-#include <solv/repo_rpmmd.h>
-#include <solv/repo_rpmdb.h>
-#include <solv/repo_solv.h>
-#include <solv/repo_write.h>
-#include <solv/solv_xfopen.h>
-#include <solv/solver.h>
-#include <solv/selection.h>
-#include <solv/solverdebug.h>
-
 typedef struct _SolvSack
 {
     Pool*       pPool;
@@ -76,37 +57,37 @@ SolvGetPkgInfoFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
     uint32_t dwWhichInfo,
-    const char** ppszInfo);
+    char** ppszInfo);
 
 uint32_t
 SolvGetPkgNameFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszName);
+    char** ppszName);
 
 uint32_t
 SolvGetPkgArchFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszArch);
+    char** ppszArch);
 
 uint32_t
 SolvGetPkgVersionFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char ** ppszVersion);
+    char ** ppszVersion);
 
 uint32_t
 SolvGetPkgReleaseFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszRelease);
+    char** ppszRelease);
 
 uint32_t
 SolvGetPkgRepoNameFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppRepoName);
+    char** ppRepoName);
 
 uint32_t
 SolvGetPkgInstallSizeFromId(
@@ -118,38 +99,38 @@ uint32_t
 SolvGetPkgSummaryFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszSummary);
+    char** ppszSummary);
 
 uint32_t
 SolvGetPkgLicenseFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszLicense);
+    char** ppszLicense);
 
 uint32_t
 SolvGetPkgDescriptionFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszDescription);
+    char** ppszDescription);
 
 
 uint32_t
 SolvGetPkgUrlFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszUrl);
+    char** ppszUrl);
 
 uint32_t 
 SolvGetPkgLocationFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    const char** ppszLocation);
+    char** ppszLocation);
 
 uint32_t
 SolvGetPkgNevrFromId(
     PSolvSack pSack,
     uint32_t  dwPkgId,
-    const char** ppszNevr);
+    char** ppszNevr);
 
 uint32_t
 SolvSplitEvr(

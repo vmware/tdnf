@@ -353,7 +353,7 @@ TDNFAddGoal(
     )
 {
     uint32_t dwError = 0;
-    const char* pszPkg = NULL;
+    char* pszPkg = NULL;
     int flags = 0;
     int i = 0;
     Queue job2;
@@ -405,6 +405,7 @@ TDNFAddGoal(
             BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszPkg);
     queue_free(&job2);
     return dwError;
 

@@ -1,37 +1,42 @@
+/*
+ * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #include "includes.h"
 
-uint32_t 
+uint32_t
 SolvCreateSack(PSolvSack* ppSack)
 {
     uint32_t dwError = 0;
+    PSolvSack pSack = NULL;
+
     if(!ppSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    PSolvSack pSack = solv_calloc(1, sizeof(SolvSack));
-    if(!pSack)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pSack->pPool = NULL;;
-    pSack->pdwCommandLinePkgs = NULL;
-    pSack->dwNumOfCommandPkgs = 0;
-    pSack->pszCacheDir = NULL;
-    pSack->pszRootDir = NULL;
+    dwError = TDNFAllocateMemory(1, sizeof(SolvSack), (void **)&pSack);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     *ppSack = pSack;
-cleanup: 
+cleanup:
     return dwError;
 
 error:
+    if(ppSack)
+    {
+        *ppSack = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pSack);
     goto cleanup;
 }
 
-void 
+void
 SolvFreeSack(
     PSolvSack pSack)
 {
@@ -42,24 +47,15 @@ SolvFreeSack(
         {
             pool_free(pPool);
         }
-        if(pSack->pdwCommandLinePkgs)
-        {
-            solv_free(pSack->pdwCommandLinePkgs);
-        }
-        if(pSack->pszCacheDir)
-        {
-            solv_free(pSack->pszCacheDir);
-        }
-        if(pSack->pszRootDir)
-        {
-            solv_free(pSack->pszRootDir);
-        }
-        solv_free(pSack);
+        TDNF_SAFE_FREE_MEMORY(pSack->pdwCommandLinePkgs);
+        TDNF_SAFE_FREE_MEMORY(pSack->pszCacheDir);
+        TDNF_SAFE_FREE_MEMORY(pSack->pszRootDir);
+        TDNF_SAFE_FREE_MEMORY(pSack);
     }
 
 }
 
-static uint32_t 
+static uint32_t
 SolvReadInstalledRpms(
     Pool* pPool,
     Repo** ppRepo,
@@ -98,7 +94,7 @@ SolvReadInstalledRpms(
     }
     *ppRepo = pRepo;
 
-cleanup: 
+cleanup:
     if (pCacheFile)
         fclose(pCacheFile);
     return dwError;
@@ -131,15 +127,12 @@ SolvInitSack(
     }
 
     dwError = SolvCreateSack(&pSack);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     if (pszCacheDir != NULL)
     {
-        pSack->pszCacheDir = solv_strdup(pszCacheDir);
-        if(!pSack->pszCacheDir)
-        {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
+        dwError = TDNFAllocateString(pszCacheDir, &pSack->pszCacheDir);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pPool = pool_create();
@@ -152,6 +145,9 @@ SolvInitSack(
     if(pszRootDir != NULL)
     {
         pool_set_rootdir(pPool, pszRootDir);
+
+        dwError = TDNFAllocateString(pszRootDir, &pSack->pszRootDir);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     if (uname(&systemInfo))
@@ -159,7 +155,7 @@ SolvInitSack(
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    
+
     pool_setarch(pPool, systemInfo.machine);
     pool_set_flag(pPool, POOL_FLAG_ADDFILEPROVIDESFILTERED, 1);
 
@@ -171,7 +167,7 @@ SolvInitSack(
     pSack->pPool = pPool;
     *ppSack = pSack;
 
-cleanup: 
+cleanup:
     return dwError;
 
 error:

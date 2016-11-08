@@ -34,7 +34,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
-#include <tdnfsolv.h>
+#include "../solv/includes.h"
 //librepo
 #include <librepo/librepo.h>
 
