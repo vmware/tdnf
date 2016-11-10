@@ -217,31 +217,31 @@ error:
 int
 doCheck(PTDNFRPMTS pTS)
 {
-  int nResult = 0;
-  rpmpsi psi = NULL;
-  rpmProblem prob = NULL;
-  nResult = rpmtsCheck(pTS->pTS);
+    int nResult = 0;
+    rpmpsi psi = NULL;
+    rpmProblem prob = NULL;
+    nResult = rpmtsCheck(pTS->pTS);
 
-  rpmps ps = rpmtsProblems(pTS->pTS);
-  if(ps)
-  {
-    int nProbs = rpmpsNumProblems(ps);
-    if(nProbs > 0)
+    rpmps ps = rpmtsProblems(pTS->pTS);
+    if(ps)
     {
-      printf("Found %d problems\n", nProbs);
+        int nProbs = rpmpsNumProblems(ps);
+        if(nProbs > 0)
+        {
+            printf("Found %d problems\n", nProbs);
 
-      psi = rpmpsInitIterator(ps);
-      while(rpmpsNextIterator(psi) >= 0)
-      {
-        prob = rpmpsGetProblem(psi);
-        printf("%s\n", rpmProblemString(prob));
-        rpmProblemFree(prob);
-      }
-      rpmpsFreeIterator(psi);
-      nResult = ERROR_TDNF_RPM_CHECK;
+            psi = rpmpsInitIterator(ps);
+            while(rpmpsNextIterator(psi) >= 0)
+            {
+                prob = rpmpsGetProblem(psi);
+                printf("%s\n", rpmProblemString(prob));
+                rpmProblemFree(prob);
+            }
+            rpmpsFreeIterator(psi);
+            nResult = ERROR_TDNF_RPM_CHECK;
+        }
     }
-  }
-  return nResult;
+    return nResult;
 }
 
 uint32_t
@@ -294,8 +294,12 @@ TDNFTransAddInstallPkgs(
     }
     while(pInfo)
     {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo->pszLocation, pInfo->pszName,
-                    pInfo->pszRepoName, 0);
+        dwError = TDNFTransAddInstallPkg(
+                      pTS,
+                      pTdnf,
+                      pInfo->pszLocation,
+                      pInfo->pszName,
+                      pInfo->pszRepoName, 0);
         pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -341,12 +345,12 @@ TDNFTransAddInstallPkg(
     char* pszUrlGPGKey = NULL;
 
     pszRpmCacheDir = g_build_filename(
-                           G_DIR_SEPARATOR_S,
-                           pTdnf->pConf->pszCacheDir,
-                           pszRepoName,
-                           "rpms",
-                           G_DIR_SEPARATOR_S,
-                           NULL);
+                         G_DIR_SEPARATOR_S,
+                         pTdnf->pConf->pszCacheDir,
+                         pszRepoName,
+                         "rpms",
+                         G_DIR_SEPARATOR_S,
+                         NULL);
     pszFilePath = g_build_filename(pszRpmCacheDir, pszPackageLocation, NULL);
     if(pTS->pCachedRpmsArray)
     {
@@ -413,10 +417,10 @@ TDNFTransAddInstallPkg(
     }
 
     dwError = rpmReadPackageFile(
-                     pTS->pTS,
-                     fp,
-                     pszFilePath,
-                     &rpmHeader);
+                  pTS->pTS,
+                  fp,
+                  pszFilePath,
+                  &rpmHeader);
     //If not checking gpg sigs, ignore signature errors
     if(!nGPGCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
     {
@@ -425,11 +429,11 @@ TDNFTransAddInstallPkg(
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     dwError = rpmtsAddInstallElement(
-                   pTS->pTS,
-                   rpmHeader,
-                   (fnpyKey)pszFilePath,
-                   nUpgrade,
-                   NULL);
+                  pTS->pTS,
+                  rpmHeader,
+                  (fnpyKey)pszFilePath,
+                  nUpgrade,
+                  NULL);
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
@@ -469,8 +473,13 @@ TDNFTransAddUpgradePkgs(
     }
     while(pInfo)
     {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, pInfo->pszLocation, pInfo->pszName,
-                    pInfo->pszRepoName, 1);
+        dwError = TDNFTransAddInstallPkg(
+                      pTS,
+                      pTdnf,
+                      pInfo->pszLocation,
+                      pInfo->pszName,
+                      pInfo->pszRepoName,
+                      1);
         pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }

@@ -31,10 +31,10 @@ typedef struct _TDNF_
 
 typedef struct _TDNF_RPM_TS_
 {
-  rpmts              pTS;
-  rpmKeyring         pKeyring;
-  rpmtransFlags      nTransFlags;
-  rpmprobFilterFlags nProbFilterFlags;
-  FD_t               pFD;
-  GArray*            pCachedRpmsArray;
+    rpmts              pTS;
+    rpmKeyring         pKeyring;
+    rpmtransFlags      nTransFlags;
+    rpmprobFilterFlags nProbFilterFlags;
+    FD_t               pFD;
+    GArray*            pCachedRpmsArray;
 }TDNFRPMTS, *PTDNFRPMTS;

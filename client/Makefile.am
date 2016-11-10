@@ -20,7 +20,6 @@ libtdnfclient_la_SOURCES = \
     rpmtrans.c \
     updateinfo.c \
     utils.c \
-    search.c \
     validate.c
 
 libtdnfclient_la_LIBADD =  \

@@ -60,9 +60,9 @@ TDNFDownloadPackage(
     char* pszBaseUrl = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszRpmCacheDir) ||
-        IsNullOrEmptyString(pszPackageLocation) ||
-        IsNullOrEmptyString(pszPkgName) ||
-        IsNullOrEmptyString(pszRepoName))
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -113,15 +113,15 @@ TDNFDownloadPackage(
     BAIL_ON_TDNF_ERROR(dwError);
 
     bRet = lr_download_package (
-                         pRepoHandle,
-                         pszPackageLocation,
-                         pszRpmCacheDir,
-                         LR_CHECKSUM_UNKNOWN,
-                         NULL,
-                         0, 
-                         NULL, 
-                         TRUE,
-                         &pError);
+               pRepoHandle,
+               pszPackageLocation,
+               pszRpmCacheDir,
+               LR_CHECKSUM_UNKNOWN,
+               NULL,
+               0, 
+               NULL, 
+               TRUE,
+               &pError);
 
     if(bRet == FALSE)
     {

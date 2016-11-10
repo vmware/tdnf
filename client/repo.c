@@ -25,7 +25,7 @@ uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepoData,
-    PSolvRepo* ppRepo
+    PSolvSack pSack
     )
 {
     uint32_t dwError = 0;
@@ -43,7 +43,7 @@ TDNFInitRepo(
     char* ppszDownloadList[] = {"primary", "filelists", "updateinfo", NULL};
     PTDNF_CONF pConf = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !pRepoData || !ppRepo)
+    if(!pTdnf || !pTdnf->pConf || !pRepoData || !pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -52,10 +52,10 @@ TDNFInitRepo(
     pConf = pTdnf->pConf;
 
     pszRepoCacheDir = g_build_path(
-                           G_DIR_SEPARATOR_S,
-                           pConf->pszCacheDir,
-                           pRepoData->pszId,
-                           NULL);
+                          G_DIR_SEPARATOR_S,
+                          pConf->pszCacheDir,
+                          pRepoData->pszId,
+                          NULL);
     if(!pszRepoCacheDir)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -63,10 +63,10 @@ TDNFInitRepo(
     }
 
     pszRepoDataDir = g_build_path(
-                           G_DIR_SEPARATOR_S,
-                           pszRepoCacheDir,
-                           TDNF_REPODATA_DIR_NAME,
-                           NULL);
+                         G_DIR_SEPARATOR_S,
+                         pszRepoCacheDir,
+                         TDNF_REPODATA_DIR_NAME,
+                         NULL);
     if(!pszRepoDataDir)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -160,7 +160,7 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFInitRepoFromMetaData(pTdnf, pRepoData->pszId, pRepo);
+    dwError = TDNFInitRepoFromMetaData(pSack, pRepoData->pszId, pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -199,17 +199,13 @@ error:
             TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
         }
     }
-    if(ppRepo)
-    {
-        *ppRepo = NULL;
-    }
     goto cleanup;
 }
 
 uint32_t
 TDNFInitRepoFromMetaData(
-    PTDNF pTdnf,
-    const char* repo_name,
+    PSolvSack pSack,
+    const char* pszRepoName,
     LrYumRepo* pRepo
     )
 {
@@ -218,12 +214,26 @@ TDNFInitRepoFromMetaData(
     const char* pszValue2 = NULL;
     const char* pszValue3 = NULL;
 
+    if(!pSack || !pRepo || IsNullOrEmptyString(pszRepoName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pszValue = lr_yum_repo_path(pRepo, "primary");
     pszValue2 = lr_yum_repo_path(pRepo, "filelists");
     pszValue3 = lr_yum_repo_path(pRepo, "updateinfo");
-    SolvReadYumRepo(pTdnf->pSack, repo_name, 
-        pRepo->repomd, pszValue, pszValue2, pszValue3);
+    dwError = SolvReadYumRepo(pSack,
+                  pszRepoName, 
+                  pRepo->repomd,
+                  pszValue,
+                  pszValue2,
+                  pszValue3);
+cleanup: 
+    return dwError;
 
+error:
+    goto cleanup;
     return dwError;
 }
 

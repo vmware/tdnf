@@ -81,10 +81,10 @@ TDNFFreePackageInfoArray(
     uint32_t unIndex = 0;
     if(pPkgInfoArray && unLength > 0)
     {
-      for(unIndex = 0; unIndex < unLength; ++unIndex)
-      {
-        TDNFFreePackageInfoContents(&pPkgInfoArray[unIndex]);
-      }
+        for(unIndex = 0; unIndex < unLength; ++unIndex)
+        {
+            TDNFFreePackageInfoContents(&pPkgInfoArray[unIndex]);
+        }
     }
     TDNF_SAFE_FREE_MEMORY(pPkgInfoArray);
 }
@@ -96,17 +96,17 @@ TDNFFreePackageInfoContents(
 {
     if(pPkgInfo)
     {
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszName);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRepoName);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszVersion);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszArch);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszSummary);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszURL);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLicense);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszDescription);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
-      TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszName);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRepoName);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszVersion);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszArch);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszSummary);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszURL);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLicense);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszDescription);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
     }
 }
 
@@ -118,25 +118,25 @@ TDNFFreeSolvedPackageInfo(
     int i = 0;
     if(pSolvedPkgInfo)
     {
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsExisting);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToInstall);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToUpgrade);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToDowngrade);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToRemove);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
-       TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
-       
-       if(pSolvedPkgInfo->ppszPkgsNotResolved)
-       {
-           while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
-           {
-               TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
-           }
-       }
-       TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsExisting);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToInstall);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToUpgrade);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToDowngrade);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToRemove);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
+
+        if(pSolvedPkgInfo->ppszPkgsNotResolved)
+        {
+            while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
+            {
+                TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+            }
+        }
+        TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
     }
     TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }

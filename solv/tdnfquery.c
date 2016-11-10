@@ -17,74 +17,149 @@
 
 uint32_t
 SolvAddUpgradeAllJob(
-    Queue* jobs
+    Queue* pQueueJobs
     )
 {
-    queue_push2(jobs, SOLVER_UPDATE|SOLVER_SOLVABLE_ALL, 0);
-    return 0;
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_push2(pQueueJobs, SOLVER_UPDATE|SOLVER_SOLVABLE_ALL, 0);
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvAddDistUpgradeJob(
-    Queue* jobs
+    Queue* pQueueJobs
     )
 {
-    queue_push2(jobs, SOLVER_DISTUPGRADE|SOLVER_SOLVABLE_ALL, 0);
-    return 0;
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_push2(pQueueJobs, SOLVER_DISTUPGRADE|SOLVER_SOLVABLE_ALL, 0);
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvAddFlagsToJobs(
-    Queue* jobs,
-    int flags)
+    Queue* pQueueJobs,
+    int nFlags
+    )
 {
-    for (int i = 0; i < jobs->count; i += 2)
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
     {
-        jobs->elements[i] |= flags;//SOLVER_FORCEBEST;
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    return 0;
+    for (int i = 0; i < pQueueJobs->count; i += 2)
+    {
+        pQueueJobs->elements[i] |= nFlags;
+    }
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvAddPkgInstallJob(
-    Queue* jobs,
-    Id id)
+    Queue*  pQueueJobs,
+    Id      dwId
+    )
 {
-    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, id);
-    return 0;
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_INSTALL, dwId);
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvAddPkgDowngradeJob(
-    Queue* jobs,
-    Id id)
+    Queue*  pQueueJobs,
+    Id      dwId
+    )
 {
-    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_INSTALL, id);
-    return 0;
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_INSTALL, dwId);
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvAddPkgEraseJob(
-    Queue* jobs,
-    Id id)
+    Queue*  pQueueJobs,
+    Id      dwId
+    )
 {
-    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_ERASE, id);
-    return 0;
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_ERASE, dwId);
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvAddPkgUserInstalledJob(
-    Queue* jobs,
-    Id id)
+    Queue*  pQueueJobs,
+    Id      dwId)
 {
-    queue_push2(jobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, id);
-    return 0;
+    uint32_t dwError = 0;
+    if(!pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, dwId);
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t
 SolvCreateQuery(
-    PSolvSack pSack,
-    PSolvQuery* ppQuery)
+    PSolvSack   pSack,
+    PSolvQuery* ppQuery
+    )
 {
     uint32_t dwError = 0;
     PSolvQuery pQuery = NULL;
@@ -101,8 +176,6 @@ SolvCreateQuery(
     pQuery->pSack = pSack;
     queue_init(&pQuery->queueJob);
     queue_init(&pQuery->queueRepoFilter);
-    queue_init(&pQuery->queueKindFilter);
-    queue_init(&pQuery->queueArchFilter);
     queue_init(&pQuery->queueResult);
     *ppQuery = pQuery;
 
@@ -120,7 +193,8 @@ error:
 
 void
 SolvFreeQuery(
-    PSolvQuery pQuery)
+    PSolvQuery pQuery
+    )
 {
     if(pQuery)
     {
@@ -136,11 +210,11 @@ SolvFreeQuery(
 
         queue_free(&pQuery->queueJob);
         queue_free(&pQuery->queueRepoFilter);
-        queue_free(&pQuery->queueKindFilter);
-        queue_free(&pQuery->queueArchFilter);
         queue_free(&pQuery->queueResult);
-
-        TDNFFreeStringArray(pQuery->ppszPackageNames);
+        if(pQuery->ppszPackageNames)
+        {
+            TDNFFreeStringArray(pQuery->ppszPackageNames);
+        }
         TDNF_SAFE_FREE_MEMORY(pQuery);
     }
 }
@@ -152,81 +226,118 @@ SolvApplySinglePackageFilter(
     )
 {
     uint32_t dwError = 0;
-    char** ppszPkgNames = NULL;
-
-    if(!pQuery || IsNullOrEmptyString(pszPackageName))
+    char** ppCopyOfpkgNames = NULL;
+    if(!pQuery || !pszPackageName || IsNullOrEmptyString(pszPackageName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(2,
-                                 sizeof(char *),
-                                 (void **)&ppszPkgNames);
+    dwError = TDNFAllocateMemory(
+                  2,
+                  sizeof(char*),
+                  (void**)&ppCopyOfpkgNames);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateString(pszPackageName, &ppszPkgNames[0]);
+    dwError = TDNFAllocateString(
+                  pszPackageName,
+                  &ppCopyOfpkgNames[0]);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pQuery->ppszPackageNames = ppszPkgNames;
+    if(pQuery->ppszPackageNames)
+    {
+        TDNFFreeStringArray(pQuery->ppszPackageNames);
+    }
+
+    pQuery->ppszPackageNames = ppCopyOfpkgNames;
 
 cleanup:
     return dwError;
 
 error:
-    TDNFFreeStringArray(ppszPkgNames);
+    if(ppCopyOfpkgNames)
+    {
+        TDNFFreeStringArray(ppCopyOfpkgNames);
+    }
     goto cleanup;
 }
 
 uint32_t
 SolvApplyPackageFilter(
     PSolvQuery pQuery,
-    char** ppszPkgNames
+    char** ppszPackageNames
     )
 {
     uint32_t dwError = 0;
-    int i = 0;
-    int nPkgCount = 0;
-    char** ppszTemp = NULL;
+    int     dwPkgs = 0;
+    char** ppszTmpNames = NULL;
     char** ppszCopyOfPkgNames = NULL;
+    int nIndex = 0;
 
-    if(!pQuery || !ppszPkgNames)
+    if(!pQuery || !ppszPackageNames)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ppszTemp = ppszPkgNames;
-    while(*ppszTemp)
+    ppszTmpNames = ppszPackageNames;
+    while(*ppszTmpNames)
     {
-        ++ppszTemp;
-        ++nPkgCount;
+        if(!IsNullOrEmptyString(ppszTmpNames))
+        {
+            dwPkgs++;
+        }
+        ppszTmpNames++;
     }
 
-    dwError = TDNFAllocateMemory(nPkgCount + 1,
-                                 sizeof(char **),
-                                 (void **)&ppszCopyOfPkgNames);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for(i = 0; i < nPkgCount; ++i)
+    if(dwPkgs == 0)
     {
-        dwError = TDNFAllocateString(ppszPkgNames[i], &ppszCopyOfPkgNames[i]);
+        dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFAllocateMemory(
+                  dwPkgs + 1,
+                  sizeof(char*),
+                  (void**)&ppszCopyOfPkgNames);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(nIndex = 0; nIndex < dwPkgs; ++nIndex)
+    {
+        if(!IsNullOrEmptyString(ppszPackageNames))
+        {
+            dwError = TDNFAllocateString(
+                          *ppszPackageNames,
+                          &ppszCopyOfPkgNames[nIndex]);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        ppszPackageNames++;
+    }
+
+    if(pQuery->ppszPackageNames)
+    {
+        TDNFFreeStringArray(ppszCopyOfPkgNames);
+    }
     pQuery->ppszPackageNames = ppszCopyOfPkgNames;
 
 cleanup:
+  
     return dwError;
-
 error:
-    TDNFFreeStringArray(ppszCopyOfPkgNames);
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    if(ppszCopyOfPkgNames)
+    {
+        TDNFFreeStringArray(ppszCopyOfPkgNames);
+    }
     goto cleanup;
 }
 
 uint32_t
 SolvAddSystemRepoFilter(
-    PSolvQuery pQuery
+    PSolvQuery  pQuery
     )
 {
     uint32_t dwError = 0;
@@ -271,9 +382,10 @@ SolvAddAvailableRepoFilter(
     {
         if (strcasecmp(SYSTEM_REPO_NAME, pRepo->name))
         {
-            queue_push2(&pQuery->queueRepoFilter,
-                        SOLVER_SOLVABLE_REPO | SOLVER_SETREPO | SOLVER_SETVENDOR,
-                        pRepo->repoid);
+            queue_push2(
+                &pQuery->queueRepoFilter,
+                SOLVER_SOLVABLE_REPO | SOLVER_SETREPO | SOLVER_SETVENDOR,
+                pRepo->repoid);
         }
     }
 
@@ -284,15 +396,15 @@ error:
     goto cleanup;
 }
 
-static uint32_t
+uint32_t
 SolvGenerateCommonJob(
-    PSolvQuery pQuery
+    PSolvQuery  pQuery
     )
 {
     uint32_t dwError = 0;
-    char** pkgNames = NULL;
+    char** ppszPkgNames = NULL;
     Pool *pPool = NULL;
-    Queue job2 = {0};
+    Queue queueJob = {0};
 
     if(!pQuery || !pQuery->pSack)
     {
@@ -300,103 +412,108 @@ SolvGenerateCommonJob(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pkgNames = pQuery->ppszPackageNames;
-    queue_init(&job2);
+    ppszPkgNames = pQuery->ppszPackageNames;
+    queue_init(&queueJob);
     pPool = pQuery->pSack->pPool;
-    if(pkgNames)
+    if(ppszPkgNames)
     {
-        while(*pkgNames)
+        while(*ppszPkgNames)
         {
             int flags = 0;
             int rflags = 0;
 
-            queue_empty(&job2);
+            queue_empty(&queueJob);
             flags = SELECTION_NAME|SELECTION_PROVIDES|SELECTION_GLOB;
             flags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
-                rflags = selection_make(pPool, &job2, *pkgNames, flags);
+                rflags = selection_make(
+                             pPool,
+                             &queueJob,
+                             *ppszPkgNames,
+                             flags);
             if (pQuery->queueRepoFilter.count)
-                selection_filter(pPool, &job2, &pQuery->queueRepoFilter);
-            if (pQuery->queueArchFilter.count)
-                selection_filter(pPool, &job2, &pQuery->queueArchFilter);
-            if (pQuery->queueKindFilter.count)
-                selection_filter(pPool, &job2, &pQuery->queueKindFilter);
-            if (!job2.count)
+                selection_filter(pPool, &queueJob, &pQuery->queueRepoFilter);
+            if (!queueJob.count)
             {
                 flags |= SELECTION_NOCASE;
-
-                rflags = selection_make(pPool, &job2, *pkgNames, flags);
+                rflags = selection_make(
+                             pPool,
+                             &queueJob,
+                             *ppszPkgNames,
+                             flags);
                 if (pQuery->queueRepoFilter.count)
-                    selection_filter(pPool, &job2, &pQuery->queueRepoFilter);
-                if (pQuery->queueArchFilter.count)
-                    selection_filter(pPool, &job2, &pQuery->queueArchFilter);
-                if (pQuery->queueKindFilter.count)
-                    selection_filter(pPool, &job2, &pQuery->queueKindFilter);
-                if (job2.count)
-                    printf("[ignoring case for '%s']\n", *pkgNames);
+                    selection_filter(
+                        pPool,
+                        &queueJob,
+                        &pQuery->queueRepoFilter);
+                if (queueJob.count)
+                    printf("[ignoring case for '%s']\n", *ppszPkgNames);
             }
-            if (job2.count)
+            if (queueJob.count)
             {
                 if (rflags & SELECTION_FILELIST)
-                    printf("[using file list match for '%s']\n", *pkgNames);
+                    printf("[using file list match for '%s']\n",
+                           *ppszPkgNames);
                 if (rflags & SELECTION_PROVIDES)
-                    printf("[using capability match for '%s']\n", *pkgNames);
-                queue_insertn(&pQuery->queueJob, pQuery->queueJob.count, job2.count, job2.elements);
+                    printf("[using capability match for '%s']\n",
+                           *ppszPkgNames);
+                queue_insertn(&pQuery->queueJob,
+                              pQuery->queueJob.count,
+                              queueJob.count,
+                              queueJob.elements);
             }
-            pkgNames++;
+            ppszPkgNames++;
         }
     }
-    else if(pQuery->queueRepoFilter.count ||
-            pQuery->queueArchFilter.count ||
-            pQuery->queueKindFilter.count)
+    else if(pQuery->queueRepoFilter.count)
     {
-        queue_empty(&job2);
-        queue_push2(&job2, SOLVER_SOLVABLE_ALL, 0);
+        queue_empty(&queueJob);
+        queue_push2(&queueJob, SOLVER_SOLVABLE_ALL, 0);
         if (pQuery->queueRepoFilter.count)
-            selection_filter(pPool, &job2, &pQuery->queueRepoFilter);
-        if (pQuery->queueArchFilter.count)
-            selection_filter(pPool, &job2, &pQuery->queueArchFilter);
-        if (pQuery->queueKindFilter.count)
-            selection_filter(pPool, &job2, &pQuery->queueKindFilter);
-        queue_insertn(&pQuery->queueJob, pQuery->queueJob.count, job2.count, job2.elements);
+            selection_filter(pPool, &queueJob, &pQuery->queueRepoFilter);
+        queue_insertn(&pQuery->queueJob,
+                        pQuery->queueJob.count,
+                        queueJob.count,
+                        queueJob.elements);
     }
 
 cleanup:
-    queue_free(&job2);
+    queue_free(&queueJob);
     return dwError;
 
 error:
     goto cleanup;
 }
 
-static uint32_t
+uint32_t
 SolvRunSolv(
     PSolvQuery pQuery,
-    uint32_t mainMode,
-    uint32_t mode,
-    Queue* jobs,
+    uint32_t dwMainMode,
+    uint32_t dwMode,
+    Queue* queueJobs,
     Solver** ppSolv)
 {
     uint32_t dwError = 0;
     int nJob = 0;
-    Id problem = 0;
-    Id solution = 0;
-    int nProblemCount = 0;
-    int nSolutionCount = 0;
-
     Solver *pSolv = NULL;
 
-    if (!jobs->count && (mainMode == MODE_UPDATE || mainMode == MODE_DISTUPGRADE || mainMode == MODE_VERIFY))
+    if(!queueJobs->count && (dwMainMode == MODE_UPDATE || 
+       dwMainMode == MODE_DISTUPGRADE ||
+       dwMainMode == MODE_VERIFY))
     {
-        queue_push2(jobs, SOLVER_SOLVABLE_ALL, 0);
+        queue_push2(queueJobs, SOLVER_SOLVABLE_ALL, 0);
     }
-    // add mode
-    for (nJob = 0; nJob < jobs->count; nJob += 2)
+
+    for (nJob = 0; nJob < queueJobs->count; nJob += 2)
     {
-        jobs->elements[nJob] |= mode;
-        //jobs->elements[nJob] |= SOLVER_MULTIVERSION;
-        if (mode == SOLVER_UPDATE && pool_isemptyupdatejob(pQuery->pSack->pPool,
-                        jobs->elements[nJob], jobs->elements[nJob + 1]))
-            jobs->elements[nJob] ^= SOLVER_UPDATE ^ SOLVER_INSTALL;
+        queueJobs->elements[nJob] |= dwMode;
+        if (dwMode == SOLVER_UPDATE && 
+            pool_isemptyupdatejob(
+                pQuery->pSack->pPool,
+                queueJobs->elements[nJob],
+                queueJobs->elements[nJob + 1]))
+        {
+            queueJobs->elements[nJob] ^= SOLVER_UPDATE ^ SOLVER_INSTALL;
+        }
     }
     pSolv = solver_create(pQuery->pSack->pPool);
     if(pSolv == NULL)
@@ -404,45 +521,20 @@ SolvRunSolv(
         dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    /* no vendor locking */
-    // solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_VENDORCHANGE, 1);
-    /* don't erase packages that are no longer in repo during distupgrade */
-    // solver_set_flag(pSolv, SOLVER_FLAG_KEEP_ORPHANS, 1);
-    /* no arch change for forcebest */
     solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
-    /* support package splits via obsoletes */
-    // solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
-
     solver_set_flag(pSolv, SOLVER_FLAG_SPLITPROVIDES, 1);
-    if (mainMode == MODE_ERASE)
+    if (dwMainMode == MODE_ERASE)
     {
-        solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);  /* don't nag */
+        solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
     }
-    // solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
-    //solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_DOWNGRADE, 1);
-    for (;;)
-    {
-        if (!solver_solve(pSolv, jobs))
-            break;
-        nProblemCount = solver_problem_count(pSolv);
-        printf("Found %d problems:\n", nProblemCount);
-        for (problem = 1; problem <= nProblemCount; problem++)
-        {
-            printf("Problem %d/%d:\n", problem, nProblemCount);
-            solver_printprobleminfo(pSolv, problem);
-            printf("\n");
-            nSolutionCount = solver_solution_count(pSolv, problem);
-            for (solution = 1; solution <= nSolutionCount; solution++)
-            {
-                printf("Solution %d:\n", solution);
-                solver_printsolution(pSolv, problem, solution);
-                printf("\n");
-            }
-            solver_take_solution(pSolv, problem, 1, jobs);
-        }
-    }
-    *ppSolv = pSolv;
 
+    if(solver_solve(pSolv, queueJobs))
+    {
+        dwError = ERROR_TDNF_SOLV_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppSolv = pSolv;
 cleanup:
     return dwError;
 
@@ -466,8 +558,8 @@ SolvApplyListQuery(
     )
 {
     uint32_t dwError = 0;
-    int i = 0;
-    Queue tmp;
+    int nIndex = 0;
+    Queue queueTmp = {0};
 
     if(!pQuery)
     {
@@ -475,41 +567,47 @@ SolvApplyListQuery(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    queue_init(&tmp);
+    queue_init(&queueTmp);
 
     dwError = SolvGenerateCommonJob(pQuery);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if(pQuery->queueJob.count > 0)
     {
-        for (i = 0; i < pQuery->queueJob.count ; i += 2)
+        for (nIndex = 0; nIndex < pQuery->queueJob.count ; nIndex += 2)
         {
-            queue_empty(&tmp);
-            pool_job2solvables(pQuery->pSack->pPool, &tmp,
-                             pQuery->queueJob.elements[i],
-                             pQuery->queueJob.elements[i + 1]);
-            queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, tmp.count, tmp.elements);
+            queue_empty(&queueTmp);
+            pool_job2solvables(pQuery->pSack->pPool, &queueTmp,
+                               pQuery->queueJob.elements[nIndex],
+                               pQuery->queueJob.elements[nIndex + 1]);
+            queue_insertn(&pQuery->queueResult,
+                          pQuery->queueResult.count,
+                          queueTmp.count,
+                          queueTmp.elements);
         }
     }
     else if(!pQuery->ppszPackageNames ||
             IsNullOrEmptyString(pQuery->ppszPackageNames[0]))
     {
-        pool_job2solvables(pQuery->pSack->pPool, &pQuery->queueResult, SOLVER_SOLVABLE_ALL, 0);
+        pool_job2solvables(pQuery->pSack->pPool,
+                           &pQuery->queueResult,
+                           SOLVER_SOLVABLE_ALL,
+                           0);
     }
 
 cleanup:
-    queue_free(&tmp);
+    queue_free(&queueTmp);
     return dwError;
 
 error:
     goto cleanup;
 }
 
-static uint32_t
+uint32_t
 SolvApplyAlterQuery(
     PSolvQuery pQuery,
-    uint32_t mainMode,
-    uint32_t mode
+    uint32_t dwMainMode,
+    uint32_t dwMode
     )
 {
     uint32_t dwError = 0;
@@ -519,7 +617,12 @@ SolvApplyAlterQuery(
     dwError = SolvGenerateCommonJob(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvRunSolv(pQuery, mainMode, mode, &pQuery->queueJob, &pSolv);
+    dwError = SolvRunSolv(
+                  pQuery,
+                  dwMainMode,
+                  dwMode,
+                  &pQuery->queueJob,
+                  &pSolv);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTrans = solver_create_transaction(pSolv);
@@ -529,9 +632,10 @@ SolvApplyAlterQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, pTrans->steps.count, pTrans->steps.elements);
-    //transaction_print(pTrans);
-    //pQuery->nNewPackages = transaction_installedresult(pTrans, &pQuery->result);
+    queue_insertn(&pQuery->queueResult,
+                  pQuery->queueResult.count,
+                  pTrans->steps.count,
+                  pTrans->steps.elements);
 
 cleanup:
     if(pSolv)
@@ -555,157 +659,60 @@ SolvApplyDistroSyncQuery(
 uint32_t
 SolvApplySearch(
     PSolvQuery pQuery,
-    char** searchStrings,
-    int startIndex,
-    int endIndex
+    char** ppszSearchStrings,
+    int dwStartIndex,
+    int dwEndIndex
     )
 {
-    Queue sel, q;
     Dataiterator di = {0};
-    Pool* pool = NULL;
+    Pool* pPool = NULL;
     uint32_t dwError = 0;
-    int i = 0;
-    if(!pQuery || !searchStrings)
+    int nIndex = 0;
+    Queue queueSel = {0};
+    Queue queueResult = {0};
+
+    if(!pQuery || !ppszSearchStrings)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    pool = pQuery->pSack->pPool;
-    pool_createwhatprovides(pool);
-    queue_init(&sel);
-    queue_init(&q);
-    for(i = startIndex; i < endIndex; i++)
+    queue_init(&queueSel);
+    queue_init(&queueResult);
+    pPool = pQuery->pSack->pPool;
+    pool_createwhatprovides(pPool);
+
+    for(nIndex = dwStartIndex; nIndex < dwStartIndex; nIndex++)
     {
-        queue_empty(&sel);
-        queue_empty(&q);
-        dataiterator_init(&di, pool, 0, 0, 0, searchStrings[i], SEARCH_SUBSTRING|SEARCH_NOCASE);
+        queue_empty(&queueSel);
+        queue_empty(&queueResult);
+        dataiterator_init(&di, pPool, 0, 0, 0, ppszSearchStrings[nIndex],
+                          SEARCH_SUBSTRING|SEARCH_NOCASE);
         dataiterator_set_keyname(&di, SOLVABLE_NAME);
         dataiterator_set_search(&di, 0, 0);
         while (dataiterator_step(&di))
-            queue_push2(&sel, SOLVER_SOLVABLE, di.solvid);
+            queue_push2(&queueSel, SOLVER_SOLVABLE, di.solvid);
         dataiterator_set_keyname(&di, SOLVABLE_SUMMARY);
         dataiterator_set_search(&di, 0, 0);
         while (dataiterator_step(&di))
-            queue_push2(&sel, SOLVER_SOLVABLE, di.solvid);
+            queue_push2(&queueSel, SOLVER_SOLVABLE, di.solvid);
         dataiterator_set_keyname(&di, SOLVABLE_DESCRIPTION);
         dataiterator_set_search(&di, 0, 0);
         while (dataiterator_step(&di))
-            queue_push2(&sel, SOLVER_SOLVABLE, di.solvid);
+            queue_push2(&queueSel, SOLVER_SOLVABLE, di.solvid);
         dataiterator_free(&di);
-        //if (repofilter.count)
-        //    selection_filter(pool, &sel, &repofilter);
-        selection_solvables(pool, &sel, &q);
-        queue_insertn(&pQuery->queueResult, pQuery->queueResult.count, q.count, q.elements);
+
+        selection_solvables(pPool, &queueSel, &queueResult);
+        queue_insertn(&pQuery->queueResult,
+                      pQuery->queueResult.count,
+                      queueResult.count,
+                      queueResult.elements);
     }
 
 cleanup:
-    queue_free(&sel);
-    queue_free(&q);
+    queue_free(&queueSel);
+    queue_free(&queueResult);
     return dwError;
 
 error:
-    goto cleanup;
-}
-
-uint32_t
-SolvSplitEvr(
-    PSolvSack pSack,
-    const char *pszEVRstring,
-    char **ppszEpoch,
-    char **ppszVersion,
-    char **ppszRelease)
-{
-
-    uint32_t dwError = 0;
-    char *pszEvr = NULL;
-    int eIndex = 0;
-    int rIndex = 0;
-    char *pszTempEpoch = NULL;
-    char *pszTempVersion = NULL;
-    char *pszTempRelease = NULL;
-    char *pszEpoch = NULL;
-    char *pszVersion = NULL;
-    char *pszRelease = NULL;
-    char *pszIt = NULL;
-
-    if(!pSack || !pszEVRstring || !ppszEpoch || !ppszVersion || !ppszRelease)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-
-    dwError = TDNFAllocateString(pszEVRstring, &pszEvr);
-    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-
-    // EVR string format: epoch : version-release
-    pszIt = pszEvr;
-    for( ; *pszIt != '\0'; pszIt++)
-    {
-        if(*pszIt == ':')
-        {
-            eIndex = pszIt - pszEvr;
-        }
-        else if(*pszIt == '-')
-        {
-            rIndex = pszIt - pszEvr;
-        }
-    }
-
-    pszTempVersion = pszEvr;
-    pszTempEpoch = NULL;
-    pszTempRelease = NULL;
-    if(eIndex != 0)
-    {
-        pszTempEpoch = pszEvr;
-        *(pszEvr + eIndex) = '\0';
-        pszTempVersion = pszEvr + eIndex + 1;
-    }
-
-    if(rIndex != 0 && rIndex > eIndex)
-    {
-        pszTempRelease = pszEvr + rIndex + 1;
-        *(pszEvr + rIndex) = '\0';
-    }
-
-    if(!IsNullOrEmptyString(pszTempEpoch))
-    {
-        dwError = TDNFAllocateString(pszTempEpoch, &pszEpoch);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    if(!IsNullOrEmptyString(pszTempVersion))
-    {
-        dwError = TDNFAllocateString(pszTempVersion, &pszVersion);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    if(!IsNullOrEmptyString(pszTempRelease))
-    {
-        dwError = TDNFAllocateString(pszTempRelease, &pszRelease);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    *ppszEpoch = pszEpoch;
-    *ppszVersion = pszVersion;
-    *ppszRelease = pszRelease;
-
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszEvr);
-    return dwError;
-
-error:
-    if(ppszEpoch)
-    {
-        *ppszEpoch = NULL;
-    }
-    if(ppszVersion)
-    {
-        *ppszVersion = NULL;
-    }
-    if(ppszRelease)
-    {
-        *ppszRelease = NULL;
-    }
-    TDNF_SAFE_FREE_MEMORY(pszEpoch);
-    TDNF_SAFE_FREE_MEMORY(pszVersion);
-    TDNF_SAFE_FREE_MEMORY(pszRelease);
     goto cleanup;
 }

@@ -62,10 +62,10 @@ TDNFReadConfig(
     }
 
     if(!g_key_file_load_from_file(
-                pKeyFile,
-                pszFile,
-                G_KEY_FILE_KEEP_COMMENTS,
-                NULL))
+            pKeyFile,
+            pszFile,
+            G_KEY_FILE_KEEP_COMMENTS,
+            NULL))
     {
         dwError = ERROR_TDNF_CONF_FILE_LOAD;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -73,12 +73,16 @@ TDNFReadConfig(
     if(g_key_file_has_group(pKeyFile, pszGroup))
     {
         dwError = TDNFAllocateMemory(
-                    1,
-                    sizeof(TDNF_CONF),
-                    (void**)&pConf);
+                      1,
+                      sizeof(TDNF_CONF),
+                      (void**)&pConf);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if(g_key_file_has_key(pKeyFile, pszGroup, TDNF_CONF_KEY_GPGCHECK, NULL))
+        if(g_key_file_has_key(
+               pKeyFile,
+               pszGroup,
+               TDNF_CONF_KEY_GPGCHECK,
+               NULL))
         {
             if(g_key_file_get_boolean(
                    pKeyFile,
@@ -90,42 +94,42 @@ TDNFReadConfig(
             }
         }
         if(g_key_file_has_key(
-                              pKeyFile,
-                              pszGroup,
-                              TDNF_CONF_KEY_INSTALLONLY_LIMIT,
-                              NULL))
+               pKeyFile,
+               pszGroup,
+               TDNF_CONF_KEY_INSTALLONLY_LIMIT,
+               NULL))
         {
             pConf->nInstallOnlyLimit = g_key_file_get_integer(
-                                            pKeyFile,
-                                            pszGroup,
-                                            TDNF_CONF_KEY_INSTALLONLY_LIMIT,
-                                            NULL);
+                                           pKeyFile,
+                                           pszGroup,
+                                           TDNF_CONF_KEY_INSTALLONLY_LIMIT,
+                                           NULL);
         }
         if(g_key_file_has_key(
-                pKeyFile,
-                pszGroup,
-                TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
-                NULL))
+               pKeyFile,
+               pszGroup,
+               TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
+               NULL))
         {
             pConf->nCleanRequirementsOnRemove = 
                      g_key_file_get_boolean(
-                          pKeyFile,
-                          pszGroup,
-                          TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
-                          NULL);
+                         pKeyFile,
+                         pszGroup,
+                         TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
+                         NULL);
         }
         if(g_key_file_has_key(
-                pKeyFile,
-                pszGroup,
-                TDNF_CONF_KEY_KEEP_CACHE,
-                NULL))
+               pKeyFile,
+               pszGroup,
+               TDNF_CONF_KEY_KEEP_CACHE,
+               NULL))
         {
             pConf->nKeepCache =
                      g_key_file_get_boolean(
-                          pKeyFile,
-                          pszGroup,
-                          TDNF_CONF_KEY_KEEP_CACHE,
-                          NULL);
+                         pKeyFile,
+                         pszGroup,
+                         TDNF_CONF_KEY_KEEP_CACHE,
+                         NULL);
         }
         dwError = TDNFReadKeyValue(
                       pKeyFile,
@@ -206,7 +210,8 @@ TDNFConfigExpandVars(
     if(!pConf->pszVarReleaseVer &&
        !IsNullOrEmptyString(pTdnf->pArgs->pszReleaseVer))
     {
-        dwError = TDNFAllocateString(pTdnf->pArgs->pszReleaseVer,
+        dwError = TDNFAllocateString(
+                      pTdnf->pArgs->pszReleaseVer,
                       &pConf->pszVarReleaseVer);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -336,10 +341,10 @@ TDNFReadKeyValue(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pszVal = g_key_file_get_string(
-                    pKeyFile,
-                    pszGroupName,
-                    pszKeyName,
-                    NULL);
+                 pKeyFile,
+                 pszGroupName,
+                 pszKeyName,
+                 NULL);
     if(!pszVal && pszDefault)
     {
         pszVal = g_strdup(pszDefault);
@@ -382,14 +387,14 @@ TDNFFreeConfig(
 {
     if(pConf)
     {
-       TDNF_SAFE_FREE_MEMORY(pConf->pszProxy);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
-       TDNF_SAFE_FREE_MEMORY(pConf);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszProxy);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
+        TDNF_SAFE_FREE_MEMORY(pConf);
     }
 }
 
