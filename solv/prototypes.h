@@ -5,7 +5,6 @@ extern "C" {
 typedef struct _SolvSack
 {
     Pool*       pPool;
-    Id*         pdwCommandLinePkgs;
     uint32_t    dwNumOfCommandPkgs;
     char*       pszCacheDir;
     char*       pszRootDir;
@@ -18,8 +17,6 @@ typedef struct _SolvQuery
     Solver      *pSolv;
     Transaction *pTrans;
     Queue       queueRepoFilter;
-    Queue       queueKindFilter;
-    Queue       queueArchFilter;
     char**      ppszPackageNames;
     Queue       queueResult;
     uint32_t    dwNewPackages;
@@ -255,7 +252,7 @@ SolvGetPackageListSize(
 uint32_t
 SolvGetPackageId(
     PSolvPackageList pPkgList,
-    int dwPkgIndex,
+    uint32_t dwPkgIndex,
     Id* dwPkgId
     );
 
@@ -324,7 +321,7 @@ SolvCountPkgByName(
 
 uint32_t
 SolvGetTransResultsWithType(
-    Transaction *trans,
+    Transaction *pTrans,
     Id          dwType,
     PSolvPackageList pPkgList
     );
@@ -367,6 +364,13 @@ uint32_t
 SolvAddPkgUserInstalledJob(
     Queue* pQueueJobs,
     Id     dwId
+    );
+
+uint32_t
+SolvFindHighestAvailable(
+    PSolvSack   pSack,
+    const char* pszPkgName,
+    Id*         pdwId
     );
 
 #ifdef __cplusplus

@@ -286,7 +286,10 @@ SolvGetPkgArchFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvGetPkgInfoFromId(pSack, dwPkgId, SOLVABLE_ARCH, &pszArch);
+    dwError = SolvGetPkgInfoFromId(pSack,
+                        dwPkgId,
+                        SOLVABLE_ARCH,
+                        &pszArch);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszArch = pszArch;
@@ -468,7 +471,7 @@ SolvGetPkgInstallSizeFromId(
     uint32_t* pdwSize)
 {
     uint32_t dwError = 0;
-    uint32_t installSize = 0;
+    uint32_t dwInstallSize = 0;
     Solvable *pSolv = NULL;
 
     if(!pSack || !pdwSize)
@@ -484,8 +487,8 @@ SolvGetPkgInstallSizeFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    installSize = solvable_lookup_num(pSolv, SOLVABLE_INSTALLSIZE, 0);
-    *pdwSize = installSize;
+    dwInstallSize = solvable_lookup_num(pSolv, SOLVABLE_INSTALLSIZE, 0);
+    *pdwSize = dwInstallSize;
 
 cleanup:
     return dwError;
@@ -514,7 +517,10 @@ SolvGetPkgSummaryFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvGetPkgInfoFromId(pSack, dwPkgId, SOLVABLE_SUMMARY, &pszSummary);
+    dwError = SolvGetPkgInfoFromId(pSack,
+                        dwPkgId,
+                        SOLVABLE_SUMMARY,
+                        &pszSummary);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszSummary = pszSummary;
@@ -527,6 +533,7 @@ error:
     {
         *ppszSummary = NULL;
     }
+    TDNF_SAFE_FREE_MEMORY(pszSummary);
     goto cleanup;
 
 }
@@ -547,7 +554,10 @@ SolvGetPkgLicenseFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvGetPkgInfoFromId(pSack, dwPkgId, SOLVABLE_LICENSE, &pszLicense);
+    dwError = SolvGetPkgInfoFromId(pSack,
+                        dwPkgId,
+                        SOLVABLE_LICENSE,
+                        &pszLicense);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszLicense = pszLicense;
@@ -560,6 +570,7 @@ error:
     {
         *ppszLicense = NULL;
     }
+    TDNF_SAFE_FREE_MEMORY(pszLicense);
     goto cleanup;
 }
 
@@ -596,6 +607,7 @@ error:
     {
         *ppszDescription = NULL;
     }
+    TDNF_SAFE_FREE_MEMORY(pszDescription);
     goto cleanup;
 }
 
@@ -615,7 +627,10 @@ SolvGetPkgUrlFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvGetPkgInfoFromId(pSack, dwPkgId, SOLVABLE_URL, &pszUrl);
+    dwError = SolvGetPkgInfoFromId(pSack,
+                        dwPkgId,
+                        SOLVABLE_URL,
+                        &pszUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszUrl = pszUrl;
@@ -628,6 +643,7 @@ error:
     {
         *ppszUrl = NULL;
     }
+    TDNF_SAFE_FREE_MEMORY(pszUrl);
     goto cleanup;
 }
 
@@ -730,17 +746,17 @@ error:
 uint32_t
 SolvGetPackageId(
     PSolvPackageList pPkgList,
-    int pkgIndex,
-    Id* pkgId
+    uint32_t dwPkgIndex,
+    Id* dwPkgId
     )
 {
     uint32_t dwError = 0;
-    if(!pPkgList || pkgIndex < 0 || pkgIndex >= pPkgList->queuePackages.count)
+    if(!pPkgList || dwPkgIndex < 0 || dwPkgIndex >= pPkgList->queuePackages.count)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    *pkgId = pPkgList->queuePackages.elements[pkgIndex];
+    *dwPkgId = pPkgList->queuePackages.elements[dwPkgIndex];
 
 cleanup:
     return dwError;
@@ -752,9 +768,9 @@ error:
 uint32_t
 SolvCmpEvr(
     PSolvSack pSack,
-    Id pkg1,
-    Id pkg2,
-    int* result)
+    Id dwPkg1,
+    Id dwPkg2,
+    int* pdwResult)
 {
     uint32_t    dwError = 0;
     Solvable    *pSolv1 = NULL;
@@ -768,8 +784,8 @@ SolvCmpEvr(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pSolv1 = pool_id2solvable(pSack->pPool, pkg1);
-    pSolv2 = pool_id2solvable(pSack->pPool, pkg2);
+    pSolv1 = pool_id2solvable(pSack->pPool, dwPkg1);
+    pSolv2 = pool_id2solvable(pSack->pPool, dwPkg2);
     if(!pSolv1 || !pSolv2)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -779,7 +795,10 @@ SolvCmpEvr(
     pszEvr1 = solvable_lookup_str(pSolv1, SOLVABLE_EVR);
     pszEvr2 = solvable_lookup_str(pSolv2, SOLVABLE_EVR);
 
-    *result = pool_evrcmp_str(pSack->pPool, pszEvr1, pszEvr2, EVRCMP_COMPARE);
+    *pdwResult = pool_evrcmp_str(pSack->pPool,
+                        pszEvr1,
+                        pszEvr2,
+                        EVRCMP_COMPARE);
 cleanup:
     return dwError;
 
@@ -791,8 +810,8 @@ uint32_t
 SolvGetLatest(
     PSolvSack pSack,
     Queue* pPkgList,
-    Id pkg,
-    Id* result)
+    Id dwPkg,
+    Id* pdwResult)
 {
     uint32_t dwError = 0;
     Solvable    *pSolv1 = NULL;
@@ -801,17 +820,16 @@ SolvGetLatest(
     const char  *pszEvr2 = NULL;
     const char  *pszName1  = NULL;
     const char  *pszName2  = NULL;
-    int pkgIter  = 0;
+    uint32_t  dwPkgIter  = 0;
     int compareResult = 0;
-    *result = pkg;
 
-    if(!pSack || pkg <= 0 || !pPkgList)
+    if(!pSack || dwPkg <= 0 || !pPkgList || !pdwResult)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pSolv1 = pool_id2solvable(pSack->pPool, pkg);
+    pSolv1 = pool_id2solvable(pSack->pPool, dwPkg);
     if(!pSolv1)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -820,9 +838,9 @@ SolvGetLatest(
 
     pszName1 = pool_id2str(pSack->pPool, pSolv1->name);
     pszEvr1 = solvable_lookup_str(pSolv1, SOLVABLE_EVR);
-    for( ; pkgIter < pPkgList->count;  pkgIter++)
+    for( ; dwPkgIter < pPkgList->count;  dwPkgIter++)
     {
-        pSolv2 = pool_id2solvable(pSack->pPool, pPkgList->elements[pkgIter]);
+        pSolv2 = pool_id2solvable(pSack->pPool, pPkgList->elements[dwPkgIter]);
         if(!pSolv2)
         {
             dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -838,7 +856,7 @@ SolvGetLatest(
             compareResult = pool_evrcmp_str(pSack->pPool, pszEvr2, pszEvr1, EVRCMP_COMPARE);
             if(compareResult == 1)
             {
-                *result = pPkgList->elements[pkgIter];
+                *pdwResult = pPkgList->elements[dwPkgIter];
                 pSolv1 = pSolv2;
                 pszEvr1 = pszEvr2;
             }
@@ -848,6 +866,10 @@ cleanup:
     return dwError;
 
 error:
+    if(pdwResult)
+    {
+        *pdwResult = 0;
+    }
     goto cleanup;
 
 }
@@ -1023,52 +1045,116 @@ error:
 
 uint32_t
 SolvGetTransResultsWithType(
-    Transaction *trans,
-    Id type,
+    Transaction *pTrans,
+    Id dwType,
     PSolvPackageList pPkgList
     )
 {
     uint32_t  dwError = 0;
-    Id pkg = 0;
-    Id pkgType = 0;
-    Queue solvedPackages;
-    queue_init(&solvedPackages);
+    Id dwPkg = 0;
+    Id dwPkgType = 0;
+    Queue queueSolvedPackages;
+    queue_init(&queueSolvedPackages);
     if(!pPkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    if (!trans)
+    if (!pTrans)
     {
         dwError = ERROR_TDNF_SOLV_NO_SOLUTION;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (int i = 0; i < trans->steps.count; ++i)
+    for (int i = 0; i < pTrans->steps.count; ++i)
     {
-        pkg = trans->steps.elements[i];
+        dwPkg = pTrans->steps.elements[i];
 
-        switch (type)
+        switch (dwType)
         {
             case SOLVER_TRANSACTION_OBSOLETED:
-                pkgType =  transaction_type(trans, pkg, SOLVER_TRANSACTION_SHOW_OBSOLETES);
+                dwPkgType =  transaction_type(pTrans,
+                                dwPkg,
+                                SOLVER_TRANSACTION_SHOW_OBSOLETES);
                 break;
             default:
-                pkgType  = transaction_type(trans, pkg,
+                dwPkgType  = transaction_type(pTrans, dwPkg,
                      SOLVER_TRANSACTION_SHOW_ACTIVE|
                      SOLVER_TRANSACTION_SHOW_ALL);
                 break;
         }
 
-        if (type == pkgType)
-            queue_push(&solvedPackages, pkg);
+        if (dwType == dwPkgType)
+            queue_push(&queueSolvedPackages, dwPkg);
     }
     queue_insertn(&pPkgList->queuePackages, pPkgList->queuePackages.count,
-             solvedPackages.count, solvedPackages.elements);
+             queueSolvedPackages.count, queueSolvedPackages.elements);
 cleanup:
-    queue_free(&solvedPackages);
+    queue_free(&queueSolvedPackages);
     return dwError;
 
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvFindHighestAvailable(
+    PSolvSack   pSack,
+    const char* pszPkgName,
+    Id*         pdwId
+    )
+{
+    uint32_t dwError = 0;
+    int dwPkgIndex = 0;
+    int dwEvrCompare = 0;
+    Id  dwAvailableId = 0;
+    Id  dwHighestAvailable = 0;
+    PSolvPackageList pAvailabePkgList = NULL;
+    uint32_t dwCount = 0;
+
+    if(!pSack || !pszPkgName || !pdwId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);;
+    }
+
+    dwError = SolvCreatePackageList(&pAvailabePkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvFindAvailablePkgByName(pSack,
+                    pszPkgName,
+                    pAvailabePkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetPackageId(pAvailabePkgList, 0, &dwHighestAvailable);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwHighestAvailable != 0)
+    {
+        dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
+        {
+            SolvGetPackageId(pAvailabePkgList, dwPkgIndex, &dwAvailableId);
+            dwError = SolvCmpEvr(pSack,
+                        dwAvailableId,
+                        dwHighestAvailable,
+                        &dwEvrCompare);
+            if(dwError == 0 && dwEvrCompare > 0)
+            {
+                dwHighestAvailable = dwAvailableId;
+            }
+        }
+    }
+
+    *pdwId = dwHighestAvailable;
+cleanup:
+    if(pAvailabePkgList)
+    {
+        SolvFreePackageList(pAvailabePkgList);
+    }
+    return dwError;
 error:
     goto cleanup;
 }

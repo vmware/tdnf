@@ -118,7 +118,8 @@ error:
 static uint32_t
 SolvLoadRepomdUpdateinfo(
     Repo* pRepo,
-    const char* pszUpdateinfo)
+    const char* pszUpdateinfo
+    )
 {
     uint32_t dwError = 0;
     FILE *fp = NULL;
@@ -216,7 +217,7 @@ SolvCountPackages(
     )
 {
     uint32_t dwError = 0;
-    uint32_t cnt = 0;
+    uint32_t dwCount = 0;
     Id p = 0;
     if(!pSack || !pSack->pPool || !pdwCount)
     {
@@ -226,9 +227,9 @@ SolvCountPackages(
     Pool* pool = pSack->pPool;
     FOR_POOL_SOLVABLES(p)
     {
-        cnt++;
+        dwCount++;
     }
-    *pdwCount = cnt;
+    *pdwCount = dwCount;
 cleanup: 
     return dwError;
 error:

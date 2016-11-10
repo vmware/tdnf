@@ -209,7 +209,7 @@ error:
 uint32_t
 TDNFInitRepoFromMetaData(
     PTDNF pTdnf,
-    const char* repo_name,
+    const char* pszRepoName,
     LrYumRepo* pRepo
     )
 {
@@ -221,7 +221,7 @@ TDNFInitRepoFromMetaData(
     pszValue = lr_yum_repo_path(pRepo, "primary");
     pszValue2 = lr_yum_repo_path(pRepo, "filelists");
     pszValue3 = lr_yum_repo_path(pRepo, "updateinfo");
-    SolvReadYumRepo(pTdnf->pSack, repo_name, 
+    SolvReadYumRepo(pTdnf->pSack, pszRepoName, 
         pRepo->repomd, pszValue, pszValue2, pszValue3);
 
     return dwError;

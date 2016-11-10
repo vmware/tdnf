@@ -184,7 +184,7 @@ TDNFAppendPackages(
 
 uint32_t
 TDNFPackageGetDowngrade(
-    Id          current,
+    Id          dwCurrent,
     PTDNF       pTdnf,
     Id*         pkgId,
     const char* pszPkgName
@@ -206,8 +206,8 @@ TDNFFilterPackages(
 
 uint32_t
 TDNFAddPackagesForInstall(
-    PTDNF pTdnf,
-    Queue* qGoal,
+    PTDNF       pTdnf,
+    Queue*      pQueueGoal,
     const char* pszPkgName
     );
 
@@ -235,9 +235,9 @@ TDNFAddPackagesForDowngrade(
 
 uint32_t
 TDNFGoal(
-    PTDNF       pTdnf,
-    Queue*      pkgList,
-    PTDNF_SOLVED_PKG_INFO pInfo
+    PTDNF                   pTdnf,
+    Queue*                  pkgList,
+    PTDNF_SOLVED_PKG_INFO   pInfo
     );
 
 uint32_t
@@ -390,7 +390,7 @@ TDNFPrintRepoMetadata(
 uint32_t
 TDNFInitRepoFromMetaData(
     PTDNF       pTdnf,
-    const char* repo_name,
+    const char* pszRepoName,
     LrYumRepo*  pRepo);
 
 uint32_t
@@ -508,7 +508,7 @@ TDNFTransAddObsoletedPkgs(
 uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS      pTS,
-    const char*     pkgName
+    const char*     pszPkgName
     );
 
 uint32_t
@@ -571,40 +571,6 @@ TDNFFreeCmdOpt(
 
 //search.c
 
-//strings.c
-uint32_t
-TDNFAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
-uint32_t
-TDNFSafeAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
-uint32_t
-TDNFAllocateStringPrintf(
-    char** ppszDst,
-    const char* pszFmt,
-    ...
-    );
-
-uint32_t
-TDNFAllocateStringN(
-    const char* pszSrc,
-    uint32_t dwNumElements,
-    char** ppszDst
-    );
-
-uint32_t
-TDNFReplaceString(
-    const char* pszSource,
-    const char* pszSearch,
-    const char* pszReplace,
-    char** ppszDst
-    );
 //updateinfo.c
 uint32_t
 TDNFGetUpdateInfoPackages(

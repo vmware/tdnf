@@ -25,15 +25,22 @@ TDNFGetPackagesWithSpecifiedType(
     Transaction*    pTrans,
     PTDNF           pTdnf, 
     PTDNF_PKG_INFO* pPkgInfo,
-    Id              type)
+    Id              dwType)
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
     PSolvPackageList pPkgList = NULL;
+
+    if(!pTdnf || !pTdnf->pSack|| !pTrans || !pPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = SolvCreatePackageList(&pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetTransResultsWithType(pTrans, type, pPkgList);
+    dwError = SolvGetTransResultsWithType(pTrans, dwType, pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetPackageListSize(pPkgList, &dwCount);
@@ -115,23 +122,29 @@ TDNFGetObsoletedPackages(
 
 uint32_t
 TDNFGetUnneededPackages(
-    Solver*         solv,
+    Solver*         pSolv,
     PTDNF           pTdnf,
     PTDNF_PKG_INFO* pPkgInfo)
 {
     uint32_t dwError = 0;
     PSolvPackageList pPkgList = NULL;
-    Queue tmp;
-    queue_init(&tmp);
+    Queue queueResult;
+    queue_init(&queueResult);
 
-    solver_get_unneeded(solv, &tmp, 0);
+    if(!pTdnf || !pTdnf->pSack|| !pSolv || !pPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
-    if(tmp.count > 0)
+    solver_get_unneeded(pSolv, &queueResult, 0);
+
+    if(queueResult.count > 0)
     {
         dwError = SolvCreatePackageList(&pPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvQueueToPackageList(&tmp, pPkgList);
+        dwError = SolvQueueToPackageList(&queueResult, pPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFPopulatePkgInfos(
@@ -146,7 +159,7 @@ cleanup:
     {
         SolvFreePackageList(pPkgList);
     }
-    queue_free(&tmp);
+    queue_free(&queueResult);
     return dwError;
 
 error:
@@ -166,12 +179,17 @@ TDNFGetDownGradePackages(
 {
     uint32_t dwError = 0;
     PSolvPackageList pInstalledPkgList = NULL;
-    Id installedId = 0;
+    Id dwInstalledId = 0;
     PSolvPackageList pRemovePkgList = NULL;
-    PTDNF_PKG_INFO pInfo = NULL;
-    Queue toRemove;
-    queue_init(&toRemove);
+    PTDNF_PKG_INFO   pInfo = NULL;
+    Queue queuePkgToRemove;
+    queue_init(&queuePkgToRemove);
 
+    if(!pTdnf || !pTdnf->pSack|| !pTrans || !pPkgInfo || !pRemovePkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFGetPackagesWithSpecifiedType(pTrans, pTdnf, pPkgInfo,
                     SOLVER_TRANSACTION_DOWNGRADE);
@@ -189,20 +207,22 @@ TDNFGetDownGradePackages(
     while(pInfo)
     {
         SolvEmptyPackageList(pInstalledPkgList);
-        dwError = SolvFindInstalledPkgByName(pTdnf->pSack, pInfo->pszName, pInstalledPkgList);
+        dwError = SolvFindInstalledPkgByName(pTdnf->pSack,
+                        pInfo->pszName,
+                        pInstalledPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        SolvGetPackageId(pInstalledPkgList, 0, &installedId);
-        queue_push(&toRemove, installedId);
+        SolvGetPackageId(pInstalledPkgList, 0, &dwInstalledId);
+        queue_push(&queuePkgToRemove, dwInstalledId);
         pInfo = pInfo->pNext;
     }
 
-    if(toRemove.count > 0)
+    if(queuePkgToRemove.count > 0)
     {
         dwError = SolvCreatePackageList(&pRemovePkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvQueueToPackageList(&toRemove, pRemovePkgList);
+        dwError = SolvQueueToPackageList(&queuePkgToRemove, pRemovePkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFPopulatePkgInfos(
@@ -212,7 +232,7 @@ TDNFGetDownGradePackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
-    queue_free(&toRemove);
+    queue_free(&queuePkgToRemove);
     if(pRemovePkgList)
     {
         SolvFreePackageList(pRemovePkgList);
@@ -234,7 +254,7 @@ error:
 uint32_t
 TDNFGoal(
     PTDNF                   pTdnf,
-    Queue*                  pkgList,
+    Queue*                  pQueuePkgList,
     PTDNF_SOLVED_PKG_INFO   pInfo
     )
 {
@@ -243,13 +263,13 @@ TDNFGoal(
     PTDNF_SOLVED_PKG_INFO pInfoTemp = NULL;
     Solver *pSolv = NULL;
     Transaction *pTrans = NULL;
-    Queue jobs;
-    queue_init(&jobs);
+    Queue queueJobs;
+    queue_init(&queueJobs);
 
     int nFlags = 0;
     int i = 0;
 
-    if(!pTdnf || !pInfo )
+    if(!pTdnf || !pInfo || !pQueuePkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -257,20 +277,20 @@ TDNFGoal(
 
     if(pInfo->nAlterType == ALTER_UPGRADEALL)
     {
-        dwError = SolvAddUpgradeAllJob(&jobs);
+        dwError = SolvAddUpgradeAllJob(&queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else if(pInfo->nAlterType == ALTER_DISTRO_SYNC)
     {
-        dwError = SolvAddDistUpgradeJob(&jobs);
+        dwError = SolvAddDistUpgradeJob(&queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else
     {
-        for(i = 0; i < pkgList->count; i++)
+        for(i = 0; i < pQueuePkgList->count; i++)
         {
-            Id id = pkgList->elements[i];
-            TDNFAddGoal(pTdnf, pInfo->nAlterType, &jobs, id);
+            Id id = pQueuePkgList->elements[i];
+            TDNFAddGoal(pTdnf, pInfo->nAlterType, &queueJobs, id);
         }
     }
 
@@ -278,7 +298,7 @@ TDNFGoal(
     {
         nFlags = nFlags | SOLVER_FORCEBEST;
     }
-    dwError = SolvAddFlagsToJobs(&jobs, nFlags);
+    dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
 
     if(pTdnf->pArgs->nDebugSolver)
     {
@@ -304,7 +324,7 @@ TDNFGoal(
     solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
 
-    if (solver_solve(pSolv, &jobs) == 0)
+    if (solver_solve(pSolv, &queueJobs) == 0)
     {
         pTrans = solver_create_transaction(pSolv);
     }
@@ -331,7 +351,7 @@ cleanup:
     return dwError;
 
 error:
-    queue_free(&jobs);
+    queue_free(&queueJobs);
     if(pTrans)
     {
         transaction_free(pTrans);
@@ -349,17 +369,17 @@ TDNFAddGoal(
     PTDNF   pTdnf,
     int     nAlterType,
     Queue*  pQueueJobs,
-    Id      id
+    Id      dwId
     )
 {
     uint32_t dwError = 0;
     char* pszPkg = NULL;
     int flags = 0;
     int i = 0;
-    Queue job2;
-    queue_init(&job2);
+    Queue queueJob;
+    queue_init(&queueJob);
 
-    if(!pQueueJobs || id == 0)
+    if(!pQueueJobs || dwId == 0)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -369,35 +389,35 @@ TDNFAddGoal(
     {
         case ALTER_DOWNGRADEALL:
         case ALTER_DOWNGRADE:
-            dwError = SolvAddPkgDowngradeJob(pQueueJobs, id);
+            dwError = SolvAddPkgDowngradeJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         case ALTER_ERASE:
-            dwError = SolvAddPkgEraseJob(pQueueJobs, id);
+            dwError = SolvAddPkgEraseJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         case ALTER_REINSTALL:
         case ALTER_INSTALL:
-            dwError = SolvAddPkgInstallJob(pQueueJobs, id);
+            dwError = SolvAddPkgInstallJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         case ALTER_UPGRADE:
-            dwError = SolvGetPkgNevrFromId(pTdnf->pSack, id, &pszPkg);
+            dwError = SolvGetPkgNevrFromId(pTdnf->pSack, dwId, &pszPkg);
             BAIL_ON_TDNF_ERROR(dwError);
 
             flags = SELECTION_NAME|SELECTION_PROVIDES|SELECTION_GLOB;
             flags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
-            selection_make(pTdnf->pSack->pPool, &job2, pszPkg, flags);
-            for (i = 0; i < job2.count; i += 2)
+            selection_make(pTdnf->pSack->pPool, &queueJob, pszPkg, flags);
+            for (i = 0; i < queueJob.count; i += 2)
             {
                 queue_push2(pQueueJobs,
-                    job2.elements[i],
-                    job2.elements[i + 1]);
+                    queueJob.elements[i],
+                    queueJob.elements[i + 1]);
             }
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         case ALTER_AUTOERASE:
-            dwError = SolvAddPkgUserInstalledJob(pQueueJobs, id);
+            dwError = SolvAddPkgUserInstalledJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         default:
@@ -406,7 +426,7 @@ TDNFAddGoal(
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPkg);
-    queue_free(&job2);
+    queue_free(&queueJob);
     return dwError;
 
 error:
@@ -419,7 +439,7 @@ TDNFGoalGetAllResultsIgnoreNoData(
     Transaction*            pTrans,
     Solver*                 pSolv,
     PTDNF_SOLVED_PKG_INFO*  ppInfo,
-    PTDNF  pTdnf
+    PTDNF                   pTdnf
     )
 {
     uint32_t dwError = 0;
@@ -438,29 +458,48 @@ TDNFGoalGetAllResultsIgnoreNoData(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetInstallPackages(
-            pTrans, pTdnf, &pInfo->pPkgsToInstall);
+                    pTrans,
+                    pTdnf,
+                    &pInfo->pPkgsToInstall);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetUpgradePackages(
-                  pTrans, pTdnf, &pInfo->pPkgsToUpgrade);
+                    pTrans,
+                    pTdnf,
+                    &pInfo->pPkgsToUpgrade);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetDownGradePackages(pTrans, pTdnf, &pInfo->pPkgsToDowngrade,
-            &pInfo->pPkgsRemovedByDowngrade);
+    dwError = TDNFGetDownGradePackages(
+                    pTrans,
+                    pTdnf,
+                    &pInfo->pPkgsToDowngrade,
+                    &pInfo->pPkgsRemovedByDowngrade);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetErasePackages(pTrans, pTdnf, &pInfo->pPkgsToRemove);
+    dwError = TDNFGetErasePackages(
+                    pTrans,
+                    pTdnf,
+                    &pInfo->pPkgsToRemove);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(nResolveFor == ALTER_AUTOERASE)
     {
-        dwError = TDNFGetUnneededPackages(pSolv, pTdnf, &pInfo->pPkgsUnNeeded);
+        dwError = TDNFGetUnneededPackages(
+                        pSolv,
+                        pTdnf,
+                        &pInfo->pPkgsUnNeeded);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = TDNFGetReinstallPackages(pTrans, pTdnf, &pInfo->pPkgsToReinstall);
+    dwError = TDNFGetReinstallPackages(
+                        pTrans,
+                        pTdnf,
+                        &pInfo->pPkgsToReinstall);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetObsoletedPackages(pTrans, pTdnf, &pInfo->pPkgsObsoleted);
+    dwError = TDNFGetObsoletedPackages(
+                        pTrans,
+                        pTdnf,
+                        &pInfo->pPkgsObsoleted);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppInfo = pInfo;
