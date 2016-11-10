@@ -142,10 +142,10 @@ TDNFLoadReposFromFile(
     }
 
     if(!g_key_file_load_from_file(
-              pKeyFile,
-              pszRepoFile,
-              G_KEY_FILE_KEEP_COMMENTS,
-              NULL))
+            pKeyFile,
+            pszRepoFile,
+            G_KEY_FILE_KEEP_COMMENTS,
+            NULL))
     {
         dwError = ERROR_TDNF_REPO_FILE_LOAD;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -160,7 +160,9 @@ TDNFLoadReposFromFile(
     {
         pszRepo = ppszRepos[i];
 
-        dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
+        dwError = TDNFAllocateMemory(1,
+                                     sizeof(TDNF_REPO_DATA),
+                                     (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAllocateString(pszRepo, &pRepo->pszId);
@@ -288,19 +290,19 @@ TDNFFreeRepos(
   PTDNF_REPO_DATA pRepos
   )
 {
-  PTDNF_REPO_DATA pRepo = NULL;
-  while(pRepos)
-  {
-    pRepo = pRepos;
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
+    PTDNF_REPO_DATA pRepo = NULL;
+    while(pRepos)
+    {
+        pRepo = pRepos;
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
 
-    pRepos = pRepo->pNext;
-    TDNF_SAFE_FREE_MEMORY(pRepo);
-  }
+        pRepos = pRepo->pNext;
+        TDNF_SAFE_FREE_MEMORY(pRepo);
+    }
 }

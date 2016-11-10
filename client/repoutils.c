@@ -68,7 +68,7 @@ TDNFRepoGetBaseUrl(
         {
             break;
         }
-        pRepos = pRepos->pNext;  
+        pRepos = pRepos->pNext;
     }
 
     if(!pRepos)
@@ -119,7 +119,7 @@ TDNFRepoGetUserPass(
         {
             break;
         }
-        pRepos = pRepos->pNext;  
+        pRepos = pRepos->pNext;
     }
 
     if(!pRepos)
@@ -128,7 +128,7 @@ TDNFRepoGetUserPass(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(!IsNullOrEmptyString(pRepos->pszUser) && 
+    if(!IsNullOrEmptyString(pRepos->pszUser) &&
        !IsNullOrEmptyString(pRepos->pszPass))
     {
         dwError = TDNFAllocateStringPrintf(
@@ -172,11 +172,11 @@ TDNFRepoGetRpmCacheDir(
     }
 
     pszRpmCacheDir = g_build_path(
-                          G_DIR_SEPARATOR_S,
-                          pTdnf->pConf->pszCacheDir,
-                          pszRepoId,
-                          TDNF_RPM_CACHE_DIR_NAME,
-                          NULL);
+                         G_DIR_SEPARATOR_S,
+                         pTdnf->pConf->pszCacheDir,
+                         pszRepoId,
+                         TDNF_RPM_CACHE_DIR_NAME,
+                         NULL);
     if(access(pszRpmCacheDir, F_OK))
     {
         dwError = errno;

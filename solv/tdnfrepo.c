@@ -9,7 +9,7 @@
 
 #include "includes.h"
 
-static uint32_t
+uint32_t
 SolvLoadRepomd(
     Repo* pRepo,
     const char* pszRepomd
@@ -45,7 +45,7 @@ error:
     goto cleanup;
 }
 
-static uint32_t
+uint32_t
 SolvLoadRepomdPrimary(
     Repo* pRepo,
     const char* pszPrimary
@@ -82,7 +82,7 @@ error:
 
 }
 
-static uint32_t
+uint32_t
 SolvLoadRepomdFilelists(
     Repo* pRepo,
     const char* pszFilelists
@@ -115,10 +115,11 @@ error:
     goto cleanup;
 }
 
-static uint32_t
+uint32_t
 SolvLoadRepomdUpdateinfo(
     Repo* pRepo,
-    const char* pszUpdateinfo)
+    const char* pszUpdateinfo
+    )
 {
     uint32_t dwError = 0;
     FILE *fp = NULL;
@@ -216,7 +217,7 @@ SolvCountPackages(
     )
 {
     uint32_t dwError = 0;
-    uint32_t cnt = 0;
+    uint32_t dwCount = 0;
     Id p = 0;
     if(!pSack || !pSack->pPool || !pdwCount)
     {
@@ -226,9 +227,9 @@ SolvCountPackages(
     Pool* pool = pSack->pPool;
     FOR_POOL_SOLVABLES(p)
     {
-        cnt++;
+        dwCount++;
     }
-    *pdwCount = cnt;
+    *pdwCount = dwCount;
 cleanup: 
     return dwError;
 error:
@@ -236,3 +237,54 @@ error:
 
 }
 
+uint32_t
+SolvReadInstalledRpms(
+    Pool* pPool,
+    Repo** ppRepo,
+    const char*  pszCacheFileName
+    )
+{
+    uint32_t dwError = 0;
+    Repo *pRepo = NULL;
+    FILE *pCacheFile = NULL;
+    int  dwFlags = 0;
+    if(!pPool || !ppRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pRepo = repo_create(pPool, SYSTEM_REPO_NAME);
+    if(pRepo == NULL)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    if(pszCacheFileName)
+    {
+        pCacheFile = fopen(pszCacheFileName, "r");
+    }
+
+    dwFlags = REPO_REUSE_REPODATA | RPM_ADD_WITH_HDRID | REPO_USE_ROOTDIR;
+    dwError = repo_add_rpmdb_reffp(pRepo, pCacheFile, dwFlags);
+
+    if (dwError)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    *ppRepo = pRepo;
+
+cleanup:
+    if (pCacheFile)
+        fclose(pCacheFile);
+    return dwError;
+
+error:
+    if(pRepo)
+    {
+        repo_free(pRepo, 1);
+    }
+    goto cleanup;
+}

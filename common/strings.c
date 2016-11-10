@@ -31,8 +31,8 @@ TDNFAllocateString(
 
     if(!pszSrc || !ppszDst)
     {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     if(strlen(pszSrc) > TDNF_DEFAULT_MAX_STRING_LEN)
@@ -44,8 +44,8 @@ TDNFAllocateString(
     pszDst = strdup(pszSrc);
     if(!pszDst)
     {
-      dwError = ERROR_TDNF_OUT_OF_MEMORY;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     *ppszDst = pszDst;
@@ -56,7 +56,7 @@ cleanup:
 error:
     if(ppszDst)
     {
-      *ppszDst = NULL;
+        *ppszDst = NULL;
     }
     TDNF_SAFE_FREE_MEMORY(pszDst);
     goto cleanup;
@@ -73,13 +73,13 @@ TDNFSafeAllocateString(
 
     if(!ppszDst)
     {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pszSrc)
     {
-      dwError = TDNFAllocateString(pszSrc, &pszDst);
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFAllocateString(pszSrc, &pszDst);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppszDst = pszDst;
 cleanup:
@@ -181,8 +181,8 @@ TDNFAllocateStringN(
 
     if(!pszSrc || !ppszDst)
     {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     dwSrcLength = strlen(pszSrc);
@@ -205,7 +205,7 @@ cleanup:
 error:
     if(ppszDst)
     {
-      *ppszDst = NULL;
+        *ppszDst = NULL;
     }
     TDNF_SAFE_FREE_MEMORY(pszDst);
     goto cleanup;

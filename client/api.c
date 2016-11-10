@@ -72,11 +72,11 @@ TDNFCheckUpdates(
     }
 
     dwError = TDNFList(
-               pTdnf,
-               SCOPE_UPGRADES,
-               ppszPackageNameSpecs,
-               ppPkgInfo,
-               pdwCount);
+                  pTdnf,
+                  SCOPE_UPGRADES,
+                  ppszPackageNameSpecs,
+                  ppPkgInfo,
+                  pdwCount);
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
         dwError = 0;
@@ -125,14 +125,12 @@ TDNFClean(
     }
 
     dwError = TDNFAllocateMemory(
-                1,
-                sizeof(TDNF_CLEAN_INFO),
-                (void**)&pCleanInfo);
+                  1,
+                  sizeof(TDNF_CLEAN_INFO),
+                  (void**)&pCleanInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFCopyEnabledRepos(
-                pTdnf->pRepos, 
-                &pCleanInfo->ppszReposUsed);
+    dwError = TDNFCopyEnabledRepos(pTdnf->pRepos, &pCleanInfo->ppszReposUsed);
     BAIL_ON_TDNF_ERROR(dwError);
 
     ppszReposUsed = pCleanInfo->ppszReposUsed;
@@ -215,7 +213,7 @@ TDNFInfo(
     PSolvPackageList pPkgList = NULL;
 
     if(!pTdnf || !pTdnf->pSack ||!pdwCount || !ppPkgInfo || 
-        !ppszPackageNameSpecs || !pTdnf->pSack)
+       !ppszPackageNameSpecs || !pTdnf->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -240,11 +238,11 @@ TDNFInfo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPopulatePkgInfoArray(
-                    pTdnf->pSack,
-                    pPkgList,
-                    DETAIL_INFO,
-                    &pPkgInfo,
-                    &dwCount);
+                  pTdnf->pSack,
+                  pPkgList,
+                  DETAIL_INFO,
+                  &pPkgInfo,
+                  &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
@@ -293,7 +291,7 @@ TDNFList(
     PSolvPackageList pPkgList = NULL;
 
     if(!pTdnf || !pTdnf->pSack || !ppszPackageNameSpecs ||
-        !ppPkgInfo || !pdwCount)
+       !ppPkgInfo || !pdwCount)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -368,7 +366,7 @@ TDNFMakeCache(
     }
 
     //Pass in clean metadata as 1
-    dwError = TDNFRefreshSack(pTdnf, 1);
+    dwError = TDNFRefreshSack(pTdnf, NULL, 1);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -396,36 +394,36 @@ TDNFOpenHandle(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(
-                    1,
-                    sizeof(TDNF),
-                    (void**)&pTdnf);
+    dwError = TDNFAllocateMemory(1, sizeof(TDNF), (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadConfig(pTdnf,
-                    pTdnf->pArgs->pszConfFile,
-                    TDNF_CONF_GROUP);
+                  pTdnf->pArgs->pszConfFile,
+                  TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvInitSack(&pSack,
-                    pTdnf->pConf->pszCacheDir,
-                    pTdnf->pArgs->pszInstallRoot);
+    dwError = SolvInitSack(
+                  &pSack,
+                  pTdnf->pConf->pszCacheDir,
+                  pTdnf->pArgs->pszInstallRoot);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFLoadRepoData(
+                  pTdnf,
+                  REPOLISTFILTER_ENABLED,
+                  &pTdnf->pRepos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRefreshSack(
+                  pTdnf,
+                  pSack,
+                  pTdnf->pArgs->nRefresh);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pSack = pSack;
-    dwError = TDNFLoadRepoData(
-                    pTdnf,
-                    REPOLISTFILTER_ENABLED,
-                    &pTdnf->pRepos);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFRefreshSack(pTdnf,
-                    pTdnf->pArgs->nRefresh);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     *ppTdnf = pTdnf;
 
 cleanup:
@@ -456,8 +454,6 @@ TDNFProvides(
 {
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
-
-    //int nFlag = HY_EQ;
 
     if(!pTdnf || IsNullOrEmptyString(pszSpec))
     {
@@ -516,8 +512,7 @@ TDNFResolve(
     )
 {
     uint32_t dwError = 0;
-    Queue queueGoal;
-    queue_init(&queueGoal);
+    Queue queueGoal = {0};
 
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
 
@@ -527,6 +522,8 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    queue_init(&queueGoal);
+    
     if(nAlterType == ALTER_AUTOERASE)
     {
         dwError = ERROR_TDNF_AUTOERASE_UNSUPPORTED;
@@ -537,9 +534,9 @@ TDNFResolve(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
-                1,
-                sizeof(TDNF_SOLVED_PKG_INFO),
-                (void**)&pSolvedPkgInfo);
+                  1,
+                  sizeof(TDNF_SOLVED_PKG_INFO),
+                  (void**)&pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nAlterType = nAlterType;
@@ -610,8 +607,7 @@ TDNFSearchCommand(
     PSolvPackageList pPkgList = NULL;
     int nIndex = 0;
     uint32_t unCount  = 0;
-    Id  pkgId = 0;
-
+    Id dwPkgId = 0;
     if(!pTdnf || !pCmdArgs || !ppPkgInfo || !punCount || !pTdnf->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -627,10 +623,13 @@ TDNFSearchCommand(
     }
 
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
-    SolvApplySearch(pQuery,
-                        pCmdArgs->ppszCmds,
-                        nStartArgIndex,
-                        pCmdArgs->nCmdCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplySearch(pQuery,
+                  pCmdArgs->ppszCmds,
+                  nStartArgIndex,
+                  pCmdArgs->nCmdCount);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvCreatePackageList(&pPkgList);
     if(!pPkgList)
@@ -652,24 +651,25 @@ TDNFSearchCommand(
     }
 
     dwError = TDNFAllocateMemory(
-                unCount,
-                sizeof(TDNF_PKG_INFO),
-                (void**)&pPkgInfo);
+                  unCount,
+                  sizeof(TDNF_PKG_INFO),
+                  (void**)&pPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     for(nIndex = 0; nIndex < unCount; nIndex++)
     {
         PTDNF_PKG_INFO pPkg = &pPkgInfo[nIndex];
 
-        dwError = SolvGetPackageId(pPkgList, nIndex, &pkgId);
+        dwError = SolvGetPackageId(pPkgList, nIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgNameFromId(pTdnf->pSack, pkgId, &pPkg->pszName);
+        dwError = SolvGetPkgNameFromId(pTdnf->pSack, dwPkgId, &pPkg->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgSummaryFromId(pTdnf->pSack,
-                    pkgId,
-                    &pPkg->pszSummary);
+        dwError = SolvGetPkgSummaryFromId(
+                      pTdnf->pSack,
+                      dwPkgId,
+                      &pPkg->pszSummary);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -686,15 +686,14 @@ cleanup:
         SolvFreePackageList(pPkgList);
     }
     return dwError;
-
 error:
     if(ppPkgInfo)
     {
-      *ppPkgInfo = NULL;
+        *ppPkgInfo = NULL;
     }
     if(punCount)
     {
-      *punCount = 0;
+        *punCount = 0;
     }
     TDNFFreePackageInfoArray(pPkgInfo, unCount);
 

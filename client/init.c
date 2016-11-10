@@ -31,9 +31,9 @@ TDNFCloneCmdArgs(
     PTDNF_CMD_ARGS pCmdArgs = NULL;
 
     dwError = TDNFAllocateMemory(
-                            1,
-                            sizeof(TDNF_CMD_ARGS),
-                            (void**)&pCmdArgs);
+                  1,
+                  sizeof(TDNF_CMD_ARGS),
+                  (void**)&pCmdArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pCmdArgs->nAllowErasing  = pCmdArgsIn->nAllowErasing;
@@ -53,22 +53,22 @@ TDNFCloneCmdArgs(
     pCmdArgs->nIPv6          = pCmdArgsIn->nIPv6;
 
     dwError = TDNFAllocateString(
-                         pCmdArgsIn->pszInstallRoot,
-                         &pCmdArgs->pszInstallRoot);
+                  pCmdArgsIn->pszInstallRoot,
+                  &pCmdArgs->pszInstallRoot);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(IsNullOrEmptyString(pCmdArgsIn->pszConfFile))
     {
         dwError = TDNFAllocateString(
-                             TDNF_CONF_FILE,
-                             &pCmdArgs->pszConfFile);
+                      TDNF_CONF_FILE,
+                      &pCmdArgs->pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else
     {
         dwError = TDNFAllocateString(
-                             pCmdArgsIn->pszConfFile,
-                             &pCmdArgs->pszConfFile);
+                      pCmdArgsIn->pszConfFile,
+                      &pCmdArgs->pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -82,17 +82,16 @@ TDNFCloneCmdArgs(
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
-                            pCmdArgs->nCmdCount,
-                            sizeof(char*),
-                            (void**)&pCmdArgs->ppszCmds
-                            );
+                  pCmdArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&pCmdArgs->ppszCmds);
     BAIL_ON_TDNF_ERROR(dwError);
         
     for(nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
     {
         dwError = TDNFAllocateString(
-                         pCmdArgsIn->ppszCmds[nIndex],
-                         &pCmdArgs->ppszCmds[nIndex]);
+                      pCmdArgsIn->ppszCmds[nIndex],
+                      &pCmdArgs->ppszCmds[nIndex]);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -113,11 +112,11 @@ error:
 uint32_t
 TDNFRefreshSack(
     PTDNF pTdnf,
+    PSolvSack pSack,
     int nCleanMetadata
     )
 {
     uint32_t dwError = 0;
-    PSolvRepo pRepo = NULL;
     if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -145,13 +144,18 @@ TDNFRefreshSack(
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
 
-                dwError = TDNFInitRepo(pTdnf, pTempRepo, &pRepo);
+                if(pSack)
+                {
+                    dwError = TDNFInitRepo(pTdnf, pTempRepo, pSack);
+                }
                 if(dwError)
                 {
                     if(pTempRepo->nSkipIfUnavailable)
                     {
                         pTempRepo->nEnabled = 0;
-                        fprintf(stdout, "Disabling Repo: '%s'\n", pTempRepo->pszName);
+                        fprintf(stdout,
+                                "Disabling Repo: '%s'\n",
+                                pTempRepo->pszName);
 
                         dwError = 0;
                     }
