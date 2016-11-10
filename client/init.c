@@ -113,11 +113,11 @@ error:
 uint32_t
 TDNFRefreshSack(
     PTDNF pTdnf,
+    PSolvSack pSack,
     int nCleanMetadata
     )
 {
     uint32_t dwError = 0;
-    PSolvRepo pRepo = NULL;
     if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -145,7 +145,10 @@ TDNFRefreshSack(
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
 
-                dwError = TDNFInitRepo(pTdnf, pTempRepo, &pRepo);
+                if(pSack)
+                {
+                    dwError = TDNFInitRepo(pTdnf, pTempRepo, pSack);
+                }
                 if(dwError)
                 {
                     if(pTempRepo->nSkipIfUnavailable)

@@ -223,11 +223,6 @@ TDNFFreeSolvedPackageInfo(
     );
 
 void
-TDNFFreeStringArray(
-    char** ppszArray
-    );
-
-void
 TDNFFreeUpdateInfo(
     PTDNF_UPDATEINFO pUpdateInfo
     );

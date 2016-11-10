@@ -23,9 +23,9 @@
 //All alter commands such as install/update/erase
 uint32_t
 TDNFAlterCommand(
-    PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    PTDNF                   pTdnf,
+    TDNF_ALTERTYPE          nAlterType,
+    PTDNF_SOLVED_PKG_INFO   pSolvedInfo
     )
 {
     uint32_t dwError = 0;
@@ -57,10 +57,10 @@ TDNFCheckLocalPackages(
 
 uint32_t
 TDNFCheckUpdates(
-    PTDNF pTdnf,
-    char** ppszPackageNameSpecs,
+    PTDNF           pTdnf,
+    char**          ppszPackageNameSpecs,
     PTDNF_PKG_INFO* ppPkgInfo,
-    uint32_t* pdwCount
+    uint32_t*       pdwCount
     )
 {
     uint32_t dwError = 0;
@@ -101,9 +101,9 @@ error:
 //Clean cache data
 uint32_t
 TDNFClean(
-    PTDNF pTdnf,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO* ppCleanInfo
+    PTDNF               pTdnf,
+    TDNF_CLEANTYPE      nCleanType,
+    PTDNF_CLEAN_INFO*   ppCleanInfo
     )
 {
     uint32_t dwError = 0;
@@ -170,8 +170,8 @@ error:
 //equivalent to rpm -qa | wc -l
 uint32_t
 TDNFCountCommand(
-    PTDNF pTdnf,
-    uint32_t* pdwCount
+    PTDNF       pTdnf,
+    uint32_t*   pdwCount
     )
 {
     uint32_t dwError = 0;
@@ -201,11 +201,11 @@ error:
 //Returns a sum of installed size
 uint32_t
 TDNFInfo(
-    PTDNF pTdnf,
-    TDNF_SCOPE nScope,
-    char** ppszPackageNameSpecs,
+    PTDNF           pTdnf,
+    TDNF_SCOPE      nScope,
+    char**          ppszPackageNameSpecs,
     PTDNF_PKG_INFO* ppPkgInfo,
-    uint32_t* pdwCount
+    uint32_t*       pdwCount
     )
 {
     uint32_t dwError = 0;
@@ -279,11 +279,11 @@ error:
 
 uint32_t
 TDNFList(
-    PTDNF pTdnf,
-    TDNF_SCOPE nScope,
-    char** ppszPackageNameSpecs,
+    PTDNF           pTdnf,
+    TDNF_SCOPE      nScope,
+    char**          ppszPackageNameSpecs,
     PTDNF_PKG_INFO* ppPkgInfo,
-    uint32_t* pdwCount
+    uint32_t*       pdwCount
     )
 {
     uint32_t dwError = 0;
@@ -368,7 +368,7 @@ TDNFMakeCache(
     }
 
     //Pass in clean metadata as 1
-    dwError = TDNFRefreshSack(pTdnf, 1);
+    dwError = TDNFRefreshSack(pTdnf, NULL, 1);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -382,8 +382,8 @@ error:
 //to be used in subsequent calls.
 uint32_t
 TDNFOpenHandle(
-    PTDNF_CMD_ARGS pArgs,
-    PTDNF* ppTdnf
+    PTDNF_CMD_ARGS  pArgs,
+    PTDNF*          ppTdnf
     )
 {
     uint32_t dwError = 0;
@@ -415,17 +415,19 @@ TDNFOpenHandle(
                     pTdnf->pArgs->pszInstallRoot);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pTdnf->pSack = pSack;
     dwError = TDNFLoadRepoData(
                     pTdnf,
                     REPOLISTFILTER_ENABLED,
                     &pTdnf->pRepos);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFRefreshSack(pTdnf,
+    dwError = TDNFRefreshSack(
+                    pTdnf,
+                    pSack,
                     pTdnf->pArgs->nRefresh);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    pTdnf->pSack = pSack;
     *ppTdnf = pTdnf;
 
 cleanup:
@@ -449,8 +451,8 @@ error:
 
 uint32_t
 TDNFProvides(
-    PTDNF pTdnf,
-    const char* pszSpec,
+    PTDNF           pTdnf,
+    const char*     pszSpec,
     PTDNF_PKG_INFO* ppPkgInfo
     )
 {
@@ -610,8 +612,7 @@ TDNFSearchCommand(
     PSolvPackageList pPkgList = NULL;
     int nIndex = 0;
     uint32_t unCount  = 0;
-    Id  pkgId = 0;
-
+    Id  dwPkgId = 0;
     if(!pTdnf || !pCmdArgs || !ppPkgInfo || !punCount || !pTdnf->pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -661,14 +662,14 @@ TDNFSearchCommand(
     {
         PTDNF_PKG_INFO pPkg = &pPkgInfo[nIndex];
 
-        dwError = SolvGetPackageId(pPkgList, nIndex, &pkgId);
+        dwError = SolvGetPackageId(pPkgList, nIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgNameFromId(pTdnf->pSack, pkgId, &pPkg->pszName);
+        dwError = SolvGetPkgNameFromId(pTdnf->pSack, dwPkgId, &pPkg->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgSummaryFromId(pTdnf->pSack,
-                    pkgId,
+                    dwPkgId,
                     &pPkg->pszSummary);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -686,7 +687,6 @@ cleanup:
         SolvFreePackageList(pPkgList);
     }
     return dwError;
-
 error:
     if(ppPkgInfo)
     {
@@ -704,7 +704,7 @@ error:
 //TODO: Refactor UpdateInfoSummary into one function
 uint32_t
 TDNFUpdateInfo(
-    PTDNF pTdnf,
+    PTDNF   pTdnf,
     TDNF_SCOPE nScope,
     TDNF_AVAIL nAvail,
     char** ppszPackageNameSpecs,
