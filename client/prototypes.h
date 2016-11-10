@@ -75,8 +75,9 @@ TDNFCloneCmdArgs(
 
 uint32_t
 TDNFRefreshSack(
-    PTDNF   pTdnf,
-    int     nCleanMetadata
+    PTDNF           pTdnf,
+    PSolvSack       pSack,
+    int             nCleanMetadata
     );
 
 //makecache.c
@@ -184,50 +185,50 @@ TDNFAppendPackages(
 
 uint32_t
 TDNFPackageGetDowngrade(
-    Id          current,
-    PTDNF       pTdnf,
+    Id          dwCurrent,
+    PSolvSack   pSack,
     Id*         pkgId,
     const char* pszPkgName
     );
 
 uint32_t
 TDNFGetGlobPackages(
-    PTDNF       pTdnf,
+    PSolvSack   pSack,
     char*       pszPkgGlob,
     Queue*      pQueueGlob
     );
 
 uint32_t
 TDNFFilterPackages(
-    PTDNF                   pTdnf,
+    PSolvSack               pSack,
     PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
     Queue*                  pQueueGoal
     );
 
 uint32_t
 TDNFAddPackagesForInstall(
-    PTDNF pTdnf,
-    Queue* qGoal,
+    PSolvSack   pSack,
+    Queue*      pQueueGoal,
     const char* pszPkgName
     );
 
 uint32_t
 TDNFAddPackagesForErase(
-    PTDNF       pTdnf,
+    PSolvSack   pSack,
     Queue*      pQueueGoal,
     const char* pszPkgName
     );
 
 uint32_t
 TDNFAddPackagesForUpgrade(
-    PTDNF       pTdnf,
+    PSolvSack   pSack,
     Queue*      pQueueGoal,
     const char* pszPkgName
     );
 
 uint32_t
 TDNFAddPackagesForDowngrade(
-    PTDNF       pTdnf,
+    PSolvSack   pSack,
     Queue*      pQueueGoal,
     const char* pszPkgName
     );
@@ -235,9 +236,9 @@ TDNFAddPackagesForDowngrade(
 
 uint32_t
 TDNFGoal(
-    PTDNF       pTdnf,
-    Queue*      pkgList,
-    PTDNF_SOLVED_PKG_INFO pInfo
+    PTDNF                   pTdnf,
+    Queue*                  pkgList,
+    PTDNF_SOLVED_PKG_INFO   pInfo
     );
 
 uint32_t
@@ -389,15 +390,15 @@ TDNFPrintRepoMetadata(
 
 uint32_t
 TDNFInitRepoFromMetaData(
-    PTDNF       pTdnf,
-    const char* repo_name,
+    PSolvSack   pSack,
+    const char* pszRepoName,
     LrYumRepo*  pRepo);
 
 uint32_t
 TDNFInitRepo(
     PTDNF           pTdnf,
     PTDNF_REPO_DATA pRepoData,
-    PSolvRepo*      ppRepo
+    PSolvSack       pSack
     );
 
 uint32_t
@@ -440,7 +441,7 @@ TDNFPrepareAllPackages(
 
 uint32_t
 TDNFPrepareAndAddPkg(
-    PTDNF                   pTdnf,
+    PSolvSack               pSack,
     const char*             pszPkgName,
     PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
     Queue*                  pQueueGoal
@@ -448,7 +449,7 @@ TDNFPrepareAndAddPkg(
 
 uint32_t
 TDNFPrepareSinglePkg(
-    PTDNF                   pTdnf,
+    PSolvSack               pSack,
     const char*             pszPkgName,
     PTDNF_SOLVED_PKG_INFO   pSolvedPkgInfo,
     Queue*                  pQueueGoal
@@ -508,7 +509,7 @@ TDNFTransAddObsoletedPkgs(
 uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS      pTS,
-    const char*     pkgName
+    const char*     pszPkgName
     );
 
 uint32_t
@@ -571,40 +572,6 @@ TDNFFreeCmdOpt(
 
 //search.c
 
-//strings.c
-uint32_t
-TDNFAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
-uint32_t
-TDNFSafeAllocateString(
-    const char* pszSrc,
-    char** ppszDst
-    );
-
-uint32_t
-TDNFAllocateStringPrintf(
-    char** ppszDst,
-    const char* pszFmt,
-    ...
-    );
-
-uint32_t
-TDNFAllocateStringN(
-    const char* pszSrc,
-    uint32_t dwNumElements,
-    char** ppszDst
-    );
-
-uint32_t
-TDNFReplaceString(
-    const char* pszSource,
-    const char* pszSearch,
-    const char* pszReplace,
-    char** ppszDst
-    );
 //updateinfo.c
 uint32_t
 TDNFGetUpdateInfoPackages(

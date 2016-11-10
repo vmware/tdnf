@@ -71,3 +71,8 @@ TDNFReplaceString(
     const char* pszReplace,
     char** ppszDst
     );
+
+void
+TDNFFreeStringArray(
+    char** ppszArray
+    );

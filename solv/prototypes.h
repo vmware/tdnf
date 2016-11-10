@@ -5,7 +5,6 @@ extern "C" {
 typedef struct _SolvSack
 {
     Pool*       pPool;
-    Id*         pdwCommandLinePkgs;
     uint32_t    dwNumOfCommandPkgs;
     char*       pszCacheDir;
     char*       pszRootDir;
@@ -18,8 +17,6 @@ typedef struct _SolvQuery
     Solver      *pSolv;
     Transaction *pTrans;
     Queue       queueRepoFilter;
-    Queue       queueKindFilter;
-    Queue       queueArchFilter;
     char**      ppszPackageNames;
     Queue       queueResult;
     uint32_t    dwNewPackages;
@@ -51,7 +48,7 @@ typedef struct _SolvAdvisory
 
 } SolvAdvisory, *PSolvAdvisory;
 
-
+// tdnfpackage.c
 uint32_t
 SolvGetPkgInfoFromId(
     PSolvSack pSack,
@@ -113,7 +110,6 @@ SolvGetPkgDescriptionFromId(
     uint32_t dwPkgId,
     char** ppszDescription);
 
-
 uint32_t
 SolvGetPkgUrlFromId(
     PSolvSack pSack,
@@ -140,89 +136,12 @@ SolvSplitEvr(
     char **ppVersion,
     char **ppLease);
 
-uint32_t 
-SolvCreateSack(PSolvSack* ppSack);
-
-void
-SolvFreeSack(PSolvSack);
-
 uint32_t
-SolvCreateQuery(
+SolvCmpEvr(
     PSolvSack pSack,
-    PSolvQuery* ppQuery
-    );
-
-void
-SolvFreeQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplyPackageFilter(
-    PSolvQuery pQuery,
-    char** ppszPackageNames
-    );
-
-uint32_t
-SolvApplySinglePackageFilter(
-    PSolvQuery pQuery,
-    const char* pszPackageName
-    );
-
-uint32_t
-SolvApplyListQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplyDistroSyncQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvApplySearch(
-    PSolvQuery pQuery,
-    char** ppszSearchStrings,
-    int dwStartIndex,
-    int dwCount
-    );
-
-uint32_t
-SolvGetNumPkgs(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvReadYumRepo(
-    PSolvSack pSack,
-    const char *pszRepoName,
-    const char *pszRepomd,
-    const char *pszPrimary,
-    const char *pszFilelists,
-    const char *pszUpdateinfo
-    );
-
-uint32_t
-SolvCountPackages(
-    PSolvSack pSack,
-    uint32_t* pdwCount;
-    );
-
-uint32_t
-SolvInitSack(
-    PSolvSack *ppSack,
-    const char* pszCacheDir,
-    const char* pszRootDir
-    );
-
-uint32_t
-SolvAddSystemRepoFilter(
-    PSolvQuery pQuery
-    );
-
-uint32_t
-SolvAddAvailableRepoFilter(
-    PSolvQuery pQuery
+    Id  dwPkg1,
+    Id  dwPkg2,
+    int* pdwResult
     );
 
 uint32_t
@@ -255,8 +174,99 @@ SolvGetPackageListSize(
 uint32_t
 SolvGetPackageId(
     PSolvPackageList pPkgList,
-    int dwPkgIndex,
+    uint32_t dwPkgIndex,
     Id* dwPkgId
+    );
+
+// tdnfpool.c
+uint32_t 
+SolvCreateSack(
+    PSolvSack* ppSack
+    );
+
+void
+SolvFreeSack(
+    PSolvSack);
+
+uint32_t
+SolvInitSack(
+    PSolvSack *ppSack,
+    const char* pszCacheDir,
+    const char* pszRootDir
+    );
+
+
+// tdnfquery.c
+uint32_t
+SolvCreateQuery(
+    PSolvSack pSack,
+    PSolvQuery* ppQuery
+    );
+
+void
+SolvFreeQuery(
+    PSolvQuery pQuery
+    );
+
+uint32_t
+SolvApplyPackageFilter(
+    PSolvQuery  pQuery,
+    char**      ppszPackageNames
+    );
+
+uint32_t
+SolvApplySinglePackageFilter(
+    PSolvQuery  pQuery,
+    const char* pszPackageName
+    );
+
+uint32_t
+SolvApplyListQuery(
+    PSolvQuery pQuery
+    );
+
+uint32_t
+SolvApplyDistroSyncQuery(
+    PSolvQuery pQuery
+    );
+
+uint32_t
+SolvApplySearch(
+    PSolvQuery  pQuery,
+    char**      ppszSearchStrings,
+    int         dwStartIndex,
+    int         dwCount
+    );
+
+uint32_t
+SolvRunSolv(
+    PSolvQuery pQuery,
+    uint32_t dwMainMode,
+    uint32_t dwMode,
+    Queue* queueJobs,
+    Solver** ppSolv
+    );
+
+uint32_t
+SolvApplyAlterQuery(
+    PSolvQuery pQuery,
+    uint32_t dwMainMode,
+    uint32_t dwMode
+    );
+
+uint32_t
+SolvGenerateCommonJob(
+    PSolvQuery  pQuery
+    );
+
+uint32_t
+SolvAddSystemRepoFilter(
+    PSolvQuery pQuery
+    );
+
+uint32_t
+SolvAddAvailableRepoFilter(
+    PSolvQuery pQuery
     );
 
 uint32_t
@@ -271,13 +281,24 @@ SolvGetSearchResult(
     PSolvPackageList pPkgList
     );
 
+
+// tdnfrepo.c
 uint32_t
-SolvCmpEvr(
+SolvReadYumRepo(
     PSolvSack pSack,
-    Id  dwPkg1,
-    Id  dwPkg2,
-    int* pdwResult
+    const char *pszRepoName,
+    const char *pszRepomd,
+    const char *pszPrimary,
+    const char *pszFilelists,
+    const char *pszUpdateinfo
     );
+
+uint32_t
+SolvCountPackages(
+    PSolvSack pSack,
+    uint32_t* pdwCount;
+    );
+
 
 uint32_t
 SolvGetLatest(
@@ -285,14 +306,6 @@ SolvGetLatest(
     Queue* pPkgList,
     Id     dwPpkg,
     Id*    pdwResult
-    );
-
-uint32_t
-SolvRemovePkgWithHigherorEqualEvr(
-    PSolvSack pSack,
-    Queue* pPkgList,
-    Id     dwPkg,
-    Queue* pNewQueue
     );
 
 uint32_t
@@ -324,7 +337,7 @@ SolvCountPkgByName(
 
 uint32_t
 SolvGetTransResultsWithType(
-    Transaction *trans,
+    Transaction *pTrans,
     Id          dwType,
     PSolvPackageList pPkgList
     );
@@ -367,6 +380,13 @@ uint32_t
 SolvAddPkgUserInstalledJob(
     Queue* pQueueJobs,
     Id     dwId
+    );
+
+uint32_t
+SolvFindHighestAvailable(
+    PSolvSack   pSack,
+    const char* pszPkgName,
+    Id*         pdwId
     );
 
 #ifdef __cplusplus

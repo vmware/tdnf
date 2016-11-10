@@ -9,7 +9,9 @@
 #include "includes.h"
 
 uint32_t
-SolvCreateSack(PSolvSack* ppSack)
+SolvCreateSack(
+    PSolvSack* ppSack
+    )
 {
     uint32_t dwError = 0;
     PSolvSack pSack = NULL;
@@ -38,7 +40,8 @@ error:
 
 void
 SolvFreeSack(
-    PSolvSack pSack)
+    PSolvSack pSack
+    )
 {
     if(pSack)
     {
@@ -47,7 +50,6 @@ SolvFreeSack(
         {
             pool_free(pPool);
         }
-        TDNF_SAFE_FREE_MEMORY(pSack->pdwCommandLinePkgs);
         TDNF_SAFE_FREE_MEMORY(pSack->pszCacheDir);
         TDNF_SAFE_FREE_MEMORY(pSack->pszRootDir);
         TDNF_SAFE_FREE_MEMORY(pSack);

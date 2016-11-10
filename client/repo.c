@@ -23,9 +23,9 @@
 //Download repo metadata and initialize
 uint32_t
 TDNFInitRepo(
-    PTDNF pTdnf,
+    PTDNF           pTdnf,
     PTDNF_REPO_DATA pRepoData,
-    PSolvRepo* ppRepo
+    PSolvSack       pSack
     )
 {
     uint32_t dwError = 0;
@@ -43,7 +43,7 @@ TDNFInitRepo(
     char* ppszDownloadList[] = {"primary", "filelists", "updateinfo", NULL};
     PTDNF_CONF pConf = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !pRepoData || !ppRepo)
+    if(!pTdnf || !pTdnf->pConf || !pRepoData || !pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -160,7 +160,7 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFInitRepoFromMetaData(pTdnf, pRepoData->pszId, pRepo);
+    dwError = TDNFInitRepoFromMetaData(pSack, pRepoData->pszId, pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -199,17 +199,13 @@ error:
             TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
         }
     }
-    if(ppRepo)
-    {
-        *ppRepo = NULL;
-    }
     goto cleanup;
 }
 
 uint32_t
 TDNFInitRepoFromMetaData(
-    PTDNF pTdnf,
-    const char* repo_name,
+    PSolvSack pSack,
+    const char* pszRepoName,
     LrYumRepo* pRepo
     )
 {
@@ -218,12 +214,26 @@ TDNFInitRepoFromMetaData(
     const char* pszValue2 = NULL;
     const char* pszValue3 = NULL;
 
+    if(!pSack || !pRepo || IsNullOrEmptyString(pszRepoName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pszValue = lr_yum_repo_path(pRepo, "primary");
     pszValue2 = lr_yum_repo_path(pRepo, "filelists");
     pszValue3 = lr_yum_repo_path(pRepo, "updateinfo");
-    SolvReadYumRepo(pTdnf->pSack, repo_name, 
-        pRepo->repomd, pszValue, pszValue2, pszValue3);
+    dwError = SolvReadYumRepo(pSack,
+                    pszRepoName, 
+                    pRepo->repomd,
+                    pszValue,
+                    pszValue2,
+                    pszValue3);
+cleanup: 
+    return dwError;
 
+error:
+    goto cleanup;
     return dwError;
 }
 
@@ -280,10 +290,10 @@ error:
 
 uint32_t
 TDNFGetGPGCheck(
-    PTDNF pTdnf,
+    PTDNF       pTdnf,
     const char* pszRepo,
-    int* pnGPGCheck,
-    char** ppszUrlGPGKey
+    int*        pnGPGCheck,
+    char**      ppszUrlGPGKey
     )
 {
     uint32_t dwError = 0;
@@ -334,9 +344,9 @@ error:
 
 uint32_t
 TDNFGetRepoById(
-    PTDNF pTdnf,
-    const char* pszId,
-    PTDNF_REPO_DATA* ppRepo
+    PTDNF               pTdnf,
+    const char*         pszId,
+    PTDNF_REPO_DATA*    ppRepo
     )
 {
     uint32_t dwError = 0;
