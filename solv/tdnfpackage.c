@@ -674,7 +674,7 @@ SolvGetPkgNevrFromId(
     }
 
     pszTemp = pool_solvable2str(pSack->pPool, pSolv);
-    if(!pszNevr)
+    if(!pszTemp)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
