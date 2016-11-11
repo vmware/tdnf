@@ -118,8 +118,8 @@ TDNFDownloadPackage(
                pszRpmCacheDir,
                LR_CHECKSUM_UNKNOWN,
                NULL,
-               0, 
-               NULL, 
+               0,
+               NULL,
                TRUE,
                &pError);
 
