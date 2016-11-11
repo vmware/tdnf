@@ -201,7 +201,8 @@ TDNFGetGlobPackages(
 uint32_t
 TDNFFilterPackages(
     PSolvSack pSack,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* pQueueGoal
     );
 
@@ -245,13 +246,14 @@ uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     Queue* pkgList,
-    PTDNF_SOLVED_PKG_INFO pInfo
+    PTDNF_SOLVED_PKG_INFO* ppInfo,
+    TDNF_ALTERTYPE nAlterType
     );
 
 uint32_t
 TDNFAddGoal(
     PTDNF pTdnf,
-    int nAlterType,
+    TDNF_ALTERTYPE nAlterType,
     Queue* pQueueJobs,
     Id dwId
     );
@@ -442,7 +444,8 @@ TDNFLoadRepoData(
 uint32_t
 TDNFPrepareAllPackages(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* pQueueGoal
     );
 
@@ -450,7 +453,8 @@ uint32_t
 TDNFPrepareAndAddPkg(
     PSolvSack pSack,
     const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* pQueueGoal
     );
 
@@ -458,7 +462,8 @@ uint32_t
 TDNFPrepareSinglePkg(
     PSolvSack pSack,
     const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* pQueueGoal
     );
 
@@ -472,7 +477,7 @@ TDNFAddFilteredPkgs(
 
 uint32_t
 TDNFAddNotResolved(
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    char** ppszPkgsNotResolved,
     const char* pszPkgName
     );
 
@@ -480,7 +485,8 @@ TDNFAddNotResolved(
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pInfo
+    PTDNF_SOLVED_PKG_INFO pInfo,
+    TDNF_ALTERTYPE nAlterType
     );
 
 void*

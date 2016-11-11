@@ -28,12 +28,9 @@ TDNFMatchForReinstall(
     )
 {
     uint32_t dwError = 0;
-    uint32_t dwCount = 0;
-    int dwPkgIndex = 0;
-    int dwEvrCompare = 0;
-    int dwPkgNotFound = 0;
     Id  dwInstalledId = 0;
     Id  dwAvailableId = 0;
+    char* pszNevr = NULL;
     PSolvPackageList pInstalledPkgList = NULL;
     PSolvPackageList pAvailabePkgList = NULL;
 
@@ -46,52 +43,36 @@ TDNFMatchForReinstall(
     dwError = SolvCreatePackageList(&pInstalledPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvCreatePackageList(&pAvailabePkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     dwError = SolvFindInstalledPkgByName(
                   pSack,
                   pszName,
                   pInstalledPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
-    dwError = SolvFindAvailablePkgByName(
-                  pSack,
-                  pszName,
-                  pAvailabePkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError =  SolvGetPackageId(pInstalledPkgList, 0, &dwInstalledId);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
+    dwError = SolvGetPkgNevrFromId(pSack, dwInstalledId, &pszNevr);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
-    {
-        dwError = SolvGetPackageId(pAvailabePkgList,
-                                   dwPkgIndex,
-                                   &dwAvailableId);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = SolvCreatePackageList(&pAvailabePkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvCmpEvr(pSack,
-                             dwInstalledId,
-                             dwAvailableId,
-                             &dwEvrCompare);
-        BAIL_ON_TDNF_ERROR(dwError);
-        if(dwEvrCompare == 0)
-        {
-            queue_push(pQueueGoal, dwAvailableId);
-            dwPkgNotFound = 1;
-            break;
-        }
-    }
+    dwError = SolvFindAvailablePkgByName(
+                  pSack,
+                  pszNevr,
+                  pAvailabePkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwPkgNotFound == 0)
-    {
-        dwError = ERROR_TDNF_NO_MATCH;
-    }
+    dwError = SolvGetPackageId(pAvailabePkgList,
+                               0,
+                               &dwAvailableId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    queue_push(pQueueGoal, dwAvailableId);
+
 cleanup:
-
+    TDNF_SAFE_FREE_MEMORY(pszNevr);
     if(pAvailabePkgList)
     {
         SolvFreePackageList(pAvailabePkgList);

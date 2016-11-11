@@ -23,7 +23,8 @@
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    TDNF_ALTERTYPE nAlterType
     )
 {
     uint32_t dwError = 0;
@@ -52,7 +53,7 @@ TDNFRpmExecTransaction(
 
     //Allow downgrades
     ts.nProbFilterFlags = RPMPROB_FILTER_OLDPACKAGE;
-    if(pSolvedInfo->nAlterType == ALTER_REINSTALL)
+    if(nAlterType == ALTER_REINSTALL)
     {
         ts.nProbFilterFlags = ts.nProbFilterFlags | RPMPROB_FILTER_REPLACEPKG;
     }

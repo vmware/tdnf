@@ -224,7 +224,7 @@ TDNFInitRepoFromMetaData(
     pszValue2 = lr_yum_repo_path(pRepo, "filelists");
     pszValue3 = lr_yum_repo_path(pRepo, "updateinfo");
     dwError = SolvReadYumRepo(pSack,
-                  pszRepoName, 
+                  pszRepoName,
                   pRepo->repomd,
                   pszValue,
                   pszValue2,

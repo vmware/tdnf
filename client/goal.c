@@ -277,7 +277,8 @@ uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     Queue* pQueuePkgList,
-    PTDNF_SOLVED_PKG_INFO pInfo
+    PTDNF_SOLVED_PKG_INFO* ppInfo,
+    TDNF_ALTERTYPE nAlterType
     )
 {
     uint32_t dwError = 0;
@@ -291,19 +292,19 @@ TDNFGoal(
     int i = 0;
     Id  dwId = 0; 
 
-    if(!pTdnf || !pInfo || !pQueuePkgList)
+    if(!pTdnf || !ppInfo || !pQueuePkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
     queue_init(&queueJobs);
-    if(pInfo->nAlterType == ALTER_UPGRADEALL)
+    if(nAlterType == ALTER_UPGRADEALL)
     {
         dwError = SolvAddUpgradeAllJob(&queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    else if(pInfo->nAlterType == ALTER_DISTRO_SYNC)
+    else if(nAlterType == ALTER_DISTRO_SYNC)
     {
         dwError = SolvAddDistUpgradeJob(&queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -313,7 +314,7 @@ TDNFGoal(
         for(i = 0; i < pQueuePkgList->count; i++)
         {
             dwId = pQueuePkgList->elements[i];
-            TDNFAddGoal(pTdnf, pInfo->nAlterType, &queueJobs, dwId);
+            TDNFAddGoal(pTdnf, nAlterType, &queueJobs, dwId);
         }
     }
 
@@ -336,8 +337,8 @@ TDNFGoal(
     }
 
     if(pTdnf->pArgs->nAllowErasing ||
-       pInfo->nAlterType == ALTER_ERASE ||
-       pInfo->nAlterType == ALTER_AUTOERASE)
+       nAlterType == ALTER_ERASE ||
+       nAlterType == ALTER_AUTOERASE)
     {
         solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
     }
@@ -353,24 +354,16 @@ TDNFGoal(
     }
 
     dwError = TDNFGoalGetAllResultsIgnoreNoData(
-                  pInfo->nAlterType,
+                  nAlterType,
                   pTrans,
                   pSolv,
                   &pInfoTemp,
                   pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pInfo->pPkgsToInstall = pInfoTemp->pPkgsToInstall;
-    pInfo->pPkgsToUpgrade = pInfoTemp->pPkgsToUpgrade;
-    pInfo->pPkgsToDowngrade = pInfoTemp->pPkgsToDowngrade;
-    pInfo->pPkgsToRemove = pInfoTemp->pPkgsToRemove;
-    pInfo->pPkgsUnNeeded = pInfoTemp->pPkgsUnNeeded;
-    pInfo->pPkgsToReinstall = pInfoTemp->pPkgsToReinstall;
-    pInfo->pPkgsObsoleted = pInfoTemp->pPkgsObsoleted;
-    pInfo->pPkgsRemovedByDowngrade = pInfoTemp->pPkgsRemovedByDowngrade;
+    *ppInfo = pInfoTemp;
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pInfoTemp);
     return dwError;
 
 error:
@@ -383,6 +376,11 @@ error:
     {
         solver_free(pSolv);
     }
+    TDNF_SAFE_FREE_MEMORY(pInfoTemp);
+    if(ppInfo)
+    {
+        *ppInfo = NULL;
+    }
     goto cleanup;
 }
 
@@ -390,7 +388,7 @@ error:
 uint32_t
 TDNFAddGoal(
     PTDNF pTdnf,
-    int nAlterType,
+    TDNF_ALTERTYPE nAlterType,
     Queue* pQueueJobs,
     Id dwId
     )

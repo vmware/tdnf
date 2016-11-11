@@ -22,26 +22,25 @@
 
 uint32_t
 TDNFAddNotResolved(
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    char** ppszPkgsNotResolved,
     const char* pszPkgName
     )
 {
     uint32_t dwError = 0 ;
     int nIndex = 0;
 
-    if(!pSolvedInfo ||
-       !pSolvedInfo->ppszPkgsNotResolved ||
+    if(!ppszPkgsNotResolved ||
        IsNullOrEmptyString(pszPkgName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while(pSolvedInfo->ppszPkgsNotResolved[nIndex++]);
+    while(ppszPkgsNotResolved[nIndex++]);
 
     dwError = TDNFAllocateString(
                   pszPkgName,
-                  &pSolvedInfo->ppszPkgsNotResolved[--nIndex]);
+                  &ppszPkgsNotResolved[--nIndex]);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -54,7 +53,8 @@ error:
 uint32_t
 TDNFPrepareAllPackages(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* queueGoal
     )
 {
@@ -67,7 +67,7 @@ TDNFPrepareAllPackages(
     Queue queueLocal = {0};
 
     if(!pTdnf || !pTdnf->pSack ||
-       !pTdnf->pArgs || !pSolvedPkgInfo || !queueGoal)
+       !pTdnf->pArgs || !ppszPkgsNotResolved || !queueGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -75,12 +75,13 @@ TDNFPrepareAllPackages(
     queue_init(&queueLocal);
     pCmdArgs = pTdnf->pArgs;
 
-    if(pSolvedPkgInfo->nAlterType == ALTER_DOWNGRADEALL || 
-       pSolvedPkgInfo->nAlterType == ALTER_AUTOERASE)
+    if(nAlterType == ALTER_DOWNGRADEALL ||
+       nAlterType == ALTER_AUTOERASE)
     {
         dwError =  TDNFFilterPackages(
-                       pTdnf->pSack, 
-                       pSolvedPkgInfo,
+                       pTdnf->pSack,
+                       nAlterType,
+                       ppszPkgsNotResolved,
                        queueGoal);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -109,13 +110,14 @@ TDNFPrepareAllPackages(
                 dwError = TDNFPrepareAndAddPkg(
                               pTdnf->pSack,
                               pszName,
-                              pSolvedPkgInfo,
+                              nAlterType,
+                              ppszPkgsNotResolved,
                               queueGoal);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             if(queueLocal.count == 0)
             {
-                dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
+                dwError = TDNFAddNotResolved(ppszPkgsNotResolved, pszPkgName);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
@@ -124,7 +126,8 @@ TDNFPrepareAllPackages(
             dwError = TDNFPrepareAndAddPkg(
                           pTdnf->pSack,
                           pszPkgName,
-                          pSolvedPkgInfo,
+                          nAlterType,
+                          ppszPkgsNotResolved,
                           queueGoal);
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -141,7 +144,8 @@ error:
 
 uint32_t TDNFFilterPackages(
     PSolvSack pSack,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* queueGoal)
 {
     uint32_t dwError = 0;
@@ -151,7 +155,7 @@ uint32_t TDNFFilterPackages(
     PSolvPackageList pInstalledPkgList = NULL;
     char* pszName = NULL;
 
-    if(!pSack || !queueGoal)
+    if(!pSack || !queueGoal || !ppszPkgsNotResolved)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -182,7 +186,8 @@ uint32_t TDNFFilterPackages(
         dwError = TDNFPrepareAndAddPkg(
                       pSack,
                       pszName,
-                      pSolvedPkgInfo,
+                      nAlterType,
+                      ppszPkgsNotResolved,
                       queueGoal);
         BAIL_ON_TDNF_ERROR(dwError);
         TDNF_SAFE_FREE_MEMORY(pszName);
@@ -205,14 +210,15 @@ uint32_t
 TDNFPrepareAndAddPkg(
     PSolvSack pSack,
     const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* queueGoal
     )
 {
     uint32_t dwError = 0;
     if( !pSack ||
         IsNullOrEmptyString(pszPkgName) ||
-        !pSolvedPkgInfo ||
+        !ppszPkgsNotResolved ||
         !queueGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -222,7 +228,8 @@ TDNFPrepareAndAddPkg(
     dwError = TDNFPrepareSinglePkg(
                   pSack,
                   pszPkgName,
-                  pSolvedPkgInfo,
+                  nAlterType,
+                  ppszPkgsNotResolved,
                   queueGoal);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -236,25 +243,24 @@ uint32_t
 TDNFPrepareSinglePkg(
     PSolvSack pSack,
     const char* pszPkgName,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    TDNF_ALTERTYPE nAlterType,
+    char** ppszPkgsNotResolved,
     Queue* queueGoal
     )
 {
     uint32_t dwError = 0;
     PSolvPackageList pInstalledPkgList = NULL;
     uint32_t dwCount = 0;
-    int nAlterType = 0;
 
     if(!pSack ||
+       !ppszPkgsNotResolved ||
        IsNullOrEmptyString(pszPkgName) ||
-       !pSolvedPkgInfo ||
        !queueGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    nAlterType = pSolvedPkgInfo->nAlterType;
 
     //Check if this is a known package. If not add to unresolved
     dwError = SolvCountPkgByName(pSack, pszPkgName, &dwCount);
@@ -343,7 +349,7 @@ error:
     if(dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
     {
         dwError = 0;
-        if(TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName))
+        if(TDNFAddNotResolved(ppszPkgsNotResolved, pszPkgName))
         {
             fprintf(stderr, "Error while adding not resolved packages\n");
         }

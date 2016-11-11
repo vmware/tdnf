@@ -35,7 +35,7 @@ TDNFAlterCommand(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo);
+    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo, nAlterType);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -513,6 +513,7 @@ TDNFResolve(
 {
     uint32_t dwError = 0;
     Queue queueGoal = {0};
+    char** ppszPkgsNotResolved = NULL;
 
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
 
@@ -534,29 +535,23 @@ TDNFResolve(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
-                  1,
-                  sizeof(TDNF_SOLVED_PKG_INFO),
-                  (void**)&pSolvedPkgInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    pSolvedPkgInfo->nAlterType = nAlterType;
-
-    dwError = TDNFAllocateMemory(
                   pTdnf->pArgs->nCmdCount,
                   sizeof(char*),
-                  (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
+                  (void**)&ppszPkgsNotResolved);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPrepareAllPackages(
                   pTdnf,
-                  pSolvedPkgInfo,
+                  nAlterType,
+                  ppszPkgsNotResolved,
                   &queueGoal);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGoal(
                   pTdnf,
                   &queueGoal,
-                  pSolvedPkgInfo);
+                  &pSolvedPkgInfo,
+                  nAlterType);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction = 
@@ -574,6 +569,7 @@ TDNFResolve(
         pSolvedPkgInfo->pPkgsToDowngrade ||
         pSolvedPkgInfo->pPkgsToReinstall;
 
+    pSolvedPkgInfo->ppszPkgsNotResolved = ppszPkgsNotResolved;
     *ppSolvedPkgInfo = pSolvedPkgInfo;
 
 cleanup:
@@ -589,6 +585,11 @@ error:
     {
         TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
     }
+    if(ppszPkgsNotResolved)
+    {
+        TDNFFreeStringArray(ppszPkgsNotResolved);
+    }
+    TDNF_SAFE_FREE_MEMORY(ppszPkgsNotResolved);
     goto cleanup;
 }
 
