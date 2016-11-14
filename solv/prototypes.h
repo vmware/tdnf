@@ -229,6 +229,28 @@ SolvFindHighestAvailable(
     Id* pdwId
     );
 
+uint32_t
+SolvFindLowestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    );
+
+uint32_t
+SolvFindHightestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    );
+
+uint32_t
+SolvFindHightestOrLowestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId,
+    uint32_t dwFindHighest
+    );
+
 // tdnfpool.c
 uint32_t 
 SolvCreateSack(

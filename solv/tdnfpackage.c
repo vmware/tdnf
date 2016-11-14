@@ -1167,6 +1167,140 @@ error:
 }
 
 uint32_t
+SolvFindLowestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    )
+{
+    uint32_t dwError = 0;
+    Id dwLowestInstalled = 0;
+    if(!pSack || !pszPkgName || !pdwId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = SolvFindHightestOrLowestInstalled(
+                  pSack,
+                  pszPkgName,
+                  &dwLowestInstalled,
+                  0);
+    BAIL_ON_TDNF_ERROR(dwError);
+    *pdwId = dwLowestInstalled;
+cleanup:
+
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvFindHightestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    )
+{
+    uint32_t dwError = 0;
+    Id dwHighestInstalled = 0;
+    if(!pSack || !pszPkgName || !pdwId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = SolvFindHightestOrLowestInstalled(
+                  pSack,
+                  pszPkgName,
+                  &dwHighestInstalled,
+                  1);
+    BAIL_ON_TDNF_ERROR(dwError);
+    *pdwId = dwHighestInstalled;
+cleanup:
+
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvFindHightestOrLowestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId,
+    uint32_t dwFindHighest
+    )
+{
+    uint32_t dwError = 0;
+    int dwPkgIndex = 0;
+    int dwEvrCompare = 0;
+    Id  dwInstalledId = 0;
+    Id  dwHightestOrLowestInstalled = 0;
+    PSolvPackageList pInstalledPkgList = NULL;
+    uint32_t dwCount = 0;
+
+    if(!pSack || !pszPkgName || !pdwId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);;
+    }
+
+    dwError = SolvCreatePackageList(&pInstalledPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvFindInstalledPkgByName(pSack,
+                  pszPkgName,
+                  pInstalledPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetPackageId(
+                  pInstalledPkgList,
+                  0,
+                  &dwHightestOrLowestInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwHightestOrLowestInstalled != 0)
+    {
+        dwError = SolvGetPackageListSize(pInstalledPkgList, &dwCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
+        {
+            SolvGetPackageId(pInstalledPkgList, dwPkgIndex, &dwInstalledId);
+            BAIL_ON_TDNF_ERROR(dwError);
+            dwError = SolvCmpEvr(pSack,
+                          dwInstalledId,
+                          dwHightestOrLowestInstalled,
+                          &dwEvrCompare);
+            BAIL_ON_TDNF_ERROR(dwError);
+            if(dwFindHighest)
+            {
+                if(dwEvrCompare > 0)
+                {
+                    dwHightestOrLowestInstalled = dwInstalledId;
+                }
+            }
+            else
+            {
+                if(dwEvrCompare < 0)
+                {
+                    dwHightestOrLowestInstalled = dwInstalledId;
+                }
+            }
+        }
+    }
+
+    *pdwId = dwHightestOrLowestInstalled;
+cleanup:
+    if(pInstalledPkgList)
+    {
+        SolvFreePackageList(pInstalledPkgList);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 SolvSplitEvr(
     PSolvSack pSack,
     const char *pszEVRstring,
