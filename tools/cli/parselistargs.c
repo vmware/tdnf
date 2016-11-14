@@ -39,9 +39,9 @@ TDNFCliParseListArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
     dwError = TDNFAllocateMemory(
-                            1,
-                            sizeof(TDNF_LIST_ARGS),
-                            (void**)&pListArgs);
+                  1,
+                  sizeof(TDNF_LIST_ARGS),
+                  (void**)&pListArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
     //Should have scope argument (tdnf list <scope> <pkgnamespecs>)

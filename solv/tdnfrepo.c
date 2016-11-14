@@ -17,7 +17,7 @@ SolvLoadRepomd(
 {
     uint32_t dwError = 0;
     FILE *fp = NULL;
-    if( !pRepo || !pszRepomd)
+    if( !pRepo || IsNullOrEmptyString(pszRepomd))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -53,7 +53,7 @@ SolvLoadRepomdPrimary(
 {
     uint32_t dwError = 0;
     FILE *fp = NULL;
-    if( !pRepo || !pszPrimary)
+    if( !pRepo || IsNullOrEmptyString(pszPrimary))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -90,7 +90,7 @@ SolvLoadRepomdFilelists(
 {
     uint32_t dwError = 0;
     FILE *fp = NULL;
-    if(!pRepo || !pszFilelists)
+    if(!pRepo || IsNullOrEmptyString(pszFilelists))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -123,7 +123,7 @@ SolvLoadRepomdUpdateinfo(
 {
     uint32_t dwError = 0;
     FILE *fp = NULL;
-    if( !pRepo || !pszUpdateinfo)
+    if( !pRepo || IsNullOrEmptyString(pszUpdateinfo))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
