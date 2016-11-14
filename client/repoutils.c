@@ -26,7 +26,7 @@ TDNFRepoMakeCacheDirs(
     )
 {
     uint32_t dwError = 0;
-    if(!pszRepo)
+    if(IsNullOrEmptyString(pszRepo))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -50,7 +50,7 @@ TDNFRepoGetBaseUrl(
     char* pszBaseUrl = NULL;
     PTDNF_REPO_DATA pRepos = NULL;
 
-    if(!pTdnf || !pszRepo || !ppszBaseUrl)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszBaseUrl)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -101,7 +101,7 @@ TDNFRepoGetUserPass(
     char* pszUserPass = NULL;
     PTDNF_REPO_DATA pRepos = NULL;
 
-    if(!pTdnf || !pszRepo || !ppszUserPass)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszUserPass)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -159,7 +159,7 @@ TDNFRepoGetRpmCacheDir(
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
 
-    if(!pTdnf || !pszRepoId || !ppszRpmCacheDir)
+    if(!pTdnf || IsNullOrEmptyString(pszRepoId) || !ppszRpmCacheDir)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -288,7 +288,8 @@ TDNFRepoGetKeyValue(
     char* pszValue = NULL;
     char* pszKeyValue = NULL;
 
-    if(!pKeyFile || !pszGroup || !pszKeyName || !ppszValue)
+    if(!pKeyFile || IsNullOrEmptyString(pszGroup) ||
+       IsNullOrEmptyString(pszKeyName) || !ppszValue)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -346,7 +347,8 @@ TDNFRepoGetKeyValueBoolean(
     char* pszValue = NULL;
     int nValue = 0;
 
-    if(!pKeyFile || !pszGroup || !pszKeyName || !pnValue)
+    if(!pKeyFile || IsNullOrEmptyString(pszGroup) ||
+       IsNullOrEmptyString(pszKeyName) || !pnValue)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

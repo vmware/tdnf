@@ -185,10 +185,10 @@ TDNFAppendPackages(
 
 uint32_t
 TDNFPackageGetDowngrade(
-    Id dwCurrent,
+    Id dwInstalled,
     PSolvSack pSack,
-    Id* dwPkgId,
-    const char* pszPkgName
+    PSolvPackageList pAvailabePkgList,
+    Id* pdwDowngradePkgId
     );
 
 uint32_t

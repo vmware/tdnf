@@ -231,10 +231,7 @@ TDNFInfo(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvCreatePackageList(&pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvGetListResult(pQuery, pPkgList);
+    dwError = SolvGetListResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPopulatePkgInfoArray(
@@ -309,10 +306,7 @@ TDNFList(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvCreatePackageList(&pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvGetListResult(pQuery, pPkgList);
+    dwError = SolvGetListResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPopulatePkgInfoArray(
@@ -400,7 +394,8 @@ TDNFOpenHandle(
     dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadConfig(pTdnf,
+    dwError = TDNFReadConfig(
+                  pTdnf,
                   pTdnf->pArgs->pszConfFile,
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -626,20 +621,14 @@ TDNFSearchCommand(
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvApplySearch(pQuery,
+    dwError = SolvApplySearch(
+                  pQuery,
                   pCmdArgs->ppszCmds,
                   nStartArgIndex,
                   pCmdArgs->nCmdCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvCreatePackageList(&pPkgList);
-    if(!pPkgList)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = SolvGetSearchResult(pQuery, pPkgList);
+    dwError = SolvGetSearchResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetPackageListSize(pPkgList, &unCount);

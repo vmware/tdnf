@@ -301,7 +301,7 @@ TDNFGetGPGCheck(
     int nGPGCheck = 0;
     char* pszUrlGPGKey = NULL;
 
-    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo))
+    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo) || !pnGPGCheck)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
