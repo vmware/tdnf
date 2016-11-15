@@ -101,7 +101,7 @@ error:
 }
 
 uint32_t
-SolvGetListResult(
+SolvGetQueryResult(
     PSolvQuery pQuery,
     PSolvPackageList* ppPkgList
     )
@@ -117,39 +117,6 @@ SolvGetListResult(
     if(pQuery->queueResult.count == 0)
     {
         dwError = ERROR_TDNF_NO_MATCH;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    SolvQueueToPackageList(&pQuery->queueResult, &pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-    *ppPkgList = pPkgList;
-
-cleanup:
-    return dwError;
-
-error:
-    if(pPkgList)
-    {
-        SolvFreePackageList(pPkgList);
-    }
-    if(ppPkgList)
-    {
-        *ppPkgList = NULL;
-    }
-    goto cleanup;
-}
-
-uint32_t
-SolvGetSearchResult(
-    PSolvQuery pQuery,
-    PSolvPackageList* ppPkgList
-    )
-{
-    uint32_t dwError = 0;
-    PSolvPackageList pPkgList = NULL;
-    if(!ppPkgList || !pQuery)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -764,6 +731,11 @@ cleanup:
     return dwError;
 
 error:
+    // Installed packages do not have location.
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
     if(ppszLocation)
     {
         ppszLocation = NULL;
@@ -932,7 +904,7 @@ SolvFindAllInstalled(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetListResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgList = pPkgList;
@@ -977,7 +949,7 @@ SolvCountPkgByName(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetListResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetPackageListSize(pPkgList, dwCount);
@@ -1026,7 +998,7 @@ SolvFindInstalledPkgByName(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetListResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgList = pPkgList;
@@ -1074,7 +1046,7 @@ SolvFindAvailablePkgByName(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetListResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
     *ppPkgList = pPkgList;
 

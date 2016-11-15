@@ -37,7 +37,7 @@ TDNFGPGCheck(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = AddKeyToKeyRing(pszUrlKeyFile, pKeyring); 
+    dwError = AddKeyToKeyRing(pszUrlKeyFile, pKeyring);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = VerifyRpmSig(pKeyring, pszPkgFile);
@@ -68,7 +68,7 @@ ReadGPGKey(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    
+
     pszScheme = g_uri_parse_scheme(pszKeyUrl);
     if(!pszScheme)
     {
@@ -243,7 +243,7 @@ VerifyRpmSig(
 
     if(!headerConvert(pPkgHeader, HEADERCONV_RETROFIT_V3))
     {
-        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED; 
+        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED;
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
 

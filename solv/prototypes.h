@@ -252,7 +252,7 @@ SolvFindHightestOrLowestInstalled(
     );
 
 // tdnfpool.c
-uint32_t 
+uint32_t
 SolvCreateSack(
     PSolvSack* ppSack
     );
@@ -304,6 +304,16 @@ SolvApplyDistroSyncQuery(
     );
 
 uint32_t
+SolvApplyProvidesQuery(
+    PSolvQuery pQuery
+    );
+
+uint32_t
+SolvApplyDistroSyncQuery(
+    PSolvQuery pQuery
+    );
+
+uint32_t
 SolvApplySearch(
     PSolvQuery pQuery,
     char** ppszSearchStrings,
@@ -329,7 +339,8 @@ SolvApplyAlterQuery(
 
 uint32_t
 SolvGenerateCommonJob(
-    PSolvQuery pQuery
+    PSolvQuery pQuery,
+    uint32_t dwSelectFlags
     );
 
 uint32_t
@@ -343,13 +354,7 @@ SolvAddAvailableRepoFilter(
     );
 
 uint32_t
-SolvGetListResult(
-    PSolvQuery pQuery,
-    PSolvPackageList* ppPkgList
-    );
-
-uint32_t
-SolvGetSearchResult(
+SolvGetQueryResult(
     PSolvQuery pQuery,
     PSolvPackageList* ppPkgList
     );
@@ -408,7 +413,7 @@ SolvReadYumRepo(
 uint32_t
 SolvCountPackages(
     PSolvSack pSack,
-    uint32_t* pdwCount;
+    uint32_t* pdwCount
     );
 
 uint32_t

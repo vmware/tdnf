@@ -231,7 +231,7 @@ TDNFInfo(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetListResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPopulatePkgInfoArray(
@@ -306,7 +306,7 @@ TDNFList(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetListResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPopulatePkgInfoArray(
@@ -449,17 +449,42 @@ TDNFProvides(
 {
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszSpec))
+    if(!pTdnf || !pTdnf->pSack || IsNullOrEmptyString(pszSpec) ||
+       !ppPkgInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplySinglePackageFilter(pQuery, pszSpec);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyProvidesQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPopulatePkgInfos(pTdnf->pSack, pPkgList, &pPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     *ppPkgInfo = pPkgInfo;
 cleanup:
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    if(pPkgList)
+    {
+        SolvFreePackageList(pPkgList);
+    }
     return dwError;
-
 error:
     if(ppPkgInfo)
     {
@@ -628,7 +653,7 @@ TDNFSearchCommand(
                   pCmdArgs->nCmdCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetSearchResult(pQuery, &pPkgList);
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetPackageListSize(pPkgList, &unCount);

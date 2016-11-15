@@ -398,13 +398,16 @@ error:
 
 uint32_t
 SolvGenerateCommonJob(
-    PSolvQuery  pQuery
+    PSolvQuery pQuery,
+    uint32_t dwSelectFlags
     )
 {
     uint32_t dwError = 0;
     char** ppszPkgNames = NULL;
     Pool *pPool = NULL;
     Queue queueJob = {0};
+    uint32_t nFlags = 0;
+    uint32_t nRetFlags = 0;
 
     if(!pQuery || !pQuery->pSack)
     {
@@ -419,43 +422,53 @@ SolvGenerateCommonJob(
     {
         while(*ppszPkgNames)
         {
-            int flags = 0;
-            int rflags = 0;
+            nFlags  = dwSelectFlags;
+            nRetFlags = 0;
 
             queue_empty(&queueJob);
-            flags = SELECTION_NAME|SELECTION_PROVIDES|SELECTION_GLOB;
-            flags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
-                rflags = selection_make(
-                             pPool,
-                             &queueJob,
-                             *ppszPkgNames,
-                             flags);
+
+            nRetFlags = selection_make(
+                         pPool,
+                         &queueJob,
+                         *ppszPkgNames,
+                         nFlags);
+
             if (pQuery->queueRepoFilter.count)
+            {
                 selection_filter(pPool, &queueJob, &pQuery->queueRepoFilter);
+            }
             if (!queueJob.count)
             {
-                flags |= SELECTION_NOCASE;
-                rflags = selection_make(
-                             pPool,
-                             &queueJob,
-                             *ppszPkgNames,
-                             flags);
+                nFlags |= SELECTION_NOCASE;
+                nRetFlags = selection_make(
+                                pPool,
+                                &queueJob,
+                                *ppszPkgNames,
+                                nFlags);
                 if (pQuery->queueRepoFilter.count)
+                {
                     selection_filter(
                         pPool,
                         &queueJob,
                         &pQuery->queueRepoFilter);
+                }
                 if (queueJob.count)
+                {
                     printf("[ignoring case for '%s']\n", *ppszPkgNames);
+                }
             }
             if (queueJob.count)
             {
-                if (rflags & SELECTION_FILELIST)
+                if (nRetFlags & SELECTION_FILELIST)
+                {
                     printf("[using file list match for '%s']\n",
                            *ppszPkgNames);
-                if (rflags & SELECTION_PROVIDES)
+                }
+                if (nRetFlags & SELECTION_PROVIDES)
+                {
                     printf("[using capability match for '%s']\n",
                            *ppszPkgNames);
+                }
                 queue_insertn(&pQuery->queueJob,
                               pQuery->queueJob.count,
                               queueJob.count,
@@ -469,11 +482,13 @@ SolvGenerateCommonJob(
         queue_empty(&queueJob);
         queue_push2(&queueJob, SOLVER_SOLVABLE_ALL, 0);
         if (pQuery->queueRepoFilter.count)
+        {
             selection_filter(pPool, &queueJob, &pQuery->queueRepoFilter);
+        }
         queue_insertn(&pQuery->queueJob,
-                        pQuery->queueJob.count,
-                        queueJob.count,
-                        queueJob.elements);
+                      pQuery->queueJob.count,
+                      queueJob.count,
+                      queueJob.elements);
     }
 
 cleanup:
@@ -560,6 +575,7 @@ SolvApplyListQuery(
     uint32_t dwError = 0;
     int nIndex = 0;
     Queue queueTmp = {0};
+    uint32_t nFlags = 0;
 
     if(!pQuery)
     {
@@ -568,8 +584,10 @@ SolvApplyListQuery(
     }
 
     queue_init(&queueTmp);
+    nFlags = SELECTION_NAME | SELECTION_PROVIDES | SELECTION_GLOB;
+    nFlags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
 
-    dwError = SolvGenerateCommonJob(pQuery);
+    dwError = SolvGenerateCommonJob(pQuery, nFlags);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if(pQuery->queueJob.count > 0)
@@ -613,8 +631,12 @@ SolvApplyAlterQuery(
     uint32_t dwError = 0;
     Solver *pSolv = NULL;
     Transaction *pTrans = NULL;
+    uint32_t nFlags = 0;
 
-    dwError = SolvGenerateCommonJob(pQuery);
+    nFlags = SELECTION_NAME | SELECTION_PROVIDES | SELECTION_GLOB;
+    nFlags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
+
+    dwError = SolvGenerateCommonJob(pQuery, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvRunSolv(
@@ -711,6 +733,60 @@ SolvApplySearch(
 cleanup:
     queue_free(&queueSel);
     queue_free(&queueResult);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyProvidesQuery(
+    PSolvQuery pQuery
+    )
+{
+    uint32_t dwError = 0;
+    int nIndex = 0;
+    Queue queueTmp = {0};
+    uint32_t nFlags = 0;
+
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    queue_init(&queueTmp);
+    nFlags = SELECTION_FILELIST | SELECTION_NAME | SELECTION_GLOB |
+             SELECTION_PROVIDES;
+    nFlags |= SELECTION_CANON| SELECTION_FILELIST|SELECTION_REL;
+
+    dwError = SolvGenerateCommonJob(pQuery, nFlags);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    if(pQuery->queueJob.count > 0)
+    {
+        for (nIndex = 0; nIndex < pQuery->queueJob.count ; nIndex += 2)
+        {
+            queue_empty(&queueTmp);
+            pool_job2solvables(pQuery->pSack->pPool, &queueTmp,
+                               pQuery->queueJob.elements[nIndex],
+                               pQuery->queueJob.elements[nIndex + 1]);
+            queue_insertn(&pQuery->queueResult,
+                          pQuery->queueResult.count,
+                          queueTmp.count,
+                          queueTmp.elements);
+        }
+    }
+    else if(!pQuery->ppszPackageNames ||
+            IsNullOrEmptyString(pQuery->ppszPackageNames[0]))
+    {
+        pool_job2solvables(pQuery->pSack->pPool,
+                           &pQuery->queueResult,
+                           SOLVER_SOLVABLE_ALL,
+                           0);
+    }
+
+cleanup:
+    queue_free(&queueTmp);
     return dwError;
 
 error:

@@ -81,7 +81,7 @@ TDNFCliParseArgs(
     opterr = 0;//tell getopt to not print errors
     while (1)
     {
-                
+
             nOption = getopt_long (
                           argc,
                           argv,
@@ -90,7 +90,7 @@ TDNFCliParseArgs(
                           &nOptionIndex);
             if (nOption == -1)
                 break;
-                
+
             switch (nOption)
             {
                 case 0:
@@ -170,7 +170,7 @@ TDNFCliParseArgs(
                       sizeof(char*),
                       (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);
-        
+
         while (optind < argc)
         {
             dwError = TDNFAllocateString(
