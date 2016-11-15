@@ -218,13 +218,14 @@ SolvCountPackages(
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
+    Pool* pool = 0;
     Id p = 0;
     if(!pSack || !pSack->pPool || !pdwCount)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    Pool* pool = pSack->pPool;
+    pool = pSack->pPool;
     FOR_POOL_SOLVABLES(p)
     {
         dwCount++;

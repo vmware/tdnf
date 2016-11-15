@@ -348,11 +348,11 @@ TDNFGetGlobPackages(
 
     if(pSolvPkgList->queuePackages.count > 0)
     {
-        for(dwPkgIndex = 0; 
+        for(dwPkgIndex = 0;
             dwPkgIndex < pSolvPkgList->queuePackages.count;
             dwPkgIndex++)
         {
-            queue_push(pQueueGoal, 
+            queue_push(pQueueGoal,
                        pSolvPkgList->queuePackages.elements[dwPkgIndex]);
         }
     }

@@ -45,7 +45,7 @@ TDNFCliParseUpdateInfoArgs(
                   (void**)&pUpdateInfoArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
-    //Assume first arg as mode 
+    //Assume first arg as mode
     //(tdnf updateinfo <mode> <availability> <type> <pkgnamespecs>)
     if(pCmdArgs->nCmdCount > nStartIndex)
     {
