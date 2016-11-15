@@ -161,10 +161,7 @@ uint32_t TDNFFilterPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvCreatePackageList(&pInstalledPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvFindAllInstalled(pSack, pInstalledPkgList);
+    dwError = SolvFindAllInstalled(pSack, &pInstalledPkgList);
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
         dwError = 0;
@@ -282,13 +279,10 @@ TDNFPrepareSinglePkg(
     if(nAlterType == ALTER_ERASE ||
         nAlterType == ALTER_AUTOERASE)
     {
-        dwError = SolvCreatePackageList(&pInstalledPkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-
         dwError = SolvFindInstalledPkgByName(
                       pSack,
                       pszPkgName,
-                      pInstalledPkgList);
+                      &pInstalledPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAddPackagesForErase(

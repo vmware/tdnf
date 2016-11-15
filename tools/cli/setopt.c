@@ -93,7 +93,8 @@ GetOptionAndValue(
     nEqualsPos = pszIndex - pszOptArg;
     pCmdOpt->pszOptName[nEqualsPos] = '\0';
 
-    dwError = TDNFAllocateString(pszOptArg+nEqualsPos+1, &pCmdOpt->pszOptValue);
+    dwError = TDNFAllocateString(pszOptArg+nEqualsPos+1,
+                                 &pCmdOpt->pszOptValue);
     BAIL_ON_CLI_ERROR(dwError);
 
     *ppCmdOpt = pCmdOpt;

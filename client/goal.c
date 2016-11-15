@@ -37,13 +37,10 @@ TDNFGetPackagesWithSpecifiedType(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvCreatePackageList(&pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     dwError = SolvGetTransResultsWithType(
                   pTrans,
                   dwType,
-                  pPkgList);
+                  &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetPackageListSize(pPkgList, &dwCount);
@@ -159,10 +156,7 @@ TDNFGetUnneededPackages(
 
     if(queueResult.count > 0)
     {
-        dwError = SolvCreatePackageList(&pPkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvQueueToPackageList(&queueResult, pPkgList);
+        dwError = SolvQueueToPackageList(&queueResult, &pPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFPopulatePkgInfos(
@@ -222,29 +216,25 @@ TDNFGetDownGradePackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvCreatePackageList(&pInstalledPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     while(pInfo)
     {
-        SolvEmptyPackageList(pInstalledPkgList);
         dwError = SolvFindInstalledPkgByName(
                       pTdnf->pSack,
                       pInfo->pszName,
-                      pInstalledPkgList);
+                      &pInstalledPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        SolvGetPackageId(pInstalledPkgList, 0, &dwInstalledId);
+        dwError = SolvGetPackageId(pInstalledPkgList, 0, &dwInstalledId);
+        BAIL_ON_TDNF_ERROR(dwError);
         queue_push(&queuePkgToRemove, dwInstalledId);
         pInfo = pInfo->pNext;
+        SolvFreePackageList(pInstalledPkgList);
+        pInstalledPkgList = NULL;
     }
 
     if(queuePkgToRemove.count > 0)
     {
-        dwError = SolvCreatePackageList(&pRemovePkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvQueueToPackageList(&queuePkgToRemove, pRemovePkgList);
+        dwError = SolvQueueToPackageList(&queuePkgToRemove, &pRemovePkgList);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFPopulatePkgInfos(

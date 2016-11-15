@@ -227,7 +227,9 @@ TDNFCliAlterCommand(
     }
     if(pSolvedPkgInfo->pPkgsToDowngrade)
     {
-        dwError = PrintAction(pSolvedPkgInfo->pPkgsToDowngrade, ALTER_DOWNGRADE);
+        dwError = PrintAction(
+                      pSolvedPkgInfo->pPkgsToDowngrade,
+                      ALTER_DOWNGRADE);
         BAIL_ON_CLI_ERROR(dwError);
     }
     if(pSolvedPkgInfo->pPkgsToRemove)
@@ -242,7 +244,9 @@ TDNFCliAlterCommand(
     }
     if(pSolvedPkgInfo->pPkgsToReinstall)
     {
-        dwError = PrintAction(pSolvedPkgInfo->pPkgsToReinstall, ALTER_REINSTALL);
+        dwError = PrintAction(
+                      pSolvedPkgInfo->pPkgsToReinstall,
+                      ALTER_REINSTALL);
         BAIL_ON_CLI_ERROR(dwError);
     }
     if(pSolvedPkgInfo->pPkgsObsoleted)

@@ -133,7 +133,8 @@ TDNFFreeSolvedPackageInfo(
         {
             while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
             {
-                TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+                TDNF_SAFE_FREE_MEMORY(
+                    pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
             }
         }
         TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);

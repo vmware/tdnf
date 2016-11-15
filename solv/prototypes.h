@@ -162,7 +162,7 @@ SolvFreePackageList(
 uint32_t
 SolvQueueToPackageList(
     Queue* pQueue,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 uint32_t
@@ -190,21 +190,21 @@ SolvGetLatest(
 uint32_t
 SolvFindAllInstalled(
     PSolvSack pSack,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 uint32_t
 SolvFindAvailablePkgByName(
     PSolvSack pSack,
     const char* pszName,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 uint32_t
 SolvFindInstalledPkgByName(
     PSolvSack pSack,
     const char* pszName,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 uint32_t
@@ -218,7 +218,7 @@ uint32_t
 SolvGetTransResultsWithType(
     Transaction *pTrans,
     Id dwType,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 
@@ -227,6 +227,28 @@ SolvFindHighestAvailable(
     PSolvSack pSack,
     const char* pszPkgName,
     Id* pdwId
+    );
+
+uint32_t
+SolvFindLowestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    );
+
+uint32_t
+SolvFindHightestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    );
+
+uint32_t
+SolvFindHightestOrLowestInstalled(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId,
+    uint32_t dwFindHighest
     );
 
 // tdnfpool.c
@@ -323,13 +345,13 @@ SolvAddAvailableRepoFilter(
 uint32_t
 SolvGetListResult(
     PSolvQuery pQuery,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 uint32_t
 SolvGetSearchResult(
     PSolvQuery pQuery,
-    PSolvPackageList pPkgList
+    PSolvPackageList* ppPkgList
     );
 
 uint32_t

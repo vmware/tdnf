@@ -73,9 +73,9 @@ TDNFCliParseArgs(
     }
 
     dwError = TDNFAllocateMemory(
-                            1,
-                            sizeof(TDNF_CMD_ARGS),
-                            (void**)&pCmdArgs);
+                  1,
+                  sizeof(TDNF_CMD_ARGS),
+                  (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
     opterr = 0;//tell getopt to not print errors
@@ -83,11 +83,11 @@ TDNFCliParseArgs(
     {
                 
             nOption = getopt_long (
-                           argc,
-                           argv,
-                           "46bCc:d:e:hi:qvxy",
-                           pstOptions,
-                           &nOptionIndex);
+                          argc,
+                          argv,
+                          "46bCc:d:e:hi:qvxy",
+                          pstOptions,
+                          &nOptionIndex);
             if (nOption == -1)
                 break;
                 
@@ -140,7 +140,10 @@ TDNFCliParseArgs(
                     _opt.nVerbose = 1;
                 break;
                 case '?':
-                    dwError = HandleOptionsError(argv[optind-1], optarg, pstOptions);
+                    dwError = HandleOptionsError(
+                                  argv[optind-1],
+                                  optarg,
+                                  pstOptions);
                     BAIL_ON_CLI_ERROR(dwError);
                 //TODO: Handle unknown option, incomplete options
                 break;
@@ -150,9 +153,9 @@ TDNFCliParseArgs(
     if(pCmdArgs->pszInstallRoot == NULL)
     {
         dwError = TDNFAllocateString(
-                    pszDefaultInstallRoot,
-                    &pCmdArgs->pszInstallRoot);
-                    BAIL_ON_CLI_ERROR(dwError);
+                      pszDefaultInstallRoot,
+                      &pCmdArgs->pszInstallRoot);
+                      BAIL_ON_CLI_ERROR(dwError);
     }
 
     dwError = TDNFCopyOptions(&_opt, pCmdArgs);
@@ -163,16 +166,16 @@ TDNFCliParseArgs(
     {
         pCmdArgs->nCmdCount = argc-optind;
         dwError = TDNFAllocateMemory(
-                                pCmdArgs->nCmdCount,
-                                sizeof(char*),
-                                (void**)&pCmdArgs->ppszCmds);
+                      pCmdArgs->nCmdCount,
+                      sizeof(char*),
+                      (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);
         
         while (optind < argc)
         {
             dwError = TDNFAllocateString(
-                             argv[optind++],
-                             &pCmdArgs->ppszCmds[nIndex++]);
+                          argv[optind++],
+                          &pCmdArgs->ppszCmds[nIndex++]);
             BAIL_ON_CLI_ERROR(dwError);
         }
     }
@@ -236,8 +239,8 @@ TDNFCliParseInfoArgs(
     )
 {
     return TDNFCliParseListArgs(
-        pCmdArgs,
-        ppListArgs);
+               pCmdArgs,
+               ppListArgs);
 }
 
 uint32_t

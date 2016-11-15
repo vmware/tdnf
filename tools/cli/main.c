@@ -322,7 +322,8 @@ TDNFCliInfoCommand(
         printf("Epoch         : %d\n", pPkg->dwEpoch);
         printf("Version       : %s\n", pPkg->pszVersion);
         printf("Release       : %s\n", pPkg->pszRelease);
-        printf("Install Size  : %s (%u)\n", pPkg->pszFormattedSize, pPkg->dwInstallSizeBytes);
+        printf("Install Size  : %s (%u)\n", pPkg->pszFormattedSize,
+            pPkg->dwInstallSizeBytes);
         printf("Repo          : %s\n", pPkg->pszRepoName);
         printf("Summary       : %s\n", pPkg->pszSummary);
         printf("URL           : %s\n", pPkg->pszURL);
@@ -688,7 +689,9 @@ TDNFCliVerboseShowEnv(
         fprintf(stdout, "Setting options:\n");
         while(pOpt)
         {
-            fprintf(stdout, "\t%s = %s\n", pOpt->pszOptName, pOpt->pszOptValue);
+            fprintf(stdout, "\t%s = %s\n",
+                    pOpt->pszOptName,
+                    pOpt->pszOptValue);
             pOpt = pOpt->pNext;
         }
     }

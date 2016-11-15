@@ -30,7 +30,8 @@ TDNFGPGCheck(
     uint32_t dwError = 0;
     char* pszKeyData = NULL;
 
-    if(!pKeyring || IsNullOrEmptyString(pszUrlKeyFile) || !pszPkgFile)
+    if(!pKeyring || IsNullOrEmptyString(pszUrlKeyFile) ||
+       IsNullOrEmptyString(pszPkgFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
