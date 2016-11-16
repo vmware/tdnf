@@ -235,6 +235,13 @@ TDNFVerifyUpgradePackage(
     );
 
 uint32_t
+TDNFVerifyInstallPackage(
+    PSolvSack pSack,
+    Id dwPkg,
+    uint32_t* dwInstallPackage
+    );
+
+uint32_t
 TDNFAddPackagesForDowngrade(
     PSolvSack pSack,
     Queue* pQueueGoal,

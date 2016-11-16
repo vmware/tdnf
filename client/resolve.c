@@ -172,7 +172,7 @@ uint32_t TDNFFilterPackages(
 
     for(dwPkgIndex = 0; dwPkgIndex < dwSize; dwPkgIndex++)
     {
-        SolvGetPackageId(pInstalledPkgList, dwPkgIndex, &dwInstalledId);
+        dwError = SolvGetPackageId(pInstalledPkgList, dwPkgIndex, &dwInstalledId);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgNameFromId(pSack,
