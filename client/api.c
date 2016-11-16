@@ -408,8 +408,11 @@ TDNFOpenHandle(
 
     dwError = TDNFLoadRepoData(
                   pTdnf,
-                  REPOLISTFILTER_ENABLED,
+                  REPOLISTFILTER_ALL,
                   &pTdnf->pRepos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRepoListFinalize(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRefreshSack(
@@ -503,15 +506,54 @@ TDNFRepoList(
 {
     uint32_t dwError = 0;
     PTDNF_REPO_DATA pReposAll = NULL;
+    PTDNF_REPO_DATA pRepoTemp = NULL;
+    PTDNF_REPO_DATA pRepoCurrent = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
+    int nAdd = 0;
 
-    if(!pTdnf || !pTdnf->pConf || !ppReposAll)
+    if(!pTdnf || !pTdnf->pRepos || !ppReposAll)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFLoadRepoData(pTdnf, nFilter, &pReposAll);
-    BAIL_ON_TDNF_ERROR(dwError);
+    pRepos = pTdnf->pRepos;
+
+    while(pRepos)
+    {
+        nAdd = 0;
+        if(nFilter == REPOLISTFILTER_ALL)
+        {
+            nAdd = 1;
+        }
+        else if(nFilter == REPOLISTFILTER_ENABLED && pRepos->nEnabled)
+        {
+            nAdd = 1;
+        }
+        else if(nFilter == REPOLISTFILTER_DISABLED && !pRepos->nEnabled)
+        {
+            nAdd = 1;
+        }
+        if(nAdd)
+        {
+            dwError = TDNFCloneRepo(pRepos, &pRepoTemp);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if(!pReposAll)
+            {
+                pReposAll = pRepoTemp;
+                pRepoCurrent = pReposAll;
+            }
+            else
+            {
+                pRepoCurrent->pNext = pRepoTemp;
+                pRepoCurrent = pRepoCurrent->pNext;
+            }
+            pRepoTemp = NULL;
+        }
+
+        pRepos = pRepos->pNext;
+    }
 
     *ppReposAll = pReposAll;
 
@@ -519,6 +561,14 @@ cleanup:
     return dwError;
 
 error:
+    if(ppReposAll)
+    {
+        *ppReposAll = NULL;
+    }
+    if(pReposAll)
+    {
+        TDNFFreeRepos(pReposAll);
+    }
     goto cleanup;
 }
 
@@ -771,8 +821,10 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
-
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pSetOpt);
+        if(pCmdArgs->pSetOpt)
+        {
+            TDNFFreeCmdOpt(pCmdArgs->pSetOpt);
+        }
         TDNF_SAFE_FREE_MEMORY(pCmdArgs);
     }
 }

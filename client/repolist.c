@@ -160,9 +160,10 @@ TDNFLoadReposFromFile(
     {
         pszRepo = ppszRepos[i];
 
-        dwError = TDNFAllocateMemory(1,
-                                     sizeof(TDNF_REPO_DATA),
-                                     (void**)&pRepo);
+        dwError = TDNFAllocateMemory(
+                      1,
+                      sizeof(TDNF_REPO_DATA),
+                      (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAllocateString(pszRepo, &pRepo->pszId);
@@ -240,21 +241,6 @@ TDNFLoadReposFromFile(
                       &pRepo->pszPass);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if(pRepo->nEnabled)
-        {
-            if(pRepo->pszBaseUrl)
-            {
-                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-
-            if(pRepo->pszMetaLink)
-            {
-                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-
         pRepo->pNext = pRepos;
         pRepos = pRepo;
         pRepo = NULL;
@@ -284,11 +270,183 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFRepoListFinalize(
+    PTDNF pTdnf
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
+
+    if(!pTdnf || !pTdnf->pArgs || !pTdnf->pRepos)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //There could be overrides to enable/disable
+    //repo such as cmdline args, api overrides
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_ENABLEREPO ||
+           pSetOpt->nType == CMDOPT_DISABLEREPO)
+        {
+            dwError = TDNFAlterRepoState(
+                          pTdnf->pRepos,
+                          pSetOpt->nType == CMDOPT_ENABLEREPO,
+                          pSetOpt->pszOptValue);
+            BAIL_ON_TDNF_ERROR(dwError);
+         }
+         pSetOpt = pSetOpt->pNext;
+    }
+
+    //Now that the overrides are applied, replace config vars
+    //for the repos that are enabled.
+    pRepo = pTdnf->pRepos;
+    while(pRepo)
+    {
+        if(pRepo->nEnabled)
+        {
+            if(pRepo->pszBaseUrl)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            if(pRepo->pszMetaLink)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        pRepo = pRepo->pNext;
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFAlterRepoState(
+    PTDNF_REPO_DATA pRepos,
+    int nEnable,
+    const char* pszId
+    )
+{
+    uint32_t dwError = 0;
+    int nMatch = 0;
+    int nIsGlob = 0;
+    if(!pRepos && IsNullOrEmptyString(pszId))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nIsGlob = TDNFIsGlob(pszId);
+
+    while(pRepos)
+    {
+        nMatch = 0;
+        if(nIsGlob)
+        {
+            if(!fnmatch(pszId, pRepos->pszId, 0))
+            {
+                nMatch = 1;
+            }
+        }
+        else if(!strcmp(pRepos->pszId, pszId))
+        {
+            nMatch = 1;
+        }
+        if(nMatch)
+        {
+            pRepos->nEnabled = nEnable;
+            if(!nIsGlob)
+            {
+                break;
+            }
+        }
+        pRepos = pRepos->pNext;
+    }
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCloneRepo(
+    PTDNF_REPO_DATA pRepoIn,
+    PTDNF_REPO_DATA* ppRepo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_DATA pRepo = NULL;
+
+    if(!pRepoIn || !ppRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pRepo->nEnabled = pRepoIn->nEnabled;
+
+    dwError = TDNFSafeAllocateString(pRepoIn->pszId, &pRepo->pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(pRepoIn->pszName, &pRepo->pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(pRepoIn->pszBaseUrl, &pRepo->pszBaseUrl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(
+                  pRepoIn->pszMetaLink,
+                  &pRepo->pszMetaLink);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(
+                  pRepoIn->pszUrlGPGKey,
+                  &pRepo->pszUrlGPGKey);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(pRepoIn->pszUser, &pRepo->pszUser);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(pRepoIn->pszPass, &pRepo->pszPass);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppRepo = pRepo;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppRepo)
+    {
+        *ppRepo = NULL;
+    }
+    if(pRepo)
+    {
+        TDNFFreeRepos(pRepo);
+    }
+    goto cleanup;
+}
 
 void
 TDNFFreeRepos(
-  PTDNF_REPO_DATA pRepos
-  )
+    PTDNF_REPO_DATA pRepos
+    )
 {
     PTDNF_REPO_DATA pRepo = NULL;
     while(pRepos)
@@ -301,7 +459,6 @@ TDNFFreeRepos(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-
         pRepos = pRepo->pNext;
         TDNF_SAFE_FREE_MEMORY(pRepo);
     }

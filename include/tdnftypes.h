@@ -133,6 +133,15 @@ typedef enum
     REPOLISTFILTER_DISABLED
 }TDNF_REPOLISTFILTER;
 
+//CmdOpt Types
+typedef enum
+{
+    CMDOPT_NONE = -1,
+    CMDOPT_KEYVALUE,
+    CMDOPT_ENABLEREPO,
+    CMDOPT_DISABLEREPO
+}TDNF_CMDOPT_TYPE;
+
 typedef struct _TDNF_ *PTDNF;
 
 typedef struct _TDNF_PKG_INFO
@@ -172,6 +181,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
 
 typedef struct _TDNF_CMD_OPT
 {
+    int nType;
     char* pszOptName;
     char* pszOptValue;
     struct _TDNF_CMD_OPT* pNext;
@@ -204,10 +214,6 @@ typedef struct _TDNF_CMD_ARGS
     //Commands and args that do not fall in options
     char** ppszCmds;
     int nCmdCount;
-    //Enabled repositories
-    char** ppszEnabledRepos;
-    //Disabled repositories
-    char** ppszDisabledRepos;
     PTDNF_CMD_OPT pSetOpt;
 }TDNF_CMD_ARGS, *PTDNF_CMD_ARGS;
 
