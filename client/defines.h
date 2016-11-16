@@ -114,6 +114,10 @@ typedef enum
 #define TDNF_REPO_KEY_GPGKEY              "gpgkey"
 #define TDNF_REPO_KEY_USERNAME            "username"
 #define TDNF_REPO_KEY_PASSWORD            "password"
+#define TDNF_REPO_KEY_METADATA_EXPIRE     "metadata_expire"
+
+//file names
+#define TDNF_REPO_METADATA_MARKER         "lastrefresh"
 
 //Repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
@@ -122,6 +126,8 @@ typedef enum
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
+#define TDNF_REPO_DEFAULT_METADATA_EXPIRE "8294400"//48 hours in seconds
+#define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
 //var names
 #define TDNF_VAR_RELEASEVER               "$releasever"
 #define TDNF_VAR_BASEARCH                 "$basearch"
@@ -178,4 +184,5 @@ typedef enum
     {ERROR_TDNF_RPM_GPG_NO_MATCH,   "ERROR_TDNF_RPM_GPG_NO_MATCH",     "RPM is signed but failed to match with known keys. Use --nogpgcheck to ignore."}, \
     {ERROR_TDNF_AUTOERASE_UNSUPPORTED,"ERROR_TDNF_AUTOERASE_UNSUPPORTED","autoerase / autoremove is not supported."}, \
     {ERROR_TDNF_RPM_CHECK,           "ERROR_TDNF_RPM_CHECK",           "rpm check reported errors"}, \
+    {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
 };

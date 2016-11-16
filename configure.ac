@@ -1,4 +1,4 @@
-AC_INIT(tdnf, 1.0.9)
+AC_INIT(tdnf, 1.1.0)
 AC_MSG_NOTICE([tdnf configuration])
 
 AC_CANONICAL_SYSTEM

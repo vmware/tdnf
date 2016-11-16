@@ -37,6 +37,7 @@ TDNFInitRepo(
     char* pszRepoCacheDir = NULL;
     char* pszRepoDataDir = NULL;
     char* pszUserPass = NULL;
+    char* pszLastRefreshMarker = NULL;
 
     char* ppszRepoUrls[] = {NULL, NULL};
     char* ppszLocalUrls[] = {NULL, NULL};
@@ -100,21 +101,13 @@ TDNFInitRepo(
     }
     else
     {
-        //Look for the repo root cache dir. If not there,
-        //try to create and download into it.
-        if(access(pszRepoCacheDir, F_OK))
+        if(mkdir(pszRepoCacheDir, 755))
         {
-            if(errno != ENOENT)
-            {
-                dwError = errno;
-            }
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-
-            if(mkdir(pszRepoCacheDir, 755))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
+             if(errno != EEXIST)
+             {
+                 dwError = errno;
+                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+             }
         }
 
         lr_handle_setopt(hLibRepo, NULL, LRO_URLS, ppszRepoUrls);
@@ -163,7 +156,18 @@ TDNFInitRepo(
     dwError = TDNFInitRepoFromMetaData(pSack, pRepoData->pszId, pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFAllocateStringPrintf(
+                  &pszLastRefreshMarker,
+                  "%s/%s",
+                  pszRepoCacheDir,
+                  TDNF_REPO_METADATA_MARKER);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFTouchFile(pszLastRefreshMarker);
+    BAIL_ON_TDNF_ERROR(dwError);
+
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
     if(pszRepoDataDir)
     {
         g_free(pszRepoDataDir);

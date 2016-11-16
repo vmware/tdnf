@@ -217,11 +217,6 @@ TDNFRepoRemoveCache(
                           pszRepoId,
                           TDNF_REPODATA_DIR_NAME,
                           NULL);
-    if(access(pszRepoCacheDir, F_OK))
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
 
     pDir = g_dir_open(pszRepoCacheDir, 0, NULL);
     if(!pDir)

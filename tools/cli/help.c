@@ -38,11 +38,14 @@ TDNFCliShowHelp(
 
     printf("options    [-c [config file]]\n");
     printf("           [--debugsolver]\n");
+    printf("           [--disablerepo=<repoid>]\n");
+    printf("           [--enablerepo=<repoid>]\n");
     printf("           [--rpmverbosity [debug level name]] [-v] [-y] [--assumeno]\n");
     printf("           [--version] [--installroot [path]]\n");
     printf("           [--nogpgcheck]\n");
+    printf("           [-q, --quiet]\n");
     printf("           [--releasever RELEASEVER] [--setopt SETOPTS]\n");
-    printf("           [--refresh] [-4] [-6] [-h]\n");
+    printf("           [--refresh]\n");
 
     printf("List of Main Commands\n");
     printf("\n");

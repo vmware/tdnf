@@ -204,6 +204,8 @@ typedef struct _TDNF_CMD_ARGS
     int nShowDuplicates;   //show dups in list/search
     int nShowVersion;      //show version and exit
     int nNoGPGCheck;       //skip gpg check
+    int nNoOutput;         //if quiet and assumeyes are provided
+    int nQuiet;            //quiet option
     int nVerbose;          //print debug info
     int nIPv4;             //resolve to IPv4 addresses only
     int nIPv6;             //resolve to IPv6 addresses only
@@ -245,6 +247,7 @@ typedef struct _TDNF_REPO_DATA
     int nEnabled;
     int nSkipIfUnavailable;
     int nGPGCheck;
+    long lMetadataExpire;
     char* pszId;
     char* pszName;
     char* pszBaseUrl;

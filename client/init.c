@@ -43,6 +43,8 @@ TDNFCloneCmdArgs(
     pCmdArgs->nCacheOnly     = pCmdArgsIn->nCacheOnly;
     pCmdArgs->nDebugSolver   = pCmdArgsIn->nDebugSolver;
     pCmdArgs->nNoGPGCheck    = pCmdArgsIn->nNoGPGCheck;
+    pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
+    pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;
     pCmdArgs->nRefresh       = pCmdArgsIn->nRefresh;
     pCmdArgs->nRpmVerbosity  = pCmdArgsIn->nRpmVerbosity;
     pCmdArgs->nShowDuplicates= pCmdArgsIn->nShowDuplicates;
@@ -172,6 +174,8 @@ TDNFRefreshSack(
     )
 {
     uint32_t dwError = 0;
+    char* pszRepoCacheDir = NULL;
+    int nMetadataExpired = 0;
     if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -184,9 +188,30 @@ TDNFRefreshSack(
         PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
         while(pTempRepo)
         {
+            nMetadataExpired = 0;
             if(pTempRepo->nEnabled)
             {
-                if(nCleanMetadata)
+                //Check if expired since last sync per metadata_expire
+                if(!nCleanMetadata && pTempRepo->lMetadataExpire >= 0)
+                {
+                    dwError = TDNFAllocateStringPrintf(
+                                  &pszRepoCacheDir,
+                                  "%s/%s",
+                                  pTdnf->pConf->pszCacheDir,
+                                  pTempRepo->pszId);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    dwError = TDNFShouldSyncMetadata(
+                                  pszRepoCacheDir,
+                                  pTempRepo->lMetadataExpire,
+                                  &nMetadataExpired);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+                    pszRepoCacheDir = NULL;
+                }
+
+                if(nCleanMetadata || nMetadataExpired)
                 {
                     fprintf(stdout,
                             "Refreshing metadata for: '%s'\n",
@@ -222,6 +247,7 @@ TDNFRefreshSack(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     return dwError;
 
 error:

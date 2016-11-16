@@ -148,7 +148,7 @@ TDNFCliReinstallCommand(
     )
 {
     uint32_t dwError = 0;
-    
+
     dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_REINSTALL);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -171,12 +171,15 @@ TDNFCliAlterCommand(
     char** ppszPackageArgs = NULL;
     int nPackageCount = 0;
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+    int nSilent = 0;
 
-    if(!pTdnf)
+    if(!pTdnf || !pCmdArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
     }
+
+    nSilent = pCmdArgs->nNoOutput;
 
     dwError = TDNFCliParsePackageArgs(
                   pCmdArgs,
@@ -187,7 +190,7 @@ TDNFCliAlterCommand(
     dwError = TDNFResolve(pTdnf, nAlterType, &pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
-    if(pSolvedPkgInfo->ppszPkgsNotResolved)
+    if(!nSilent && pSolvedPkgInfo->ppszPkgsNotResolved)
     {
         dwError = PrintNotAvailable(pSolvedPkgInfo->ppszPkgsNotResolved);
         BAIL_ON_CLI_ERROR(dwError);
@@ -202,6 +205,64 @@ TDNFCliAlterCommand(
         {
             dwError = ERROR_TDNF_NO_MATCH;
         }
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    if(!nSilent)
+    {
+        dwError = PrintSolvedInfo(pSolvedPkgInfo);
+    }
+
+    if(pSolvedPkgInfo->nNeedAction)
+    {
+        if(!pCmdArgs->nAssumeYes && !pCmdArgs->nAssumeNo)
+        {
+            printf("Is this ok [y/N]:");
+            if (scanf("%c", &chChoice) != 1)
+            {
+                printf("Invalid input\n");
+            }
+        }
+
+        if(pCmdArgs->nAssumeYes || chChoice == 'y')
+        {
+            if(!nSilent && pSolvedPkgInfo->nNeedDownload)
+            {
+                fprintf(stdout, "\nDownloading:\n");
+            }
+            dwError = TDNFAlterCommand(pTdnf, nAlterType, pSolvedPkgInfo);
+            BAIL_ON_CLI_ERROR(dwError);
+
+            if(!nSilent)
+            {
+                fprintf(stdout, "\nComplete!\n");
+            }
+        }
+        else
+        {
+            printf("Exiting on user Command\n");
+        }
+    }
+
+cleanup:
+    TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
+    TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+PrintSolvedInfo(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
     }
 
@@ -255,37 +316,7 @@ TDNFCliAlterCommand(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    if(pSolvedPkgInfo->nNeedAction)
-    {
-        if(!pCmdArgs->nAssumeYes && !pCmdArgs->nAssumeNo)
-        {
-            printf("Is this ok [y/N]:");
-            if (scanf("%c", &chChoice) != 1)
-            {
-                printf("Invalid input\n");
-            }
-        }
-
-        if(pCmdArgs->nAssumeYes || chChoice == 'y')
-        {
-            if(pSolvedPkgInfo->nNeedDownload)
-            {
-                fprintf(stdout, "\nDownloading:\n");
-            }
-            dwError = TDNFAlterCommand(pTdnf, nAlterType, pSolvedPkgInfo);
-            BAIL_ON_CLI_ERROR(dwError);
-
-            fprintf(stdout, "\nComplete!\n");
-        }
-        else
-        {
-            printf("Exiting on user Command\n");
-        }
-    }
-
 cleanup:
-    TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
-    TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
     return dwError;
 
 error:

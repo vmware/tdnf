@@ -40,6 +40,7 @@ static struct option pstOptions[] =
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
+    {"quiet",         no_argument, &_opt.nQuiet, 1},       //--nogpgcheck
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
     {"releasever",    required_argument, 0, 0},            //--releasever
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
@@ -124,6 +125,9 @@ TDNFCliParseArgs(
                                   optarg,
                                   pCmdArgs);
                     BAIL_ON_CLI_ERROR(dwError);
+                break;
+                case 'q':
+                    _opt.nQuiet = 1;
                 break;
                 case 'r':
                 break;
@@ -217,6 +221,8 @@ TDNFCopyOptions(
     pArgs->nCacheOnly     = pOptionArgs->nCacheOnly;
     pArgs->nDebugSolver   = pOptionArgs->nDebugSolver;
     pArgs->nNoGPGCheck    = pOptionArgs->nNoGPGCheck;
+    pArgs->nNoOutput      = pOptionArgs->nQuiet && pOptionArgs->nAssumeYes;
+    pArgs->nQuiet         = pOptionArgs->nQuiet;
     pArgs->nRefresh       = pOptionArgs->nRefresh;
     pArgs->nShowDuplicates= pOptionArgs->nShowDuplicates;
     pArgs->nShowHelp      = pOptionArgs->nShowHelp;
