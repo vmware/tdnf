@@ -120,7 +120,7 @@ SolvGetQueryResult(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    SolvQueueToPackageList(&pQuery->queueResult, &pPkgList);
+    dwError = SolvQueueToPackageList(&pQuery->queueResult, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
     *ppPkgList = pPkgList;
 
@@ -752,8 +752,7 @@ SolvGetPackageId(
     )
 {
     uint32_t dwError = 0;
-    if(!pPkgList || dwPkgIndex < 0 || 
-       dwPkgIndex >= pPkgList->queuePackages.count)
+    if(!pPkgList || dwPkgIndex >= pPkgList->queuePackages.count)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -1110,7 +1109,7 @@ SolvGetTransResultsWithType(
         if (dwType == dwPkgType)
             queue_push(&queueSolvedPackages, dwPkg);
     }
-    SolvQueueToPackageList(&queueSolvedPackages, &pPkgList);
+    dwError = SolvQueueToPackageList(&queueSolvedPackages, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgList = pPkgList;
@@ -1148,7 +1147,7 @@ SolvFindHighestAvailable(
     if(!pSack || IsNullOrEmptyString(pszPkgName) || !pdwId)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     dwError = SolvFindAvailablePkgByName(
@@ -1160,28 +1159,25 @@ SolvFindHighestAvailable(
     dwError = SolvGetPackageId(pAvailabePkgList, 0, &dwHighestAvailable);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwHighestAvailable != 0)
-    {
-        dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
+    for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
+    {
+        dwError = SolvGetPackageId(
+                      pAvailabePkgList,
+                      dwPkgIndex,
+                      &dwAvailableId);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = SolvCmpEvr(
+                      pSack,
+                      dwAvailableId,
+                      dwHighestAvailable,
+                      &dwEvrCompare);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(dwEvrCompare > 0)
         {
-            dwError = SolvGetPackageId(
-                          pAvailabePkgList,
-                          dwPkgIndex,
-                          &dwAvailableId);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = SolvCmpEvr(
-                          pSack,
-                          dwAvailableId,
-                          dwHighestAvailable,
-                          &dwEvrCompare);
-            BAIL_ON_TDNF_ERROR(dwError);
-            if(dwEvrCompare > 0)
-            {
-                dwHighestAvailable = dwAvailableId;
-            }
+            dwHighestAvailable = dwAvailableId;
         }
     }
 
@@ -1271,7 +1267,7 @@ SolvFindHightestOrLowestInstalled(
     if(!pSack || IsNullOrEmptyString(pszPkgName) || !pdwId)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     dwError = SolvFindInstalledPkgByName(
@@ -1293,7 +1289,10 @@ SolvFindHightestOrLowestInstalled(
 
         for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
         {
-            SolvGetPackageId(pInstalledPkgList, dwPkgIndex, &dwInstalledId);
+            dwError = SolvGetPackageId(
+                          pInstalledPkgList,
+                          dwPkgIndex,
+                          &dwInstalledId);
             BAIL_ON_TDNF_ERROR(dwError);
             dwError = SolvCmpEvr(
                           pSack,
