@@ -609,7 +609,6 @@ error:
     {
         TDNFFreeStringArray(ppszPkgsNotResolved);
     }
-    TDNF_SAFE_FREE_MEMORY(ppszPkgsNotResolved);
     goto cleanup;
 }
 

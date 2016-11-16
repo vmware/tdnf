@@ -264,7 +264,7 @@ TDNFPackageGetDowngrade(
     if(!pSack || !pdwDowngradePkgId || !pAvailabePkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
@@ -417,80 +417,12 @@ error:
     goto cleanup;
 }
 
-uint32_t
-TDNFAddPackagesForInstall(
-    PSolvSack pSack,
-    Queue* pQueueGoal,
-    const char* pszPkgName
-    )
-{
-    uint32_t dwError = 0;
-    int dwEvrCompare = 0;
-    Id dwInstalledId = 0;
-    Id dwHighestAvailable = 0;
-    PSolvPackageList pInstalledPkgList = NULL;
-
-    if(!pSack || !pQueueGoal ||IsNullOrEmptyString(pszPkgName))
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = SolvFindInstalledPkgByName(
-                  pSack,
-                  pszPkgName,
-                  &pInstalledPkgList);
-    if(dwError == ERROR_TDNF_NO_MATCH)
-    {
-        dwError = 0;
-    }
-    SolvGetPackageId(pInstalledPkgList, 0, &dwInstalledId);
-
-    SolvFindHighestAvailable(pSack, pszPkgName, &dwHighestAvailable);
-    if(dwHighestAvailable != 0)
-    {
-        if(dwInstalledId != 0)
-        {
-            dwError = SolvCmpEvr(
-                          pSack,
-                          dwHighestAvailable,
-                          dwInstalledId,
-                          &dwEvrCompare);
-            if(dwError == 0 && dwEvrCompare > 0)
-            {
-                queue_push(pQueueGoal, dwHighestAvailable);
-            }
-            else
-            {
-                dwError = ERROR_TDNF_ALREADY_INSTALLED;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-        else
-        {
-            queue_push(pQueueGoal, dwHighestAvailable);
-        }
-    }
-    else
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-    }
-cleanup:
-    if(pInstalledPkgList)
-    {
-        SolvFreePackageList(pInstalledPkgList);
-    }
-    return dwError;
-
-error:
-    goto cleanup;
-}
 
 uint32_t
-TDNFVerifyUpgradePackage(
+TDNFVerifyInstallPackage(
     PSolvSack pSack,
     Id dwPkg,
-    uint32_t* dwUpgradePackage
+    uint32_t* pdwInstallPackage
     )
 {
 
@@ -498,8 +430,9 @@ TDNFVerifyUpgradePackage(
     char* pszName = NULL;
     Id  dwInstalledId = 0;
     int dwEvrCompare = 0;
+    uint32_t dwInstallPackage = 0;
 
-    if(!pSack)
+    if(!pSack || !pdwInstallPackage)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -517,22 +450,119 @@ TDNFVerifyUpgradePackage(
     dwError = SolvCmpEvr(pSack, dwPkg, dwInstalledId, &dwEvrCompare);
     if(dwError == 0 && dwEvrCompare > 0)
     {
-        *dwUpgradePackage = 1;
+        dwInstallPackage = 1;
     }
     else
     {
-        *dwUpgradePackage = 0;
+        dwInstallPackage = 0;
     }
+
+    *pdwInstallPackage = dwInstallPackage;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszName);
+    return dwError;
+
+error:
+    if((dwError == ERROR_TDNF_NO_MATCH || dwError == ERROR_TDNF_NO_DATA) &&
+       pdwInstallPackage)
+    {
+        *pdwInstallPackage = 1;
+        dwError = 0;
+    }
+    goto cleanup;
+}
+
+
+uint32_t
+TDNFAddPackagesForInstall(
+    PSolvSack pSack,
+    Queue* pQueueGoal,
+    const char* pszPkgName
+    )
+{
+    uint32_t dwError = 0;
+    Id dwHighestAvailable = 0;
+    uint32_t  dwInstallPackage = 0;
+
+    if(!pSack || !pQueueGoal || IsNullOrEmptyString(pszPkgName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvFindHighestAvailable(
+                  pSack,
+                  pszPkgName,
+                  &dwHighestAvailable);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFVerifyInstallPackage(
+                  pSack,
+                  dwHighestAvailable,
+                  &dwInstallPackage);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwInstallPackage == 1)
+    {
+        queue_push(pQueueGoal, dwHighestAvailable);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+
+uint32_t
+TDNFVerifyUpgradePackage(
+    PSolvSack pSack,
+    Id dwPkg,
+    uint32_t* pdwUpgradePackage
+    )
+{
+
+    uint32_t dwError = 0;
+    char* pszName = NULL;
+    Id  dwInstalledId = 0;
+    int dwEvrCompare = 0;
+    uint32_t dwUpgradePackage = 0;
+
+    if(!pSack || !pdwUpgradePackage)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetPkgNameFromId(pSack, dwPkg, &pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvFindHightestInstalled(
+                  pSack,
+                  pszName,
+                  &dwInstalledId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvCmpEvr(pSack, dwPkg, dwInstalledId, &dwEvrCompare);
+    if(dwError == 0 && dwEvrCompare > 0)
+    {
+        dwUpgradePackage = 1;
+    }
+    else
+    {
+        dwUpgradePackage = 0;
+    }
+    *pdwUpgradePackage = dwUpgradePackage;
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszName);
     return dwError;
 
 error:
-    if(dwError == ERROR_TDNF_NO_MATCH || dwError == ERROR_TDNF_NO_DATA)
+    if(pdwUpgradePackage)
     {
-        *dwUpgradePackage = 1;
-        dwError = 0;
+        *pdwUpgradePackage = 0;
     }
     goto cleanup;
 }

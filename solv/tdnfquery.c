@@ -316,7 +316,7 @@ SolvApplyPackageFilter(
 
     if(pQuery->ppszPackageNames)
     {
-        TDNFFreeStringArray(ppszCopyOfPkgNames);
+        TDNFFreeStringArray(pQuery->ppszPackageNames);
     }
     pQuery->ppszPackageNames = ppszCopyOfPkgNames;
 

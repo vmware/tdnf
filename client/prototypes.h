@@ -231,7 +231,14 @@ uint32_t
 TDNFVerifyUpgradePackage(
     PSolvSack pSack,
     Id dwPkg,
-    uint32_t* dwUpgradePackage
+    uint32_t* pdwUpgradePackage
+    );
+
+uint32_t
+TDNFVerifyInstallPackage(
+    PSolvSack pSack,
+    Id dwPkg,
+    uint32_t* pdwInstallPackage
     );
 
 uint32_t
