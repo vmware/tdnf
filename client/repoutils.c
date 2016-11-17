@@ -204,6 +204,7 @@ TDNFRepoRemoveCache(
     const char* pszFile = NULL;
     char* pszFilePath = NULL;
     GDir* pDir = NULL;
+    GError* pGerror = NULL;
 
     if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
     {
@@ -218,10 +219,17 @@ TDNFRepoRemoveCache(
                           TDNF_REPODATA_DIR_NAME,
                           NULL);
 
-    pDir = g_dir_open(pszRepoCacheDir, 0, NULL);
+    pDir = g_dir_open(pszRepoCacheDir, 0, &pGerror);
     if(!pDir)
     {
-        dwError = ERROR_TDNF_REPO_DIR_OPEN;
+        if(pGerror && pGerror->code == G_FILE_ERROR_NOENT)
+        {
+            dwError = ERROR_TDNF_FILE_NOT_FOUND;
+        }
+        else
+        {
+            dwError = ERROR_TDNF_REPO_DIR_OPEN;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -252,6 +260,10 @@ TDNFRepoRemoveCache(
     }
 
 cleanup:
+    if(pGerror)
+    {
+        g_clear_error(&pGerror);
+    }
     if(pszFilePath)
     {
         g_free(pszFilePath);
