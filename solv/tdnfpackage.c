@@ -1431,3 +1431,56 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszRelease);
     goto cleanup;
 }
+
+uint32_t
+SolvReportProblems(
+    Solver* pSolv
+    )
+{
+    uint32_t dwError = 0;
+    int i = 0;
+    int nCount = 0;
+    Id dwProbrlemId = 0;
+    Id dwSource = 0;
+    Id dwTarget = 0;
+    Id dwDep = 0;
+    const char* pszProblem = NULL;
+
+    SolverRuleinfo type;
+
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nCount = solver_problem_count(pSolv);
+    if(nCount > 0)
+    {
+        fprintf(stdout, "Found %d problem(s) while resolving\n", nCount);
+        for( i = 1; i <= nCount; ++i)
+        {
+            dwProbrlemId = solver_findproblemrule(pSolv, i);
+            type = solver_ruleinfo(
+                       pSolv,
+                       dwProbrlemId,
+                       &dwSource,&dwTarget,
+                       &dwDep);
+
+            pszProblem = solver_problemruleinfo2str(
+                             pSolv,
+                             type,
+                             dwSource,
+                             dwTarget,
+                             dwDep);
+
+            fprintf(stdout, "%d. %s\n", i, pszProblem);
+            pszProblem = NULL;
+        }
+    }
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
