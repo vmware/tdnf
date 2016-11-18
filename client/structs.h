@@ -23,7 +23,6 @@
 typedef struct _TDNF_
 {
     PSolvSack pSack;
-    PSolvGoal pGoal;
     PTDNF_CMD_ARGS pArgs;
     PTDNF_CONF pConf;
     PTDNF_REPO_DATA pRepos;

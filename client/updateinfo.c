@@ -75,8 +75,9 @@ TDNFFreeUpdateInfoReferences(
 
 uint32_t
 TDNFGetUpdateInfoPackages(
-    PSolvAdvisory hAdv,
-    PTDNF_UPDATEINFO_PKG* ppPkgs
+    PSolvSack pSack,
+    Id dwPkgId,
+    PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
     )
 {
     return 1;

@@ -792,3 +792,88 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+SolvGetUpdateAdvisories(
+    PSolvSack pSack,
+    Id dwPkgIdpkg,
+    PSolvPackageList* ppPkgList)
+{
+    uint32_t dwError = 0;
+    Dataiterator di = {0};
+    Id dwEvr = 0;
+    Id dwArch = 0;
+    int nCompareResult = 0;
+    Queue queueAdv = {0};
+    PSolvPackageList pPkgList = NULL;
+    Solvable *pSolvable = NULL;
+
+    if(!pSack || !pSack->pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    queue_init(&queueAdv);
+    pSolvable = pool_id2solvable(pSack->pPool, dwPkgIdpkg);
+    if(!pSolvable)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    dataiterator_init(&di,
+                      pSack->pPool,
+                      0,
+                      0,
+                      UPDATE_COLLECTION_NAME,
+                      pool_id2str(pSack->pPool, pSolvable->name),
+                      SEARCH_STRING);
+
+    dataiterator_prepend_keyname(&di, UPDATE_COLLECTION);
+    while (dataiterator_step(&di))
+    {
+        dataiterator_setpos_parent(&di);
+        dwArch = pool_lookup_id(
+                     pSack->pPool,
+                     SOLVID_POS,
+                     UPDATE_COLLECTION_ARCH);
+        if (dwArch!= pSolvable->arch)
+            continue;
+        dwEvr = pool_lookup_id(
+                    pSack->pPool,
+                    SOLVID_POS,
+                    UPDATE_COLLECTION_EVR);
+
+        if (!dwEvr)
+            continue;
+
+        nCompareResult = pool_evrcmp(
+                             pSack->pPool,
+                             dwEvr,
+                             pSolvable->evr,
+                             EVRCMP_COMPARE);
+        if (nCompareResult > 0 )
+        {
+            queue_push(&queueAdv, di.solvid);
+            dataiterator_skip_solvable(&di);
+        }
+    }
+
+    dwError = SolvQueueToPackageList(&queueAdv, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppPkgList = pPkgList;
+
+cleanup:
+    dataiterator_free(&di);
+    queue_free(&queueAdv);
+    return dwError;
+
+error:
+    if(ppPkgList)
+    {
+        *ppPkgList = NULL;
+    }
+    goto cleanup;
+
+}

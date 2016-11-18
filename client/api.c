@@ -130,7 +130,99 @@ TDNFCheckLocalPackages(
     const char* pszLocalPath
     )
 {
-    return 1;
+    uint32_t dwError = 0;
+    char* pszRPMPath = NULL;
+    const char* pszFile = NULL;
+    GDir* pDir = NULL;
+    Repo *pCmdlineRepo = 0;
+    Id    dwPkgAdded = 0;
+    Queue queueJobs = {0};
+    Solver *pSolv = NULL;
+    uint32_t dwPackagesFound = 0;
+
+    if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool || !pszLocalPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    queue_init(&queueJobs);
+    pDir = g_dir_open(pszLocalPath, 0, NULL);
+    if(!pDir)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    fprintf(stdout, "Checking all packages from: %s\n", pszLocalPath);
+
+    pCmdlineRepo = repo_create(pTdnf->pSack->pPool, CMDLINE_REPO_NAME);
+    if(!pCmdlineRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    while ((pszFile = g_dir_read_name (pDir)) != NULL)
+    {
+        if (!g_str_has_suffix (pszFile, TDNF_RPM_EXT))
+        {
+            continue;
+        }
+        pszRPMPath = g_build_filename(pszLocalPath, pszFile, NULL);
+        dwPkgAdded = repo_add_rpm(
+                         pCmdlineRepo,
+                         pszRPMPath,
+                         REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE);
+        if(!dwPkgAdded)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        queue_push2(&queueJobs, SOLVER_SOLVABLE|SOLVER_INSTALL, dwPkgAdded);
+        dwPackagesFound++;
+        g_free(pszRPMPath);
+        pszRPMPath = NULL;
+    }
+    repo_internalize(pCmdlineRepo);
+    fprintf(stdout, "Found %d packages\n", dwPackagesFound);
+
+    pSolv = solver_create(pTdnf->pSack->pPool);
+    if(pSolv == NULL)
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_VENDORCHANGE, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_KEEP_ORPHANS, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
+
+    if (solver_solve(pSolv, &queueJobs) != 0)
+    {
+        SolvReportProblems(pSolv);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if(pSolv)
+    {
+        solver_free(pSolv);
+    }
+    queue_free(&queueJobs);
+    if(pDir)
+    {
+        g_dir_close(pDir);
+    }
+    if(pszRPMPath)
+    {
+        g_free(pszRPMPath);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
 }
 
 uint32_t

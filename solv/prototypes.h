@@ -22,31 +22,10 @@ typedef struct _SolvQuery
     uint32_t    dwNewPackages;
 } SolvQuery, *PSolvQuery;
 
-typedef struct _SolvPackage
-{
-    Id dwPkg;
-} SolvPackage, *PSolvPackage;
-
 typedef struct _SolvPackageList
 {
     Queue       queuePackages;
 } SolvPackageList, *PSolvPackageList;
-
-typedef struct _SolvGoal
-{
-    Queue       queueGoal;
-} SolvGoal, *PSolvGoal;
-
-typedef struct _SolvRepo
-{
-    Repo*       pRepo;
-} SolvRepo, *PSolvRepo;
-
-
-typedef struct _SolvAdvisory
-{
-
-} SolvAdvisory, *PSolvAdvisory;
 
 // tdnfpackage.c
 uint32_t
@@ -399,6 +378,12 @@ SolvAddPkgUserInstalledJob(
     Id dwId
     );
 
+uint32_t
+SolvGetUpdateAdvisories(
+    PSolvSack pSack,
+    Id dwPkgIdpkg,
+    PSolvPackageList* ppPkgList);
+
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(
@@ -445,6 +430,11 @@ uint32_t
 SolvLoadRepomdUpdateinfo(
     Repo* pRepo,
     const char* pszUpdateinfo
+    );
+
+uint32_t
+SolvReportProblems(
+    Solver* pSolv
     );
 
 #ifdef __cplusplus
