@@ -354,9 +354,6 @@ TDNFGoal(
     *ppInfo = pInfoTemp;
 
 cleanup:
-    return dwError;
-
-error:
     queue_free(&queueJobs);
     if(pTrans)
     {
@@ -366,6 +363,9 @@ error:
     {
         solver_free(pSolv);
     }
+    return dwError;
+
+error:
     TDNF_SAFE_FREE_MEMORY(pInfoTemp);
     if(ppInfo)
     {
