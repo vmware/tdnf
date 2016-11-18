@@ -18,14 +18,6 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
-
-//checklocal.c
-uint32_t
-TDNFCheckLocalPackagesInternal(
-    PTDNF pTdnf,
-    const char* pszLocalPath
-    );
-
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
@@ -614,12 +606,12 @@ TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
     );
 
-//search.c
 
 //updateinfo.c
 uint32_t
 TDNFGetUpdateInfoPackages(
-    PSolvAdvisory hAdv,
+    PSolvSack pSack,
+    Id dwPkgId,
     PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
     );
 
@@ -631,6 +623,13 @@ TDNFFreeUpdateInfoReferences(
 void
 TDNFFreeUpdateInfoPackages(
     PTDNF_UPDATEINFO_PKG pPkg
+    );
+
+uint32_t
+TDNFPopulateUpdateInfoOfOneAdvisory(
+    PSolvSack pSack,
+    Id dwAdvId,
+    PTDNF_UPDATEINFO* ppInfo
     );
 
 //utils.c

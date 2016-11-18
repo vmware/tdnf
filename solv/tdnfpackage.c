@@ -926,14 +926,16 @@ uint32_t
 SolvCountPkgByName(
     PSolvSack pSack,
     const char* pszName,
-    uint32_t* dwCount
+    uint32_t* pdwCount
     )
 {
     uint32_t dwError = 0;
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
+    uint32_t dwCount = 0;
 
-    if(!pSack || IsNullOrEmptyString(pszName))
+    if(!pSack || IsNullOrEmptyString(pszName) ||
+       !pdwCount)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -951,8 +953,10 @@ SolvCountPkgByName(
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetPackageListSize(pPkgList, dwCount);
+    dwError = SolvGetPackageListSize(pPkgList, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    *pdwCount = dwCount;
 cleanup:
     if(pPkgList)
     {
@@ -965,6 +969,10 @@ cleanup:
     return dwError;
 
 error:
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
     goto cleanup;
 }
 
@@ -979,7 +987,8 @@ SolvFindInstalledPkgByName(
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
 
-    if(!pSack || IsNullOrEmptyString(pszName))
+    if(!pSack || IsNullOrEmptyString(pszName) ||
+       !ppPkgList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -992,6 +1001,55 @@ SolvFindInstalledPkgByName(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvApplySinglePackageFilter(pQuery, pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppPkgList = pPkgList;
+cleanup:
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    return dwError;
+
+error:
+    if(ppPkgList)
+    {
+        *ppPkgList = NULL;
+    }
+    goto cleanup;
+}
+
+uint32_t
+SolvFindInstalledPkgByMultipleNames(
+    PSolvSack pSack,
+    char** ppszPackageNameSpecs,
+    PSolvPackageList* ppPkgList
+    )
+{
+    uint32_t dwError = 0;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+
+    if(!pSack || !ppszPackageNameSpecs ||
+       !ppPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvCreateQuery(pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvAddSystemRepoFilter(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyPackageFilter(pQuery, ppszPackageNameSpecs);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvApplyListQuery(pQuery);
@@ -1429,5 +1487,58 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszEpoch);
     TDNF_SAFE_FREE_MEMORY(pszVersion);
     TDNF_SAFE_FREE_MEMORY(pszRelease);
+    goto cleanup;
+}
+
+uint32_t
+SolvReportProblems(
+    Solver* pSolv
+    )
+{
+    uint32_t dwError = 0;
+    int i = 0;
+    int nCount = 0;
+    Id dwProbrlemId = 0;
+    Id dwSource = 0;
+    Id dwTarget = 0;
+    Id dwDep = 0;
+    const char* pszProblem = NULL;
+
+    SolverRuleinfo type;
+
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nCount = solver_problem_count(pSolv);
+    if(nCount > 0)
+    {
+        fprintf(stdout, "Found %d problem(s) while resolving\n", nCount);
+        for( i = 1; i <= nCount; ++i)
+        {
+            dwProbrlemId = solver_findproblemrule(pSolv, i);
+            type = solver_ruleinfo(
+                       pSolv,
+                       dwProbrlemId,
+                       &dwSource,&dwTarget,
+                       &dwDep);
+
+            pszProblem = solver_problemruleinfo2str(
+                             pSolv,
+                             type,
+                             dwSource,
+                             dwTarget,
+                             dwDep);
+
+            fprintf(stdout, "%d. %s\n", i, pszProblem);
+            pszProblem = NULL;
+        }
+    }
+cleanup:
+    return dwError;
+
+error:
     goto cleanup;
 }
