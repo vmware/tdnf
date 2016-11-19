@@ -143,6 +143,14 @@ TDNFIsSystemError(
 }
 
 uint32_t
+TDNFIsCurlError(
+    uint32_t dwError
+    )
+{
+    return dwError >= ERROR_TDNF_CURL_BASE && dwError <= ERROR_TDNF_CURL_END;
+}
+
+uint32_t
 TDNFGetSystemError(
     uint32_t dwError
     )
@@ -601,5 +609,56 @@ error:
     {
         *pnShouldSync = 0;
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFAppendPath(
+    const char *pszBase,
+    const char *pszPart,
+    char **ppszPath
+    )
+{
+    uint32_t dwError = 0;
+    char *pszPath = NULL;
+    int nLength = 0;
+
+    if(IsNullOrEmptyString(pszBase) ||
+       IsNullOrEmptyString(pszPart) ||
+       !ppszPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  strlen(pszBase) + strlen(pszPart) + 2,
+                  (void **)&pszPath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    nLength = strlen(pszBase);
+    if(pszBase[nLength - 1] == '/')
+    {
+        --nLength;
+    }
+
+    strncpy(pszPath, pszBase, nLength);
+    if(pszPart[0] != '/')
+    {
+        strcat(pszPath, "/");
+    }
+    strcat(pszPath, pszPart);
+
+    *ppszPath = pszPath;
+cleanup:
+    return dwError;
+
+error:
+    if(ppszPath)
+    {
+        *ppszPath = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
 }

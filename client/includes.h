@@ -30,6 +30,7 @@
 #include <time.h>
 #include <utime.h>
 #include <fnmatch.h>
+#include <libgen.h>
 //
 #include <sys/utsname.h>
 //glib
@@ -50,8 +51,6 @@
 #include <hawkey/sack.h>
 #include <hawkey/selector.h>
 #include <hawkey/util.h>
-//librepo
-#include <librepo/librepo.h>
 
 //librpm
 #include <rpm/rpmlib.h>
@@ -61,6 +60,16 @@
 #include <rpm/rpmts.h>
 #include <rpm/rpmkeyring.h>
 #include <rpm/header.h>
+
+// libsolv
+#include <solv/evr.h>
+#include <solv/pool.h>
+#include <solv/poolarch.h>
+#include <solv/repo.h>
+#include <solv/repo_repomdxml.h>
+
+//libcurl
+#include <curl/curl.h>
 
 #include <tdnfclient.h>
 

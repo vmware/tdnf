@@ -44,3 +44,13 @@ typedef struct _TDNF_ENV_
     pthread_mutex_t mutexInitialize;
     int nInitialized;
 }TDNF_ENV, *PTDNF_ENV;
+
+typedef struct _TDNF_REPO_METADATA
+{
+    char *pszRepoCacheDir;
+    char *pszRepo;
+    char *pszRepoMD;
+    char *pszPrimary;
+    char *pszFileLists;
+    char *pszUpdateInfo;
+}TDNF_REPO_METADATA,*PTDNF_REPO_METADATA;

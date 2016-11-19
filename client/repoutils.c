@@ -388,12 +388,12 @@ error:
 uint32_t
 TDNFRepoApplyProxySettings(
     PTDNF_CONF pConf,
-    LrHandle* pRepoHandle
+    CURL *pCurl
     )
 {
     uint32_t dwError = 0;
 
-    if(!pConf || !pRepoHandle)
+    if(!pConf || !pCurl)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -401,11 +401,10 @@ TDNFRepoApplyProxySettings(
 
     if(!IsNullOrEmptyString(pConf->pszProxy))
     {
-        if(!lr_handle_setopt(
-            pRepoHandle,
-            NULL,
-            LRO_PROXY,
-            pConf->pszProxy))
+        if(curl_easy_setopt(
+            pCurl,
+            CURLOPT_PROXY,
+            pConf->pszProxy) != CURLE_OK)
         {
             dwError = ERROR_TDNF_SET_PROXY;
             BAIL_ON_TDNF_ERROR(dwError);
@@ -413,11 +412,10 @@ TDNFRepoApplyProxySettings(
 
         if(!IsNullOrEmptyString(pConf->pszProxyUserPass))
         {
-            if(!lr_handle_setopt(
-                pRepoHandle,
-                NULL,
-                LRO_PROXYUSERPWD,
-                pConf->pszProxyUserPass))
+            if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_PROXYUSERPWD,
+                pConf->pszProxyUserPass) != CURLE_OK)
             {
                 dwError = ERROR_TDNF_SET_PROXY_USERPASS;
                 BAIL_ON_TDNF_ERROR(dwError);
