@@ -29,21 +29,11 @@ TDNFInitRepo(
     )
 {
     uint32_t dwError = 0;
-    gboolean bRet = 0;
-    LrHandle* hLibRepo = NULL;
-    LrResult* pResult = NULL;
-    LrYumRepo* pRepo = NULL;
-    int nLocalOnly = 0;
     char* pszRepoCacheDir = NULL;
     char* pszRepoDataDir = NULL;
-    char* pszUserPass = NULL;
     char* pszLastRefreshMarker = NULL;
-
-    char* ppszRepoUrls[] = {NULL, NULL};
-    char* ppszLocalUrls[] = {NULL, NULL};
-    char* ppszDownloadList[] = {"primary", "filelists", "updateinfo", NULL};
+    PTDNF_REPO_METADATA pRepoMD = NULL;
     PTDNF_CONF pConf = NULL;
-
     HyRepo hRepo = NULL;
 
     if(!pTdnf || !pTdnf->pConf || !pRepoData || !phRepo)
@@ -61,7 +51,7 @@ TDNFInitRepo(
                            NULL);
     if(!pszRepoCacheDir)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -72,90 +62,17 @@ TDNFInitRepo(
                            NULL);
     if(!pszRepoDataDir)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ppszRepoUrls[0] = pRepoData->pszBaseUrl;
-    ppszLocalUrls[0] = pszRepoCacheDir;
+    dwError = TDNFGetRepoMD(pTdnf,
+                            pRepoData,
+                            pszRepoDataDir,
+                            &pRepoMD);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    hLibRepo = lr_handle_init();
-    if(!hLibRepo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pResult = lr_result_init();
-    if(!pResult)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    //Look for repodata dir - this is auto created
-    //during last refresh so skip download if present
-    if(!access(pszRepoDataDir, F_OK))
-    {
-        nLocalOnly = 1;
-        lr_handle_setopt(hLibRepo, NULL, LRO_URLS, ppszLocalUrls);
-        lr_handle_setopt(hLibRepo, NULL, LRO_IGNOREMISSING, 1);
-    }
-    else
-    {
-        if(mkdir(pszRepoCacheDir, 755))
-        {
-             if(errno != EEXIST)
-             {
-                 dwError = errno;
-                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-             }
-        }
-
-        lr_handle_setopt(hLibRepo, NULL, LRO_URLS, ppszRepoUrls);
-        lr_handle_setopt(hLibRepo, NULL, LRO_SSLVERIFYPEER, 1);
-        lr_handle_setopt(hLibRepo, NULL, LRO_SSLVERIFYHOST, 2);
-        lr_handle_setopt(hLibRepo, NULL, LRO_DESTDIR, pszRepoCacheDir);
-        lr_handle_setopt(hLibRepo, NULL, LRO_YUMDLIST, ppszDownloadList);
-        if(!IsNullOrEmptyString(pRepoData->pszUser) && 
-           !IsNullOrEmptyString(pRepoData->pszPass))
-        {
-            dwError = TDNFAllocateStringPrintf(
-                          &pszUserPass,
-                          "%s:%s",
-                          pRepoData->pszUser,
-                          pRepoData->pszPass);
-            BAIL_ON_TDNF_ERROR(dwError);
-            lr_handle_setopt(
-                hLibRepo,
-                NULL,
-                LRO_USERPWD,
-                pszUserPass);
-        }
-
-        dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, hLibRepo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    lr_handle_setopt(hLibRepo, NULL, LRO_REPOTYPE, LR_YUMREPO);
-    lr_handle_setopt(hLibRepo, NULL, LRO_LOCAL, nLocalOnly);
-
-    
-    bRet = lr_handle_perform(hLibRepo, pResult, NULL);
-    if(!bRet)
-    {
-        dwError = ERROR_TDNF_REPO_PERFORM;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    bRet = lr_result_getinfo(pResult, NULL, LRR_YUM_REPO, &pRepo);
-    if(!bRet)
-    {
-        dwError = ERROR_TDNF_REPO_GETINFO;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    //Create and set repo properties   
+    //Create and set repo properties
     hRepo = hy_repo_create(pRepoData->pszId);
     if(!hRepo)
     {
@@ -163,7 +80,7 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFInitRepoFromMetaData(hRepo, pRepo);
+    dwError = TDNFInitRepoFromMetadata(hRepo, pRepoMD);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateStringPrintf(
@@ -177,7 +94,9 @@ TDNFInitRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     *phRepo = hRepo;
+
 cleanup:
+    TDNFFreeRepoMetadata(pRepoMD);
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
     if(pszRepoDataDir)
     {
@@ -188,14 +107,6 @@ cleanup:
         g_free(pszRepoCacheDir);
     }
 
-    if(pResult)
-    {
-        lr_result_free(pResult);
-    }
-    if(hLibRepo)
-    {
-        lr_handle_free(hLibRepo);
-    }
     return dwError;
 
 error:
@@ -226,88 +137,38 @@ error:
 }
 
 uint32_t
-TDNFInitRepoFromMetaData(
+TDNFInitRepoFromMetadata(
     HyRepo hRepo,
-    LrYumRepo* pRepo
+    PTDNF_REPO_METADATA pRepoMD
     )
 {
     uint32_t dwError = 0;
-    const char* pszValue = NULL;
-    
-    if(!pRepo)
+
+    if(!hRepo || !pRepoMD)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    hy_repo_set_string(hRepo, HY_REPO_MD_FN, pRepo->repomd);
-    pszValue = lr_yum_repo_path(pRepo, "primary");
-    if(pszValue)
+    hy_repo_set_string(hRepo, HY_REPO_MD_FN, pRepoMD->pszRepoMD);
+
+    if(!IsNullOrEmptyString(pRepoMD->pszPrimary))
     {
-        hy_repo_set_string(hRepo, HY_REPO_PRIMARY_FN, pszValue);
-    }
-    pszValue = lr_yum_repo_path(pRepo, "filelists");
-    if(pszValue != NULL)
-    {
-        hy_repo_set_string(hRepo, HY_REPO_FILELISTS_FN, pszValue);
-    }
-    pszValue = lr_yum_repo_path(pRepo, "updateinfo");
-    if(pszValue != NULL)
-    {
-        hy_repo_set_string (hRepo, HY_REPO_UPDATEINFO_FN, pszValue);
+        hy_repo_set_string(hRepo, HY_REPO_PRIMARY_FN, pRepoMD->pszPrimary);
     }
 
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFPrintRepoMetadata(
-    LrYumRepoMd* pRepoMD
-    )
-{
-    uint32_t dwError = 0;
-
-    GSList* pElem = NULL;
-
-    if(!pRepoMD)
+    if(!IsNullOrEmptyString(pRepoMD->pszFileLists))
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+        hy_repo_set_string(hRepo, HY_REPO_FILELISTS_FN, pRepoMD->pszFileLists);
     }
 
-    pElem = pRepoMD->records;
-
-    printf("Repo metadata info:\n");
-
-    for (; pElem; pElem = g_slist_next(pElem))
+    if(!IsNullOrEmptyString(pRepoMD->pszUpdateInfo))
     {
-        LrYumRepoMdRecord* pRec = (LrYumRepoMdRecord*) pElem->data;
-        printf(" Type: %s\n", pRec->type);
-        printf(" Location href: %s\n", pRec->location_href);
-        if (pRec->location_base)
-            printf(" Location base: %s\n", pRec->location_base);
-        if (pRec->checksum)
-            printf(" Checksum: %s\n", pRec->checksum);
-        if (pRec->checksum_type)
-            printf(" Checksum type: %s\n", pRec->checksum_type);
-        if (pRec->checksum_open)
-            printf(" Checksum open: %s\n", pRec->checksum_open);
-        if (pRec->checksum_open_type)
-            printf(" Checksum open type: %s\n", pRec->checksum_open_type);
-        if (pRec->timestamp > 0)
-            printf(" Timestamp: %"G_GINT64_FORMAT"\n", pRec->timestamp);
-        if (pRec->size > 0)
-            printf(" Size: %"G_GINT64_FORMAT"\n", pRec->size);
-        if (pRec->size_open > 0)
-            printf(" Size open: %"G_GINT64_FORMAT"\n", pRec->size_open);
-        if (pRec->db_version > 0)
-            printf(" Db version: %d\n", pRec->db_version);
-        printf("------------------------------------------------\n");
+        hy_repo_set_string(hRepo,
+                           HY_REPO_UPDATEINFO_FN,
+                           pRepoMD->pszUpdateInfo);
     }
+
 cleanup:
     return dwError;
 
@@ -416,4 +277,355 @@ cleanup:
 
 error:
     goto cleanup;
+}
+
+uint32_t
+TDNFGetRepoMD(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepoData,
+    const char *pszRepoDataDir,
+    PTDNF_REPO_METADATA *ppRepoMD
+    )
+{
+    uint32_t dwError = 0;
+    char *pszRepoMDFile = NULL;
+    char *pszRepoMDUrl = NULL;
+    PTDNF_REPO_METADATA pRepoMDRel = NULL;
+    PTDNF_REPO_METADATA pRepoMD = NULL;
+
+    if(!pTdnf ||
+       !pRepoData ||
+       IsNullOrEmptyString(pszRepoDataDir) ||
+       !ppRepoMD)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(&pszRepoMDFile,
+                                      "%s/%s",
+                                      pszRepoDataDir,
+                                      TDNF_REPO_METADATA_FILE_NAME);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
+                                      "%s/%s",
+                                      pRepoData->pszBaseUrl,
+                                      TDNF_REPO_METADATA_FILE_PATH);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_REPO_METADATA),
+                  (void **)&pRepoMDRel);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pRepoMDRel->pszRepoCacheDir,
+                  "%s/%s",
+                  pTdnf->pConf->pszCacheDir,
+                  pRepoData->pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pszRepoMDFile, &pRepoMDRel->pszRepoMD);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pRepoData->pszId, &pRepoMDRel->pszRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(access(pszRepoMDFile, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(
+                      pTdnf,
+                      pRepoData->pszId,
+                      pszRepoMDUrl,
+                      pszRepoMDFile,
+                      pRepoData->pszId);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFParseRepoMD(pRepoMDRel);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFEnsureRepoMDParts(
+                  pTdnf,
+                  pRepoData->pszBaseUrl,
+                  pRepoMDRel,
+                  &pRepoMD);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppRepoMD = pRepoMD;
+
+cleanup:
+    TDNFFreeRepoMetadata(pRepoMDRel);
+    TDNF_SAFE_FREE_MEMORY(pszRepoMDFile);
+    TDNF_SAFE_FREE_MEMORY(pszRepoMDUrl);
+    return dwError;
+
+error:
+    TDNFFreeRepoMetadata(pRepoMD);
+    goto cleanup;
+}
+
+uint32_t
+TDNFEnsureRepoMDParts(
+    PTDNF pTdnf,
+    const char *pszBaseUrl,
+    PTDNF_REPO_METADATA pRepoMDRel,
+    PTDNF_REPO_METADATA *ppRepoMD
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_METADATA pRepoMD = NULL;
+    char *pszTempUrl = NULL;
+
+    if(!pTdnf || !pRepoMDRel || !ppRepoMD)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_REPO_METADATA),
+                  (void **)&pRepoMD);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pRepoMD->pszRepoMD = pRepoMDRel->pszRepoMD;
+    pRepoMDRel->pszRepoMD = NULL;
+
+    dwError = TDNFAppendPath(
+                  pRepoMDRel->pszRepoCacheDir,
+                  pRepoMDRel->pszPrimary,
+                  &pRepoMD->pszPrimary);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(access(pRepoMD->pszPrimary, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = TDNFAppendPath(
+                      pszBaseUrl,
+                      pRepoMDRel->pszPrimary,
+                      &pszTempUrl);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(
+                      pTdnf,
+                      pRepoMDRel->pszRepo,
+                      pszTempUrl,
+                      pRepoMD->pszPrimary,
+                      pRepoMDRel->pszRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAppendPath(
+                  pRepoMDRel->pszRepoCacheDir,
+                  pRepoMDRel->pszFileLists,
+                  &pRepoMD->pszFileLists);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(access(pRepoMD->pszFileLists, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = TDNFAppendPath(
+                      pszBaseUrl,
+                      pRepoMDRel->pszFileLists,
+                      &pszTempUrl);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(
+                      pTdnf,
+                      pRepoMDRel->pszRepo,
+                      pszTempUrl,
+                      pRepoMD->pszFileLists,
+                      pRepoMDRel->pszRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    *ppRepoMD = pRepoMD;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszTempUrl);
+    return dwError;
+
+error:
+    TDNFFreeRepoMetadata(pRepoMD);
+    goto cleanup;
+}
+
+uint32_t
+TDNFFindRepoMDPart(
+    Repo *pSolvRepo,
+    const char *pszType,
+    char **ppszPart
+    )
+{
+    uint32_t dwError = 0;
+    Pool *pPool = NULL;
+    Dataiterator di = {0};
+    char *pszPart = NULL;
+    const char *pszPartTemp = NULL;
+
+    if(!pSolvRepo ||
+       !pSolvRepo->pool ||
+       IsNullOrEmptyString(pszType) ||
+       !ppszPart)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pPool = pSolvRepo->pool;
+
+    dwError = dataiterator_init(
+                  &di,
+                  pPool,
+                  pSolvRepo,
+                  SOLVID_META,
+                  REPOSITORY_REPOMD_TYPE,
+                  pszType,
+                  SEARCH_STRING);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dataiterator_prepend_keyname(&di, REPOSITORY_REPOMD);
+    if (dataiterator_step(&di))
+    {
+        dataiterator_setpos_parent(&di);
+        pszPartTemp = pool_lookup_str(
+                          pPool,
+                          SOLVID_POS,
+                          REPOSITORY_REPOMD_LOCATION);
+    }
+
+    if(!pszPartTemp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszPartTemp, &pszPart);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszPart = pszPart;
+
+cleanup:
+    dataiterator_free(&di);
+    return dwError;
+
+error:
+    if(ppszPart)
+    {
+        *ppszPart = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszPart);
+    goto cleanup;
+}
+
+uint32_t
+TDNFParseRepoMD(
+    PTDNF_REPO_METADATA pRepoMD
+    )
+{
+    uint32_t dwError = 0;
+    Repo *pRepo = NULL;
+    Pool *pPool = NULL;
+    FILE *fp = NULL;
+
+    if(!pRepoMD)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pPool = pool_create();
+    pRepo = repo_create(pPool, "md_parse_temp");
+
+    fp = fopen(pRepoMD->pszRepoMD, "r");
+    if(!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    dwError = repo_add_repomdxml(pRepo, fp, 0);
+    if(dwError)
+    {
+        fprintf(stdout,
+                "Error(%d) parsing repomd: %s\n",
+                dwError,
+                pool_errstr(pPool));
+    }
+
+    dwError = TDNFFindRepoMDPart(
+                  pRepo,
+                  TDNF_REPOMD_TYPE_PRIMARY,
+                  &pRepoMD->pszPrimary);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFFindRepoMDPart(
+                  pRepo,
+                  TDNF_REPOMD_TYPE_FILELISTS,
+                  &pRepoMD->pszFileLists);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFFindRepoMDPart(
+                  pRepo,
+                  TDNF_REPOMD_TYPE_UPDATEINFO,
+                  &pRepoMD->pszUpdateInfo);
+    //updateinfo is not mandatory
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if(pRepo)
+    {
+        repo_free(pRepo, 0);
+    }
+    if(pPool)
+    {
+        pool_free(pPool);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+void
+TDNFFreeRepoMetadata(
+    PTDNF_REPO_METADATA pRepoMD
+    )
+{
+    if(!pRepoMD)
+    {
+        return;
+    }
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszRepoCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszRepo);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszRepoMD);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszPrimary);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszFileLists);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszUpdateInfo);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD);
 }
