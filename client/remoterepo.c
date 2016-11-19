@@ -21,20 +21,22 @@
 #include "includes.h"
 
 static int
-lrProgressCB(
+progress_cb(
     void *pUserData,
-    gdouble dTotalToDownload,
-    gdouble dDownloaded
+    curl_off_t dlTotal,
+    curl_off_t dlNow,
+    curl_off_t ulTotal,
+    curl_off_t ulNow
     )
 {
-    if(dTotalToDownload > 0.00)
+    if(dlTotal > 0)
     {
-        gdouble dPercent = (dDownloaded/dTotalToDownload) * 100.0;
+        double dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
         fprintf(
             stdout,
-            "%-35s %10.0f  %5.0f%%\r",
+            "%-35s %10ld  %5.0f%%\r",
             (char*)pUserData,
-            dDownloaded,
+            dlNow,
             dPercent);
         fflush(stdout);
     }
@@ -43,38 +45,125 @@ lrProgressCB(
 
 uint32_t
 set_progress_cb(
-    LrHandle *pRepoHandle,
-    const char *pszPkgName
+    CURL *pCurl,
+    const char *pszData
     )
 {
     uint32_t dwError = 0;
-    gboolean bRet = FALSE;
 
-    if(!pRepoHandle || IsNullOrEmptyString(pszPkgName))
+    if(!pCurl || IsNullOrEmptyString(pszData))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSCB, lrProgressCB);
-    if(bRet == FALSE)
-    {
-        //TODO: Add repo specific
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    bRet = lr_handle_setopt(pRepoHandle, NULL, LRO_PROGRESSDATA, pszPkgName);
-    if(bRet == FALSE)
-    {
-        //TODO: Add repo specific
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = curl_easy_setopt(pCurl, CURLOPT_XFERINFOFUNCTION, progress_cb);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, pszData);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
 
 cleanup:
     return dwError;
 
 error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadFile(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszFileUrl,
+    const char *pszFile,
+    const char *pszProgressData
+    )
+{
+    uint32_t dwError = 0;
+    CURL *pCurl = NULL;
+    FILE *fp = NULL;
+    char *pszUserPass = NULL;
+
+    if(!pTdnf ||
+       !pTdnf->pArgs ||
+       IsNullOrEmptyString(pszFileUrl) ||
+       IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pCurl = curl_easy_init();
+    if(!pCurl)
+    {
+        dwError = ERROR_TDNF_CURL_INIT;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRepoGetUserPass(pTdnf, pszRepo, &pszUserPass);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!IsNullOrEmptyString(pszUserPass))
+    {
+        dwError = curl_easy_setopt(
+                      pCurl,
+                      CURLOPT_USERPWD,
+                      pszUserPass);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_URL, pszFileUrl);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    if(pszProgressData)
+    {
+        dwError = set_progress_cb(pCurl, pszProgressData);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    fp = fopen(pszFile, "wb");
+    if(!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fp);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    dwError = curl_easy_perform(pCurl);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszUserPass);
+    if(fp)
+    {
+        fclose(fp);
+    }
+    if(pCurl)
+    {
+        curl_easy_cleanup(pCurl);
+    }
+    return dwError;
+
+error:
+    if(pCurl && TDNFIsCurlError(dwError))
+    {
+        uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
+        fprintf(stderr,
+                "download error: %d - %s\n",
+                nCurlError,
+                curl_easy_strerror(nCurlError));
+    }
     goto cleanup;
 }
 
@@ -86,33 +175,22 @@ TDNFDownloadPackage(
     )
 {
     uint32_t dwError = 0;
-    LrHandle *pRepoHandle = NULL;
-    GError* pError = NULL;
-    gboolean bRet = FALSE;
-    char* ppszUrls[] = {NULL, NULL};
     char* pszHyPackage = NULL;
     const char* pszRepo = NULL;
     char* pszUserPass = NULL;
     char* pszBaseUrl = NULL;
     const char* pszPkgName = NULL;
     int nSilent = 0;
-    
+    char *pszPackageUrl = NULL;
+    char *pszPackageFile = NULL;
+
     if(!pTdnf || !pTdnf->pArgs || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    nSilent = pTdnf->pArgs->nNoOutput;
-
-    pRepoHandle = lr_handle_init();
-
-    if(!pRepoHandle)
-    {
-        //TODO: Add repo specific
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    nSilent = pTdnf->pArgs->nQuiet;
 
     //Get package details
     pszHyPackage = hy_package_get_location(hPkg);
@@ -122,54 +200,34 @@ TDNFDownloadPackage(
     dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    ppszUrls[0] = pszBaseUrl;
-
-    lr_handle_setopt(pRepoHandle, NULL, LRO_URLS, ppszUrls);
-    lr_handle_setopt(pRepoHandle, NULL, LRO_REPOTYPE, LR_YUMREPO);
-    lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYPEER, 1);
-    lr_handle_setopt(pRepoHandle, NULL, LRO_SSLVERIFYHOST, 2);
-
-    dwError = TDNFRepoGetUserPass(pTdnf, pszRepo, &pszUserPass);
+    dwError = TDNFAllocateStringPrintf(&pszPackageUrl,
+                                       "%s/%s",
+                                       pszBaseUrl,
+                                       pszHyPackage);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(!IsNullOrEmptyString(pszUserPass))
-    {
-        lr_handle_setopt(pRepoHandle, NULL, LRO_USERPWD, pszUserPass);
-    }
+    dwError = TDNFAllocateStringPrintf(&pszPackageFile,
+                                       "%s/%s",
+                                       pszRpmCacheDir,
+                                       basename(pszHyPackage));
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFDownloadFile(pTdnf,
+                               pszRepo,
+                               pszPackageUrl,
+                               pszPackageFile,
+                               nSilent ? NULL : pszPkgName);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     if(!nSilent)
     {
-        dwError = set_progress_cb(pRepoHandle, pszPkgName);
-        BAIL_ON_TDNF_ERROR(dwError);
+        fprintf(stdout, "\n");
     }
-
-    dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pRepoHandle);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    bRet = lr_download_package (
-                         pRepoHandle,
-                         pszHyPackage,
-                         pszRpmCacheDir,
-                         LR_CHECKSUM_UNKNOWN,
-                         NULL,
-                         0, 
-                         NULL, 
-                         TRUE,
-                         &pError);
-
-    if(bRet == FALSE)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    fprintf(stdout, "\n");
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszPackageFile);
+    TDNF_SAFE_FREE_MEMORY(pszPackageUrl);
     TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
-    if(pRepoHandle)
-    {
-        lr_handle_free(pRepoHandle);
-    }
     if(pszHyPackage)
     {
         hy_free(pszHyPackage);
@@ -177,15 +235,5 @@ cleanup:
     return dwError;
 
 error:
-    if(pError)
-    {
-        fprintf(
-            stderr,
-            "Error during download: %d: %s\n",
-            pError->code,
-            pError->message
-            );
-        g_error_free(pError);
-    }
     goto cleanup;
 }

@@ -31,12 +31,9 @@ AC_CHECK_LIB(hawkey, hy_sack_count)
 PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_libglib=yes], [have_libglib=no])
 AM_CONDITIONAL([GLIB],  [test "$have_libglib" = "yes"])
 
-#librepo
-echo "Looking for librepo headers"
-AC_CHECK_HEADERS(librepo/librepo.h)
-
-echo "Looking for librepo libs"
-AC_CHECK_LIB(repo, lr_handle_init)
+#licurl
+PKG_CHECK_MODULES([LIBCURL], [libcurl], [have_libcurl=yes], [have_libcurl=no])
+AM_CONDITIONAL([LIBCURL],  [test "$have_libcurl" = "yes"])
 
 #rpm
 echo "Looking for librpm headers"
