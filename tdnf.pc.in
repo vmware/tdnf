@@ -6,6 +6,6 @@ includedir=@includedir@/tdnf
 Name: tdnf
 Description: tiny dandified yum
 Version: @VERSION@
-Requires:hawkey librepo rpm
+Requires:libsolv rpm
 Libs: -L${libdir} -ltdnfclient
 Cflags: -I${includedir}
