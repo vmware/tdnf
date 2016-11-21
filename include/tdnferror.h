@@ -68,7 +68,12 @@ extern "C" {
 //
 #define ERROR_TDNF_METADATA_EXPIRE_PARSE    1029
 
-#define ERROR_TDNF_SOLV_BASE          1300
+//curl errors
+#define ERROR_TDNF_CURL_INIT                1030
+#define ERROR_TDNF_CURL_BASE                1031
+#define ERROR_TDNF_CURL_END                 1299
+
+#define ERROR_TDNF_SOLV_BASE                1300
 // general runtime error
 #define ERROR_TDNF_SOLV_FAILED        (ERROR_TDNF_SOLV_BASE + 1)
 // client programming error

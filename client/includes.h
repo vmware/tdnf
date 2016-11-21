@@ -30,6 +30,7 @@
 #include <time.h>
 #include <utime.h>
 #include <fnmatch.h>
+#include <libgen.h>
 //
 #include <sys/utsname.h>
 //glib
@@ -37,8 +38,6 @@
 #include <glib/gstdio.h>
 
 #include "../solv/includes.h"
-//librepo
-#include <librepo/librepo.h>
 
 //librpm
 #include <rpm/rpmlib.h>
@@ -48,6 +47,9 @@
 #include <rpm/rpmts.h>
 #include <rpm/rpmkeyring.h>
 #include <rpm/header.h>
+
+//libcurl
+#include <curl/curl.h>
 
 #include <tdnfclient.h>
 

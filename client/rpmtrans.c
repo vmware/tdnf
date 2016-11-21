@@ -640,7 +640,7 @@ TDNFRemoveCachedRpms(
     for(dwIndex = 0; dwIndex < pCachedRpmsArray->len; ++dwIndex)
     {
         pszCachedRpm = g_array_index(pCachedRpmsArray, char*, dwIndex);
-        if(IsNullOrEmptyString(pszCachedRpm))
+        if(!IsNullOrEmptyString(pszCachedRpm))
         {
             if(unlink(pszCachedRpm))
             {

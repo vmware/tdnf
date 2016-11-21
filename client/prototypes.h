@@ -138,9 +138,19 @@ TDNFRepoGetKeyValueBoolean(
 uint32_t
 TDNFRepoApplyProxySettings(
     PTDNF_CONF pConf,
-    LrHandle* pRepoHandle
+    CURL *pCurl
     );
+
 //remoterepo.c
+uint32_t
+TDNFDownloadFile(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszFileUrl,
+    const char *pszFile,
+    const char *pszProgressData
+    );
+
 uint32_t
 TDNFDownloadPackage(
     PTDNF pTdnf,
@@ -398,15 +408,11 @@ TDNFConfigReplaceVars(
 
 //repo.c
 uint32_t
-TDNFPrintRepoMetadata(
-    LrYumRepoMd* pRepoMD
-    );
-
-uint32_t
-TDNFInitRepoFromMetaData(
+TDNFInitRepoFromMetadata(
     PSolvSack pSack,
     const char* pszRepoName,
-    LrYumRepo* pRepo);
+    PTDNF_REPO_METADATA pRepoMD
+    );
 
 uint32_t
 TDNFInitRepo(
@@ -428,6 +434,39 @@ TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszName,
     PTDNF_REPO_DATA* ppRepo
+    );
+
+uint32_t
+TDNFGetRepoMD(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepoData,
+    const char *pszRepoDataDir,
+    PTDNF_REPO_METADATA *ppRepoMD
+    );
+
+uint32_t
+TDNFEnsureRepoMDParts(
+    PTDNF pTdnf,
+    const char *pszBaseUrl,
+    PTDNF_REPO_METADATA pRepoMDRel,
+    PTDNF_REPO_METADATA *ppRepoMD
+    );
+
+uint32_t
+TDNFParseRepoMD(
+    PTDNF_REPO_METADATA pRepoMD
+    );
+
+uint32_t
+TDNFFindRepoMDPart(
+    Repo *pSolvRepo,
+    const char *pszType,
+    char **ppszPart
+    );
+
+void
+TDNFFreeRepoMetadata(
+    PTDNF_REPO_METADATA pRepoMD
     );
 
 //repolist.c
@@ -634,6 +673,11 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
 
 //utils.c
 uint32_t
+TDNFIsCurlError(
+    uint32_t dwError
+    );
+
+uint32_t
 TDNFIsSystemError(
     uint32_t dwError
     );
@@ -697,6 +741,14 @@ TDNFShouldSyncMetadata(
     const char* pszRepoDataFolder,
     long lMetadataExpire,
     int* pnShouldSync
+    );
+
+
+uint32_t
+TDNFAppendPath(
+    const char *pszBase,
+    const char *pszPart,
+    char **ppszPath
     );
 
 //validate.c

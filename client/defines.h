@@ -64,6 +64,15 @@ typedef enum
         }                                                          \
     } while(0)
 
+#define BAIL_ON_TDNF_CURL_ERROR(dwError) \
+    do {                                                           \
+        if (dwError)                                               \
+        {                                                          \
+            dwError = ERROR_TDNF_CURL_BASE + dwError;              \
+            goto error;                                            \
+        }                                                          \
+    } while(0)
+
 #define TDNF_SAFE_FREE_MEMORY(pMemory) \
     do {                                                           \
         if (pMemory) {                                             \
@@ -86,6 +95,12 @@ typedef enum
     } while(0)
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
+#define DIR_SEPARATOR                     '/'
+
+//repomd type
+#define TDNF_REPOMD_TYPE_PRIMARY          "primary"
+#define TDNF_REPOMD_TYPE_FILELISTS        "filelists"
+#define TDNF_REPOMD_TYPE_UPDATEINFO       "updateinfo"
 
 //Repo defines
 #define TDNF_REPO_EXT                     ".repo"
@@ -118,6 +133,8 @@ typedef enum
 
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
+#define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
+#define TDNF_REPO_METADATA_FILE_NAME      "repomd.xml"
 
 //Repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"

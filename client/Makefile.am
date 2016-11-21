@@ -2,6 +2,7 @@ lib_LTLIBRARIES = libtdnfclient.la
 libtdnfclient_la_CPPFLAGS = -I$(top_srcdir)/include
 
 AM_CFLAGS += $(GLIB_CFLAGS)
+AM_CFLAGS += $(LIBCURL_CFLAGS)
 
 libtdnfclient_la_SOURCES = \
     api.c \
@@ -25,7 +26,8 @@ libtdnfclient_la_SOURCES = \
 libtdnfclient_la_LIBADD =  \
     @top_builddir@/solv/libtdnfsolv.la \
     $(top_builddir)/common/libcommon.la \
-    -lrepo \
+    @GLIB_LIBS@ \
+    @LIBCURL_LIBS@ \
     -lrpm  \
     -lsolv \
     -lsolvext
