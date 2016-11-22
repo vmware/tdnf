@@ -703,7 +703,7 @@ SolvApplySearch(
     pPool = pQuery->pSack->pPool;
     pool_createwhatprovides(pPool);
 
-    for(nIndex = dwStartIndex; nIndex < dwStartIndex; nIndex++)
+    for(nIndex = dwStartIndex; nIndex < dwEndIndex; nIndex++)
     {
         queue_empty(&queueSel);
         queue_empty(&queueResult);
@@ -873,6 +873,128 @@ cleanup:
     return dwError;
 
 error:
+    if(ppPkgList)
+    {
+        *ppPkgList = NULL;
+    }
+    goto cleanup;
+
+}
+
+uint32_t
+SolvFindUpdateCandidateForSinglePkg(
+    PSolvSack pSack,
+    Queue* pQueueCadidate,
+    Id dwPkgId
+    )
+{
+    uint32_t dwError = 0;
+    char* pszName = NULL;
+    uint32_t dwCount = 0;
+    uint32_t dwPkgIndex = 0;
+    Id dwCandidateId = 0;
+    int dwEvrCompare = 0;
+    PSolvPackageList pUpdateCadidates = NULL;
+
+    if(!pSack || !pQueueCadidate)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetPkgNameFromId(pSack, dwPkgId, &pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvFindAvailablePkgByName(
+                  pSack,
+                  pszName,
+                  &pUpdateCadidates);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetPackageListSize(pUpdateCadidates, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
+    {
+        dwError = SolvGetPackageId(
+                      pUpdateCadidates,
+                      dwPkgIndex,
+                      &dwCandidateId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvCmpEvr(
+                      pSack,
+                      dwCandidateId,
+                      dwPkgId,
+                      &dwEvrCompare);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(dwEvrCompare > 0)
+        {
+            queue_push(pQueueCadidate, dwCandidateId);
+        }
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszName);
+    if(pUpdateCadidates)
+    {
+        SolvFreePackageList(pUpdateCadidates);
+    }
+
+    return dwError;
+
+error:
+    goto cleanup;
+
+}
+
+uint32_t
+SolvFindAllUpdateCandidates(
+    PSolvSack pSack,
+    PSolvPackageList  pInstaledPackages,
+    PSolvPackageList* ppPkgList)
+{
+    uint32_t dwError = 0;
+    uint32_t dwSize  = 0;
+    uint32_t dwPkgIndex = 0;
+    Queue queueUpdate = {0};
+    Id dwPkgId = 0;
+    PSolvPackageList pUpdateCadidates = NULL;
+    if(!pSack || !pSack->pPool || !pInstaledPackages ||
+       !ppPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    queue_init(&queueUpdate);
+
+    dwError = SolvGetPackageListSize(pInstaledPackages, &dwSize);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(dwPkgIndex = 0; dwPkgIndex < dwSize; dwPkgIndex++)
+    {
+        dwError = SolvGetPackageId(pInstaledPackages, dwPkgIndex, &dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvFindUpdateCandidateForSinglePkg(
+                      pSack,
+                      &queueUpdate,
+                      dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvQueueToPackageList(&queueUpdate, &pUpdateCadidates);
+    BAIL_ON_TDNF_ERROR(dwError);
+    *ppPkgList = pUpdateCadidates;
+
+cleanup:
+    return dwError;
+
+error:
+    if(pUpdateCadidates)
+    {
+        SolvFreePackageList(pUpdateCadidates);
+    }
     if(ppPkgList)
     {
         *ppPkgList = NULL;
