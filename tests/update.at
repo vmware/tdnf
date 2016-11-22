@@ -14,6 +14,7 @@ AT_CHECK([
 TDNF_CHROOT_CLEAN
 TDNF_CHROOT_INIT
 TDNF_BUILD_INSTALL_RPMS
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
 TDNF_CLI_W_CHROOT check-update
 ],
 [0],

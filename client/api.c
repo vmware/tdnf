@@ -234,28 +234,64 @@ TDNFCheckUpdates(
     )
 {
     uint32_t dwError = 0;
+    PSolvPackageList pInstalledPkgList = NULL;
+    PSolvPackageList pUpdateCandidates = NULL;
+    uint32_t dwCount = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
 
-    if(!pTdnf || !ppszPackageNameSpecs || !ppPkgInfo || !pdwCount)
+    if(!pTdnf || !ppPkgInfo || !pdwCount)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFList(
-                  pTdnf,
-                  SCOPE_UPGRADES,
-                  ppszPackageNameSpecs,
-                  ppPkgInfo,
-                  pdwCount);
+    if(!ppszPackageNameSpecs)
+    {
+        dwError = SolvFindAllInstalled(pTdnf->pSack, &pInstalledPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = SolvFindInstalledPkgByMultipleNames(
+                      pTdnf->pSack,
+                      ppszPackageNameSpecs,
+                      &pInstalledPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvFindAllUpdateCandidates(
+                  pTdnf->pSack,
+                  pInstalledPkgList,
+                  &pUpdateCandidates);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPopulatePkgInfoArray(
+                  pTdnf->pSack,
+                  pUpdateCandidates,
+                  DETAIL_LIST,
+                  &pPkgInfo,
+                  &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppPkgInfo = pPkgInfo;
+    *pdwCount = dwCount;
+
+cleanup:
+    if(pInstalledPkgList)
+    {
+        SolvFreePackageList(pInstalledPkgList);
+    }
+    if(pUpdateCandidates)
+    {
+        SolvFreePackageList(pUpdateCandidates);
+    }
+    return dwError;
+
+error:
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
         dwError = 0;
     }
-
-cleanup:
-    return dwError;
-
-error:
     if(ppPkgInfo)
     {
         *ppPkgInfo = NULL;

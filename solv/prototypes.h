@@ -295,11 +295,6 @@ SolvApplyProvidesQuery(
     );
 
 uint32_t
-SolvApplyDistroSyncQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
 SolvApplySearch(
     PSolvQuery pQuery,
     char** ppszSearchStrings,
@@ -384,6 +379,18 @@ SolvAddPkgUserInstalledJob(
     Queue* pQueueJobs,
     Id dwId
     );
+
+uint32_t
+SolvGetUpdateAdvisories(
+    PSolvSack pSack,
+    Id dwPkgIdpkg,
+    PSolvPackageList* ppPkgList);
+
+uint32_t
+SolvFindAllUpdateCandidates(
+    PSolvSack pSack,
+    PSolvPackageList  pInstaledPackages,
+    PSolvPackageList* ppPkgList);
 
 uint32_t
 SolvGetUpdateAdvisories(
