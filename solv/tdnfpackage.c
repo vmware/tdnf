@@ -81,6 +81,11 @@ SolvQueueToPackageList(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(pQueue->count == 0)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     dwError = SolvCreatePackageList(&pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
