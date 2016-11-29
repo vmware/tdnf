@@ -24,5 +24,6 @@
 #include "defines.h"
 #include "tdnferror.h"
 #include "../common/defines.h"
+#include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "prototypes.h"

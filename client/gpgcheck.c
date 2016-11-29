@@ -30,14 +30,13 @@ TDNFGPGCheck(
     uint32_t dwError = 0;
     char* pszKeyData = NULL;
 
-    if(!pKeyring || IsNullOrEmptyString(pszUrlKeyFile) ||
-       IsNullOrEmptyString(pszPkgFile))
+    if(!pKeyring || IsNullOrEmptyString(pszUrlKeyFile) || !pszPkgFile)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = AddKeyToKeyRing(pszUrlKeyFile, pKeyring);
+    dwError = AddKeyToKeyRing(pszUrlKeyFile, pKeyring); 
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = VerifyRpmSig(pKeyring, pszPkgFile);
@@ -51,6 +50,103 @@ error:
     goto cleanup;
 }
 
+uint32_t TDNFParseScheme(
+    const char* pszKeyUrl,
+    char** ppszScheme)
+{
+    uint32_t dwError = 0;
+    char* pszScheme = NULL;
+    const char* pszTmpStr = NULL;
+    int nLen = 0;
+    int i = 0;
+    if(IsNullOrEmptyString(pszKeyUrl) || !ppszScheme)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pszTmpStr = strchr(pszKeyUrl, ':');
+    if(pszTmpStr == NULL)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    nLen = pszTmpStr - pszKeyUrl;
+    dwError = TDNFAllocateMemory(
+                  nLen + 1,
+                  sizeof(char),
+                  (void**)&pszScheme);
+    BAIL_ON_TDNF_ERROR(dwError);
+    for(i = 0; i < nLen; i ++)
+    {
+        pszScheme[i] = pszKeyUrl[i];
+    }
+    *ppszScheme = pszScheme;
+cleanup:
+    return dwError;
+
+error:
+    if(ppszScheme)
+    {
+        *ppszScheme = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszScheme);
+    goto cleanup;
+}
+
+uint32_t FileNameFromUri(
+    const char* pszKeyUrl,
+    char** ppszFile)
+{
+    uint32_t dwError = 0;
+    const char* pszPath = NULL;
+    const char* pszFilePrefix = "file://";
+    char *pszFile = NULL;
+
+    if(strncmp(pszKeyUrl, pszFilePrefix, strlen(pszFilePrefix)) != 0)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pszPath = pszKeyUrl + strlen(pszFilePrefix);
+
+    if(!pszPath || *pszPath == '\0')
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (strchr (pszPath, '#') != NULL)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(*pszPath != '/')
+    {
+        //skip hostname in the uri.
+        pszPath = strchr (pszPath, '/');
+        if(pszPath == NULL)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    dwError = TDNFAllocateString(pszPath, &pszFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+    *ppszFile = pszFile;
+
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszFile);
+    if(ppszFile)
+    {
+        *ppszFile = NULL;
+    }
+    goto cleanup;
+}
+
 uint32_t
 ReadGPGKey(
    const char* pszKeyUrl,
@@ -58,35 +154,26 @@ ReadGPGKey(
    )
 {
     uint32_t dwError = 0;
-    gchar* pszScheme = NULL;
-    gchar* pszFile = NULL;
     char* pszKeyData = NULL;
     int nPathIsDir = 0;
-
+    char* pszScheme = NULL;
+    char* pszFile = NULL;
     if(IsNullOrEmptyString(pszKeyUrl) || !ppszKeyData)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pszScheme = g_uri_parse_scheme(pszKeyUrl);
-    if(!pszScheme)
-    {
-        dwError = ERROR_TDNF_KEYURL_INVALID;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError =  TDNFParseScheme(pszKeyUrl, &pszScheme);
+    BAIL_ON_TDNF_ERROR(dwError);
     if(strcasecmp("file", pszScheme))
     {
         dwError = ERROR_TDNF_KEYURL_UNSUPPORTED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pszFile = g_filename_from_uri(pszKeyUrl, NULL, NULL);
-    if(!pszFile)
-    {
-        dwError = ERROR_TDNF_KEYURL_INVALID;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = FileNameFromUri(pszKeyUrl, &pszFile);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFIsDir(pszFile, &nPathIsDir);
     if(dwError)
@@ -103,27 +190,18 @@ ReadGPGKey(
         dwError = ERROR_TDNF_KEYURL_INVALID;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    if(g_file_get_contents(pszFile, &pszKeyData, NULL, NULL) != TRUE)
-    {
-        dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFFileReadAllText(pszFile, &pszKeyData);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszKeyData = pszKeyData;
 
 cleanup:
-    if(pszScheme)
-    {
-        g_free(pszScheme);
-    }
-    if(pszFile)
-    {
-        g_free(pszFile);
-    }
+    TDNF_SAFE_FREE_MEMORY(pszScheme);
+    TDNF_SAFE_FREE_MEMORY(pszFile);
     return dwError;
 
 error:
+    TDNF_SAFE_FREE_MEMORY(pszKeyData);
     goto cleanup;
 }
 
@@ -243,7 +321,7 @@ VerifyRpmSig(
 
     if(!headerConvert(pPkgHeader, HEADERCONV_RETROFIT_V3))
     {
-        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED;
+        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED; 
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
 

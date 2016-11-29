@@ -76,3 +76,51 @@ void
 TDNFFreeStringArray(
     char** ppszArray
     );
+
+void
+TDNFFreeStringArrayWithCount(
+    char **ppszArray,
+    int nCount
+    );
+
+//configreader.c
+void
+TDNFPrintConfigData(
+    PCONF_DATA pData
+    );
+
+uint32_t
+TDNFReadConfigFile(
+    const char *pszFile,
+    const int nMaxLineLength,
+    PCONF_DATA *ppData
+    );
+
+uint32_t
+TDNFConfigGetSection(
+    PCONF_DATA pData,
+    const char *pszGroup,
+    PCONF_SECTION *ppSection
+    );
+
+void
+TDNFFreeConfigData(
+    PCONF_DATA pData
+    );
+
+uint32_t
+TDNFFileReadAllText(
+    const char *pszFileName,
+    char **ppszText
+    );
+
+const char *
+TDNFLeftTrim(
+    const char *pszStr
+    );
+
+const char *
+TDNFRightTrim(
+    const char *pszStart,
+    const char *pszEnd
+    );
