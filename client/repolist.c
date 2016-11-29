@@ -30,14 +30,14 @@ TDNFLoadRepoData(
 {
     uint32_t dwError = 0;
     char* pszRepoFilePath = NULL;
-    const char* pszFile = NULL;
-    
     PTDNF_REPO_DATA pReposAll = NULL;
-    PTDNF_REPO_DATA pReposTemp = NULL; 
+    PTDNF_REPO_DATA pReposTemp = NULL;
     PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_CONF pConf = NULL;
-
-    GDir* pDir = NULL;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
+    int nLen = 0;
+    int nLenRepoExt = 0;
 
     if(!pTdnf || !pTdnf->pConf || !ppReposAll)
     {
@@ -46,25 +46,34 @@ TDNFLoadRepoData(
     }
     pConf = pTdnf->pConf;
 
-    pDir = g_dir_open(pConf->pszRepoDir, 0, NULL);
-    if(!pDir)
+    pDir = opendir(pConf->pszRepoDir);
+    if(pDir == NULL)
     {
         dwError = ERROR_TDNF_REPO_DIR_OPEN;
-        BAIL_ON_TDNF_ERROR(dwError);
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    while ((pszFile = g_dir_read_name (pDir)) != NULL)
+    while ((pEnt = readdir (pDir)) != NULL )
     {
-        if (!g_str_has_suffix (pszFile, TDNF_REPO_EXT))
+        nLen = strlen(pEnt->d_name);
+        nLenRepoExt = strlen(TDNF_REPO_EXT);
+        if (nLen <= nLenRepoExt ||
+            strcmp(pEnt->d_name + nLen - nLenRepoExt, TDNF_REPO_EXT))
         {
             continue;
         }
-        pszRepoFilePath = g_build_filename(pConf->pszRepoDir, pszFile, NULL);
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pszRepoFilePath,
+                      "%s/%s",
+                      pConf->pszRepoDir,
+                      pEnt->d_name);
+        BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, &pRepos);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        g_free(pszRepoFilePath);
+        TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
         pszRepoFilePath = NULL;
 
         //Apply filter
@@ -96,14 +105,11 @@ TDNFLoadRepoData(
 cleanup:
     if(pDir)
     {
-        g_dir_close(pDir);
+        closedir(pDir);
     }
-    if(pszRepoFilePath)
-    {
-        g_free(pszRepoFilePath);
-    }
-    return dwError;
+    TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
 
+    return dwError;
 error:
     if(ppReposAll)
     {
@@ -113,8 +119,7 @@ error:
     {
         TDNFFreeRepos(pReposAll);
     }
-    goto cleanup;
-}
+    goto cleanup;}
 
 uint32_t
 TDNFLoadReposFromFile(
@@ -124,42 +129,22 @@ TDNFLoadReposFromFile(
     )
 {
     uint32_t dwError = 0;
-    int i = 0;
 
-    GKeyFile* pKeyFile = NULL;
-    char** ppszRepos = NULL;
     char* pszRepo = NULL;
-    char* pszValue = NULL;
     char* pszMetadataExpire = NULL;
 
     PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_REPO_DATA pRepo = NULL;
 
-    pKeyFile = g_key_file_new(); 
-    if(!pKeyFile)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    PCONF_DATA pData = NULL;
+    PCONF_SECTION pSections = NULL;
 
-    if(!g_key_file_load_from_file(
-            pKeyFile,
-            pszRepoFile,
-            G_KEY_FILE_KEEP_COMMENTS,
-            NULL))
+    dwError = TDNFReadConfigFile(pszRepoFile, 0, &pData);
+    BAIL_ON_TDNF_ERROR(dwError);
+    pSections = pData->pSections;
+    for(; pSections; pSections = pSections->pNext)
     {
-        dwError = ERROR_TDNF_REPO_FILE_LOAD;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    ppszRepos = g_key_file_get_groups (pKeyFile, NULL);
-    if(!ppszRepos)
-    {
-        dwError = ERROR_TDNF_INVALID_REPO_FILE;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    while(ppszRepos[i])
-    {
-        pszRepo = ppszRepos[i];
+        pszRepo = pSections->pszName;
 
         dwError = TDNFAllocateMemory(
                       1,
@@ -170,95 +155,75 @@ TDNFLoadReposFromFile(
         dwError = TDNFAllocateString(pszRepo, &pRepo->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValueBoolean(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValueBoolean(
+                      pSections,
                       TDNF_REPO_KEY_ENABLED,
                       0,
                       &pRepo->nEnabled);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_NAME,
                       NULL,
                       &pRepo->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_BASEURL,
                       NULL,
                       &pRepo->pszBaseUrl);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_METALINK,
                       NULL,
                       &pRepo->pszMetaLink);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValueBoolean(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValueBoolean(
+                      pSections,
                       TDNF_REPO_KEY_SKIP,
                       1,
                       &pRepo->nSkipIfUnavailable);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValueBoolean(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValueBoolean(
+                      pSections,
                       TDNF_REPO_KEY_GPGCHECK,
                       1,
                       &pRepo->nGPGCheck);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_GPGKEY,
                       NULL,
                       &pRepo->pszUrlGPGKey);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_USERNAME,
                       NULL,
                       &pRepo->pszUser);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_PASSWORD,
                       NULL,
                       &pRepo->pszPass);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoGetKeyValue(
-                      pKeyFile,
-                      pszRepo,
+        dwError = TDNFReadKeyValue(
+                      pSections,
                       TDNF_REPO_KEY_METADATA_EXPIRE,
-                      NULL,
+                      TDNF_REPO_DEFAULT_METADATA_EXPIRE,
                       &pszMetadataExpire);
         BAIL_ON_TDNF_ERROR(dwError);
-
-        //Set
-        if(IsNullOrEmptyString(pszMetadataExpire))
-        {
-            TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
-            dwError = TDNFAllocateString(
-                          TDNF_REPO_DEFAULT_METADATA_EXPIRE,
-                          &pszMetadataExpire);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
 
         dwError = TDNFParseMetadataExpire(
                       pszMetadataExpire,
@@ -271,17 +236,14 @@ TDNFLoadReposFromFile(
         pRepo->pNext = pRepos;
         pRepos = pRepo;
         pRepo = NULL;
-        i++; 
     }
 
     *ppRepos = pRepos;
 cleanup:
-    if(pKeyFile)
+    if(pData)
     {
-        g_key_file_free(pKeyFile);
+        TDNFFreeConfigData(pData);
     }
-    g_free(pszValue);
-    g_strfreev(ppszRepos);
     TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
     return dwError;
 
@@ -295,8 +257,7 @@ error:
     {
         TDNFFreeRepos(pRepos);
     }
-    goto cleanup;
-}
+    goto cleanup;}
 
 uint32_t
 TDNFRepoListFinalize(

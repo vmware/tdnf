@@ -28,11 +28,6 @@ AC_CHECK_HEADERS(solv/pool.h)
 echo "Looking for libsolv libs"
 AC_CHECK_LIB(solv, pool_create)
 
-
-#glib
-PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_libglib=yes], [have_libglib=no])
-AM_CONDITIONAL([GLIB],  [test "$have_libglib" = "yes"])
-
 #licurl
 PKG_CHECK_MODULES([LIBCURL], [libcurl], [have_libcurl=yes], [have_libcurl=no])
 AM_CONDITIONAL([LIBCURL],  [test "$have_libcurl" = "yes"])
