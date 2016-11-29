@@ -168,6 +168,22 @@ TDNFFreeStringArray(
     }
 }
 
+void
+TDNFFreeStringArrayWithCount(
+    char **ppszArray,
+    int nCount
+    )
+{
+    if(ppszArray)
+    {
+        while(nCount)
+        {
+            TDNFFreeMemory(ppszArray[--nCount]);
+        }
+        TDNFFreeMemory(ppszArray);
+    }
+}
+
 uint32_t
 TDNFAllocateStringN(
     const char* pszSrc,

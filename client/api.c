@@ -132,13 +132,15 @@ TDNFCheckLocalPackages(
 {
     uint32_t dwError = 0;
     char* pszRPMPath = NULL;
-    const char* pszFile = NULL;
-    GDir* pDir = NULL;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
     Repo *pCmdlineRepo = 0;
     Id    dwPkgAdded = 0;
     Queue queueJobs = {0};
     Solver *pSolv = NULL;
     uint32_t dwPackagesFound = 0;
+    int nLen = 0;
+    int nLenRpmExt = 0;
 
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool || !pszLocalPath)
     {
@@ -147,8 +149,8 @@ TDNFCheckLocalPackages(
     }
 
     queue_init(&queueJobs);
-    pDir = g_dir_open(pszLocalPath, 0, NULL);
-    if(!pDir)
+    pDir = opendir(pszLocalPath);
+    if(pDir == NULL)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -162,13 +164,22 @@ TDNFCheckLocalPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while ((pszFile = g_dir_read_name (pDir)) != NULL)
+    while ((pEnt = readdir (pDir)) != NULL )
     {
-        if (!g_str_has_suffix (pszFile, TDNF_RPM_EXT))
+        nLenRpmExt = strlen(TDNF_RPM_EXT);
+        nLen = strlen(pEnt->d_name);
+        if (nLen <= nLenRpmExt ||
+            strcmp(pEnt->d_name + nLen - nLenRpmExt, TDNF_RPM_EXT))
         {
             continue;
         }
-        pszRPMPath = g_build_filename(pszLocalPath, pszFile, NULL);
+        dwError = TDNFAllocateStringPrintf(
+                      &pszRPMPath,
+                      "%s/%s",
+                      pszLocalPath,
+                      pEnt->d_name);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwPkgAdded = repo_add_rpm(
                          pCmdlineRepo,
                          pszRPMPath,
@@ -180,7 +191,7 @@ TDNFCheckLocalPackages(
         }
         queue_push2(&queueJobs, SOLVER_SOLVABLE|SOLVER_INSTALL, dwPkgAdded);
         dwPackagesFound++;
-        g_free(pszRPMPath);
+        TDNF_SAFE_FREE_MEMORY(pszRPMPath);
         pszRPMPath = NULL;
     }
     repo_internalize(pCmdlineRepo);
@@ -213,12 +224,9 @@ cleanup:
     queue_free(&queueJobs);
     if(pDir)
     {
-        g_dir_close(pDir);
+        closedir(pDir);
     }
-    if(pszRPMPath)
-    {
-        g_free(pszRPMPath);
-    }
+    TDNF_SAFE_FREE_MEMORY(pszRPMPath);
     return dwError;
 
 error:

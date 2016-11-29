@@ -33,9 +33,9 @@
 #include <libgen.h>
 //
 #include <sys/utsname.h>
-//glib
-#include <glib.h>
-#include <glib/gstdio.h>
+
+#include <dirent.h>
+#include <pthread.h>
 
 #include "../solv/includes.h"
 
@@ -55,5 +55,6 @@
 
 #include "defines.h"
 #include "structs.h"
-#include "prototypes.h"
+#include "../common/structs.h"
 #include "../common/prototypes.h"
+#include "prototypes.h"
