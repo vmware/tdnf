@@ -39,7 +39,11 @@ TDNFRpmExecTransaction(
 
     nKeepCachedRpms = pTdnf->pConf->nKeepCache;
 
-    ts.pCachedRpmsArray = g_array_new(TRUE, TRUE, sizeof(char*));
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_CACHED_RPM_LIST),
+                  (void**)&ts.pCachedRpmsArray);
+
     if(!ts.pCachedRpmsArray)
     {
         dwError = ERROR_TDNF_OUT_OF_MEMORY;
@@ -81,7 +85,6 @@ TDNFRpmExecTransaction(
         dwError = ERROR_TDNF_RPMTS_SET_CB_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
 
     dwError = TDNFPopulateTransaction(&ts, pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -345,34 +348,38 @@ TDNFTransAddInstallPkg(
     int nGPGCheck = 0;
     char* pszRpmCacheDir = NULL;
     char* pszFilePath = NULL;
+    char* pszFilePathCopy = NULL;
     const char* pszRepoName = NULL;
     char* pszHyName = NULL;
     Header rpmHeader = NULL;
     FD_t fp = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
+    PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
 
     pszRepoName = hy_package_get_reponame(hPkg);
     pszHyName = hy_package_get_location(hPkg);
 
-    pszRpmCacheDir = g_build_filename(
-                           G_DIR_SEPARATOR_S,
-                           pTdnf->pConf->pszCacheDir,
-                           pszRepoName,
-                           "rpms",
-                           G_DIR_SEPARATOR_S,
-                           NULL);
-    pszFilePath = g_build_filename(pszRpmCacheDir, pszHyName, NULL);
-    if(pTS->pCachedRpmsArray)
-    {
-        if(!g_array_append_val(pTS->pCachedRpmsArray, pszFilePath))
-        {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
+    dwError = TDNFAllocateStringPrintf(
+                  &pszRpmCacheDir,
+                  "%s/%s/%s",
+                  pTdnf->pConf->pszCacheDir,
+                  pszRepoName,
+                  "rpms");
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    pszDownloadCacheDir = g_path_get_dirname(pszFilePath);
+    dwError = TDNFAllocateStringPrintf(
+                  &pszFilePath,
+                  "%s/%s",
+                  pszRpmCacheDir,
+                  pszHyName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    // dirname() may modify the contents of path, so it may be desirable to
+    // pass a copy when calling this function.
+    dwError = TDNFAllocateString(pszFilePath, &pszFilePathCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+    pszDownloadCacheDir = dirname(pszFilePathCopy);
     if(!pszDownloadCacheDir)
     {
         dwError = ENOENT;
@@ -445,20 +452,26 @@ TDNFTransAddInstallPkg(
                    nUpgrade,
                    NULL);
     BAIL_ON_TDNF_RPM_ERROR(dwError);
+
+    if(pTS->pCachedRpmsArray)
+    {
+        dwError = TDNFAllocateMemory(
+                      1,
+                      sizeof(TDNF_CACHED_RPM_ENTRY),
+                      (void**)&pRpmCache);
+        BAIL_ON_TDNF_ERROR(dwError);
+        pRpmCache->pszFilePath = pszFilePath;
+        pRpmCache->pNext = pTS->pCachedRpmsArray->pHead;
+        pTS->pCachedRpmsArray->pHead = pRpmCache;
+    }
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
     if(pszHyName)
     {
         hy_free(pszHyName);
     }
-    if(pszDownloadCacheDir)
-    {
-        g_free(pszDownloadCacheDir);
-    }
-    if(pszRpmCacheDir)
-    {
-        g_free(pszRpmCacheDir);
-    }
+    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
     if(fp)
     {
         Fclose(fp);
@@ -467,9 +480,15 @@ cleanup:
     {
         headerFree(rpmHeader);
     }
+    if(!pTS->pCachedRpmsArray && dwError == 0)
+    {
+        TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    }
     return dwError;
 
 error:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pRpmCache);
     goto cleanup;
 }
 
@@ -737,30 +756,29 @@ TDNFRpmCB(
 
 uint32_t
 TDNFRemoveCachedRpms(
-    GArray* pCachedRpmsArray
+    PTDNF_CACHED_RPM_LIST pCachedRpmsList
     )
 {
     uint32_t dwError = 0;
-    uint32_t dwIndex = 0;
-    char* pszCachedRpm = NULL;
+    PTDNF_CACHED_RPM_ENTRY pCur = NULL;
 
-    if(!pCachedRpmsArray)
+    if(!pCachedRpmsList)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    for(dwIndex = 0; dwIndex < pCachedRpmsArray->len; ++dwIndex)
+    pCur = pCachedRpmsList->pHead;
+    while(pCur != NULL)
     {
-        pszCachedRpm = g_array_index(pCachedRpmsArray, char*, dwIndex);
-        if(!IsNullOrEmptyString(pszCachedRpm))
+        if(!IsNullOrEmptyString(pCur->pszFilePath))
         {
-            if(unlink(pszCachedRpm))
+            if(unlink(pCur->pszFilePath))
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
             }
         }
+        pCur = pCur->pNext;
     }
 
 cleanup:
@@ -768,23 +786,27 @@ cleanup:
 
 error:
     goto cleanup;
+    return 1;
 }
 
 void
 TDNFFreeCachedRpmsArray(
-    GArray* pArray
+    PTDNF_CACHED_RPM_LIST pArray
     )
 {
-    uint32_t dwIndex = 0;
-    char* pszPath = NULL;
+    PTDNF_CACHED_RPM_ENTRY pCur = NULL;
+    PTDNF_CACHED_RPM_ENTRY pNext = NULL;
 
     if(pArray)
     {
-        for(dwIndex = 0; dwIndex < pArray->len; ++dwIndex)
+        pCur = pArray->pHead;
+        while(pCur != NULL)
         {
-            pszPath = g_array_index(pArray, char*, dwIndex);
-            TDNF_SAFE_FREE_MEMORY(pszPath);
+            pNext = pCur->pNext;
+            TDNF_SAFE_FREE_MEMORY(pCur->pszFilePath);
+            TDNF_SAFE_FREE_MEMORY(pCur);
+            pCur = pNext;
         }
-        g_array_free(pArray, TRUE);
+        TDNF_SAFE_FREE_MEMORY(pArray);
     }
 }
