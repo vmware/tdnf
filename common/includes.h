@@ -6,6 +6,7 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -16,4 +17,5 @@
 #include <tdnferror.h>
 
 #include "defines.h"
+#include "structs.h"
 #include "prototypes.h"
