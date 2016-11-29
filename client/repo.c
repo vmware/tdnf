@@ -44,27 +44,19 @@ TDNFInitRepo(
 
     pConf = pTdnf->pConf;
 
-    pszRepoCacheDir = g_build_path(
-                           G_DIR_SEPARATOR_S,
-                           pConf->pszCacheDir,
-                           pRepoData->pszId,
-                           NULL);
-    if(!pszRepoCacheDir)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFAllocateStringPrintf(
+                  &pszRepoCacheDir,
+                  "%s/%s",
+                  pConf->pszCacheDir,
+                  pRepoData->pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    pszRepoDataDir = g_build_path(
-                           G_DIR_SEPARATOR_S,
-                           pszRepoCacheDir,
-                           TDNF_REPODATA_DIR_NAME,
-                           NULL);
-    if(!pszRepoDataDir)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFAllocateStringPrintf(
+                  &pszRepoDataDir,
+                  "%s/%s",
+                  pszRepoCacheDir,
+                  TDNF_REPODATA_DIR_NAME);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetRepoMD(pTdnf,
                             pRepoData,
@@ -98,14 +90,8 @@ TDNFInitRepo(
 cleanup:
     TDNFFreeRepoMetadata(pRepoMD);
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
-    if(pszRepoDataDir)
-    {
-        g_free(pszRepoDataDir);
-    }
-    if(pszRepoCacheDir)
-    {
-        g_free(pszRepoCacheDir);
-    }
+    TDNF_SAFE_FREE_MEMORY(pszRepoDataDir);
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
 
     return dwError;
 

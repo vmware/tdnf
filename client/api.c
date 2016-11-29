@@ -134,12 +134,14 @@ TDNFCheckLocalPackages(
     uint32_t dwError = 0;
     int i = 0;
     char* pszRPMPath = NULL;
-    const char* pszFile = NULL;
-    GDir* pDir = NULL;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
     HySack hSack = NULL;
     HyPackage hPkg = NULL;
     HyGoal hGoal = NULL;
     HyPackageList hPkgList = NULL;
+    int nLen = 0;
+    int nLenRpmExt = 0;
 
     if(!pTdnf || !pszLocalPath)
     {
@@ -147,8 +149,8 @@ TDNFCheckLocalPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pDir = g_dir_open(pszLocalPath, 0, NULL);
-    if(!pDir)
+    pDir = opendir(pszLocalPath);
+    if(pDir == NULL)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -170,25 +172,34 @@ TDNFCheckLocalPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while ((pszFile = g_dir_read_name (pDir)) != NULL)
+    while ((pEnt = readdir (pDir)) != NULL )
     {
-        if (!g_str_has_suffix (pszFile, TDNF_RPM_EXT))
+        nLenRpmExt = strlen(TDNF_RPM_EXT);
+        nLen = strlen(pEnt->d_name);
+        if (nLen <= nLenRpmExt ||
+            strcmp(pEnt->d_name + nLen - nLenRpmExt, TDNF_RPM_EXT))
         {
             continue;
         }
-        pszRPMPath = g_build_filename(pszLocalPath, pszFile, NULL);
+        dwError = TDNFAllocateStringPrintf(
+                      &pszRPMPath,
+                      "%s/%s",
+                      pszLocalPath,
+                      pEnt->d_name);
+        BAIL_ON_TDNF_ERROR(dwError);
         hPkg = hy_sack_add_cmdline_package(hSack, pszRPMPath);
 
         if(!hPkg)
         {
-            dwError = ERROR_TDNF_INVALID_PARAMETER; 
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
         hy_packagelist_push(hPkgList, hPkg);
         hPkg = NULL;
 
-        g_free(pszRPMPath);
+        TDNF_SAFE_FREE_MEMORY(pszRPMPath);
         pszRPMPath = NULL;
+        printf ("%s\n", pEnt->d_name);
     }
 
     fprintf(stdout, "Found %d packages\n", hy_packagelist_count(hPkgList));
@@ -216,24 +227,21 @@ TDNFCheckLocalPackages(
 cleanup:
     if(pDir)
     {
-        g_dir_close(pDir);
+        closedir(pDir);
     }
-    if(pszRPMPath)
-    {
-        g_free(pszRPMPath);
-    }
+    TDNF_SAFE_FREE_MEMORY(pszRPMPath);
     if(hGoal)
     {
         hy_goal_free(hGoal);
-    } 
+    }
     if(hPkgList)
     {
         hy_packagelist_free(hPkgList);
-    } 
+    }
     if(hSack)
     {
         hy_sack_free(hSack);
-    } 
+    }
     return dwError;
 
 error:
@@ -310,9 +318,9 @@ TDNFClean(
     }
 
     dwError = TDNFAllocateMemory(
-                1,
-                sizeof(TDNF_CLEAN_INFO),
-                (void**)&pCleanInfo);
+                  1,
+                  sizeof(TDNF_CLEAN_INFO),
+                  (void**)&pCleanInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFCopyEnabledRepos(pTdnf->pRepos, &pCleanInfo->ppszReposUsed);
@@ -586,7 +594,8 @@ TDNFOpenHandle(
     dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadConfig(pTdnf,
+    dwError = TDNFReadConfig(
+                  pTdnf,
                   pTdnf->pArgs->pszConfFile,
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);

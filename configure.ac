@@ -27,10 +27,6 @@ AC_CHECK_HEADERS(hawkey/sack.h)
 echo "Looking for hawkey libs"
 AC_CHECK_LIB(hawkey, hy_sack_count)
 
-#glib
-PKG_CHECK_MODULES([GLIB], [glib-2.0], [have_libglib=yes], [have_libglib=no])
-AM_CONDITIONAL([GLIB],  [test "$have_libglib" = "yes"])
-
 #licurl
 PKG_CHECK_MODULES([LIBCURL], [libcurl], [have_libcurl=yes], [have_libcurl=no])
 AM_CONDITIONAL([LIBCURL],  [test "$have_libcurl" = "yes"])
