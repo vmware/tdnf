@@ -146,24 +146,6 @@ TDNFRepoRemoveCache(
     );
 
 uint32_t
-TDNFRepoGetKeyValue(
-    GKeyFile* pKeyFile,
-    const char* pszGroup,
-    const char* pszKeyName,
-    const char* pszDefault,
-    char** ppszValue
-    );
-
-uint32_t
-TDNFRepoGetKeyValueBoolean(
-    GKeyFile* pKeyFile,
-    const char* pszGroup,
-    const char* pszKeyName,
-    int nDefault,
-    int* pnValue
-    );
-
-uint32_t
 TDNFRepoApplyProxySettings(
     PTDNF_CONF pConf,
     CURL *pCurl
@@ -362,20 +344,36 @@ TDNFConfGetValue(
     TDNF_CONF_TYPE nType,
     char** ppszValue
     );
+
 uint32_t
 TDNFReadKeyValue(
-    GKeyFile* pKeyFile,
-    char* pszGroupName,
-    char* pszKeyName,
-    char* pszDefault,
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    const char* pszDefault,
     char** ppszValue
+    );
+
+uint32_t
+TDNFReadKeyValueBoolean(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    int nDefault,
+    int* pnValue
+    );
+
+uint32_t
+TDNFReadKeyValueInt(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    int nDefault,
+    int* pnValue
     );
 
 uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,
-    char* pszConfFile,
-    char* pszConfGroup
+    const char* pszConfFile,
+    const char* pszConfGroup
     );
 
 uint32_t
@@ -385,8 +383,7 @@ TDNFConfigExpandVars(
 
 uint32_t
 TDNFConfigReadProxySettings(
-    GKeyFile* pKeyFile,
-    char* pszGroup,
+    PCONF_SECTION pSection,
     PTDNF_CONF pConf);
 
 void
@@ -675,12 +672,12 @@ TDNFRunTransaction(
 
 uint32_t
 TDNFRemoveCachedRpms(
-    GArray* pCachedRpmsArray
+    PTDNF_CACHED_RPM_LIST pCachedRpmsList
     );
 
 void
 TDNFFreeCachedRpmsArray(
-    GArray* pArray
+    PTDNF_CACHED_RPM_LIST pArray
     );
 
 //memory.c
