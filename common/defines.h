@@ -20,6 +20,8 @@
 
 #pragma once
 
+#define MAX_CONFIG_LINE_LENGTH 1024
+ 
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 
 #define BAIL_ON_TDNF_ERROR(dwError) \

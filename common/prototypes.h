@@ -76,3 +76,97 @@ void
 TDNFFreeStringArray(
     char** ppszArray
     );
+
+void
+TDNFFreeStringArrayWithCount(
+    char **ppszArray,
+    int nCount
+    );
+
+//configreader.c
+void
+print_config_data(
+    PCONF_DATA pData
+    );
+
+uint32_t
+read_config_file_custom(
+    const char *pszFile,
+    const int nMaxLineLength,
+    PFN_CONF_SECTION_CB pfnSectionCB,
+    PFN_CONF_KEYVALUE_CB pfnKeyValueCB,
+    PCONF_DATA *ppData
+    );
+
+uint32_t
+read_config_file(
+    const char *pszFile,
+    const int nMaxLineLength,
+    PCONF_DATA *ppData
+    );
+
+uint32_t
+config_get_section(
+    PCONF_DATA pData,
+    const char *pszGroup,
+    PCONF_SECTION *ppSection
+    );
+
+void
+free_config_data(
+    PCONF_DATA pData
+    );
+
+//utils.c
+uint32_t
+dup_argv(
+    int argc,
+    char* const* argv,
+    char*** argvDup
+    );
+
+uint32_t
+PMDUtilsFormatSize(
+    uint32_t unSize,
+    char** ppszFormattedSize
+    );
+
+uint32_t
+file_read_all_text(
+    const char *pszFileName,
+    char **ppszText
+    );
+
+const char *
+ltrim(
+    const char *pszStr
+    );
+
+const char *
+rtrim(
+    const char *pszStart,
+    const char *pszEnd
+    );
+
+uint32_t
+count_matches(
+    const char *pszString,
+    const char *pszFind,
+    int *pnCount
+    );
+
+uint32_t
+string_replace(
+    const char *pszString,
+    const char *pszFind,
+    const char *pszReplace,
+    char **ppszResult
+    );
+
+uint32_t
+make_array_from_string(
+    const char *pszString,
+    const char *pszSeparator,
+    char ***pppszArray,
+    int *pnCount
+    );
