@@ -29,14 +29,26 @@ typedef struct _TDNF_
     PTDNF_REPO_DATA pRepos;
 }TDNF;
 
+typedef struct _TDNF_CACHED_RPM_ENTRY
+{
+    char* pszFilePath;
+    struct _TDNF_CACHED_RPM_ENTRY *pNext;
+}TDNF_CACHED_RPM_ENTRY, *PTDNF_CACHED_RPM_ENTRY;
+
+typedef struct _TDNF_CACHED_RPM_LIST
+{
+    int nSize;
+    PTDNF_CACHED_RPM_ENTRY pHead;
+}TDNF_CACHED_RPM_LIST, *PTDNF_CACHED_RPM_LIST;
+
 typedef struct _TDNF_RPM_TS_
 {
-  rpmts              pTS;
-  rpmKeyring         pKeyring;
-  rpmtransFlags      nTransFlags;
-  rpmprobFilterFlags nProbFilterFlags;
-  FD_t               pFD;
-  GArray*            pCachedRpmsArray;
+    rpmts                   pTS;
+    rpmKeyring              pKeyring;
+    rpmtransFlags           nTransFlags;
+    rpmprobFilterFlags      nProbFilterFlags;
+    FD_t                    pFD;
+    PTDNF_CACHED_RPM_LIST   pCachedRpmsArray;
 }TDNFRPMTS, *PTDNFRPMTS;
 
 typedef struct _TDNF_ENV_
@@ -54,3 +66,5 @@ typedef struct _TDNF_REPO_METADATA
     char *pszFileLists;
     char *pszUpdateInfo;
 }TDNF_REPO_METADATA,*PTDNF_REPO_METADATA;
+
+

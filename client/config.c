@@ -36,142 +36,96 @@ TDNFConfGetRpmVerbosity(
 uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,
-    char* pszFile,
-    char* pszGroup
+    const char* pszConfFile,
+    const char* pszGroup
     )
 {
     uint32_t dwError = 0;
-
-    GKeyFile* pKeyFile = NULL;
-
     PTDNF_CONF pConf = NULL;
+    PCONF_DATA pData = NULL;
+    PCONF_SECTION pSection = NULL;
 
     if(!pTdnf ||
-       IsNullOrEmptyString(pszFile) ||
+       IsNullOrEmptyString(pszConfFile) ||
        IsNullOrEmptyString(pszGroup))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pKeyFile = g_key_file_new(); 
-    if(!pKeyFile)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = read_config_file(pszConfFile, 0, &pData);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    if(!g_key_file_load_from_file(
-                pKeyFile,
-                pszFile,
-                G_KEY_FILE_KEEP_COMMENTS,
-                NULL))
-    {
-        dwError = ERROR_TDNF_CONF_FILE_LOAD;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    if(g_key_file_has_group(pKeyFile, pszGroup))
-    {
-        dwError = TDNFAllocateMemory(
-                    1,
-                    sizeof(TDNF_CONF),
-                    (void**)&pConf);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_CONF),
+                  (void**)&pConf);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        if(g_key_file_has_key(pKeyFile, pszGroup, TDNF_CONF_KEY_GPGCHECK, NULL))
-        {
-            if(g_key_file_get_boolean(
-                   pKeyFile,
-                   pszGroup,
-                   TDNF_CONF_KEY_GPGCHECK,
-                   NULL))
-            {
-                pConf->nGPGCheck=1;
-            }
-        }
-        if(g_key_file_has_key(
-                              pKeyFile,
-                              pszGroup,
-                              TDNF_CONF_KEY_INSTALLONLY_LIMIT,
-                              NULL))
-        {
-            pConf->nInstallOnlyLimit = g_key_file_get_integer(
-                                            pKeyFile,
-                                            pszGroup,
-                                            TDNF_CONF_KEY_INSTALLONLY_LIMIT,
-                                            NULL);
-        }
-        if(g_key_file_has_key(
-                pKeyFile,
-                pszGroup,
-                TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
-                NULL))
-        {
-            pConf->nCleanRequirementsOnRemove = 
-                     g_key_file_get_boolean(
-                          pKeyFile,
-                          pszGroup,
-                          TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
-                          NULL);
-        }
-        if(g_key_file_has_key(
-                pKeyFile,
-                pszGroup,
-                TDNF_CONF_KEY_KEEP_CACHE,
-                NULL))
-        {
-            pConf->nKeepCache =
-                     g_key_file_get_boolean(
-                          pKeyFile,
-                          pszGroup,
-                          TDNF_CONF_KEY_KEEP_CACHE,
-                          NULL);
-        }
-        dwError = TDNFReadKeyValue(
-                      pKeyFile,
-                      pszGroup,
-                      TDNF_CONF_KEY_REPODIR,
-                      TDNF_DEFAULT_REPO_LOCATION,
-                      &pConf->pszRepoDir);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = config_get_section(pData, pszGroup, &pSection);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFReadKeyValue(
-                      pKeyFile,
-                      pszGroup,
-                      TDNF_CONF_KEY_CACHEDIR,
-                      TDNF_DEFAULT_CACHE_LOCATION,
-                      &pConf->pszCacheDir);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFReadKeyValueInt(
+                  pSection,
+                  TDNF_CONF_KEY_INSTALLONLY_LIMIT,
+                  1,
+                  &pConf->nInstallOnlyLimit);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFReadKeyValue(
-                      pKeyFile,
-                      pszGroup,
-                      TDNF_CONF_KEY_DISTROVERPKG,
-                      TDNF_DEFAULT_DISTROVERPKG,
-                      &pConf->pszDistroVerPkg);
-        if(dwError == ERROR_TDNF_NO_DATA)
-        {
-            dwError = TDNFAllocateString(
-                          TDNF_DEFAULT_DISTROVERPKG,
-                          &pConf->pszDistroVerPkg);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFReadKeyValueBoolean(
+                  pSection,
+                  TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
+                  0,
+                  &pConf->nCleanRequirementsOnRemove);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFConfigReadProxySettings(
-                      pKeyFile,
-                      pszGroup,
-                      pConf);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFReadKeyValueBoolean(
+                  pSection,
+                  TDNF_CONF_KEY_GPGCHECK,
+                  0,
+                  &pConf->nGPGCheck);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    }
+    dwError = TDNFReadKeyValueBoolean(
+                  pSection,
+                  TDNF_CONF_KEY_KEEP_CACHE,
+                  0,
+                  &pConf->nKeepCache);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  TDNF_CONF_KEY_REPODIR,
+                  TDNF_DEFAULT_REPO_LOCATION,
+                  &pConf->pszRepoDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  TDNF_CONF_KEY_CACHEDIR,
+                  TDNF_DEFAULT_CACHE_LOCATION,
+                  &pConf->pszCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  TDNF_CONF_KEY_DISTROVERPKG,
+                  TDNF_DEFAULT_DISTROVERPKG,
+                  &pConf->pszDistroVerPkg);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFConfigReadProxySettings(
+                  pSection,
+                  pConf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
 
     pTdnf->pConf = pConf;
 
 cleanup:
-    if(pKeyFile)
+    if(pData)
     {
-        g_key_file_free(pKeyFile);
+        free_config_data(pData);
     }
     return dwError;
 
@@ -236,15 +190,14 @@ error:
 
 uint32_t
 TDNFConfigReadProxySettings(
-    GKeyFile* pKeyFile,
-    char* pszGroup,
+    PCONF_SECTION pSection,
     PTDNF_CONF pConf)
 {
     uint32_t dwError = 0;
     char* pszProxyUser = NULL;
     char* pszProxyPass = NULL;
 
-    if(!pKeyFile || !pszGroup || !pConf)
+    if(!pSection || !pConf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -252,8 +205,7 @@ TDNFConfigReadProxySettings(
 
     //optional proxy server
     dwError = TDNFReadKeyValue(
-                  pKeyFile,
-                  pszGroup,
+                  pSection,
                   TDNF_CONF_KEY_PROXY,
                   NULL,
                   &pConf->pszProxy);
@@ -267,8 +219,7 @@ TDNFConfigReadProxySettings(
     {
         //optional proxy user
         dwError = TDNFReadKeyValue(
-                      pKeyFile,
-                      pszGroup,
+                      pSection,
                       TDNF_CONF_KEY_PROXY_USER,
                       NULL,
                       &pszProxyUser);
@@ -280,8 +231,7 @@ TDNFConfigReadProxySettings(
 
         //optional proxy pass
         dwError = TDNFReadKeyValue(
-                      pKeyFile,
-                      pszGroup,
+                      pSection,
                       TDNF_CONF_KEY_PROXY_PASS,
                       NULL,
                       &pszProxyPass);
@@ -312,58 +262,153 @@ error:
 }
 
 uint32_t
+TDNFReadKeyValueBoolean(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    int nDefault,
+    int* pnValue
+    )
+{
+    uint32_t dwError = 0;
+    char* pszValue = NULL;
+    int nValue = 0;
+
+    if(!pSection || !pszKeyName || !pnValue)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  pszKeyName,
+                  NULL,
+                  &pszValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(pszValue)
+    {
+        if(!strcmp(pszValue, "1") || !strcasecmp(pszValue, "true"))
+        {
+            nValue = 1;
+        }
+    }
+    else
+    {
+        nValue = nDefault;
+    }
+
+    *pnValue = nValue;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszValue);
+    return dwError;
+
+error:
+    if(pnValue)
+    {
+        *pnValue = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFReadKeyValueInt(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    int nDefault,
+    int* pnValue
+    )
+{
+    uint32_t dwError = 0;
+    char* pszValue = NULL;
+    int nValue = 0;
+
+    if(!pSection || !pszKeyName || !pnValue)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  pszKeyName,
+                  NULL,
+                  &pszValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(pszValue)
+    {
+
+        nValue = atoi(pszValue);
+    }
+    else
+    {
+        nValue = nDefault;
+    }
+
+    *pnValue = nValue;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszValue);
+    return dwError;
+
+error:
+    if(pnValue)
+    {
+        *pnValue = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFReadKeyValue(
-    GKeyFile* pKeyFile,
-    char* pszGroupName,
-    char* pszKeyName,
-    char* pszDefault,
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    const char* pszDefault,
     char** ppszValue
     )
 {
     uint32_t dwError = 0;
     char* pszVal = NULL;
     char* pszValue = NULL;
+    PKEYVALUE pKeyValues = NULL;
     
-    if(!pKeyFile || !pszGroupName || !pszKeyName || !ppszValue)
+    if(!pSection || !pszKeyName || !ppszValue)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(!g_key_file_has_key(pKeyFile, pszGroupName, pszKeyName, NULL))
+    pKeyValues = pSection->pKeyValues;
+    for(; pKeyValues; pKeyValues = pKeyValues->pNext)
     {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pszVal = g_key_file_get_string(
-                    pKeyFile,
-                    pszGroupName,
-                    pszKeyName,
-                    NULL);
-    if(!pszVal && pszDefault)
-    {
-        pszVal = g_strdup(pszDefault);
-        if(!pszVal)
+        if(strcmp(pszKeyName, pKeyValues->pszKey) == 0)
         {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
+            dwError = TDNFAllocateString(pKeyValues->pszValue, &pszVal);
             BAIL_ON_TDNF_ERROR(dwError);
+            break;
         }
     }
-    if(!pszVal)
+
+    if(pszVal)
     {
-        dwError = ERROR_TDNF_NO_DATA;
+        dwError = TDNFAllocateString(
+                      pszVal,
+                      &pszValue);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else if(pszDefault)
+    {
+        dwError = TDNFAllocateString(
+                      pszDefault,
+                      &pszValue);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateString(
-                  pszVal,
-                  &pszValue);
-    BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     *ppszValue = pszValue;
 
 cleanup:
-    g_free(pszVal);
+    TDNF_SAFE_FREE_MEMORY(pszVal);
     return dwError;
 
 error:
