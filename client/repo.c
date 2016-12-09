@@ -298,6 +298,10 @@ TDNFGetRepoMD(
         }
 
         dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
+        if(dwError == ERROR_TDNF_ALREADY_EXISTS)
+        {
+            dwError = 0;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFDownloadFile(
