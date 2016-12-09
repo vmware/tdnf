@@ -230,6 +230,11 @@ TDNFRepoRemoveCache(
 
     while ((pEnt = readdir (pDir)) != NULL )
     {
+        if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
+        {
+            continue;
+        }
+
         dwError = TDNFAllocateStringPrintf(
                       &pszFilePath,
                       "%s/%s",
