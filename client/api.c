@@ -124,6 +124,13 @@ error:
     goto cleanup;
 }
 
+/* Compare files by name. */
+static int
+FTSEntcmp(const FTSENT **ppEntFirst, const FTSENT **ppEntSecond)
+{
+        return strcmp((*ppEntFirst)->fts_name, (*ppEntSecond)->fts_name);
+}
+
 //check a local rpm folder for dependency issues.
 uint32_t
 TDNFCheckLocalPackages(
@@ -133,15 +140,16 @@ TDNFCheckLocalPackages(
 {
     uint32_t dwError = 0;
     int i = 0;
-    char* pszRPMPath = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
+    FTS* pDir = NULL;
+    FTSENT* pEnt = NULL;
     HySack hSack = NULL;
     HyPackage hPkg = NULL;
     HyGoal hGoal = NULL;
     HyPackageList hPkgList = NULL;
     int nLen = 0;
     int nLenRpmExt = 0;
+    char* pszLocalPathCopy = NULL;
+    char *pszPathlist[2] = {NULL, NULL};
 
     if(!pTdnf || !pszLocalPath)
     {
@@ -149,7 +157,11 @@ TDNFCheckLocalPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pDir = opendir(pszLocalPath);
+    dwError = TDNFAllocateString(pszLocalPath, &pszLocalPathCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+    pszPathlist[0] = pszLocalPathCopy;
+
+    pDir = fts_open(pszPathlist, FTS_LOGICAL | FTS_NOSTAT, FTSEntcmp);
     if(pDir == NULL)
     {
         dwError = errno;
@@ -172,22 +184,20 @@ TDNFCheckLocalPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while ((pEnt = readdir (pDir)) != NULL )
+    while ((pEnt = fts_read(pDir)) != NULL )
     {
+        if(pEnt->fts_info != FTS_F)
+        {
+                continue;
+        }
         nLenRpmExt = strlen(TDNF_RPM_EXT);
-        nLen = strlen(pEnt->d_name);
+        nLen = strlen(pEnt->fts_name);
         if (nLen <= nLenRpmExt ||
-            strcmp(pEnt->d_name + nLen - nLenRpmExt, TDNF_RPM_EXT))
+            strcmp(pEnt->fts_name + nLen - nLenRpmExt, TDNF_RPM_EXT))
         {
             continue;
         }
-        dwError = TDNFAllocateStringPrintf(
-                      &pszRPMPath,
-                      "%s/%s",
-                      pszLocalPath,
-                      pEnt->d_name);
-        BAIL_ON_TDNF_ERROR(dwError);
-        hPkg = hy_sack_add_cmdline_package(hSack, pszRPMPath);
+        hPkg = hy_sack_add_cmdline_package(hSack, pEnt->fts_path);
 
         if(!hPkg)
         {
@@ -197,9 +207,7 @@ TDNFCheckLocalPackages(
         hy_packagelist_push(hPkgList, hPkg);
         hPkg = NULL;
 
-        TDNF_SAFE_FREE_MEMORY(pszRPMPath);
-        pszRPMPath = NULL;
-        printf ("%s\n", pEnt->d_name);
+        printf ("%s\n", pEnt->fts_path);
     }
 
     fprintf(stdout, "Found %d packages\n", hy_packagelist_count(hPkgList));
@@ -227,9 +235,9 @@ TDNFCheckLocalPackages(
 cleanup:
     if(pDir)
     {
-        closedir(pDir);
+        fts_close(pDir);
     }
-    TDNF_SAFE_FREE_MEMORY(pszRPMPath);
+    TDNF_SAFE_FREE_MEMORY(pszLocalPathCopy);
     if(hGoal)
     {
         hy_goal_free(hGoal);
