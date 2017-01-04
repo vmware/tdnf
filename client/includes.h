@@ -34,6 +34,7 @@
 //
 #include <sys/utsname.h>
 
+#include <fts.h>
 #include <dirent.h>
 #include <pthread.h>
 
