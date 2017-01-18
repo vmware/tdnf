@@ -207,14 +207,15 @@ error:
 uint32_t
 TDNFGetInstalled(
     HySack hSack,
-    HyPackageList* phPkgList
+    HyPackageList* phPkgList,
+    char** ppszPackageNameSpecs
     )
 {
     uint32_t dwError = 0;
     HyPackageList hPkgList = NULL;
     HyQuery hQuery = NULL;
 
-    if(!hSack || !phPkgList)
+    if(!hSack || !phPkgList || !ppszPackageNameSpecs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -226,13 +227,11 @@ TDNFGetInstalled(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    dwError = TDNFApplyScopeFilter(hQuery, SCOPE_INSTALLED);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = hy_query_filter(
-                  hQuery,
-                  HY_PKG_REPONAME,
-                  HY_EQ,
-                  HY_SYSTEM_REPO_NAME);
-    BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    dwError = TDNFApplyPackageFilter(hQuery, ppszPackageNameSpecs);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     hPkgList = hy_query_run(hQuery);
     if(!hPkgList)

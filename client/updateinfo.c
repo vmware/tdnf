@@ -32,6 +32,7 @@ TDNFUpdateInfoSummary(
     int nCount = 0;
     int iPkg = 0;
     int iAdv = 0;
+    int nPkgCount = 0;
     PTDNF_UPDATEINFO_SUMMARY pSummary = NULL;
 
     HyPackage hPkg = NULL;
@@ -47,8 +48,15 @@ TDNFUpdateInfoSummary(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgList);
+    dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgList, ppszPackageNameSpecs);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    nPkgCount = hy_packagelist_count(hPkgList);
+    if(nPkgCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFAllocateMemory(
                    nTypeCount + 1,
