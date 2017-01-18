@@ -413,15 +413,15 @@ TDNFInfo(
 
     if(!pTdnf || !pdwCount || !ppPkgInfo)
     {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     hQuery = hy_query_create(pTdnf->hSack);
     if(!hQuery)
     {
-      dwError = HY_E_IO;
-      BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
     }
 
     dwError = TDNFApplyScopeFilter(hQuery, nScope);
@@ -433,8 +433,8 @@ TDNFInfo(
     hPkgList = hy_query_run(hQuery);
     if(!hPkgList)
     {
-      dwError = HY_E_IO;
-      BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
     }
 
     dwError = TDNFPopulatePkgInfoArray(
@@ -539,11 +539,11 @@ cleanup:
 error:
     if(ppPkgInfo)
     {
-      *ppPkgInfo = NULL;
+        *ppPkgInfo = NULL;
     }
     if(pdwCount)
     {
-      *pdwCount = 0;
+        *pdwCount = 0;
     }
     if(pPkgInfo)
     {
@@ -1025,6 +1025,7 @@ TDNFUpdateInfo(
     int iPkg = 0;
     int iAdv = 0;
     time_t dwUpdated = 0;
+    int nPkgCount = 0;
 
     PTDNF_UPDATEINFO pUpdateInfos = NULL;
     PTDNF_UPDATEINFO pInfo = NULL;
@@ -1044,8 +1045,15 @@ TDNFUpdateInfo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgList);
+    dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgList, ppszPackageNameSpecs);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    nPkgCount = hy_packagelist_count(hPkgList);
+    if(nPkgCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     FOR_PACKAGELIST(hPkg, hPkgList, iPkg)
     {

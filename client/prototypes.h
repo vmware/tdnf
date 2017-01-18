@@ -192,7 +192,8 @@ TDNFFindInstalledPkgByPkg(
 uint32_t
 TDNFGetInstalled(
     HySack hSack,
-    HyPackageList* phPkgList
+    HyPackageList* phPkgList,
+    char** ppszPackageNameSpecs
     );
 
 uint32_t
