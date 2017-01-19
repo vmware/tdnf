@@ -483,6 +483,15 @@ PrintAction(
             BAIL_ON_CLI_ERROR(dwError);
         }
 
+        if (nAlterType == ALTER_INSTALL)
+        {
+            printf(
+                "%-*s%-*s\n",
+                nColWidths[0],
+                "Repository Name :",
+                nColWidths[1] + nColWidths[2],
+                pPkgInfo->pszRepoName);
+        }
         printf(
             "%-*s%-*s%-*s%*s\n",
             nColWidths[0],
