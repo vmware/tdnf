@@ -424,9 +424,9 @@ PrintAction(
     uint32_t dwTotalInstallSize = 0;
     char* pszTotalInstallSize = NULL;
 
-    #define COL_COUNT 4
-    //Name | Arch | Version-Release | Install Size
-    int nColPercents[COL_COUNT] = {40, 15, 25, 10};
+    #define COL_COUNT 5
+    //Name | Arch | Version-Release | Repository | Install Size
+    int nColPercents[COL_COUNT] = {30, 15, 20, 15, 10};
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
@@ -484,7 +484,7 @@ PrintAction(
         }
 
         printf(
-            "%-*s%-*s%-*s%*s\n",
+            "%-*s%-*s%-*s%-*s%*s\n",
             nColWidths[0],
             pPkgInfo->pszName,
             nColWidths[1],
@@ -492,6 +492,8 @@ PrintAction(
             nColWidths[2],
             szVersionAndRelease,
             nColWidths[3],
+            pPkgInfo->pszRepoName,
+            nColWidths[4],
             pPkgInfo->pszFormattedSize);
         pPkgInfo = pPkgInfo->pNext;
     }
