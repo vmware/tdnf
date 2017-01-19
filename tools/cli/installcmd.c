@@ -423,14 +423,16 @@ PrintAction(
 
     uint32_t dwTotalInstallSize = 0;
     char* pszTotalInstallSize = NULL;
+    char  *pszEmptyString = "";
 
-    #define COL_COUNT 4
-    //Name | Arch | Version-Release | Install Size
-    int nColPercents[COL_COUNT] = {40, 15, 25, 10};
+    #define COL_COUNT 5
+    //Name | Arch | Version-Release | Repository | Install Size
+    int nColPercents[COL_COUNT] = {30, 15, 20, 15, 10};
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
     char szVersionAndRelease[MAX_COL_LEN] = {0};
+    char *ppszInfoToPrint[MAX_COL_LEN] = {0};
 
     if(!pPkgInfos)
     {
@@ -483,16 +485,28 @@ PrintAction(
             BAIL_ON_CLI_ERROR(dwError);
         }
 
+        ppszInfoToPrint[0] = pPkgInfo->pszName == NULL ?
+                                 pszEmptyString : pPkgInfo->pszName;
+        ppszInfoToPrint[1] = pPkgInfo->pszArch == NULL ?
+                                 pszEmptyString : pPkgInfo->pszArch;
+        ppszInfoToPrint[2] = szVersionAndRelease == NULL ?
+                                 pszEmptyString : szVersionAndRelease;
+        ppszInfoToPrint[3] = pPkgInfo->pszRepoName == NULL ?
+                                 pszEmptyString : pPkgInfo->pszRepoName;
+        ppszInfoToPrint[4] = pPkgInfo->pszFormattedSize == NULL ?
+                                 pszEmptyString : pPkgInfo->pszFormattedSize;
         printf(
-            "%-*s%-*s%-*s%*s\n",
+            "%-*s%-*s%-*s%-*s%*s\n",
             nColWidths[0],
-            pPkgInfo->pszName,
+            ppszInfoToPrint[0],
             nColWidths[1],
-            pPkgInfo->pszArch,
+            ppszInfoToPrint[1],
             nColWidths[2],
-            szVersionAndRelease,
+            ppszInfoToPrint[2],
             nColWidths[3],
-            pPkgInfo->pszFormattedSize);
+            ppszInfoToPrint[3],
+            nColWidths[4],
+            ppszInfoToPrint[4]);
         pPkgInfo = pPkgInfo->pNext;
     }
 
