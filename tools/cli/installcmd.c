@@ -423,10 +423,12 @@ PrintAction(
 
     uint32_t dwTotalInstallSize = 0;
     char* pszTotalInstallSize = NULL;
+    int   dwTotalColWidth = 0;
+    int   i = 0;
 
-    #define COL_COUNT 4
+    #define COL_COUNT 5
     //Name | Arch | Version-Release | Install Size
-    int nColPercents[COL_COUNT] = {40, 15, 25, 10};
+    int nColPercents[COL_COUNT] = {30, 15, 20, 15, 10};
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
@@ -436,6 +438,36 @@ PrintAction(
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    for(i = 0; i < COL_COUNT; ++i)
+    {
+        dwTotalColWidth += nColWidths[i];
+    }
+    for(int i = 0; i < dwTotalColWidth; ++i)
+    {
+        printf("%c", '=');
+    }
+    printf("\n");
+    printf(
+        "%-*s%-*s%-*s%-*s%*s\n",
+        nColWidths[0],
+        "Package",
+        nColWidths[1],
+        "Arch",
+        nColWidths[2],
+        "Version",
+        nColWidths[3],
+        "Repository",
+        nColWidths[4],
+        "Size");
+
+    for(int i = 0; i < dwTotalColWidth; ++i)
+    {
+        printf("%c", '=');
     }
 
     switch(nAlterType)
@@ -464,9 +496,6 @@ PrintAction(
     }
     printf("\n");
 
-    dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
-    BAIL_ON_CLI_ERROR(dwError);
-
     pPkgInfo = pPkgInfos;
     while(pPkgInfo)
     {
@@ -484,7 +513,7 @@ PrintAction(
         }
 
         printf(
-            "%-*s%-*s%-*s%*s\n",
+            "%-*s%-*s%-*s%-*s%*s\n",
             nColWidths[0],
             pPkgInfo->pszName,
             nColWidths[1],
@@ -492,6 +521,8 @@ PrintAction(
             nColWidths[2],
             szVersionAndRelease,
             nColWidths[3],
+            pPkgInfo->pszRepoName,
+            nColWidths[4],
             pPkgInfo->pszFormattedSize);
         pPkgInfo = pPkgInfo->pNext;
     }
