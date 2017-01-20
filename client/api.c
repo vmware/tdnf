@@ -802,6 +802,7 @@ TDNFResolve(
     HyPackageList hPkgListGoal = NULL;
 
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
 
     if(!pTdnf || !ppSolvedPkgInfo)
     {
@@ -819,9 +820,9 @@ TDNFResolve(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
-                1,
-                sizeof(TDNF_SOLVED_PKG_INFO),
-                (void**)&pSolvedPkgInfo);
+                  1,
+                  sizeof(TDNF_SOLVED_PKG_INFO),
+                  (void**)&pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nAlterType = nAlterType;
@@ -843,6 +844,18 @@ TDNFResolve(
                   hPkgListGoal,
                   pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    pPkgInfo = pSolvedPkgInfo->pPkgsToRemove;
+    while(pPkgInfo != NULL)
+    {
+        if(pPkgInfo->pszName != NULL &&
+           strcmp(pPkgInfo->pszName, TDNF_NAME) == 0)
+        {
+            dwError = ERROR_TDNF_SELF_ERASE;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pPkgInfo = pPkgInfo->pNext;
+    }
 
     pSolvedPkgInfo->nNeedAction = 
         pSolvedPkgInfo->pPkgsToInstall ||
@@ -965,9 +978,9 @@ TDNFSearchCommand(
     }
 
     unError = TDNFAllocateMemory(
-                unCount,
-                sizeof(TDNF_PKG_INFO),
-                (void**)&pPkgInfo);
+                  unCount,
+                  sizeof(TDNF_PKG_INFO),
+                  (void**)&pPkgInfo);
 
     BAIL_ON_TDNF_ERROR(unError);
 
@@ -977,7 +990,8 @@ TDNFSearchCommand(
         unError = TDNFSafeAllocateString(hy_package_get_name(hPkg), &pPkg->pszName);
         BAIL_ON_TDNF_ERROR(unError);
 
-        unError = TDNFSafeAllocateString(hy_package_get_summary(hPkg), &pPkg->pszSummary);
+        unError = TDNFSafeAllocateString(hy_package_get_summary(hPkg),
+                      &pPkg->pszSummary);
         BAIL_ON_TDNF_ERROR(unError);
     }
 
