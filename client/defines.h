@@ -109,6 +109,7 @@ typedef enum
     } while(0)
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
+#define TDNF_NAME                         "tdnf"
 #define DIR_SEPARATOR                     '/'
 
 //repomd type
@@ -216,4 +217,5 @@ typedef enum
     {ERROR_TDNF_AUTOERASE_UNSUPPORTED,"ERROR_TDNF_AUTOERASE_UNSUPPORTED","autoerase / autoremove is not supported."}, \
     {ERROR_TDNF_RPM_CHECK,           "ERROR_TDNF_RPM_CHECK",           "rpm check reported errors"}, \
     {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
+    {ERROR_TDNF_SELF_ERASE, "ERROR_TDNF_SELF_ERASE", "The operation would result in removing the protected package : tdnf"},\
 };
