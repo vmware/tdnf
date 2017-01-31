@@ -909,7 +909,7 @@ TDNFSearchCommand(
     int nIndex = 0;
     int nStartArgIndex = 1;
     const char* pszFirstParam = NULL;
-    bool bSearchAll = false;
+    int bSearchAll = false;
     PTDNF_PKG_INFO pPkgInfo = NULL;
 
     if(!pTdnf || !pCmdArgs || !ppPkgInfo || !punCount)
