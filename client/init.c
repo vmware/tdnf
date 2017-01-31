@@ -43,10 +43,6 @@ cleanup:
     return dwError;
 
 error:
-    if(hSack)
-    {
-        hy_sack_free(hSack);
-    }
     goto cleanup;
 }
 
@@ -244,15 +240,114 @@ error:
 }
 
 uint32_t
-TDNFRefreshSack(
+TNDFRefreshRepo(
     PTDNF pTdnf,
-    int nCleanMetadata
+    int nCleanMetadata,
+    PTDNF_REPO_DATA pRepo
     )
 {
     uint32_t dwError = 0;
     HyRepo hRepo = NULL;
     int nYumFlags = HY_LOAD_FILELISTS | HY_LOAD_UPDATEINFO;
     char* pszRepoCacheDir = NULL;
+    int nMetadataExpired = 0;
+
+    if(!pTdnf || !pTdnf->hSack || !pRepo || !pRepo->nEnabled)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //Check if expired since last sync per metadata_expire
+    if(!nCleanMetadata && pRepo->lMetadataExpire >= 0)
+    {
+        dwError = TDNFAllocateStringPrintf(
+                      &pszRepoCacheDir,
+                      "%s/%s",
+                      pTdnf->pConf->pszCacheDir,
+                      pRepo->pszId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFShouldSyncMetadata(
+                      pszRepoCacheDir,
+                      pRepo->lMetadataExpire,
+                      &nMetadataExpired);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+        pszRepoCacheDir = NULL;
+    }
+
+    if(nCleanMetadata || nMetadataExpired)
+    {
+        fprintf(stdout,
+                "Refreshing metadata for: '%s'\n",
+                pRepo->pszName);
+        dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+        if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
+        {
+            dwError = 0;//Ignore non existent folders
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFInitRepo(pTdnf, pRepo, &hRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(pRepo->hRepo)
+    {
+        hy_repo_free(pRepo->hRepo);
+        pRepo->hRepo = NULL;
+    }
+    pRepo->hRepo = hRepo;
+
+    dwError = TDNFLoadYumRepo(pTdnf->hSack, hRepo, nYumFlags);
+
+    if(dwError)
+    {
+        fprintf(
+            stderr,
+            "Error: Failed to synchronize cache for repo '%s' from '%s'\n",
+            pRepo->pszName, pRepo->pszBaseUrl);
+
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+    return dwError;
+
+error:
+    if(pRepo)
+    {
+        pRepo->hRepo = NULL;
+        if(pRepo->nEnabled && pTdnf)
+        {
+            TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+        }
+        if(pRepo->nSkipIfUnavailable)
+        {
+            pRepo->nEnabled = 0;
+            fprintf(stdout, "Disabling Repo: '%s'\n", pRepo->pszName);
+            dwError = 0;
+        }
+    }
+    if(hRepo)
+    {
+        hy_repo_free(hRepo);
+    }
+
+    goto cleanup;
+}
+
+uint32_t
+TDNFRefreshSack(
+    PTDNF pTdnf,
+    int nCleanMetadata
+    )
+{
+    uint32_t dwError = 0;
 
     if(!pTdnf)
     {
@@ -275,74 +370,16 @@ TDNFRefreshSack(
         PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
         while(pTempRepo)
         {
-            int nMetadataExpired = 0;
             if(pTempRepo->nEnabled)
             {
-                //Check if expired since last sync per metadata_expire
-                if(!nCleanMetadata && pTempRepo->lMetadataExpire >= 0)
-                {
-                    dwError = TDNFAllocateStringPrintf(
-                                  &pszRepoCacheDir,
-                                  "%s/%s",
-                                  pTdnf->pConf->pszCacheDir,
-                                  pTempRepo->pszId);
-                    BAIL_ON_TDNF_ERROR(dwError);
-
-                    dwError = TDNFShouldSyncMetadata(
-                                  pszRepoCacheDir,
-                                  pTempRepo->lMetadataExpire,
-                                  &nMetadataExpired);
-                    BAIL_ON_TDNF_ERROR(dwError);
-
-                    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
-                    pszRepoCacheDir = NULL;
-                }
-
-                if(nCleanMetadata || nMetadataExpired)
-                {
-                    fprintf(stdout,
-                            "Refreshing metadata for: '%s'\n",
-                            pTempRepo->pszName);
-                    dwError = TDNFRepoRemoveCache(pTdnf, pTempRepo->pszId);
-                    if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
-                    {
-                        dwError = 0;//Ignore non existent folders
-                    }
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
-
-                dwError = TDNFInitRepo(pTdnf, pTempRepo, &hRepo);
-                if(dwError)
-                {
-                    if(pTempRepo->nSkipIfUnavailable)
-                    {
-                        pTempRepo->nEnabled = 0;
-                        fprintf(stdout, "Disabling Repo: '%s'\n", pTempRepo->pszName);
-
-                        dwError = 0;
-                    }
-                }
+                dwError = TNDFRefreshRepo(pTdnf, nCleanMetadata, pTempRepo);
                 BAIL_ON_TDNF_ERROR(dwError);
-
-                if(pTempRepo->nEnabled)
-                {
-                    if(pTempRepo->hRepo)
-                    {
-                        hy_repo_free(pTempRepo->hRepo);
-                        pTempRepo->hRepo = NULL;
-                    }
-                    pTempRepo->hRepo = hRepo;
-
-                    dwError = TDNFLoadYumRepo(pTdnf->hSack, hRepo, nYumFlags);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
             }
             pTempRepo = pTempRepo->pNext;
         }
     }
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     return dwError;
 
 error:
