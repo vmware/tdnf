@@ -489,8 +489,7 @@ PrintAction(
                                  pszEmptyString : pPkgInfo->pszName;
         ppszInfoToPrint[1] = pPkgInfo->pszArch == NULL ?
                                  pszEmptyString : pPkgInfo->pszArch;
-        ppszInfoToPrint[2] = szVersionAndRelease == NULL ?
-                                 pszEmptyString : szVersionAndRelease;
+        ppszInfoToPrint[2] = szVersionAndRelease;
         ppszInfoToPrint[3] = pPkgInfo->pszRepoName == NULL ?
                                  pszEmptyString : pPkgInfo->pszRepoName;
         ppszInfoToPrint[4] = pPkgInfo->pszFormattedSize == NULL ?
