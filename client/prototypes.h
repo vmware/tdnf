@@ -101,6 +101,13 @@ TDNFLoadYumRepo(
     );
 
 uint32_t
+TNDFRefreshRepo(
+    PTDNF pTdnf,
+    int nCleanMetadata,
+    PTDNF_REPO_DATA pRepo
+    );
+
+uint32_t
 TDNFRefreshSack(
     PTDNF pTdnf,
     int nCleanMetadata
