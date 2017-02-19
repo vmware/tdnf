@@ -22,6 +22,69 @@
 #include "includes.h"
 
 uint32_t
+TDNFCliParseInfoArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_LIST_ARGS* ppListArgs
+    )
+{
+    return TDNFCliParseListArgs(
+        pCmdArgs,
+        ppListArgs);
+}
+
+uint32_t
+TDNFCliParsePackageArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    char*** pppszPackageArgs,
+    int* pnPackageCount
+    )
+{
+    uint32_t dwError = 0;
+    char** ppszPackageArgs = NULL;
+    int nPackageCount = 0;
+    int nIndex = 0;
+
+    if(!pCmdArgs || !pppszPackageArgs || !pnPackageCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    nPackageCount = pCmdArgs->nCmdCount - 1;
+    if(nPackageCount < 0)
+    {
+        dwError = ERROR_TDNF_CLI_NOT_ENOUGH_ARGS;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  nPackageCount + 1,
+                  sizeof(char*),
+                  (void**)&ppszPackageArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    for(nIndex = 0; nIndex < nPackageCount; ++nIndex)
+    {
+        dwError = TDNFAllocateString(
+                      pCmdArgs->ppszCmds[nIndex+1],
+                      &ppszPackageArgs[nIndex]);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    *pppszPackageArgs = ppszPackageArgs;
+cleanup:
+    return dwError;
+
+error:
+    if(pppszPackageArgs)
+    {
+        *pppszPackageArgs = NULL;
+    }
+    TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
+    goto cleanup;
+}
+
+uint32_t
 TDNFCliParseListArgs(
     PTDNF_CMD_ARGS pCmdArgs,
     PTDNF_LIST_ARGS* ppListArgs
@@ -48,7 +111,7 @@ TDNFCliParseListArgs(
     if(pCmdArgs->nCmdCount > 1)
     {
         nStartIndex = 2;
-        dwError = ParseScope(pCmdArgs->ppszCmds[1], &pListArgs->nScope);
+        dwError = TDNFCliParseScope(pCmdArgs->ppszCmds[1], &pListArgs->nScope);
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
         {
             dwError = 0;
@@ -84,13 +147,13 @@ error:
     }
     if(pListArgs)
     {
-        TDNFFreeListArgs(pListArgs);
+        TDNFCliFreeListArgs(pListArgs);
     }
     goto cleanup;
 }
 
 uint32_t
-ParseScope(
+TDNFCliParseScope(
     const char* pszScope,
     TDNF_SCOPE* pnScope
     )
@@ -143,7 +206,7 @@ error:
 }
 
 void
-TDNFFreeListArgs(
+TDNFCliFreeListArgs(
     PTDNF_LIST_ARGS pListArgs
     )
 {
