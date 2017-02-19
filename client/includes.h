@@ -73,7 +73,7 @@
 //libcurl
 #include <curl/curl.h>
 
-#include <tdnfclient.h>
+#include <tdnf.h>
 
 #include "defines.h"
 #include "structs.h"

@@ -83,15 +83,3 @@ error:
     TDNF_SAFE_FREE_STRINGARRAY(ppszReposUsed);
     goto cleanup;
 }
-
-void
-TDNFFreeCleanInfo(
-    PTDNF_CLEAN_INFO pCleanInfo
-    )
-{
-    if(pCleanInfo)
-    {
-        TDNF_SAFE_FREE_STRINGARRAY(pCleanInfo->ppszReposUsed);
-        TDNFFreeMemory(pCleanInfo);
-    }
-}
