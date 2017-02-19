@@ -7,6 +7,7 @@
 #
 m4_include([init.at])
 m4_include([version.at])
+m4_include([repolist.at])
 m4_include([list.at])
 m4_include([install.at])
 m4_include([erase.at])

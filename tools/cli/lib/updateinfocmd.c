@@ -47,7 +47,7 @@ TDNFGetUpdateInfoType(
 
 uint32_t
 TDNFCliUpdateInfoCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
@@ -61,17 +61,15 @@ TDNFCliUpdateInfoCommand(
 
     if(pInfoArgs->nMode == OUTPUT_SUMMARY)
     {
-        dwError = TDNFCliUpdateInfoSummary(pTdnf, pCmdArgs, pInfoArgs);
+        dwError = TDNFCliUpdateInfoSummary(pContext, pCmdArgs, pInfoArgs);
         BAIL_ON_CLI_ERROR(dwError);
     }
     else
     {
-        dwError = TDNFUpdateInfo(
-                     pTdnf,
-                     pInfoArgs->nMode,
-                     pInfoArgs->nScope,
-                     pInfoArgs->ppszPackageNameSpecs,
-                     &pUpdateInfo);
+        dwError = pContext->pFnUpdateInfo(
+                      pContext,
+                      pInfoArgs,
+                      &pUpdateInfo);
         BAIL_ON_CLI_ERROR(dwError);
         if(pInfoArgs->nMode == OUTPUT_LIST)
         {
@@ -87,7 +85,7 @@ TDNFCliUpdateInfoCommand(
 cleanup:
     if(pInfoArgs)
     {
-        TDNFFreeUpdateInfoArgs(pInfoArgs);
+        TDNFCliFreeUpdateInfoArgs(pInfoArgs);
     }
     TDNFFreeUpdateInfo(pUpdateInfo);
     return dwError;
@@ -103,7 +101,7 @@ error:
 
 uint32_t
 TDNFCliUpdateInfoSummary(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs,
     PTDNF_UPDATEINFO_ARGS pInfoArgs
     )
@@ -112,16 +110,16 @@ TDNFCliUpdateInfoSummary(
     int i = 0;
     PTDNF_UPDATEINFO_SUMMARY pSummary = NULL;
 
-    if(!pTdnf || !pCmdArgs)
+    if(!pContext || !pCmdArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    dwError = TDNFUpdateInfoSummary(
-                  pTdnf,
+    dwError = pContext->pFnUpdateInfoSummary(
+                  pContext,
                   AVAIL_AVAILABLE,
-                  pInfoArgs->ppszPackageNameSpecs,
+                  pInfoArgs,
                   &pSummary);
     BAIL_ON_CLI_ERROR(dwError);
 

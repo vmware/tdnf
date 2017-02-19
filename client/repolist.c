@@ -25,14 +25,14 @@ uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
-    PTDNF_REPO_DATA* ppReposAll
+    PTDNF_REPO_DATA_INTERNAL* ppReposAll
     )
 {
     uint32_t dwError = 0;
     char* pszRepoFilePath = NULL;
-    PTDNF_REPO_DATA pReposAll = NULL;
-    PTDNF_REPO_DATA pReposTemp = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA_INTERNAL pReposAll = NULL;
+    PTDNF_REPO_DATA_INTERNAL pReposTemp = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
     PTDNF_CONF pConf = NULL;
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
@@ -80,7 +80,7 @@ TDNFLoadRepoData(
         if((nFilter == REPOLISTFILTER_ENABLED && !pRepos->nEnabled) ||
            (nFilter == REPOLISTFILTER_DISABLED && pRepos->nEnabled))
         {
-            TDNFFreeRepos(pRepos);
+            TDNFFreeReposInternal(pRepos);
             pRepos = NULL;
             continue;
         }
@@ -117,7 +117,7 @@ error:
     }
     if(pReposAll)
     {
-        TDNFFreeRepos(pReposAll);
+        TDNFFreeReposInternal(pReposAll);
     }
     goto cleanup;
 }
@@ -126,7 +126,7 @@ uint32_t
 TDNFLoadReposFromFile(
     PTDNF pTdnf,
     char* pszRepoFile,
-    PTDNF_REPO_DATA* ppRepos
+    PTDNF_REPO_DATA_INTERNAL* ppRepos
     )
 {
     uint32_t dwError = 0;
@@ -134,8 +134,8 @@ TDNFLoadReposFromFile(
     char* pszRepo = NULL;
     char* pszMetadataExpire = NULL;
 
-    PTDNF_REPO_DATA pRepos = NULL;
-    PTDNF_REPO_DATA pRepo = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
 
     PCONF_DATA pData = NULL;
     PCONF_SECTION pSections = NULL;
@@ -149,7 +149,7 @@ TDNFLoadReposFromFile(
 
         dwError = TDNFAllocateMemory(
                       1,
-                      sizeof(TDNF_REPO_DATA),
+                      sizeof(TDNF_REPO_DATA_INTERNAL),
                       (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -256,7 +256,7 @@ error:
     TDNF_SAFE_FREE_MEMORY(pRepo);
     if(pRepos)
     {
-        TDNFFreeRepos(pRepos);
+        TDNFFreeReposInternal(pRepos);
     }
     goto cleanup;
 }
@@ -268,7 +268,7 @@ TDNFRepoListFinalize(
 {
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pSetOpt = NULL;
-    PTDNF_REPO_DATA pRepo = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pRepos)
     {
@@ -325,7 +325,7 @@ error:
 
 uint32_t
 TDNFAlterRepoState(
-    PTDNF_REPO_DATA pRepos,
+    PTDNF_REPO_DATA_INTERNAL pRepos,
     int nEnable,
     const char* pszId
     )
@@ -374,7 +374,7 @@ error:
 
 uint32_t
 TDNFCloneRepo(
-    PTDNF_REPO_DATA pRepoIn,
+    PTDNF_REPO_DATA_INTERNAL pRepoIn,
     PTDNF_REPO_DATA* ppRepo
     )
 {
@@ -387,7 +387,9 @@ TDNFCloneRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
+    dwError = TDNFAllocateMemory(1,
+                                 sizeof(TDNF_REPO_DATA),
+                                 (void**)&pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pRepo->nEnabled = pRepoIn->nEnabled;
@@ -407,12 +409,6 @@ TDNFCloneRepo(
     dwError = TDNFSafeAllocateString(pRepoIn->pszUrlGPGKey, &pRepo->pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSafeAllocateString(pRepoIn->pszUser, &pRepo->pszUser);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFSafeAllocateString(pRepoIn->pszPass, &pRepo->pszPass);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     *ppRepo = pRepo;
 
 cleanup:
@@ -430,29 +426,27 @@ error:
     goto cleanup;
 }
 
-
 void
-TDNFFreeRepos(
-  PTDNF_REPO_DATA pRepos
-  )
+TDNFFreeReposInternal(
+    PTDNF_REPO_DATA_INTERNAL pRepos
+    )
 {
-  PTDNF_REPO_DATA pRepo = NULL;
-  while(pRepos)
-  {
-    pRepo = pRepos;
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-    if(pRepo->hRepo)
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    while(pRepos)
     {
-        hy_repo_free(pRepo->hRepo);
+        pRepo = pRepos;
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
+        if(pRepo->hRepo)
+        {
+            hy_repo_free(pRepo->hRepo);
+        }
+        pRepos = pRepo->pNext;
+        TDNF_SAFE_FREE_MEMORY(pRepo);
     }
-
-    pRepos = pRepo->pNext;
-    TDNF_SAFE_FREE_MEMORY(pRepo);
-  }
 }
