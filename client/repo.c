@@ -24,7 +24,7 @@
 uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA pRepoData,
+    PTDNF_REPO_DATA_INTERNAL pRepoData,
     HyRepo* phRepo
     )
 {
@@ -171,7 +171,7 @@ TDNFGetGPGCheck(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA pRepo = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
     int nGPGCheck = 0;
     char* pszUrlGPGKey = NULL;
 
@@ -220,12 +220,12 @@ uint32_t
 TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszId,
-    PTDNF_REPO_DATA* ppRepo
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA pRepo = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszId) || !ppRepo)
     {
@@ -268,7 +268,7 @@ error:
 uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA pRepoData,
+    PTDNF_REPO_DATA_INTERNAL pRepoData,
     const char *pszRepoDataDir,
     PTDNF_REPO_METADATA *ppRepoMD
     )

@@ -240,10 +240,10 @@ error:
 }
 
 uint32_t
-TNDFRefreshRepo(
+TDNFRefreshRepo(
     PTDNF pTdnf,
     int nCleanMetadata,
-    PTDNF_REPO_DATA pRepo
+    PTDNF_REPO_DATA_INTERNAL pRepo
     )
 {
     uint32_t dwError = 0;
@@ -367,12 +367,12 @@ TDNFRefreshSack(
     //If there is an empty repo directory, do nothing
     if(pTdnf->pRepos)
     {
-        PTDNF_REPO_DATA pTempRepo = pTdnf->pRepos;
+        PTDNF_REPO_DATA_INTERNAL pTempRepo = pTdnf->pRepos;
         while(pTempRepo)
         {
             if(pTempRepo->nEnabled)
             {
-                dwError = TNDFRefreshRepo(pTdnf, nCleanMetadata, pTempRepo);
+                dwError = TDNFRefreshRepo(pTdnf, nCleanMetadata, pTempRepo);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             pTempRepo = pTempRepo->pNext;
