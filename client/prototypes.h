@@ -29,7 +29,7 @@ TDNFCheckLocalPackagesInternal(
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
-    PTDNF_REPO_DATA pRepoData,
+    PTDNF_REPO_DATA_INTERNAL pRepoData,
     char*** pppszReposUsed
     );
 
@@ -101,10 +101,10 @@ TDNFLoadYumRepo(
     );
 
 uint32_t
-TNDFRefreshRepo(
+TDNFRefreshRepo(
     PTDNF pTdnf,
     int nCleanMetadata,
-    PTDNF_REPO_DATA pRepo
+    PTDNF_REPO_DATA_INTERNAL pRepo
     );
 
 uint32_t
@@ -416,7 +416,7 @@ TDNFInitRepoFromMetadata(
 uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA pRepoData,
+    PTDNF_REPO_DATA_INTERNAL pRepoData,
     HyRepo* phRepo
     );
 
@@ -432,13 +432,13 @@ uint32_t
 TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszName,
-    PTDNF_REPO_DATA* ppRepo
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
     );
 
 uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA pRepoData,
+    PTDNF_REPO_DATA_INTERNAL pRepoData,
     const char *pszRepoDataDir,
     PTDNF_REPO_METADATA *ppRepoMD
     );
@@ -473,14 +473,14 @@ uint32_t
 TDNFLoadReposFromFile(
     PTDNF pTdnf,
     char* pszRepoFile,
-    PTDNF_REPO_DATA* ppRepos
+    PTDNF_REPO_DATA_INTERNAL* ppRepos
     );
 
 uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
-    PTDNF_REPO_DATA* ppReposAll
+    PTDNF_REPO_DATA_INTERNAL* ppReposAll
     );
 
 uint32_t
@@ -490,15 +490,20 @@ TDNFRepoListFinalize(
 
 uint32_t
 TDNFAlterRepoState(
-    PTDNF_REPO_DATA pRepos,
+    PTDNF_REPO_DATA_INTERNAL pRepos,
     int nEnable,
     const char* pszId
     );
 
 uint32_t
 TDNFCloneRepo(
-    PTDNF_REPO_DATA pRepoIn,
+    PTDNF_REPO_DATA_INTERNAL pRepoIn,
     PTDNF_REPO_DATA* ppRepo
+    );
+
+void
+TDNFFreeReposInternal(
+    PTDNF_REPO_DATA_INTERNAL pRepos
     );
 
 //resolve.c
@@ -689,11 +694,6 @@ TDNFFreeCachedRpmsArray(
     );
 
 //memory.c
-void
-TDNFFreePackageInfoContents(
-    PTDNF_PKG_INFO pPkgInfo
-    );
-
 void
 TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
