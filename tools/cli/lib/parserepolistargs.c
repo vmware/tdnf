@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -40,7 +40,7 @@ TDNFCliParseRepoListArgs(
     //assume REPOLISTFILTER_ENABLED if not specified.
     if(pCmdArgs->nCmdCount > 1)
     {
-        dwError = ParseFilter(pCmdArgs->ppszCmds[1], &nFilter);
+        dwError = TDNFCliParseFilter(pCmdArgs->ppszCmds[1], &nFilter);
         BAIL_ON_CLI_ERROR(dwError);
     }
 
@@ -58,7 +58,7 @@ error:
 }
 
 uint32_t
-ParseFilter(
+TDNFCliParseFilter(
     const char* pszFilter,
     TDNF_REPOLISTFILTER* pnFilter
     )
