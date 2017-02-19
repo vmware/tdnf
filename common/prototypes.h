@@ -125,3 +125,14 @@ TDNFRightTrim(
     const char *pszStart,
     const char *pszEnd
     );
+
+uint32_t
+TDNFUtilsFormatSize(
+    uint32_t unSize,
+    char** ppszFormattedSize
+    );
+
+void
+TDNFFreePackageInfoContents(
+    PTDNF_PKG_INFO pPkgInfo
+    );

@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@/tdnf
 
-Name: tdnf
-Description: tiny dandified yum
+Name: tdnf-cli-libs
+Description: tdnf cli libs
 Version: @VERSION@
-Requires:hawkey rpm
-Libs: -L${libdir} -ltdnf
+Requires:
+Libs: -L${libdir} -ltdnfcli
 Cflags: -I${includedir}
