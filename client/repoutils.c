@@ -48,7 +48,7 @@ TDNFRepoGetBaseUrl(
 {
     uint32_t dwError = 0;
     char* pszBaseUrl = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
 
     if(!pTdnf || !pszRepo || !ppszBaseUrl)
     {
@@ -99,7 +99,7 @@ TDNFRepoGetUserPass(
 {
     uint32_t dwError = 0;
     char* pszUserPass = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
 
     if(!pTdnf || !pszRepo || !ppszUserPass)
     {
