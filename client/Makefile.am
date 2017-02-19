@@ -1,9 +1,9 @@
-lib_LTLIBRARIES = libtdnfclient.la
-libtdnfclient_la_CPPFLAGS = -I$(top_srcdir)/include
+lib_LTLIBRARIES = libtdnf.la
+libtdnf_la_CPPFLAGS = -I$(top_srcdir)/include
 
 AM_CFLAGS += $(LIBCURL_CFLAGS)
 
-libtdnfclient_la_SOURCES = \
+libtdnf_la_SOURCES = \
     api.c \
     clean.c \
     client.c \
@@ -23,7 +23,7 @@ libtdnfclient_la_SOURCES = \
     search.c \
     validate.c
 
-libtdnfclient_la_LIBADD =  \
+libtdnf_la_LIBADD =  \
     $(top_builddir)/common/libcommon.la \
     @LIBCURL_LIBS@ \
     -lhawkey \

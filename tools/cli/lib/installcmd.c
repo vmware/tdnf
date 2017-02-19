@@ -23,13 +23,13 @@
 
 uint32_t
 TDNFCliInstallCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
     uint32_t dwError = 0;
-    
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_INSTALL);
+
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_INSTALL);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -41,13 +41,13 @@ error:
 
 uint32_t
 TDNFCliEraseCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
     uint32_t dwError = 0;
     
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_ERASE);
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_ERASE);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -59,7 +59,7 @@ error:
 
 uint32_t
 TDNFCliUpgradeCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
@@ -71,7 +71,7 @@ TDNFCliUpgradeCommand(
         nAlterType = ALTER_UPGRADEALL;
     }
 
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, nAlterType);
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, nAlterType);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -83,13 +83,13 @@ error:
 
 uint32_t
 TDNFCliDistroSyncCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
     uint32_t dwError = 0;
 
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_DISTRO_SYNC);
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_DISTRO_SYNC);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -101,7 +101,7 @@ error:
 
 uint32_t
 TDNFCliDowngradeCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
@@ -113,7 +113,7 @@ TDNFCliDowngradeCommand(
         nAlterType = ALTER_DOWNGRADEALL;
     }
     
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, nAlterType);
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, nAlterType);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -125,13 +125,13 @@ error:
 
 uint32_t
 TDNFCliAutoEraseCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
     uint32_t dwError = 0;
     
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_AUTOERASE);
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_AUTOERASE);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -143,13 +143,13 @@ error:
 
 uint32_t
 TDNFCliReinstallCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
     uint32_t dwError = 0;
 
-    dwError = TDNFCliAlterCommand(pTdnf, pCmdArgs, ALTER_REINSTALL);
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_REINSTALL);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
@@ -161,7 +161,7 @@ error:
 
 uint32_t
 TDNFCliAlterCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs,
     TDNF_ALTERTYPE nAlterType
     )
@@ -173,7 +173,7 @@ TDNFCliAlterCommand(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
     int nSilent = 0;
 
-    if(!pTdnf || !pCmdArgs)
+    if(!pContext || !pContext->hTdnf || !pCmdArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
@@ -187,7 +187,10 @@ TDNFCliAlterCommand(
                   &nPackageCount);
     BAIL_ON_CLI_ERROR(dwError);
 
-    dwError = TDNFResolve(pTdnf, nAlterType, &pSolvedPkgInfo);
+    dwError = pContext->pFnResolve(
+                  pContext,
+                  nAlterType,
+                  &pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
     if(!nSilent && pSolvedPkgInfo->ppszPkgsNotResolved)
@@ -230,8 +233,13 @@ TDNFCliAlterCommand(
             {
                 fprintf(stdout, "\nDownloading:\n");
             }
-            dwError = TDNFAlterCommand(pTdnf, nAlterType, pSolvedPkgInfo);
+
+            dwError = pContext->pFnAlter(
+                          pContext,
+                          nAlterType,
+                          pSolvedPkgInfo);
             BAIL_ON_CLI_ERROR(dwError);
+
 
             if(!nSilent)
             {
@@ -246,7 +254,7 @@ TDNFCliAlterCommand(
 
 cleanup:
     TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
-    TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
+    TDNFCliFreeSolvedPackageInfo(pSolvedPkgInfo);
     return dwError;
 
 error:
