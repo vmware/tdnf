@@ -1,0 +1,29 @@
+#
+# Copyright (C) 2017 VMware, Inc. All Rights Reserved.
+#
+# Licensed under the GNU Lesser General Public License v2.1 (the "License");
+# you may not use this file except in compliance with the License. The terms
+# of the License are located in the COPYING file of this distribution.
+#
+
+AT_BANNER(tdnf repolist tests)
+
+# check tdnf repolist commands
+AT_SETUP([repolist])
+AT_KEYWORDS([repolist])
+AT_CHECK([
+TDNF_CHROOT_CLEAN
+TDNF_CHROOT_INIT
+TDNF_BUILD_INSTALL_RPMS
+TDNF_CLI_W_CHROOT repolist
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
+
+AT_SETUP([repolist all])
+AT_KEYWORDS([repolist])
+AT_CHECK([TDNF_CLI_W_CHROOT repolist all],\
+ [0], [ignore], [ignore])
+AT_CLEANUP

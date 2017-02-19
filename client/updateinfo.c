@@ -125,48 +125,6 @@ error:
     goto cleanup;
 }
 
-void
-TDNFFreeUpdateInfoSummary(
-    PTDNF_UPDATEINFO_SUMMARY pSummary
-    )
-{
-    if(pSummary)
-    {
-        TDNFFreeMemory(pSummary);
-    }
-}
-
-void
-TDNFFreeUpdateInfo(
-    PTDNF_UPDATEINFO pUpdateInfo
-    )
-{
-    if(pUpdateInfo)
-    {
-        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszID);
-        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszDate);
-        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszDescription);
-
-        TDNFFreeUpdateInfoReferences(pUpdateInfo->pReferences);
-        TDNFFreeUpdateInfoPackages(pUpdateInfo->pPackages);
-        TDNF_SAFE_FREE_MEMORY(pUpdateInfo);
-    }
-}
-
-void
-TDNFFreeUpdateInfoReferences(
-    PTDNF_UPDATEINFO_REF pRef
-    )
-{
-    if(pRef)
-    {
-        TDNF_SAFE_FREE_MEMORY(pRef->pszID);
-        TDNF_SAFE_FREE_MEMORY(pRef->pszLink);
-        TDNF_SAFE_FREE_MEMORY(pRef->pszTitle);
-        TDNF_SAFE_FREE_MEMORY(pRef->pszType);
-    }
-}
-
 uint32_t
 TDNFGetUpdateInfoPackages(
     HyAdvisory hAdv,
@@ -274,24 +232,4 @@ error:
     }
 
     goto cleanup;
-}
-
-void
-TDNFFreeUpdateInfoPackages(
-    PTDNF_UPDATEINFO_PKG pPkgs
-    )
-{
-    PTDNF_UPDATEINFO_PKG pTemp = NULL;
-    while(pPkgs)
-    {
-        TDNF_SAFE_FREE_MEMORY(pPkgs->pszName);
-        TDNF_SAFE_FREE_MEMORY(pPkgs->pszFileName);
-        TDNF_SAFE_FREE_MEMORY(pPkgs->pszEVR);
-        TDNF_SAFE_FREE_MEMORY(pPkgs->pszArch);
-
-        pTemp = pPkgs;
-        pPkgs = pPkgs->pNext;
-        
-        TDNF_SAFE_FREE_MEMORY(pTemp);
-    }
 }
