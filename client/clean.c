@@ -22,13 +22,13 @@
 
 uint32_t
 TDNFCopyEnabledRepos(
-    PTDNF_REPO_DATA pRepoData,
+    PTDNF_REPO_DATA_INTERNAL pRepoData,
     char*** pppszReposUsed
     )
 {
     uint32_t dwError = 0;
     char** ppszReposUsed = NULL;
-    PTDNF_REPO_DATA pRepoTemp = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepoTemp = NULL;
     int nCount = 0;
 
     if(!pRepoData || !pppszReposUsed)
@@ -82,16 +82,4 @@ error:
     }
     TDNF_SAFE_FREE_STRINGARRAY(ppszReposUsed);
     goto cleanup;
-}
-
-void
-TDNFFreeCleanInfo(
-    PTDNF_CLEAN_INFO pCleanInfo
-    )
-{
-    if(pCleanInfo)
-    {
-        TDNF_SAFE_FREE_STRINGARRAY(pCleanInfo->ppszReposUsed);
-        TDNFFreeMemory(pCleanInfo);
-    }
 }

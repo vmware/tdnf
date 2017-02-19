@@ -1,5 +1,5 @@
 /*
-      * Copyright (C) 2014-2015 VMware, Inc. All rights reserved.
+      * Copyright (C) 2014-2017 VMware, Inc. All rights reserved.
       *
       * Header : tdnftypes.h
       *
@@ -143,7 +143,6 @@ typedef enum
 }TDNF_CMDOPT_TYPE;
 
 typedef struct _TDNF_ *PTDNF;
-typedef struct _HyRepo * HyRepo;
 
 typedef struct _TDNF_PKG_INFO
 {
@@ -246,9 +245,6 @@ typedef struct _TDNF_REPO_DATA
     char* pszBaseUrl;
     char* pszMetaLink;
     char* pszUrlGPGKey;
-    char* pszUser;
-    char* pszPass;
-    HyRepo hRepo;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;
