@@ -1,19 +1,19 @@
 /*
-      * Copyright (C) 2014-2015 VMware, Inc. All rights reserved.
+      * Copyright (C) 2014-2017 VMware, Inc. All rights reserved.
       *
-      * Header : tdnfclient.h
+      * Header : tdnf.h
       *
       * Abstract :
       *
-      *            tdnfclientlib
+      *            libtdnf
       *
       *            public header
       *
       * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
       *
 */
-#ifndef _TDNF_CLIENT_H_
-#define _TDNF_CLIENT_H_
+#ifndef _TDNF_H_
+#define _TDNF_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -183,14 +183,6 @@ TDNFGetErrorString(
     char** ppszErrorString
     );
 
-//Format package size to suffix with
-//K, M, G for Kilo, Mega, Giga bytes
-uint32_t
-TDNFUtilsFormatSize(
-    uint32_t dwSize,
-    char** ppszFormattedSize
-    );
-
 void
 TDNFCloseHandle(
     PTDNF pTdnf
@@ -252,4 +244,4 @@ TDNFUninit(
 }
 #endif
 
-#endif//TDNF_CLIENT_H_
+#endif//TDNF_H_

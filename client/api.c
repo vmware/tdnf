@@ -107,7 +107,6 @@ TDNFAlterCommand(
     )
 {
     uint32_t dwError = 0;
-
     if(!pTdnf || !pSolvedInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -724,7 +723,8 @@ TDNFRepoList(
     PTDNF_REPO_DATA pReposAll = NULL;
     PTDNF_REPO_DATA pRepoTemp = NULL;
     PTDNF_REPO_DATA pRepoCurrent = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
     int nAdd = 0;
 
     if(!pTdnf || !pTdnf->pRepos || !ppReposAll)
@@ -1196,7 +1196,7 @@ TDNFCloseHandle(
         }
         if(pTdnf->pRepos)
         {
-            TDNFFreeRepos(pTdnf->pRepos);
+            TDNFFreeReposInternal(pTdnf->pRepos);
         }
         if(pTdnf->hSack)
         {
@@ -1214,50 +1214,9 @@ TDNFCloseHandle(
     }
 }
 
-void
-TDNFFreeCmdArgs(
-    PTDNF_CMD_ARGS pCmdArgs
-    )
-{
-    int nIndex = 0;
-    if(pCmdArgs)
-    {
-        for(nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
-        {
-            TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
-        }
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
-
-        if(pCmdArgs->pSetOpt)
-        {
-            TDNFFreeCmdOpt(pCmdArgs->pSetOpt);
-        }
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs);
-    }
-}
-
 const char*
 TDNFGetVersion(
     )
 {
     return PACKAGE_VERSION;
-}
-
-void
-TDNFFreeCmdOpt(
-    PTDNF_CMD_OPT pCmdOpt
-    )
-{
-    PTDNF_CMD_OPT pCmdOptTemp = NULL;
-    while(pCmdOpt)
-    {
-        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptName);
-        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptValue);
-        pCmdOptTemp = pCmdOpt->pNext;
-        TDNF_SAFE_FREE_MEMORY(pCmdOpt);
-        pCmdOpt = pCmdOptTemp;
-    }
 }
