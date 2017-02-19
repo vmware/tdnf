@@ -2,18 +2,12 @@ bin_PROGRAMS = tdnf
 
 tdnf_CPPFLAGS = -I$(top_srcdir)/include
 tdnf_SOURCES = \
-    help.c \
-    installcmd.c \
-    main.c \
-    options.c \
-    output.c \
-    parseargs.c \
-    parsecleanargs.c \
-    parselistargs.c \
-    parserepolistargs.c \
-    parseupdateinfo.c \
-    setopt.c \
-    updateinfocmd.c
+    main.c
+
+SUBDIRS = \
+    lib
+
 tdnf_LDADD =  \
     $(top_builddir)/common/libcommon.la \
-    $(top_builddir)/client/libtdnfclient.la
+    $(top_builddir)/client/libtdnf.la \
+    $(top_builddir)/tools/cli/lib/libtdnfcli.la

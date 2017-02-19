@@ -429,30 +429,3 @@ error:
     }
     goto cleanup;
 }
-
-
-void
-TDNFFreeRepos(
-  PTDNF_REPO_DATA pRepos
-  )
-{
-  PTDNF_REPO_DATA pRepo = NULL;
-  while(pRepos)
-  {
-    pRepo = pRepos;
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
-    TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-    if(pRepo->hRepo)
-    {
-        hy_repo_free(pRepo->hRepo);
-    }
-
-    pRepos = pRepo->pNext;
-    TDNF_SAFE_FREE_MEMORY(pRepo);
-  }
-}
