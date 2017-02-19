@@ -178,31 +178,31 @@ error:
 int
 doCheck(PTDNFRPMTS pTS)
 {
-  int nResult = 0;
-  rpmpsi psi = NULL;
-  rpmProblem prob = NULL;
-  nResult = rpmtsCheck(pTS->pTS);
+    int nResult = 0;
+    rpmpsi psi = NULL;
+    rpmProblem prob = NULL;
+    nResult = rpmtsCheck(pTS->pTS);
 
-  rpmps ps = rpmtsProblems(pTS->pTS);
-  if(ps)
-  {
-    int nProbs = rpmpsNumProblems(ps);
-    if(nProbs > 0)
+    rpmps ps = rpmtsProblems(pTS->pTS);
+    if(ps)
     {
-      printf("Found %d problems\n", nProbs);
+        int nProbs = rpmpsNumProblems(ps);
+        if(nProbs > 0)
+        {
+            fprintf(stderr, "Found %d problems\n", nProbs);
 
-      psi = rpmpsInitIterator(ps);
-      while(rpmpsNextIterator(psi) >= 0)
-      {
-        prob = rpmpsGetProblem(psi);
-        printf("%s\n", rpmProblemString(prob));
-        rpmProblemFree(prob);
-      }
-      rpmpsFreeIterator(psi);
-      nResult = ERROR_TDNF_RPM_CHECK;
+            psi = rpmpsInitIterator(ps);
+            while(rpmpsNextIterator(psi) >= 0)
+            {
+                prob = rpmpsGetProblem(psi);
+                fprintf(stderr, "%s\n", rpmProblemString(prob));
+                rpmProblemFree(prob);
+            }
+            rpmpsFreeIterator(psi);
+            nResult = ERROR_TDNF_RPM_CHECK;
+        }
     }
-  }
-  return nResult;
+    return nResult;
 }
 
 uint32_t

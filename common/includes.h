@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <tdnftypes.h>
 #include <tdnferror.h>
 
 #include "defines.h"
