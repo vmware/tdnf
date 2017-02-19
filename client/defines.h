@@ -101,12 +101,6 @@ typedef enum
         }                                                          \
     } while(0)
 
-#define TDNF_SAFE_FREE_PKGINFO(pPkgInfo) \
-    do {                                                           \
-        if (pPkgInfo) {                                            \
-            TDNFFreePackageInfo(pPkgInfo);                         \
-        }                                                          \
-    } while(0)
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
 #define TDNF_NAME                         "tdnf"

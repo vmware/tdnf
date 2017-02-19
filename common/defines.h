@@ -56,4 +56,11 @@
         }                                                          \
     } while(0)
 
+#define TDNF_SAFE_FREE_PKGINFO(pPkgInfo) \
+    do {                                                           \
+        if (pPkgInfo) {                                            \
+            TDNFFreePackageInfo(pPkgInfo);                         \
+        }                                                          \
+    } while(0)
+
 #define TDNF_DEFAULT_MAX_STRING_LEN       16384000
