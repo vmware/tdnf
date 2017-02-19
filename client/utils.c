@@ -21,57 +21,6 @@
 #include "includes.h"
 
 uint32_t
-TDNFUtilsFormatSize(
-    uint32_t unSize,
-    char** ppszFormattedSize
-    )
-{
-    uint32_t dwError = 0;
-    char* pszFormattedSize = NULL;
-    char* pszSizes = "bkMG";
-    double dSize = unSize;
-
-    int nIndex = 0;
-    int nLimit = strlen(pszSizes);
-    double dKiloBytes = 1024.0;
-    int nMaxSize = 25;
-
-    if(!ppszFormattedSize)
-    {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    while(nIndex < nLimit && dSize > dKiloBytes)
-    {
-        dSize /= dKiloBytes;
-        nIndex++;
-    }
-
-    dwError = TDNFAllocateMemory(1, nMaxSize, (void**)&pszFormattedSize);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if(sprintf(pszFormattedSize, "%.2f %c", dSize, pszSizes[nIndex]) < 0)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    *ppszFormattedSize = pszFormattedSize;
-  
-cleanup:
-    return dwError;
-
-error:
-    if(ppszFormattedSize)
-    {
-        *ppszFormattedSize = NULL;
-    }
-    TDNF_SAFE_FREE_MEMORY(pszFormattedSize);
-    goto cleanup;
-}
-
-uint32_t
 TDNFGetErrorString(
     uint32_t dwErrorCode,
     char** ppszError

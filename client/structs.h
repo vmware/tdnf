@@ -20,13 +20,31 @@
 
 #pragma once
 
+typedef struct _TDNF_REPO_DATA_INTERNAL_
+{
+    int nEnabled;
+    int nSkipIfUnavailable;
+    int nGPGCheck;
+    long lMetadataExpire;
+    char* pszId;
+    char* pszName;
+    char* pszBaseUrl;
+    char* pszMetaLink;
+    char* pszUrlGPGKey;
+    char* pszUser;
+    char* pszPass;
+    HyRepo hRepo;
+
+    struct _TDNF_REPO_DATA_INTERNAL_* pNext;
+}TDNF_REPO_DATA_INTERNAL, *PTDNF_REPO_DATA_INTERNAL;
+
 typedef struct _TDNF_
 {
     HySack hSack;
     HyGoal hGoal;
     PTDNF_CMD_ARGS pArgs;
     PTDNF_CONF pConf;
-    PTDNF_REPO_DATA pRepos;
+    PTDNF_REPO_DATA_INTERNAL pRepos;
 }TDNF;
 
 typedef struct _TDNF_CACHED_RPM_ENTRY

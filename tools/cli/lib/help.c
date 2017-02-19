@@ -86,9 +86,10 @@ TDNFCliShowNoSuchOption(
 {
     printf("No such option: %s. Please use /usr/bin/tdnf --help\n", pszOption);
 }
+
 uint32_t
 TDNFCliHelpCommand(
-    PTDNF pTdnf,
+    PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
