@@ -690,11 +690,6 @@ TDNFFreeCachedRpmsArray(
 
 //memory.c
 void
-TDNFFreePackageInfoContents(
-    PTDNF_PKG_INFO pPkgInfo
-    );
-
-void
 TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
     );

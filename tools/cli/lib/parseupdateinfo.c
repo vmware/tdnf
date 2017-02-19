@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -49,7 +49,7 @@ TDNFCliParseUpdateInfoArgs(
     //(tdnf updateinfo <mode> <availability> <type> <pkgnamespecs>)
     if(pCmdArgs->nCmdCount > nStartIndex)
     {
-        dwError = ParseMode(
+        dwError = TDNFCliParseMode(
                       pCmdArgs->ppszCmds[nStartIndex],
                       &pUpdateInfoArgs->nMode);
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
@@ -65,7 +65,7 @@ TDNFCliParseUpdateInfoArgs(
     //Next arg should be availability
     if(pCmdArgs->nCmdCount > nStartIndex)
     {
-        dwError = ParseScope(
+        dwError = TDNFCliParseScope(
                       pCmdArgs->ppszCmds[nStartIndex],
                       &pUpdateInfoArgs->nScope);
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
@@ -106,13 +106,13 @@ error:
     }
     if(pUpdateInfoArgs)
     {
-        TDNFFreeUpdateInfoArgs(pUpdateInfoArgs);
+        TDNFCliFreeUpdateInfoArgs(pUpdateInfoArgs);
     }
     goto cleanup;
 }
 
 uint32_t
-ParseMode(
+TDNFCliParseMode(
     const char* pszMode,
     TDNF_UPDATEINFO_OUTPUT* pnMode
     )
@@ -166,7 +166,7 @@ error:
 }
 
 void
-TDNFFreeUpdateInfoArgs(
+TDNFCliFreeUpdateInfoArgs(
     PTDNF_UPDATEINFO_ARGS pUpdateInfoArgs
     )
 {
