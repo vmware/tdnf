@@ -189,13 +189,13 @@ doCheck(PTDNFRPMTS pTS)
     int nProbs = rpmpsNumProblems(ps);
     if(nProbs > 0)
     {
-      printf("Found %d problems\n", nProbs);
+      fprintf(stderr, "Found %d problems\n", nProbs);
 
       psi = rpmpsInitIterator(ps);
       while(rpmpsNextIterator(psi) >= 0)
       {
         prob = rpmpsGetProblem(psi);
-        printf("%s\n", rpmProblemString(prob));
+        fprintf(stderr, "%s\n", rpmProblemString(prob));
         rpmProblemFree(prob);
       }
       rpmpsFreeIterator(psi);
