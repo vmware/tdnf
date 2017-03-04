@@ -86,6 +86,7 @@ TDNFDownloadFile(
     CURL *pCurl = NULL;
     FILE *fp = NULL;
     char *pszUserPass = NULL;
+    uint32_t nStatus = 0;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -143,6 +144,20 @@ TDNFDownloadFile(
     dwError = curl_easy_perform(pCurl);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
+    dwError = curl_easy_getinfo(pCurl,
+                                CURLINFO_RESPONSE_CODE,
+                                &nStatus);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    if(nStatus >= 400)
+    {
+        fprintf(stderr,
+                "Error: %d when downloading %s\n. Please check repo url.\n",
+                nStatus,
+                pszFileUrl);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
     if(fp)
@@ -156,6 +171,16 @@ cleanup:
     return dwError;
 
 error:
+    if(fp)
+    {
+        fclose(fp);
+        fp = NULL;
+    }
+    if(!IsNullOrEmptyString(pszFile))
+    {
+        unlink(pszFile);
+    }
+
     if(pCurl && TDNFIsCurlError(dwError))
     {
         uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
