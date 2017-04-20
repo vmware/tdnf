@@ -7,7 +7,7 @@ autoreconf
 ./configure
 make
 
-create a conf file named tdnf.conf under \etc\tdnf with the following content
+create a conf file named tdnf.conf under /etc/tdnf with the following content
 
 [main]
 gpgcheck=1
