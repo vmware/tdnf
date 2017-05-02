@@ -29,15 +29,27 @@ progress_cb(
     curl_off_t ulNow
     )
 {
+    double dPercent;
+
     if(dlTotal > 0)
     {
-        double dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
-        fprintf(
-            stdout,
-            "%-35s %10ld  %5.0f%%\r",
-            (char*)pUserData,
-            dlNow,
-            dPercent);
+        dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
+        if(!isatty(STDOUT_FILENO))
+        {
+            fprintf(stdout, "%s %3.0f%% %ld\n",
+                (char*)pUserData,
+                dPercent,
+                dlNow);
+        }
+        else
+        {
+            fprintf(
+                stdout,
+                "%-35s %10ld  %5.0f%%\r",
+                (char*)pUserData,
+                dlNow,
+                dPercent);
+        }
         fflush(stdout);
     }
     return 0;
