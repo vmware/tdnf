@@ -439,7 +439,7 @@ PrintAction(
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
-    char szVersionAndRelease[MAX_COL_LEN] = {0};
+    char szEpochVersionRelease[MAX_COL_LEN] = {0};
     char *ppszInfoToPrint[MAX_COL_LEN] = {0};
 
     if(!pPkgInfos)
@@ -481,29 +481,46 @@ PrintAction(
     while(pPkgInfo)
     {
         dwTotalInstallSize += pPkgInfo->dwInstallSizeBytes;
-        memset(szVersionAndRelease, 0, MAX_COL_LEN);
-        if(snprintf(
-            szVersionAndRelease,
-            MAX_COL_LEN,
-            "%s-%s",
-            pPkgInfo->pszVersion,
-            pPkgInfo->pszRelease) < 0)
+        memset(szEpochVersionRelease, 0, MAX_COL_LEN);
+        if(pPkgInfo->dwEpoch)
         {
-            dwError = errno;
-            BAIL_ON_CLI_ERROR(dwError);
+            if(snprintf(
+                szEpochVersionRelease,
+                MAX_COL_LEN,
+                "%u:%s-%s",
+                (unsigned)pPkgInfo->dwEpoch,
+                pPkgInfo->pszVersion,
+                pPkgInfo->pszRelease) < 0)
+            {
+                dwError = errno;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+        }
+        else
+        {
+            if(snprintf(
+                szEpochVersionRelease,
+                MAX_COL_LEN,
+                "%s-%s",
+                pPkgInfo->pszVersion,
+                pPkgInfo->pszRelease) < 0)
+            {
+                dwError = errno;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
         }
 
         ppszInfoToPrint[0] = pPkgInfo->pszName == NULL ?
                                  pszEmptyString : pPkgInfo->pszName;
         ppszInfoToPrint[1] = pPkgInfo->pszArch == NULL ?
                                  pszEmptyString : pPkgInfo->pszArch;
-        ppszInfoToPrint[2] = szVersionAndRelease;
+        ppszInfoToPrint[2] = szEpochVersionRelease;
         ppszInfoToPrint[3] = pPkgInfo->pszRepoName == NULL ?
                                  pszEmptyString : pPkgInfo->pszRepoName;
         ppszInfoToPrint[4] = pPkgInfo->pszFormattedSize == NULL ?
                                  pszEmptyString : pPkgInfo->pszFormattedSize;
         printf(
-            "%-*s%-*s%-*s%-*s%*s\n",
+            "%-*s %-*s %-*s %-*s %*s\n",
             nColWidths[0],
             ppszInfoToPrint[0],
             nColWidths[1],

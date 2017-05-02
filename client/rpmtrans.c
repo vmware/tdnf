@@ -725,6 +725,7 @@ TDNFRpmCB(
      rpmCallbackData data
      )
 {
+    Header h = (Header) pArg;
     void* pResult = NULL;
     char* pszFileName = (char*)key;
     PTDNFRPMTS pTS = (PTDNFRPMTS)data;
@@ -745,6 +746,23 @@ TDNFRpmCB(
             {
                 Fclose(pTS->pFD);
                 pTS->pFD = NULL;
+            }
+            break;
+        case RPMCALLBACK_INST_START:
+        case RPMCALLBACK_UNINST_START:
+            if(what == RPMCALLBACK_INST_START)
+            {
+                fprintf(stdout, "%s", "Installing/Updating: ");
+            }
+            else
+            {
+                fprintf(stdout, "%s", "Removing: ");
+            }
+            {
+                char* s = headerGetAsString(h, RPMTAG_NEVRA);
+                fprintf(stdout, "%s\n", s);
+                free(s);
+                (void)fflush(stdout);
             }
             break;
         default:
