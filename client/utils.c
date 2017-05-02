@@ -146,7 +146,7 @@ TDNFUtilsMakeDir(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(mkdir(pszDir, 755))
+    if(mkdir(pszDir, 0755))
     {
         if(errno != EEXIST)
         {
