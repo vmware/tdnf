@@ -61,6 +61,7 @@ typedef struct _TDNF_CACHED_RPM_LIST
 
 typedef struct _TDNF_RPM_TS_
 {
+    int                     nQuiet;
     rpmts                   pTS;
     rpmKeyring              pKeyring;
     rpmtransFlags           nTransFlags;
