@@ -349,6 +349,8 @@ TDNFPopulatePkgInfos(
                       &pPkgInfo->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        pPkgInfo->dwEpoch = hy_package_get_epoch(hPkg);
+
         dwError = TDNFGetPackageVersion(hPkg, &pPkgInfo->pszVersion);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -451,6 +453,7 @@ TDNFPopulatePkgInfoArray(
         if(nDetail == DETAIL_INFO)
         {
             pPkg->dwEpoch = hy_package_get_epoch(hPkg);
+
             pPkg->dwInstallSizeBytes = hy_package_get_installsize(hPkg);
 
             dwError = TDNFUtilsFormatSize(
@@ -501,6 +504,8 @@ TDNFPopulatePkgInfoArray(
         }
         else if(nDetail == DETAIL_LIST)
         {
+            pPkg->dwEpoch = hy_package_get_epoch(hPkg);
+
             dwError = TDNFSafeAllocateString(
                           hy_package_get_name(hPkg),
                           &pPkg->pszName);
