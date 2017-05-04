@@ -65,7 +65,11 @@ TDNFInitSack(
 
     pszHawkeyCacheDir = pTdnf->pConf->pszCacheDir;
 
-    hSack = hy_sack_create(pszHawkeyCacheDir, NULL, pTdnf->pArgs->pszInstallRoot, 0);
+    hSack = hy_sack_create(pszHawkeyCacheDir,
+                           NULL,
+                           pTdnf->pArgs->pszInstallRoot,
+                           NULL,
+                           0);
     if(!hSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -160,7 +164,7 @@ TDNFCloneCmdArgs(
                             (void**)&pCmdArgs->ppszCmds
                             );
     BAIL_ON_TDNF_ERROR(dwError);
-        
+
     for(nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
     {
         dwError = TDNFAllocateString(
