@@ -339,7 +339,7 @@ TDNFGetRepoMD(
                       pRepoData->pszId,
                       pszRepoMDUrl,
                       pszRepoMDFile,
-                      pRepoData->pszId);
+                      pTdnf->pArgs->nQuiet ? NULL : pRepoData->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -418,7 +418,7 @@ TDNFEnsureRepoMDParts(
                       pRepoMDRel->pszRepo,
                       pszTempUrl,
                       pRepoMD->pszPrimary,
-                      pRepoMDRel->pszRepo);
+                      pTdnf->pArgs->nQuiet ? NULL : pRepoMDRel->pszRepo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -447,7 +447,7 @@ TDNFEnsureRepoMDParts(
                       pRepoMDRel->pszRepo,
                       pszTempUrl,
                       pRepoMD->pszFileLists,
-                      pRepoMDRel->pszRepo);
+                      pTdnf->pArgs->nQuiet ? NULL : pRepoMDRel->pszRepo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppRepoMD = pRepoMD;
