@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -25,7 +25,7 @@ uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
     PTDNF_REPO_DATA_INTERNAL pRepoData,
-    HyRepo* phRepo
+    PSolvSack pSack
     )
 {
     uint32_t dwError = 0;
@@ -34,9 +34,8 @@ TDNFInitRepo(
     char* pszLastRefreshMarker = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
     PTDNF_CONF pConf = NULL;
-    HyRepo hRepo = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !pRepoData || !phRepo)
+    if(!pTdnf || !pTdnf->pConf || !pRepoData || !pSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -64,15 +63,7 @@ TDNFInitRepo(
                             &pRepoMD);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    //Create and set repo properties
-    hRepo = hy_repo_create(pRepoData->pszId);
-    if(!hRepo)
-    {
-        dwError = ERROR_TDNF_HAWKEY_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFInitRepoFromMetadata(hRepo, pRepoMD);
+    dwError = TDNFInitRepoFromMetadata(pSack, pRepoData->pszId, pRepoMD);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateStringPrintf(
@@ -85,14 +76,11 @@ TDNFInitRepo(
     dwError = TDNFTouchFile(pszLastRefreshMarker);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    *phRepo = hRepo;
-
 cleanup:
     TDNFFreeRepoMetadata(pRepoMD);
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
     TDNF_SAFE_FREE_MEMORY(pszRepoDataDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
-
     return dwError;
 
 error:
@@ -111,55 +99,36 @@ error:
             TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
         }
     }
-    if(phRepo)
-    {
-        *phRepo = NULL;
-    }
-    if(hRepo)
-    {
-       hy_repo_free(hRepo);
-    }
     goto cleanup;
 }
 
 uint32_t
 TDNFInitRepoFromMetadata(
-    HyRepo hRepo,
+    PSolvSack pSack,
+    const char* pszRepoName,
     PTDNF_REPO_METADATA pRepoMD
     )
 {
     uint32_t dwError = 0;
 
-    if(!hRepo || !pRepoMD)
+    if(!pSack || !pRepoMD || IsNullOrEmptyString(pszRepoName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    hy_repo_set_string(hRepo, HY_REPO_MD_FN, pRepoMD->pszRepoMD);
-
-    if(!IsNullOrEmptyString(pRepoMD->pszPrimary))
-    {
-        hy_repo_set_string(hRepo, HY_REPO_PRIMARY_FN, pRepoMD->pszPrimary);
-    }
-
-    if(!IsNullOrEmptyString(pRepoMD->pszFileLists))
-    {
-        hy_repo_set_string(hRepo, HY_REPO_FILELISTS_FN, pRepoMD->pszFileLists);
-    }
-
-    if(!IsNullOrEmptyString(pRepoMD->pszUpdateInfo))
-    {
-        hy_repo_set_string(hRepo,
-                           HY_REPO_UPDATEINFO_FN,
-                           pRepoMD->pszUpdateInfo);
-    }
-
-cleanup:
+    dwError = SolvReadYumRepo(pSack,
+                  pszRepoName,
+                  pRepoMD->pszRepoMD,
+                  pRepoMD->pszPrimary,
+                  pRepoMD->pszFileLists,
+                  pRepoMD->pszUpdateInfo);
+cleanup: 
     return dwError;
 
 error:
     goto cleanup;
+    return dwError;
 }
 
 uint32_t
@@ -175,7 +144,7 @@ TDNFGetGPGCheck(
     int nGPGCheck = 0;
     char* pszUrlGPGKey = NULL;
 
-    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo))
+    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo) || !pnGPGCheck)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

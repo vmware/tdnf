@@ -6,47 +6,60 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-AT_BANNER(tdnf update tests)
+AT_BANNER(tdnf updateinfo tests)
 
-AT_SETUP([update check])
-AT_KEYWORDS([update])
+AT_SETUP([updateifo list])
+AT_KEYWORDS([updateinfo])
 AT_CHECK([
 TDNF_CHROOT_CLEAN
 TDNF_CHROOT_INIT
 TDNF_BUILD_INSTALL_RPMS
 TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
-TDNF_CLI_W_CHROOT check-update
+TDNF_CLI_W_CHROOT updateinfo list
 ],
 [0],
 [ignore],
 [ignore])
 AT_CLEANUP
 
-AT_SETUP([update all])
-AT_KEYWORDS([update])
+AT_SETUP([updateinfo info])
+AT_KEYWORDS([updateinfo])
 AT_CHECK([
-TDNF_CLI_W_CHROOT update -y
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT updateinfo info
 ],
 [0],
 [ignore],
 [ignore])
 AT_CLEANUP
 
-AT_SETUP([update by version])
+AT_SETUP([updateinfo summary])
+AT_KEYWORDS([updateinfo])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT updateinfo
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
+
+
+AT_SETUP([updateinfo by package])
 AT_KEYWORDS([update])
 AT_CHECK([
 TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
-TDNF_CLI_W_CHROOT update tdnf-test-multiversion-1.0.2 -y
+TDNF_CLI_W_CHROOT updateinfo tdnf-test-multiversion -y
 ],
 [0],
 [ignore],
 [ignore])
 AT_CLEANUP
 
-AT_SETUP([update non installed])
-AT_KEYWORDS([update])
+AT_SETUP([updateinfo non installed])
+AT_KEYWORDS([updateinfo])
 AT_CHECK([
-TDNF_CLI_W_CHROOT update tdnf-test-one -y
+TDNF_CLI_W_CHROOT updateinfo update tdnf-test-one -y
 ],
 [243],
 [ignore],

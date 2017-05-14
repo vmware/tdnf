@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -240,7 +240,6 @@ TDNFCliAlterCommand(
                           pSolvedPkgInfo);
             BAIL_ON_CLI_ERROR(dwError);
 
-
             if(!nSilent)
             {
                 fprintf(stdout, "\nComplete!\n");
@@ -296,7 +295,9 @@ PrintSolvedInfo(
     }
     if(pSolvedPkgInfo->pPkgsToDowngrade)
     {
-        dwError = PrintAction(pSolvedPkgInfo->pPkgsToDowngrade, ALTER_DOWNGRADE);
+        dwError = PrintAction(
+                      pSolvedPkgInfo->pPkgsToDowngrade,
+                      ALTER_DOWNGRADE);
         BAIL_ON_CLI_ERROR(dwError);
     }
     if(pSolvedPkgInfo->pPkgsToRemove)
@@ -311,7 +312,9 @@ PrintSolvedInfo(
     }
     if(pSolvedPkgInfo->pPkgsToReinstall)
     {
-        dwError = PrintAction(pSolvedPkgInfo->pPkgsToReinstall, ALTER_REINSTALL);
+        dwError = PrintAction(
+                      pSolvedPkgInfo->pPkgsToReinstall,
+                      ALTER_REINSTALL);
         BAIL_ON_CLI_ERROR(dwError);
     }
     if(pSolvedPkgInfo->pPkgsObsoleted)

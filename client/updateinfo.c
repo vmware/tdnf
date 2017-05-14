@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -29,90 +29,99 @@ TDNFUpdateInfoSummary(
     )
 {
     uint32_t dwError = 0;
-    int nCount = 0;
-    int iPkg = 0;
+    uint32_t nCount = 0;
     int iAdv = 0;
-    int nPkgCount = 0;
+    uint32_t dwPkgIndex = 0;
+    uint32_t dwSize = 0;
+    PSolvPackageList pInstalledPkgList = NULL;
+    PSolvPackageList pUpdateAdvPkgList = NULL;
+    Id dwAdvId = 0;
+    Id dwPkgId = 0;
+    uint32_t nType = 0;
     PTDNF_UPDATEINFO_SUMMARY pSummary = NULL;
+    const char *pszType = 0;
 
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-    HyAdvisoryList hAdvList = NULL;
-    HyAdvisory hAdv = NULL;
-    HyAdvisoryType nType = HY_ADVISORY_UNKNOWN;
-    int nTypeCount = HY_ADVISORY_ENHANCEMENT;
-
-    if(!pTdnf || !ppszPackageNameSpecs || !ppSummary)
+    if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool ||
+       !ppSummary)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgList, ppszPackageNameSpecs);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    nPkgCount = hy_packagelist_count(hPkgList);
-    if(nPkgCount == 0)
+    if(!ppszPackageNameSpecs)
     {
-        dwError = ERROR_TDNF_NO_MATCH;
+        dwError = SolvFindAllInstalled(pTdnf->pSack, &pInstalledPkgList);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else
+    {
+        dwError = SolvFindInstalledPkgByMultipleNames(
+                      pTdnf->pSack,
+                      ppszPackageNameSpecs,
+                      &pInstalledPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = SolvGetPackageListSize(pInstalledPkgList, &dwSize);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
-                   nTypeCount + 1,
-                   sizeof(TDNF_UPDATEINFO_SUMMARY),
-                   (void**)&pSummary);
+                  UPDATE_ENHANCEMENT + 1,
+                  sizeof(TDNF_UPDATEINFO_SUMMARY),
+                  (void**)&pSummary);
     BAIL_ON_TDNF_ERROR(dwError);
-    
-    pSummary[HY_ADVISORY_UNKNOWN].nType = UPDATE_UNKNOWN;
-    pSummary[HY_ADVISORY_SECURITY].nType = UPDATE_SECURITY;
-    pSummary[HY_ADVISORY_BUGFIX].nType = UPDATE_BUGFIX;
-    pSummary[HY_ADVISORY_ENHANCEMENT].nType = UPDATE_ENHANCEMENT;
 
-    FOR_PACKAGELIST(hPkg, hPkgList, iPkg)
+    pSummary[UPDATE_UNKNOWN].nType = UPDATE_UNKNOWN;
+    pSummary[UPDATE_SECURITY].nType = UPDATE_SECURITY;
+    pSummary[UPDATE_BUGFIX].nType = UPDATE_BUGFIX;
+    pSummary[UPDATE_ENHANCEMENT].nType = UPDATE_ENHANCEMENT;
+
+    for(dwPkgIndex = 0; dwPkgIndex < dwSize; dwPkgIndex++)
     {
-        hAdvList = hy_package_get_advisories(hPkg, HY_GT);
-        if(!hAdvList)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        nCount = hy_advisorylist_count(hAdvList);
+        dwError = SolvGetPackageId(pInstalledPkgList, dwPkgIndex, &dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetUpdateAdvisories(
+                      pTdnf->pSack,
+                      dwPkgId,
+                      &pUpdateAdvPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPackageListSize(pUpdateAdvPkgList, &nCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         for(iAdv = 0; iAdv < nCount; iAdv++)
         {
-            hAdv = hy_advisorylist_get_clone(hAdvList, iAdv);
-            if(!hAdv)
-            {
-                dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            nType = hy_advisory_get_type(hAdv);
-            if(nType < HY_ADVISORY_UNKNOWN || nType > HY_ADVISORY_ENHANCEMENT)
-            {
-                dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
+            dwError = SolvGetPackageId(pUpdateAdvPkgList, iAdv, &dwAdvId);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            pszType = pool_lookup_str(
+                          pTdnf->pSack->pPool,
+                          dwAdvId,
+                          SOLVABLE_PATCHCATEGORY);
+            nType = UPDATE_UNKNOWN;
+            if (pszType == NULL)
+                nType = UPDATE_UNKNOWN;
+            else if (!strcmp (pszType, "bugfix"))
+                nType = UPDATE_BUGFIX;
+            else if (!strcmp (pszType, "enhancement"))
+                nType = UPDATE_ENHANCEMENT;
+            else if (!strcmp (pszType, "security"))
+                nType = UPDATE_SECURITY;
             pSummary[nType].nCount++;
-            hy_advisory_free(hAdv);
-            hAdv = NULL;
         }
-        hy_advisorylist_free(hAdvList);
-        hAdvList = NULL;
+        SolvFreePackageList(pUpdateAdvPkgList);
+        pUpdateAdvPkgList = NULL;
     }
     *ppSummary = pSummary;
 
 cleanup:
-    if(hAdv)
+    if(pInstalledPkgList)
     {
-        hy_advisory_free(hAdv);
+        SolvFreePackageList(pInstalledPkgList);
     }
-    if(hAdvList)
+    if(pUpdateAdvPkgList)
     {
-        hy_advisorylist_free(hAdvList);
-    }
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
+        SolvFreePackageList(pUpdateAdvPkgList);
     }
     return dwError;
 
@@ -127,43 +136,28 @@ error:
 
 uint32_t
 TDNFGetUpdateInfoPackages(
-    HyAdvisory hAdv,
-    PTDNF_UPDATEINFO_PKG* ppPkgs
+    PSolvSack pSack,
+    Id dwPkgId,
+    PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
     )
 {
     uint32_t dwError = 0;
-    int nCount = 0;
-    int iPkg = 0;
-    HyAdvisoryPkgList hAdvPkgList = NULL;
-    HyAdvisoryPkg hAdvPkg = NULL;
-
+    Dataiterator di = {0};
     PTDNF_UPDATEINFO_PKG pPkgs = NULL;
     PTDNF_UPDATEINFO_PKG pPkg = NULL;
     const char* pszTemp = NULL;
 
 
-    if(!hAdv || !ppPkgs)
+    if(!pSack || !pSack->pPool || !ppUpdateInfoPkg)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    hAdvPkgList = hy_advisory_get_packages(hAdv);
-    if(!hAdvPkgList)
+    dataiterator_init(&di, pSack->pPool, 0, dwPkgId, UPDATE_COLLECTION, 0, 0);
+    while (dataiterator_step(&di))
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    nCount = hy_advisorypkglist_count(hAdvPkgList);
-    for(iPkg = 0; iPkg < nCount; iPkg++)
-    {
-        hAdvPkg = hy_advisorypkglist_get_clone(hAdvPkgList, iPkg);
-        if(!hAdvPkg)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
+        dataiterator_setpos(&di);
 
         dwError = TDNFAllocateMemory(
                       1,
@@ -171,56 +165,62 @@ TDNFGetUpdateInfoPackages(
                       (void**)&pPkg);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_NAME);
+        pszTemp = pool_lookup_str(
+                      pSack->pPool,
+                      SOLVID_POS,
+                      UPDATE_COLLECTION_NAME);
+
         if(pszTemp)
         {
             dwError = TDNFAllocateString(pszTemp, &pPkg->pszName);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_EVR);
+
+        pszTemp = pool_lookup_str(
+                      pSack->pPool,
+                      SOLVID_POS,
+                      UPDATE_COLLECTION_EVR);
         if(pszTemp)
         {
             dwError = TDNFAllocateString(pszTemp, &pPkg->pszEVR);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_ARCH);
+        pszTemp = pool_lookup_str(
+                      pSack->pPool,
+                      SOLVID_POS,
+                      UPDATE_COLLECTION_ARCH);
         if(pszTemp)
         {
             dwError = TDNFAllocateString(pszTemp, &pPkg->pszArch);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_FILENAME);
+        pszTemp = pool_lookup_str(
+                      pSack->pPool,
+                      SOLVID_POS,
+                      UPDATE_COLLECTION_FILENAME);
         if(pszTemp)
         {
             dwError = TDNFAllocateString(pszTemp, &pPkg->pszFileName);
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        hy_advisorypkg_free(hAdvPkg);
-        hAdvPkg = NULL;
-
         pPkg->pNext = pPkgs;
         pPkgs = pPkg;
         pPkg = NULL;
+
+
     }
 
-    *ppPkgs = pPkgs;
+    *ppUpdateInfoPkg = pPkgs;
 
 cleanup:
-    if(hAdvPkg)
-    {
-        hy_advisorypkg_free(hAdvPkg);
-    }
-    if(hAdvPkgList)
-    {
-        hy_advisorypkglist_free(hAdvPkgList);
-    }
+    dataiterator_free(&di);
     return dwError;
 
 error:
-    if(ppPkgs)
+    if(ppUpdateInfoPkg)
     {
-        *ppPkgs = NULL;
+        *ppUpdateInfoPkg = NULL;
     }
     if(pPkg)
     {
@@ -231,5 +231,111 @@ error:
         TDNFFreeUpdateInfoPackages(pPkgs);
     }
 
+    goto cleanup;
+}
+
+uint32_t
+TDNFPopulateUpdateInfoOfOneAdvisory(
+    PSolvSack pSack,
+    Id dwAdvId,
+    PTDNF_UPDATEINFO* ppInfo)
+{
+    uint32_t dwError = 0;
+
+    time_t dwUpdated = 0;
+    const char *pszType = 0;
+    PTDNF_UPDATEINFO pInfo = NULL;
+    const char* pszTemp = NULL;
+    const int DATELEN = 200;
+    char szDate[DATELEN];
+
+    struct tm* pLocalTime = NULL;
+
+    if(!pSack || !pSack->pPool || !ppInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_UPDATEINFO),
+                  (void**)&pInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszType = pool_lookup_str(pSack->pPool,
+                              dwAdvId,
+                              SOLVABLE_PATCHCATEGORY);
+    pInfo->nType = UPDATE_UNKNOWN;
+    if (pszType == NULL)
+        pInfo->nType = UPDATE_UNKNOWN;
+    else if (!strcmp (pszType, "bugfix"))
+        pInfo->nType = UPDATE_BUGFIX;
+    else if (!strcmp (pszType, "enhancement"))
+        pInfo->nType = UPDATE_ENHANCEMENT;
+    else if (!strcmp (pszType, "security"))
+        pInfo->nType = UPDATE_SECURITY;
+
+    pszTemp = pool_lookup_str(
+                  pSack->pPool,
+                  dwAdvId,
+                  SOLVABLE_NAME);
+    if(pszTemp)
+    {
+        dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pszTemp = pool_lookup_str(
+                  pSack->pPool,
+                  dwAdvId,
+                  SOLVABLE_DESCRIPTION);
+    if(pszTemp)
+    {
+        dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwUpdated = pool_lookup_num(
+                    pSack->pPool,
+                    dwAdvId,
+                    SOLVABLE_BUILDTIME,
+                    0);
+    if(dwUpdated > 0)
+    {
+        pLocalTime = localtime(&dwUpdated);
+        if(!pLocalTime)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        memset(szDate, 0, DATELEN);
+        dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
+        if(dwError == 0)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+
+    dwError = TDNFGetUpdateInfoPackages(pSack, dwAdvId, &pInfo->pPackages);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppInfo = pInfo;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppInfo)
+    {
+        *ppInfo = NULL;
+    }
+    if(pInfo)
+    {
+        TDNFFreeUpdateInfo(pInfo);
+    }
     goto cleanup;
 }
