@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<updates>
+  <update from="discus-updates@project-discus.org" status="stable" type="bugfix" version="1.0.2">
+    <id>DISCUS-2015-5-01</id>
+    <title>etcd</title>
+    <release>Discus 1</release>
+    <issued date="2015-05-01 12:00:00"/>
+    <references>
+      <reference href="http://www.vmware.com" id="1" title="tdnf-test-multiversion spec file version 1.0.1" type="vendor"/>
+      <reference href="http://www.vmware.com" id="2" title="tdnf-test-multiversion spec file version 1.0.2" type="vendor"/>
+    </references>
+    <description>update tdnf-test-multiversion to 1.0.2. </description>
+    <pkglist>
+      <collection short="DS-1">
+        <name>Discus 1</name>
+        <package arch="x86_64" epoch="0" name="tdnf-test-multiversion" release="1.0.2" src="file:///root/tdnf/tests/testroot/RPMS/x86_64/tdnf-test-multiversion-1.0.2-1.x86_64.rpm" version="1.0.2-1">
+          <filename>tdnf-test-multiversion-1.0.2-1.x86_64.rpm</filename>
+        </package>
+      </collection>
+    </pkglist>
+  </update>
+</updates>

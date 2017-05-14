@@ -34,25 +34,10 @@
 //
 #include <sys/utsname.h>
 
-#include <fts.h>
 #include <dirent.h>
 #include <pthread.h>
 
-//hawkey
-#include <hawkey/advisory.h>
-#include <hawkey/advisorypkg.h>
-#include <hawkey/advisoryref.h>
-#include <hawkey/errno.h>
-#include <hawkey/goal.h>
-#include <hawkey/nevra.h>
-#include <hawkey/package.h>
-#include <hawkey/packagelist.h>
-#include <hawkey/query.h>
-#include <hawkey/reldep.h>
-#include <hawkey/repo.h>
-#include <hawkey/sack.h>
-#include <hawkey/selector.h>
-#include <hawkey/util.h>
+#include "../solv/includes.h"
 
 //librpm
 #include <rpm/rpmlib.h>
@@ -62,13 +47,6 @@
 #include <rpm/rpmts.h>
 #include <rpm/rpmkeyring.h>
 #include <rpm/header.h>
-
-// libsolv
-#include <solv/evr.h>
-#include <solv/pool.h>
-#include <solv/poolarch.h>
-#include <solv/repo.h>
-#include <solv/repo_repomdxml.h>
 
 //libcurl
 #include <curl/curl.h>
