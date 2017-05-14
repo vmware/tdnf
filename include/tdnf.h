@@ -1,17 +1,11 @@
 /*
-      * Copyright (C) 2014-2017 VMware, Inc. All rights reserved.
-      *
-      * Header : tdnf.h
-      *
-      * Abstract :
-      *
-      *            libtdnf
-      *
-      *            public header
-      *
-      * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
-      *
-*/
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #ifndef _TDNF_H_
 #define _TDNF_H_
 
@@ -150,7 +144,7 @@ TDNFSearchCommand(
     uint32_t* pdwCount
     );
 
-//invoke hawkey goal dependency resolution
+//invoke solv goal dependency resolution
 //return solved pkg info which has descriptive
 //info about steps to reach current goal.
 //usually the SolvedPkgInfo is used to display
@@ -176,11 +170,19 @@ TDNFAlterCommand(
 
 //Show a descriptive error message
 //divided into different areas like 
-//hawkey, repo, rpm and generic tdnf errors.
+//solv, repo, rpm and generic tdnf errors.
 uint32_t
 TDNFGetErrorString(
     uint32_t dwErrorCode,
     char** ppszErrorString
+    );
+
+//Format package size to suffix with
+//K, M, G for Kilo, Mega, Giga bytes
+uint32_t
+TDNFUtilsFormatSize(
+    uint32_t dwSize,
+    char** ppszFormattedSize
     );
 
 void

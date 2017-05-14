@@ -20,11 +20,12 @@ libtdnf_la_SOURCES = \
     rpmtrans.c \
     updateinfo.c \
     utils.c \
-    search.c \
     validate.c
 
 libtdnf_la_LIBADD =  \
+    @top_builddir@/solv/libtdnfsolv.la \
     $(top_builddir)/common/libcommon.la \
     @LIBCURL_LIBS@ \
-    -lhawkey \
-    -lrpm
+    -lrpm  \
+    -lsolv \
+    -lsolvext

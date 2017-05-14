@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -26,7 +26,7 @@ TDNFRepoMakeCacheDirs(
     )
 {
     uint32_t dwError = 0;
-    if(!pszRepo)
+    if(IsNullOrEmptyString(pszRepo))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -50,7 +50,7 @@ TDNFRepoGetBaseUrl(
     char* pszBaseUrl = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
 
-    if(!pTdnf || !pszRepo || !ppszBaseUrl)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszBaseUrl)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -68,7 +68,7 @@ TDNFRepoGetBaseUrl(
         {
             break;
         }
-        pRepos = pRepos->pNext;  
+        pRepos = pRepos->pNext;
     }
 
     if(!pRepos)
@@ -101,7 +101,7 @@ TDNFRepoGetUserPass(
     char* pszUserPass = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
 
-    if(!pTdnf || !pszRepo || !ppszUserPass)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszUserPass)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -119,7 +119,7 @@ TDNFRepoGetUserPass(
         {
             break;
         }
-        pRepos = pRepos->pNext;  
+        pRepos = pRepos->pNext;
     }
 
     if(!pRepos)
@@ -128,7 +128,7 @@ TDNFRepoGetUserPass(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(!IsNullOrEmptyString(pRepos->pszUser) && 
+    if(!IsNullOrEmptyString(pRepos->pszUser) &&
        !IsNullOrEmptyString(pRepos->pszPass))
     {
         dwError = TDNFAllocateStringPrintf(
@@ -159,7 +159,7 @@ TDNFRepoGetRpmCacheDir(
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
 
-    if(!pTdnf || !pszRepoId || !ppszRpmCacheDir)
+    if(!pTdnf || IsNullOrEmptyString(pszRepoId) || !ppszRpmCacheDir)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -293,9 +293,9 @@ TDNFRepoApplyProxySettings(
     if(!IsNullOrEmptyString(pConf->pszProxy))
     {
         if(curl_easy_setopt(
-            pCurl,
-            CURLOPT_PROXY,
-            pConf->pszProxy) != CURLE_OK)
+               pCurl,
+               CURLOPT_PROXY,
+               pConf->pszProxy) != CURLE_OK)
         {
             dwError = ERROR_TDNF_SET_PROXY;
             BAIL_ON_TDNF_ERROR(dwError);
@@ -304,9 +304,9 @@ TDNFRepoApplyProxySettings(
         if(!IsNullOrEmptyString(pConf->pszProxyUserPass))
         {
             if(curl_easy_setopt(
-                pCurl,
-                CURLOPT_PROXYUSERPWD,
-                pConf->pszProxyUserPass) != CURLE_OK)
+                   pCurl,
+                   CURLOPT_PROXYUSERPWD,
+                   pConf->pszProxyUserPass) != CURLE_OK)
             {
                 dwError = ERROR_TDNF_SET_PROXY_USERPASS;
                 BAIL_ON_TDNF_ERROR(dwError);

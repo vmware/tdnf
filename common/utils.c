@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #include "includes.h"
 
 uint32_t
@@ -182,6 +190,7 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszDescription);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
     }
 }
 
@@ -202,12 +211,14 @@ TDNFFreeSolvedPackageInfo(
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
 
         if(pSolvedPkgInfo->ppszPkgsNotResolved)
         {
             while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
             {
-                TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+                TDNF_SAFE_FREE_MEMORY(
+                    pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
             }
         }
         TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);

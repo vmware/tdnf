@@ -194,6 +194,7 @@ ReadGPGKey(
 
     dwError = TDNFFileReadAllText(pszFile, &pszKeyData);
     BAIL_ON_TDNF_ERROR(dwError);
+
     *ppszKeyData = pszKeyData;
 
 cleanup:

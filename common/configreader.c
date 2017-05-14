@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #include "includes.h"
 
 uint32_t TDNFConfSectionDefault(
@@ -98,7 +106,10 @@ TDNFGetSection(
     pszStart = TDNFLeftTrim(pszStart + 1);
     pszEnd = TDNFRightTrim(pszStart, pszEnd - 1);
 
-    dwError = TDNFAllocateMemory(pszEnd - pszStart + 2, 1, (void**)&pszSection);
+    dwError = TDNFAllocateMemory(
+                  pszEnd - pszStart + 2,
+                  1,
+                  (void**)&pszSection);
     BAIL_ON_TDNF_ERROR(dwError);
     memcpy(pszSection, pszStart, pszEnd - pszStart + 1);
 
@@ -432,7 +443,7 @@ error:
     {
         *ppData = NULL;
     }
-    TDNFFreeConfigData(pData);
+    TDNFFreeConfigData (pData);
     goto cleanup;
 }
 
