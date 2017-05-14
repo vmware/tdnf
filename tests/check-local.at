@@ -5,14 +5,18 @@
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-m4_include([init.at])
-m4_include([version.at])
-m4_include([repolist.at])
-m4_include([list.at])
-m4_include([install.at])
-m4_include([erase.at])
-m4_include([update.at])
-m4_include([downgrade.at])
-m4_include([whatprovides.at])
-m4_include([check-local.at])
-m4_include([updateinfo.at])
+
+AT_BANNER(tdnf check-local tests)
+
+AT_SETUP([check-local check])
+AT_KEYWORDS([check-local])
+AT_CHECK([
+TDNF_CHROOT_CLEAN
+TDNF_CHROOT_INIT
+TDNF_BUILD_INSTALL_RPMS
+TDNF_CLI_W_CHROOT check-local $abs_top_builddir/tests/testroot/RPMS/x86_64/
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
