@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -103,6 +103,47 @@ TDNFCliInvokeSearch(
     );
 
 uint32_t
+TDNFCliUpdateInfoInfo(
+    PTDNF_UPDATEINFO pInfo
+    );
+
+//help.c
+void
+TDNFCliShowUsage(
+    );
+
+void
+TDNFCliShowHelp(
+    );
+
+void
+TDNFCliShowNoSuchCommand(
+    const char* pszCmd
+    );
+
+void
+TDNFCliShowNoSuchOption(
+    const char* pszOption
+    );
+
+//installcmd.c
+
+uint32_t
+PrintSolvedInfo(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+uint32_t
+PrintNotAvailable(
+    char** ppszPkgsNotAvailable
+    );
+
+uint32_t
+PrintExistingPackagesSkipped(
+    PTDNF_PKG_INFO pPkgInfos
+    );
+
+uint32_t
 TDNFCliInvokeUpdateInfo(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_UPDATEINFO_ARGS pInfoArgs,
@@ -125,4 +166,191 @@ TDNFCliShowVersion(
 uint32_t
 TDNFCliVerboseShowEnv(
     PTDNF_CMD_ARGS pCmdArgs
+    );
+
+//options.c
+uint32_t
+_TDNFCliGetOptionByName(
+    const char* pszName,
+    struct option* pKnownOptions,
+    struct option** ppOption
+    );
+
+uint32_t
+TDNFCliValidateOptionName(
+    const char* pszOptionName,
+    struct option* pKnownOptions
+    );
+
+uint32_t
+TDNFCliValidateOptionArg(
+    const char* pszOption,
+    const char* pszArg,
+    struct option* pKnownOptions
+    );
+
+uint32_t
+TDNFCliValidateOptions(
+    const char* pszOption,
+    const char* pszArg,
+    struct option* pKnownOptions
+    );
+
+//output.c
+void
+ShowConsoleProps(
+    );
+
+uint32_t
+GetConsoleWidth(
+    int* pnWidth
+    );
+
+int
+CalculateColumnWidth(
+    int nTotalWidth,
+    int nRequestedPercent,
+    int nMinVal
+    );
+
+uint32_t
+GetColumnWidths(
+    int nCount,
+    int* pnColPercents,
+    int* pnColWidths
+    );
+
+//parseargs.c
+uint32_t
+TDNFCopyOptions(
+    PTDNF_CMD_ARGS pOptionArgs,
+    PTDNF_CMD_ARGS pArgs
+    );
+
+uint32_t
+ParseOption(
+    const char* pszName,
+    const char* pszArg,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
+ParseRpmVerbosity(
+    const char* pszVerbosity,
+    int* pnVerbosity
+    );
+
+uint32_t
+HandleOptionsError(
+    const char* pszName,
+    const char* pszArg,
+    struct option* pstOptions
+    );
+
+uint32_t
+TDNFCliParseArgs(
+    int argc,
+    char* const* argv,
+    PTDNF_CMD_ARGS* ppCmdArgs
+    );
+
+//parsecleanargs.c
+uint32_t
+ParseCleanType(
+    const char* pszCleanType,
+    TDNF_CLEANTYPE* pnCleanType
+    );
+
+uint32_t
+TDNFCliParseCleanArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    TDNF_CLEANTYPE* pnCleanType
+    );
+
+//parselistargs.c
+uint32_t
+ParseScope(
+    const char* pszScope,
+    TDNF_SCOPE* pnScope
+    );
+
+uint32_t
+TDNFCliParseListArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_LIST_ARGS* ppListArgs
+    );
+
+//parserepolistargs.c
+uint32_t
+ParseFilter(
+    const char* pszRepolistFilter,
+    TDNF_REPOLISTFILTER* pnFilter
+    );
+
+uint32_t
+TDNFCliParseRepoListArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    TDNF_REPOLISTFILTER* pnFilter
+    );
+
+//parseupdateinfo.c
+uint32_t
+ParseMode(
+    const char* pszOutMode,
+    TDNF_UPDATEINFO_OUTPUT* pnOutMode
+    );
+
+uint32_t
+TDNFCliParseUpdateInfoArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_UPDATEINFO_ARGS* ppUpdateInfoArgs
+    );
+
+void
+TDNFFreeUpdateInfoArgs(
+    PTDNF_UPDATEINFO_ARGS pUpdateInfoArgs
+    );
+
+//updateinfocmd.c
+char*
+TDNFGetUpdateInfoType(
+    int nType
+    );
+
+uint32_t
+TDNFCliUpdateInfoList(
+    PTDNF_UPDATEINFO pUpdateInfo
+    );
+
+uint32_t
+TDNFCliUpdateInfoSummary(
+    PTDNF pTdnf,
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_UPDATEINFO_ARGS pInfoArgs
+    );
+
+void
+TDNFFreeListArgs(
+    PTDNF_LIST_ARGS pListArgs
+    );
+
+//setopt.c
+uint32_t
+AddSetOpt(
+    PTDNF_CMD_ARGS pCmdArgs,
+    const char* pszOptArg
+    );
+
+uint32_t
+AddSetOptWithValues(
+    PTDNF_CMD_ARGS pCmdArgs,
+    int nType,
+    const char* pszOptArg,
+    const char* pszOptValue
+    );
+
+uint32_t
+GetOptionAndValue(
+    const char* pszOptArg,
+    PTDNF_CMD_OPT* ppCmdOpt
     );

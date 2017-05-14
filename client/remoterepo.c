@@ -98,7 +98,6 @@ TDNFDownloadFile(
     CURL *pCurl = NULL;
     FILE *fp = NULL;
     char *pszUserPass = NULL;
-    uint32_t nStatus = 0;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -156,20 +155,6 @@ TDNFDownloadFile(
     dwError = curl_easy_perform(pCurl);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
-    dwError = curl_easy_getinfo(pCurl,
-                                CURLINFO_RESPONSE_CODE,
-                                &nStatus);
-    BAIL_ON_TDNF_CURL_ERROR(dwError);
-
-    if(nStatus >= 400)
-    {
-        fprintf(stderr,
-                "Error: %d when downloading %s\n. Please check repo url.\n",
-                nStatus,
-                pszFileUrl);
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
     if(fp)
@@ -183,16 +168,6 @@ cleanup:
     return dwError;
 
 error:
-    if(fp)
-    {
-        fclose(fp);
-        fp = NULL;
-    }
-    if(!IsNullOrEmptyString(pszFile))
-    {
-        unlink(pszFile);
-    }
-
     if(pCurl && TDNFIsCurlError(dwError))
     {
         uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
@@ -207,21 +182,24 @@ error:
 uint32_t
 TDNFDownloadPackage(
     PTDNF pTdnf,
-    HyPackage hPkg,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
     const char* pszRpmCacheDir
     )
 {
     uint32_t dwError = 0;
-    char* pszHyPackage = NULL;
-    const char* pszRepo = NULL;
-    char* pszUserPass = NULL;
     char* pszBaseUrl = NULL;
-    const char* pszPkgName = NULL;
     int nSilent = 0;
     char *pszPackageUrl = NULL;
     char *pszPackageFile = NULL;
+    char *pszCopyOfPackageLocation = NULL;
 
-    if(!pTdnf || !pTdnf->pArgs || !hPkg || IsNullOrEmptyString(pszRpmCacheDir))
+    if(!pTdnf || 
+       !pTdnf->pArgs ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -229,28 +207,28 @@ TDNFDownloadPackage(
 
     nSilent = pTdnf->pArgs->nQuiet;
 
-    //Get package details
-    pszHyPackage = hy_package_get_location(hPkg);
-    pszPkgName = hy_package_get_name(hPkg);
-    pszRepo = hy_package_get_reponame(hPkg);
-
-    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepo, &pszBaseUrl);
+    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepoName, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateStringPrintf(&pszPackageUrl,
                                        "%s/%s",
                                        pszBaseUrl,
-                                       pszHyPackage);
+                                       pszPackageLocation);
+
     BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pszPackageLocation,
+                                 &pszCopyOfPackageLocation);
+        BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateStringPrintf(&pszPackageFile,
                                        "%s/%s",
                                        pszRpmCacheDir,
-                                       basename(pszHyPackage));
+                                       basename(pszCopyOfPackageLocation));
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFDownloadFile(pTdnf,
-                               pszRepo,
+                               pszRepoName,
                                pszPackageUrl,
                                pszPackageFile,
                                nSilent ? NULL : pszPkgName);
@@ -260,15 +238,12 @@ TDNFDownloadPackage(
     {
         fprintf(stdout, "\n");
     }
+
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszPackageFile);
     TDNF_SAFE_FREE_MEMORY(pszPackageUrl);
+    TDNF_SAFE_FREE_MEMORY(pszCopyOfPackageLocation);
+    TDNF_SAFE_FREE_MEMORY(pszPackageFile);
     TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
-    TDNF_SAFE_FREE_MEMORY(pszUserPass);
-    if(pszHyPackage)
-    {
-        hy_free(pszHyPackage);
-    }
     return dwError;
 
 error:
