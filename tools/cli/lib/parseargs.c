@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -74,24 +74,24 @@ TDNFCliParseArgs(
     }
 
     dwError = TDNFAllocateMemory(
-                            1,
-                            sizeof(TDNF_CMD_ARGS),
-                            (void**)&pCmdArgs);
+                  1,
+                  sizeof(TDNF_CMD_ARGS),
+                  (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
     opterr = 0;//tell getopt to not print errors
     while (1)
     {
-                
+
             nOption = getopt_long (
-                           argc,
-                           argv,
-                           "46bCc:d:e:hi:qvxy",
-                           pstOptions,
-                           &nOptionIndex);
+                          argc,
+                          argv,
+                          "46bCc:d:e:hi:qvxy",
+                          pstOptions,
+                          &nOptionIndex);
             if (nOption == -1)
                 break;
-                
+
             switch (nOption)
             {
                 case 0:
@@ -144,7 +144,10 @@ TDNFCliParseArgs(
                     _opt.nVerbose = 1;
                 break;
                 case '?':
-                    dwError = HandleOptionsError(argv[optind-1], optarg, pstOptions);
+                    dwError = HandleOptionsError(
+                                  argv[optind-1],
+                                  optarg,
+                                  pstOptions);
                     BAIL_ON_CLI_ERROR(dwError);
                 //TODO: Handle unknown option, incomplete options
                 break;
@@ -154,9 +157,9 @@ TDNFCliParseArgs(
     if(pCmdArgs->pszInstallRoot == NULL)
     {
         dwError = TDNFAllocateString(
-                    pszDefaultInstallRoot,
-                    &pCmdArgs->pszInstallRoot);
-                    BAIL_ON_CLI_ERROR(dwError);
+                      pszDefaultInstallRoot,
+                      &pCmdArgs->pszInstallRoot);
+                      BAIL_ON_CLI_ERROR(dwError);
     }
 
     dwError = TDNFCopyOptions(&_opt, pCmdArgs);
@@ -167,16 +170,16 @@ TDNFCliParseArgs(
     {
         pCmdArgs->nCmdCount = argc-optind;
         dwError = TDNFAllocateMemory(
-                                pCmdArgs->nCmdCount,
-                                sizeof(char*),
-                                (void**)&pCmdArgs->ppszCmds);
+                      pCmdArgs->nCmdCount,
+                      sizeof(char*),
+                      (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);
-        
+
         while (optind < argc)
         {
             dwError = TDNFAllocateString(
-                             argv[optind++],
-                             &pCmdArgs->ppszCmds[nIndex++]);
+                          argv[optind++],
+                          &pCmdArgs->ppszCmds[nIndex++]);
             BAIL_ON_CLI_ERROR(dwError);
         }
     }

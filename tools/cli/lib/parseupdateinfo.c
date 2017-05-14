@@ -40,12 +40,12 @@ TDNFCliParseUpdateInfoArgs(
     }
 
     dwError = TDNFAllocateMemory(
-                            1,
-                            sizeof(TDNF_UPDATEINFO_ARGS),
-                            (void**)&pUpdateInfoArgs);
+                  1,
+                  sizeof(TDNF_UPDATEINFO_ARGS),
+                  (void**)&pUpdateInfoArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
-    //Assume first arg as mode 
+    //Assume first arg as mode
     //(tdnf updateinfo <mode> <availability> <type> <pkgnamespecs>)
     if(pCmdArgs->nCmdCount > nStartIndex)
     {
