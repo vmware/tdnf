@@ -1,17 +1,11 @@
 /*
-      * Copyright (C) 2014-2017 VMware, Inc. All rights reserved.
-      *
-      * Header : tdnferror.h
-      *
-      * Abstract :
-      *
-      *            tdnfclientlib
-      *
-      *            public header
-      *
-      * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
-      *
-*/
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #ifndef __TDNFDEFINES_H__
 #define __TDNFDEFINES_H__
 
@@ -74,30 +68,29 @@ extern "C" {
 #define ERROR_TDNF_CURL_BASE                1201
 #define ERROR_TDNF_CURL_END                 1299
 
-//Hawkey errors 1300 to 1399
-#define ERROR_TDNF_HAWKEY_BASE          1300
+#define ERROR_TDNF_SOLV_BASE                1300
 // general runtime error
-#define ERROR_TDNF_HAWKEY_FAILED        (ERROR_TDNF_HAWKEY_BASE + HY_E_FAILED)
+#define ERROR_TDNF_SOLV_FAILED        (ERROR_TDNF_SOLV_BASE + 1)
 // client programming error
-#define ERROR_TDNF_HAWKEY_OP            (ERROR_TDNF_HAWKEY_BASE + HY_E_OP)
+#define ERROR_TDNF_SOLV_OP            (ERROR_TDNF_SOLV_BASE + 2)
 // error propagated from libsolv
-#define ERROR_TDNF_HAWKEY_LIBSOLV       (ERROR_TDNF_HAWKEY_BASE + HY_E_LIBSOLV)
+#define ERROR_TDNF_SOLV_LIBSOLV       (ERROR_TDNF_SOLV_BASE + 3)
 // I/O error
-#define ERROR_TDNF_HAWKEY_IO            (ERROR_TDNF_HAWKEY_BASE + HY_E_IO)
+#define ERROR_TDNF_SOLV_IO            (ERROR_TDNF_SOLV_BASE + 4)
 // cache write error
-#define ERROR_TDNF_HAWKEY_CACHE_WRITE   (ERROR_TDNF_HAWKEY_BASE + HY_E_CACHE_WRITE)
+#define ERROR_TDNF_SOLV_CACHE_WRITE   (ERROR_TDNF_SOLV_BASE + 5)
 // ill-formed query
-#define ERROR_TDNF_HAWKEY_QUERY         (ERROR_TDNF_HAWKEY_BASE + HY_E_QUERY)
+#define ERROR_TDNF_SOLV_QUERY         (ERROR_TDNF_SOLV_BASE + 6)
 // unknown arch
-#define ERROR_TDNF_HAWKEY_ARCH          (ERROR_TDNF_HAWKEY_BASE + HY_E_ARCH)
+#define ERROR_TDNF_SOLV_ARCH          (ERROR_TDNF_SOLV_BASE + 7)
 // validation check failed
-#define ERROR_TDNF_HAWKEY_VALIDATION    (ERROR_TDNF_HAWKEY_BASE + HY_E_VALIDATION)
+#define ERROR_TDNF_SOLV_VALIDATION    (ERROR_TDNF_SOLV_BASE + 8)
 // ill-specified selector
-#define ERROR_TDNF_HAWKEY_SELECTOR      (ERROR_TDNF_HAWKEY_BASE + HY_E_SELECTOR)
+#define ERROR_TDNF_SOLV_SELECTOR      (ERROR_TDNF_SOLV_BASE + 9)
 // goal found no solutions
-#define ERROR_TDNF_HAWKEY_NO_SOLUTION   (ERROR_TDNF_HAWKEY_BASE + HY_E_NO_SOLUTION)
+#define ERROR_TDNF_SOLV_NO_SOLUTION   (ERROR_TDNF_SOLV_BASE + 10)
 // the capability was not available
-#define ERROR_TDNF_HAWKEY_NO_CAPABILITY (ERROR_TDNF_HAWKEY_BASE + HY_E_NO_CAPABILITY)
+#define ERROR_TDNF_SOLV_NO_CAPABILITY (ERROR_TDNF_SOLV_BASE + 11)
 //Repo errors 1400 to 1469
 #define ERROR_TDNF_REPO_BASE                 1400
 

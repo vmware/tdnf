@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -119,8 +119,7 @@ error:
     {
         TDNFFreeReposInternal(pReposAll);
     }
-    goto cleanup;
-}
+    goto cleanup;}
 
 uint32_t
 TDNFLoadReposFromFile(
@@ -387,9 +386,7 @@ TDNFCloneRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(1,
-                                 sizeof(TDNF_REPO_DATA),
-                                 (void**)&pRepo);
+    dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pRepo->nEnabled = pRepoIn->nEnabled;
@@ -403,10 +400,14 @@ TDNFCloneRepo(
     dwError = TDNFSafeAllocateString(pRepoIn->pszBaseUrl, &pRepo->pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSafeAllocateString(pRepoIn->pszMetaLink, &pRepo->pszMetaLink);
+    dwError = TDNFSafeAllocateString(
+                  pRepoIn->pszMetaLink,
+                  &pRepo->pszMetaLink);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSafeAllocateString(pRepoIn->pszUrlGPGKey, &pRepo->pszUrlGPGKey);
+    dwError = TDNFSafeAllocateString(
+                  pRepoIn->pszUrlGPGKey,
+                  &pRepo->pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppRepo = pRepo;
@@ -442,10 +443,6 @@ TDNFFreeReposInternal(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-        if(pRepo->hRepo)
-        {
-            hy_repo_free(pRepo->hRepo);
-        }
         pRepos = pRepo->pNext;
         TDNF_SAFE_FREE_MEMORY(pRepo);
     }

@@ -7,6 +7,7 @@ pkginclude_HEADERS = include/*.h
 pkgconfigdir = $(libdir)/pkgconfig
 
 SUBDIRS = \
+    solv \
     common \
     client \
     tests \
