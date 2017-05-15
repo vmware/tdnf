@@ -427,14 +427,14 @@ TDNFFreeConfig(
 {
     if(pConf)
     {
-       TDNF_SAFE_FREE_MEMORY(pConf->pszProxy);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
-       TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
-       TDNF_SAFE_FREE_MEMORY(pConf);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszProxy);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
+        TDNF_SAFE_FREE_MEMORY(pConf);
     }
 }
 

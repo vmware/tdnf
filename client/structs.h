@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-17 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -33,15 +33,13 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     char* pszUrlGPGKey;
     char* pszUser;
     char* pszPass;
-    HyRepo hRepo;
 
     struct _TDNF_REPO_DATA_INTERNAL_* pNext;
 }TDNF_REPO_DATA_INTERNAL, *PTDNF_REPO_DATA_INTERNAL;
 
 typedef struct _TDNF_
 {
-    HySack hSack;
-    HyGoal hGoal;
+    PSolvSack pSack;
     PTDNF_CMD_ARGS pArgs;
     PTDNF_CONF pConf;
     PTDNF_REPO_DATA_INTERNAL pRepos;

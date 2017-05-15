@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -20,11 +20,11 @@
 
 #include "includes.h"
 
-
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    TDNF_ALTERTYPE nAlterType
     )
 {
     uint32_t dwError = 0;
@@ -54,7 +54,7 @@ TDNFRpmExecTransaction(
 
     //Allow downgrades
     ts.nProbFilterFlags = RPMPROB_FILTER_OLDPACKAGE;
-    if(pSolvedInfo->nAlterType == ALTER_REINSTALL)
+    if(nAlterType == ALTER_REINSTALL)
     {
         ts.nProbFilterFlags = ts.nProbFilterFlags | RPMPROB_FILTER_REPLACEPKG;
     }
@@ -117,6 +117,36 @@ error:
 }
 
 uint32_t
+TDNFTransAddErasePkgs(
+    PTDNFRPMTS pTS,
+    PTDNF_PKG_INFO pInfo)
+{
+    uint32_t dwError = 0;
+    if(!pInfo)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
+        pInfo = pInfo->pNext;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    goto cleanup;
+}
+
+
+uint32_t
 TDNFPopulateTransaction(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
@@ -124,48 +154,59 @@ TDNFPopulateTransaction(
     )
 {
     uint32_t dwError = 0;
-
     if(pSolvedInfo->pPkgsToInstall)
     {
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
-                      pTdnf);
+                      pTdnf,
+                      pSolvedInfo->pPkgsToInstall);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToReinstall)
     {
-        dwError = TDNFTransAddReInstallPkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
-                      pTdnf);
-        BAIL_ON_TDNF_ERROR(dwError);
+                      pTdnf,
+                      pSolvedInfo->pPkgsToReinstall);
+        BAIL_ON_TDNF_ERROR(dwError);    
     }
     if(pSolvedInfo->pPkgsToUpgrade)
     {
         dwError = TDNFTransAddUpgradePkgs(
                       pTS,
-                      pTdnf);
+                      pTdnf,
+                      pSolvedInfo->pPkgsToUpgrade);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToRemove)
     {
         dwError = TDNFTransAddErasePkgs(
                       pTS,
-                      pTdnf);
+                      pSolvedInfo->pPkgsToRemove);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsObsoleted)
     {
         dwError = TDNFTransAddObsoletedPkgs(
                       pTS,
-                      pTdnf);
+                      pTdnf,
+                      pSolvedInfo->pPkgsObsoleted);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToDowngrade)
     {
-        dwError = TDNFTransAddDowngradePkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
-                      pTdnf);
+                      pTdnf,
+                      pSolvedInfo->pPkgsToDowngrade);
         BAIL_ON_TDNF_ERROR(dwError);
+        if(pSolvedInfo->pPkgsRemovedByDowngrade)
+        {
+            dwError = TDNFTransAddErasePkgs(
+                      pTS,
+                      pSolvedInfo->pPkgsRemovedByDowngrade);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
 cleanup:
@@ -189,13 +230,13 @@ doCheck(PTDNFRPMTS pTS)
         int nProbs = rpmpsNumProblems(ps);
         if(nProbs > 0)
         {
-            fprintf(stderr, "Found %d problems\n", nProbs);
+            printf("Found %d problems\n", nProbs);
 
             psi = rpmpsInitIterator(ps);
             while(rpmpsNextIterator(psi) >= 0)
             {
                 prob = rpmpsGetProblem(psi);
-                fprintf(stderr, "%s\n", rpmProblemString(prob));
+                printf("%s\n", rpmProblemString(prob));
                 rpmProblemFree(prob);
             }
             rpmpsFreeIterator(psi);
@@ -263,31 +304,29 @@ error:
 uint32_t
 TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo
     )
 {
     uint32_t dwError = 0;
-    int i = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-
-    hPkgList = hy_goal_list_installs(pTdnf->hGoal);
-    if(!hPkgList)
+    if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
+    while(pInfo)
     {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
+        dwError = TDNFTransAddInstallPkg(
+                      pTS,
+                      pTdnf,
+                      pInfo->pszLocation,
+                      pInfo->pszName,
+                      pInfo->pszRepoName, 0);
+        pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
     return dwError;
 
 error:
@@ -301,46 +340,20 @@ error:
 uint32_t
 TDNFTransAddReInstallPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo
     )
 {
-    uint32_t dwError = 0;
-    int i = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-
-    hPkgList = hy_goal_list_reinstalls(pTdnf->hGoal);
-    if(!hPkgList)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
-    {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
+    return TDNFTransAddInstallPkgs(pTS, pTdnf, pInfo);
 }
 
 uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    HyPackage hPkg,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
     int nUpgrade
     )
 {
@@ -349,16 +362,11 @@ TDNFTransAddInstallPkg(
     char* pszRpmCacheDir = NULL;
     char* pszFilePath = NULL;
     char* pszFilePathCopy = NULL;
-    const char* pszRepoName = NULL;
-    char* pszHyName = NULL;
     Header rpmHeader = NULL;
     FD_t fp = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
-
-    pszRepoName = hy_package_get_reponame(hPkg);
-    pszHyName = hy_package_get_location(hPkg);
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -372,7 +380,7 @@ TDNFTransAddInstallPkg(
                   &pszFilePath,
                   "%s/%s",
                   pszRpmCacheDir,
-                  pszHyName);
+                  pszPackageLocation);
     BAIL_ON_TDNF_ERROR(dwError);
 
     // dirname() may modify the contents of path, so it may be desirable to
@@ -405,7 +413,8 @@ TDNFTransAddInstallPkg(
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
-        dwError = TDNFDownloadPackage(pTdnf, hPkg, pszDownloadCacheDir);
+        dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
+            pszRepoName, pszDownloadCacheDir);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     //A download could have been triggered.
@@ -434,10 +443,10 @@ TDNFTransAddInstallPkg(
     }
 
     dwError = rpmReadPackageFile(
-                     pTS->pTS,
-                     fp,
-                     pszFilePath,
-                     &rpmHeader);
+                  pTS->pTS,
+                  fp,
+                  pszFilePath,
+                  &rpmHeader);
     //If not checking gpg sigs, ignore signature errors
     if(!nGPGCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
     {
@@ -446,11 +455,11 @@ TDNFTransAddInstallPkg(
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     dwError = rpmtsAddInstallElement(
-                   pTS->pTS,
-                   rpmHeader,
-                   (fnpyKey)pszFilePath,
-                   nUpgrade,
-                   NULL);
+                  pTS->pTS,
+                  rpmHeader,
+                  (fnpyKey)pszFilePath,
+                  nUpgrade,
+                  NULL);
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     if(pTS->pCachedRpmsArray)
@@ -467,10 +476,6 @@ TDNFTransAddInstallPkg(
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
-    if(pszHyName)
-    {
-        hy_free(pszHyName);
-    }
     TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
     if(fp)
     {
@@ -495,69 +500,29 @@ error:
 uint32_t
 TDNFTransAddUpgradePkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf
-    )
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo)
 {
     uint32_t dwError = 0;
-    int i = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-
-    hPkgList = hy_goal_list_upgrades(pTdnf->hGoal);
-    if(!hPkgList)
+    if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
+    while(pInfo)
     {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 1);
+        dwError = TDNFTransAddInstallPkg(
+                      pTS,
+                      pTdnf,
+                      pInfo->pszLocation,
+                      pInfo->pszName,
+                      pInfo->pszRepoName,
+                      1);
+        pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
-TDNFTransAddErasePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf
-    )
-{
-    uint32_t dwError = 0;
-    int i = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-
-    hPkgList = hy_goal_list_erasures(pTdnf->hGoal);
-    if(!hPkgList)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
-    {
-        dwError = TDNFTransAddErasePkg(pTS, hPkg);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
     return dwError;
 
 error:
@@ -571,31 +536,24 @@ error:
 uint32_t
 TDNFTransAddObsoletedPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo
     )
 {
     uint32_t dwError = 0;
-    int i = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-
-    hPkgList = hy_goal_list_obsoleted(pTdnf->hGoal);
-    if(!hPkgList)
+    if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
+    while(pInfo)
     {
-        dwError = TDNFTransAddErasePkg(pTS, hPkg);
+        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
+        pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
     return dwError;
 
 error:
@@ -605,93 +563,25 @@ error:
     }
     goto cleanup;
 }
-
-uint32_t
-TDNFTransAddDowngradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf
-    )
-{
-    uint32_t dwError = 0;
-    int i = 0;
-    HyPackage hPkg = NULL;
-    HyPackageList hPkgList = NULL;
-    HyPackage hInstalledPkg = NULL;
-
-    hPkgList = hy_goal_list_downgrades(pTdnf->hGoal);
-    if(!hPkgList)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    for(i = 0; (hPkg = hy_packagelist_get(hPkgList, i)) != NULL; ++i)
-    {
-        dwError = TDNFTransAddInstallPkg(pTS, pTdnf, hPkg, 0);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        //Downgrade is a removal of existing and installing old.
-        const char* pszName = NULL;
-        pszName = hy_package_get_name(hPkg);
-        if(IsNullOrEmptyString(pszName))
-        {
-            dwError = hy_get_errno();
-            if(dwError == 0)
-            {
-                dwError = HY_E_FAILED;
-            }
-            BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
-        }
-        dwError = TDNFFindInstalledPkgByName(pTdnf->hSack, pszName, &hInstalledPkg);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFTransAddErasePkg(pTS, hInstalledPkg);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        hy_package_free(hInstalledPkg);
-        hInstalledPkg = NULL;
-    }
-
-cleanup:
-    if(hInstalledPkg)
-    {
-        hy_package_free(hInstalledPkg);
-    }
-    if(hPkgList)
-    {
-        hy_packagelist_free(hPkgList);
-    }
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
 
 uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
-    HyPackage hPkg
+    const char* pkgName
     )
 {
     uint32_t dwError = 0;
     Header pRpmHeader = NULL;
     rpmdbMatchIterator pIterator = NULL;
-    const char* pszName = NULL;
     unsigned int nOffset = 0;
 
-    if(!pTS || !hPkg)
+    if(!pTS || IsNullOrEmptyString(pkgName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pszName = hy_package_get_name(hPkg);
-
-    pIterator = rpmtsInitIterator(pTS->pTS, (rpmTag)RPMDBI_LABEL, pszName, 0);
+    pIterator = rpmtsInitIterator(pTS->pTS, (rpmTag)RPMDBI_LABEL, pkgName, 0);
     while ((pRpmHeader = rpmdbNextIterator(pIterator)) != NULL)
     {
         nOffset = rpmdbGetIteratorOffset(pIterator);
@@ -712,8 +602,6 @@ cleanup:
 error:
     goto cleanup;
 }
-
-
 
 void*
 TDNFRpmCB(

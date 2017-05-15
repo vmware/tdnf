@@ -1,17 +1,11 @@
 /*
-      * Copyright (C) 2014-2017 VMware, Inc. All rights reserved.
-      *
-      * Header : tdnftypes.h
-      *
-      * Abstract :
-      *
-      *            tdnfclientlib
-      *
-      *            public header
-      *
-      * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
-      *
-*/
+ * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #pragma once
 
 #ifdef __cplusplus
@@ -158,6 +152,7 @@ typedef struct _TDNF_PKG_INFO
     char* pszDescription;
     char* pszFormattedSize;
     char* pszRelease;
+    char* pszLocation;
     struct _TDNF_PKG_INFO* pNext;
 }TDNF_PKG_INFO, *PTDNF_PKG_INFO;
 
@@ -165,7 +160,6 @@ typedef struct _TDNF_SOLVED_PKG_INFO
 {
     int nNeedAction;
     int nNeedDownload;
-    TDNF_ALTERTYPE nAlterType;
     PTDNF_PKG_INFO pPkgsNotAvailable;
     PTDNF_PKG_INFO pPkgsExisting;
     PTDNF_PKG_INFO pPkgsToInstall;
@@ -175,6 +169,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsUnNeeded;
     PTDNF_PKG_INFO pPkgsToReinstall;
     PTDNF_PKG_INFO pPkgsObsoleted;
+    PTDNF_PKG_INFO pPkgsRemovedByDowngrade;
     char** ppszPkgsNotResolved;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
