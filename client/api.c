@@ -147,6 +147,7 @@ TDNFCheckLocalPackages(
     HyPackageList hPkgList = NULL;
     int nLen = 0;
     int nLenRpmExt = 0;
+    int nIsDir = 0;
     char* pszLocalPathCopy = NULL;
     char *pszPathlist[2] = {NULL, NULL};
 
@@ -154,6 +155,15 @@ TDNFCheckLocalPackages(
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFIsDir(pszLocalPath, &nIsDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!nIsDir)
+    {
+        dwError = ENOTDIR;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
     dwError = TDNFAllocateString(pszLocalPath, &pszLocalPathCopy);
@@ -168,7 +178,7 @@ TDNFCheckLocalPackages(
     }
     fprintf(stdout, "Checking all packages from: %s\n", pszLocalPath);
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
+    hSack = hy_sack_create(NULL, NULL, NULL, NULL, 0);
     if(!hSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -831,6 +841,12 @@ TDNFResolve(
                   pTdnf->pArgs->nCmdCount,
                   sizeof(char*),
                   (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&pSolvedPkgInfo->ppszPkgsNotInstalled);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPrepareAllPackages(
