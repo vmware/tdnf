@@ -68,6 +68,7 @@ extern "C" {
 //
 #define ERROR_TDNF_METADATA_EXPIRE_PARSE    1029
 #define ERROR_TDNF_SELF_ERASE               1030
+#define ERROR_TDNF_ERASE_NEEDS_INSTALL      1031
 
 //curl errors
 #define ERROR_TDNF_CURL_INIT                1200
