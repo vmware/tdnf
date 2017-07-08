@@ -168,7 +168,7 @@ TDNFCheckLocalPackages(
     }
     fprintf(stdout, "Checking all packages from: %s\n", pszLocalPath);
 
-    hSack = hy_sack_create(NULL, NULL, NULL, 0);
+    hSack = hy_sack_create(NULL, NULL, NULL, NULL, 0);
     if(!hSack)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -831,6 +831,12 @@ TDNFResolve(
                   pTdnf->pArgs->nCmdCount,
                   sizeof(char*),
                   (void**)&pSolvedPkgInfo->ppszPkgsNotResolved);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&pSolvedPkgInfo->ppszPkgsNotInstalled);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFPrepareAllPackages(

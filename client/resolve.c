@@ -21,6 +21,37 @@
 #include "includes.h"
 
 uint32_t
+TDNFAddNotInstalled(
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    const char* pszPkgName
+    )
+{
+    uint32_t dwError = 0 ;
+    int nIndex = 0;
+
+    if(!pSolvedInfo ||
+       !pSolvedInfo->ppszPkgsNotInstalled ||
+       IsNullOrEmptyString(pszPkgName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    while(pSolvedInfo->ppszPkgsNotInstalled[nIndex++]);
+
+    dwError = TDNFAllocateString(
+                  pszPkgName,
+                  &pSolvedInfo->ppszPkgsNotInstalled[--nIndex]);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFAddNotResolved(
     PTDNF_SOLVED_PKG_INFO pSolvedInfo,
     const char* pszPkgName
@@ -320,6 +351,7 @@ TDNFPrepareAllPackages(
             {
                 dwError = TDNFPrepareAndAddPkg(
                               pTdnf,
+                              1,
                               hy_package_get_name(hPkgGlob),
                               pSolvedPkgInfo,
                               hPkgListGoal);
@@ -335,6 +367,7 @@ TDNFPrepareAllPackages(
         {
             dwError = TDNFPrepareAndAddPkg(
                           pTdnf,
+                          0,
                           pszPkgName,
                           pSolvedPkgInfo,
                           hPkgListGoal);
@@ -390,6 +423,7 @@ TDNFAddFilteredPkgs(
     {
         dwError = TDNFPrepareAndAddPkg(
                       pTdnf,
+                      0,
                       hy_package_get_name(hPkg),
                       pSolvedPkgInfo,
                       hPkgListGoal);
@@ -409,6 +443,7 @@ error:
 uint32_t
 TDNFPrepareAndAddPkg(
     PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
     HyPackageList hPkgListGoal
@@ -430,6 +465,7 @@ TDNFPrepareAndAddPkg(
 
     dwError = TDNFPrepareSinglePkg(
                   pTdnf,
+                  nIsGlobExpanded,
                   pszPkgName,
                   pSolvedPkgInfo,
                   &hPkgList);
@@ -453,6 +489,7 @@ error:
 uint32_t
 TDNFPrepareSinglePkg(
     PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
     HyPackageList* phPkgListGoal
@@ -492,6 +529,10 @@ TDNFPrepareSinglePkg(
                       pTdnf->hSack,
                       pszPkgName,
                       &hPkgTemp);
+        if(dwError == ERROR_TDNF_NO_MATCH)
+        {
+            dwError = ERROR_TDNF_ERASE_NEEDS_INSTALL;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -590,6 +631,14 @@ error:
         if(TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName))
         {
             fprintf(stderr, "Error while adding not resolved packages\n");
+        }
+    }
+    if(dwError == ERROR_TDNF_ERASE_NEEDS_INSTALL)
+    {
+        dwError = 0;
+        if(!nIsGlobExpanded && TDNFAddNotInstalled(pSolvedPkgInfo, pszPkgName))
+        {
+            fprintf(stderr, "Error while adding not installed packages\n");
         }
     }
     if(phPkgListGoal)

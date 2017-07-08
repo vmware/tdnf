@@ -245,6 +245,11 @@ PrintNotAvailable(
     );
 
 uint32_t
+PrintNotInstalled(
+    char** ppszPkgsNotInstalled
+    );
+
+uint32_t
 PrintExistingPackagesSkipped(
     PTDNF_PKG_INFO pPkgInfos
     );

@@ -199,6 +199,12 @@ TDNFCliAlterCommand(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    if(!nSilent && pSolvedPkgInfo->ppszPkgsNotInstalled)
+    {
+        dwError = PrintNotInstalled(pSolvedPkgInfo->ppszPkgsNotInstalled);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     if(!pSolvedPkgInfo->nNeedAction)
     {
         dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
@@ -357,6 +363,35 @@ error:
 }
 
 uint32_t
+PrintNotInstalled(
+    char** ppszPkgsNotInstalled
+    )
+{
+    uint32_t dwError = 0;
+    int i = 0;
+    #define BOLD "\033[1m\033[30m"
+    #define RESET   "\033[0m"
+
+    if(!ppszPkgsNotInstalled)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    while(ppszPkgsNotInstalled[i])
+    {
+        printf(
+            "Package " BOLD "%s " RESET "is not installed.\n",
+            ppszPkgsNotInstalled[i]);
+        ++i;
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 PrintExistingPackagesSkipped(
     PTDNF_PKG_INFO pPkgInfos
     )
@@ -386,6 +421,36 @@ PrintExistingPackagesSkipped(
 cleanup:
     return dwError;
 
+error:
+    goto cleanup;
+}
+
+uint32_t
+PrintNotInstalledPackages(
+    PTDNF_PKG_INFO pPkgInfos
+    )
+{
+    uint32_t dwError = 0;
+
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+
+    if(!pPkgInfos)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    pPkgInfo = pPkgInfos;
+    while(pPkgInfo)
+    {
+        printf(
+            "Package %s is not installed.\n",
+            pPkgInfo->pszName);
+        pPkgInfo = pPkgInfo->pNext;
+    }
+
+cleanup:
+    return dwError;
 error:
     goto cleanup;
 }
