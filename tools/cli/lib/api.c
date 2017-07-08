@@ -231,7 +231,7 @@ TDNFCliInfoCommand(
 
     uint32_t dwCount = 0;
     uint32_t dwIndex = 0;
-    uint32_t dwTotalSize = 0;
+    uint64_t dwTotalSize = 0;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnInfo)
     {
@@ -269,7 +269,7 @@ TDNFCliInfoCommand(
     dwError = TDNFUtilsFormatSize(dwTotalSize, &pszFormattedSize);
     BAIL_ON_CLI_ERROR(dwError);
   
-    printf("\nTotal Size: %s (%u)\n", pszFormattedSize, dwTotalSize);
+    printf("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
 
 cleanup:
     if(pInfoArgs)

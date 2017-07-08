@@ -576,6 +576,7 @@ TDNFPrepareAllPackages(
 uint32_t
 TDNFPrepareAndAddPkg(
     PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
     HyPackageList hPkgListGoal
@@ -584,6 +585,7 @@ TDNFPrepareAndAddPkg(
 uint32_t
 TDNFPrepareSinglePkg(
     PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
     HyPackageList* phPkgListGoal

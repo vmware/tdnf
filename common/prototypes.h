@@ -128,7 +128,7 @@ TDNFRightTrim(
 
 uint32_t
 TDNFUtilsFormatSize(
-    uint32_t unSize,
+    uint64_t unSize,
     char** ppszFormattedSize
     );
 

@@ -83,7 +83,7 @@ TDNFRightTrim(
 
 uint32_t
 TDNFUtilsFormatSize(
-    uint32_t unSize,
+    uint64_t unSize,
     char** ppszFormattedSize
     )
 {
@@ -202,6 +202,15 @@ TDNFFreeSolvedPackageInfo(
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+
+        if(pSolvedPkgInfo->ppszPkgsNotInstalled)
+        {
+            while(pSolvedPkgInfo->ppszPkgsNotInstalled[i])
+            {
+                TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotInstalled[i++]);
+            }
+        }
+        TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotInstalled);
 
         if(pSolvedPkgInfo->ppszPkgsNotResolved)
         {
