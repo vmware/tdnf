@@ -301,6 +301,12 @@ TDNFRepoListFinalize(
     {
         if(pRepo->nEnabled)
         {
+            if(pRepo->pszName)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszName);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
             if(pRepo->pszBaseUrl)
             {
                 dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
