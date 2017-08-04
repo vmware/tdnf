@@ -284,9 +284,12 @@ TDNFRefreshRepo(
 
     if(nCleanMetadata || nMetadataExpired)
     {
-        fprintf(stdout,
-                "Refreshing metadata for: '%s'\n",
-                pRepo->pszName);
+        if(!pTdnf->pArgs->nQuiet)
+        {
+            fprintf(stdout,
+                    "Refreshing metadata for: '%s'\n",
+                    pRepo->pszName);
+        }
         dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
         if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
         {
