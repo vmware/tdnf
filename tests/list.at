@@ -25,7 +25,7 @@ AT_CLEANUP
 AT_SETUP([list installed])
 AT_KEYWORDS([list])
 AT_CHECK([TDNF_CLI_W_CHROOT list installed],\
- [243], [ignore], [ignore])
+ [0], [ignore], [ignore])
 AT_CLEANUP
 
 AT_SETUP([list multi])
