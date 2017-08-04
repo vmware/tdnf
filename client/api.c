@@ -451,6 +451,10 @@ TDNFInfo(
                   DETAIL_INFO,
                   &pPkgInfo,
                   &dwCount);
+    if(dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
@@ -529,6 +533,10 @@ TDNFList(
                   DETAIL_LIST,
                   &pPkgInfo,
                   &dwCount);
+    if(dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
