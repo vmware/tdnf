@@ -137,7 +137,7 @@ TDNFDownloadFile(
     dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
-    if(pszProgressData)
+    if(!pTdnf->pArgs->nQuiet && pszProgressData)
     {
         dwError = set_progress_cb(pCurl, pszProgressData);
         BAIL_ON_TDNF_ERROR(dwError);
