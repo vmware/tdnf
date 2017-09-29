@@ -50,6 +50,7 @@ TDNFCliShowHelp(
     printf("List of Main Commands\n");
     printf("\n");
 
+    printf("check                     Checks for problems in installed and available packages\n");
     printf("check-local               Checks local rpm folder for problems\n");
     printf("check-update              Check for available package upgrades\n");
     printf("clean                     Remove cached data\n");

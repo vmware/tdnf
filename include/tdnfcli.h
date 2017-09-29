@@ -155,6 +155,12 @@ TDNFCliRepoListCommand(
     );
 
 uint32_t
+TDNFCliCheckCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
 TDNFCliCheckLocalCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs

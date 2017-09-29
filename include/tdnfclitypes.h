@@ -49,6 +49,10 @@ typedef uint32_t
     PTDNF_SOLVED_PKG_INFO);
 
 typedef uint32_t
+(*PFN_TDNF_CHECK)(
+    PTDNF_CLI_CONTEXT);
+
+typedef uint32_t
 (*PFN_TDNF_CHECK_LOCAL)(
     PTDNF_CLI_CONTEXT,
     const char *);
@@ -147,6 +151,7 @@ typedef struct _TDNF_CLI_CONTEXT_
     PFN_TDNF_SEARCH             pFnSearch;
     PFN_TDNF_UPDATEINFO         pFnUpdateInfo;
     PFN_TDNF_UPDATEINFO_SUMMARY pFnUpdateInfoSummary;
+    PFN_TDNF_CHECK              pFnCheck;
 }TDNF_CLI_CONTEXT, *PTDNF_CLI_CONTEXT;
 
 #ifdef __cplusplus
