@@ -612,8 +612,20 @@ cleanup:
 error:
     if(dwError == ERROR_TDNF_ALREADY_INSTALLED)
     {
+        int nShowAlreadyInstalled = 1;
+        //dont show already installed errors in the check path
+        if(pTdnf && pTdnf->pArgs)
+        {
+            if(!strcmp(pTdnf->pArgs->ppszCmds[0], "check"))
+            {
+                nShowAlreadyInstalled = 0;
+            }
+        }
         dwError = 0;
-        fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+        if(nShowAlreadyInstalled)
+        {
+            fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+        }
     }
     if(dwError == ERROR_TDNF_NO_UPGRADE_PATH)
     {
