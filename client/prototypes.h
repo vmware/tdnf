@@ -277,6 +277,11 @@ TDNFAddPackagesForDowngrade(
     HyPackageList hPkgListGoal
     );
 
+uint32_t
+TDNFCheckProtectedPkgs(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
 //goal.c
 uint32_t
 TDNFGoalGetResultsIgnoreNoData(

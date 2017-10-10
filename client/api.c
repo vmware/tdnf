@@ -867,7 +867,6 @@ TDNFResolve(
     HyPackageList hPkgListGoal = NULL;
 
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
 
     if(!pTdnf || !ppSolvedPkgInfo)
     {
@@ -916,17 +915,8 @@ TDNFResolve(
                   pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pPkgInfo = pSolvedPkgInfo->pPkgsToRemove;
-    while(pPkgInfo != NULL)
-    {
-        if(pPkgInfo->pszName != NULL &&
-           strcmp(pPkgInfo->pszName, TDNF_NAME) == 0)
-        {
-            dwError = ERROR_TDNF_SELF_ERASE;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        pPkgInfo = pPkgInfo->pNext;
-    }
+    dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction = 
         pSolvedPkgInfo->pPkgsToInstall ||
