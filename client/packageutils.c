@@ -1108,3 +1108,57 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFHasProtectedPkgsInList(
+    PTDNF_PKG_INFO pPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        if(pPkgInfo->pszName && !strcmp(pPkgInfo->pszName, TDNF_NAME))
+        {
+            dwError = ERROR_TDNF_SELF_ERASE;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+error:
+    return dwError;
+}
+
+uint32_t
+TDNFCheckProtectedPkgs(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(pSolvedPkgInfo->pPkgsToRemove)
+    {
+        dwError = TDNFHasProtectedPkgsInList(pSolvedPkgInfo->pPkgsToRemove);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(pSolvedPkgInfo->pPkgsObsoleted)
+    {
+        dwError = TDNFHasProtectedPkgsInList(pSolvedPkgInfo->pPkgsObsoleted);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+error:
+    return dwError;
+}
