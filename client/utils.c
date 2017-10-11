@@ -603,3 +603,64 @@ error:
     }
     goto cleanup;
 }
+
+void
+print_curl_error(
+    const char *pszUrl
+    )
+{
+    CURLcode dwError = 0;
+    CURL *pCurl = NULL;
+    long nStatus = 0;
+
+    if(IsNullOrEmptyString(pszUrl))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pCurl = curl_easy_init();
+    if(IsNullOrEmptyString(pszUrl))
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_URL, pszUrl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_NOBODY, 1);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = curl_easy_perform(pCurl);
+    if(dwError)
+    {
+        const char *pszError = curl_easy_strerror(dwError);
+        fprintf(stderr, "curl#%d: %s\n", dwError, pszError);
+    }
+    else
+    {
+        dwError = curl_easy_getinfo(
+                     pCurl,
+                     CURLINFO_RESPONSE_CODE,
+                     &nStatus);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(nStatus >= 400)
+        {
+            fprintf(
+                stderr,
+                "Error: %ld when downloading %s\n. Please check repo url.\n",
+                nStatus,
+                pszUrl);
+        }
+    }
+error:
+    if(pCurl)
+    {
+        curl_easy_cleanup(pCurl);
+    }
+    return;
+}

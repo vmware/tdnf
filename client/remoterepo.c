@@ -179,6 +179,22 @@ cleanup:
 error:
     if(pError)
     {
+        if(!IsNullOrEmptyString(pszBaseUrl) ||
+           !IsNullOrEmptyString(pszHyPackage))
+        {
+            char *pszUrl = NULL;
+            dwError = TDNFAllocateStringPrintf(
+                          &pszUrl,
+                          "%s/%s",
+                          pszBaseUrl,
+                          pszHyPackage
+                          );
+            if(dwError == 0)
+            {
+                print_curl_error(pszUrl);
+            }
+            TDNF_SAFE_FREE_MEMORY(pszUrl);
+        }
         fprintf(
             stderr,
             "Error during download: %d: %s\n",
