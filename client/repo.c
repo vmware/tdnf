@@ -45,6 +45,7 @@ TDNFInitRepo(
     PTDNF_CONF pConf = NULL;
 
     HyRepo hRepo = NULL;
+    GError *pError = NULL;
 
     if(!pTdnf || !pTdnf->pConf || !pRepoData || !phRepo)
     {
@@ -141,7 +142,7 @@ TDNFInitRepo(
     lr_handle_setopt(hLibRepo, NULL, LRO_LOCAL, nLocalOnly);
 
     
-    bRet = lr_handle_perform(hLibRepo, pResult, NULL);
+    bRet = lr_handle_perform(hLibRepo, pResult, &pError);
     if(!bRet)
     {
         dwError = ERROR_TDNF_REPO_PERFORM;
@@ -196,6 +197,10 @@ cleanup:
     {
         lr_handle_free(hLibRepo);
     }
+    if(pError)
+    {
+        g_error_free(pError);
+    }
     return dwError;
 
 error:
@@ -203,6 +208,10 @@ error:
     //remove any cache data that could be potentially corrupt.
     if(pRepoData)
     {
+        if(pError && !IsNullOrEmptyString(pRepoData->pszBaseUrl))
+        {
+            print_curl_error(pRepoData->pszBaseUrl);
+        }
         fprintf(
             stderr,
             "Error: Failed to synchronize cache for repo '%s' from '%s'\n",

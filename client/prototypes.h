@@ -805,6 +805,11 @@ TDNFShouldSyncMetadata(
     int* pnShouldSync
     );
 
+void
+print_curl_error(
+    const char *pszUrl
+    );
+
 //validate.c
 uint32_t
 TDNFValidateCmdArgs(
