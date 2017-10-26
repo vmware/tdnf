@@ -139,8 +139,12 @@ TDNFDownloadFile(
 
     if(!pTdnf->pArgs->nQuiet && pszProgressData)
     {
-        dwError = set_progress_cb(pCurl, pszProgressData);
-        BAIL_ON_TDNF_ERROR(dwError);
+        //print progress only if tty or verbose is specified.
+        if(isatty(STDOUT_FILENO) || pTdnf->pArgs->nVerbose)
+        {
+            dwError = set_progress_cb(pCurl, pszProgressData);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     fp = fopen(pszFile, "wb");
