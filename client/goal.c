@@ -364,10 +364,17 @@ TDNFGoal(
     solver_set_flag(pSolv, SOLVER_FLAG_KEEP_ORPHANS, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_DOWNGRADE, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_INSTALL_ALSO_UPDATES, 1);
 
-    if (solver_solve(pSolv, &queueJobs) == 0)
+    dwError = solver_solve(pSolv, &queueJobs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pTrans = solver_create_transaction(pSolv);
+    if(!pTrans)
     {
-        pTrans = solver_create_transaction(pSolv);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     if(pTdnf->pArgs->nDebugSolver)
@@ -418,8 +425,6 @@ TDNFAddGoal(
 {
     uint32_t dwError = 0;
     char* pszPkg = NULL;
-    int flags = 0;
-    int i = 0;
     Queue queueJob = {0};
 
     if(!pQueueJobs || dwId == 0 || !pTdnf->pSack || !pTdnf->pSack->pPool)
@@ -442,22 +447,8 @@ TDNFAddGoal(
             break;
         case ALTER_REINSTALL:
         case ALTER_INSTALL:
-            dwError = SolvAddPkgInstallJob(pQueueJobs, dwId);
-            BAIL_ON_TDNF_ERROR(dwError);
-            break;
         case ALTER_UPGRADE:
-            dwError = SolvGetPkgNevrFromId(pTdnf->pSack, dwId, &pszPkg);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            flags = SELECTION_NAME|SELECTION_PROVIDES|SELECTION_GLOB;
-            flags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
-            selection_make(pTdnf->pSack->pPool, &queueJob, pszPkg, flags);
-            for (i = 0; i < queueJob.count; i += 2)
-            {
-                queue_push2(pQueueJobs,
-                            queueJob.elements[i],
-                            queueJob.elements[i + 1]);
-            }
+            dwError = SolvAddPkgInstallJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         case ALTER_AUTOERASE:

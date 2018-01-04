@@ -196,7 +196,7 @@ TDNFGetGlobPackages(
 
 uint32_t
 TDNFFilterPackages(
-    PSolvSack pSack,
+    PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
     Queue* pQueueGoal
@@ -538,7 +538,8 @@ TDNFPrepareAllPackages(
 
 uint32_t
 TDNFPrepareAndAddPkg(
-    PSolvSack pSack,
+    PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
@@ -547,7 +548,8 @@ TDNFPrepareAndAddPkg(
 
 uint32_t
 TDNFPrepareSinglePkg(
-    PSolvSack pSack,
+    PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,

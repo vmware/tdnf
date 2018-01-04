@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -175,14 +175,6 @@ uint32_t
 TDNFGetErrorString(
     uint32_t dwErrorCode,
     char** ppszErrorString
-    );
-
-//Format package size to suffix with
-//K, M, G for Kilo, Mega, Giga bytes
-uint32_t
-TDNFUtilsFormatSize(
-    uint32_t dwSize,
-    char** ppszFormattedSize
     );
 
 void
