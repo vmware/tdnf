@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -308,7 +308,7 @@ TDNFGetRepoMD(
                       pRepoData->pszId,
                       pszRepoMDUrl,
                       pszRepoMDFile,
-                      pTdnf->pArgs->nQuiet ? NULL : pRepoData->pszId);
+                      pRepoData->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -336,6 +336,58 @@ error:
 }
 
 uint32_t
+TDNFDownloadRepoMDPart(
+    PTDNF pTdnf,
+    const char *pszBaseUrl,
+    const char *pszRepo,
+    const char *pszFileName,
+    const char *pszDestPath
+    )
+{
+    uint32_t dwError = 0;
+    char *pszTempUrl = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszBaseUrl) ||
+       IsNullOrEmptyString(pszRepo) ||
+       IsNullOrEmptyString(pszFileName) ||
+       IsNullOrEmptyString(pszDestPath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(access(pszDestPath, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = TDNFAppendPath(
+                      pszBaseUrl,
+                      pszFileName,
+                      &pszTempUrl);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(
+                      pTdnf,
+                      pszRepo,
+                      pszTempUrl,
+                      pszDestPath,
+                      pszRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszTempUrl);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFEnsureRepoMDParts(
     PTDNF pTdnf,
     const char *pszBaseUrl,
@@ -345,7 +397,6 @@ TDNFEnsureRepoMDParts(
 {
     uint32_t dwError = 0;
     PTDNF_REPO_METADATA pRepoMD = NULL;
-    char *pszTempUrl = NULL;
 
     if(!pTdnf || !pRepoMDRel || !ppRepoMD)
     {
@@ -368,28 +419,13 @@ TDNFEnsureRepoMDParts(
                   &pRepoMD->pszPrimary);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(access(pRepoMD->pszPrimary, F_OK))
-    {
-        if(errno != ENOENT)
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-
-        dwError = TDNFAppendPath(
-                      pszBaseUrl,
-                      pRepoMDRel->pszPrimary,
-                      &pszTempUrl);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFDownloadFile(
-                      pTdnf,
-                      pRepoMDRel->pszRepo,
-                      pszTempUrl,
-                      pRepoMD->pszPrimary,
-                      pTdnf->pArgs->nQuiet ? NULL : pRepoMDRel->pszRepo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFDownloadRepoMDPart(
+                  pTdnf,
+                  pszBaseUrl,
+                  pRepoMDRel->pszRepo,
+                  pRepoMDRel->pszPrimary,
+                  pRepoMD->pszPrimary);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAppendPath(
                   pRepoMDRel->pszRepoCacheDir,
@@ -397,32 +433,33 @@ TDNFEnsureRepoMDParts(
                   &pRepoMD->pszFileLists);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(access(pRepoMD->pszFileLists, F_OK))
-    {
-        if(errno != ENOENT)
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
+    dwError = TDNFDownloadRepoMDPart(
+                  pTdnf,
+                  pszBaseUrl,
+                  pRepoMDRel->pszRepo,
+                  pRepoMDRel->pszFileLists,
+                  pRepoMD->pszFileLists);
+    BAIL_ON_TDNF_ERROR(dwError);
 
+    if(!IsNullOrEmptyString(pRepoMDRel->pszUpdateInfo))
+    {
         dwError = TDNFAppendPath(
-                      pszBaseUrl,
-                      pRepoMDRel->pszFileLists,
-                      &pszTempUrl);
+                      pRepoMDRel->pszRepoCacheDir,
+                      pRepoMDRel->pszUpdateInfo,
+                      &pRepoMD->pszUpdateInfo);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFDownloadFile(
+        dwError = TDNFDownloadRepoMDPart(
                       pTdnf,
+                      pszBaseUrl,
                       pRepoMDRel->pszRepo,
-                      pszTempUrl,
-                      pRepoMD->pszFileLists,
-                      pTdnf->pArgs->nQuiet ? NULL : pRepoMDRel->pszRepo);
+                      pRepoMDRel->pszUpdateInfo,
+                      pRepoMD->pszUpdateInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppRepoMD = pRepoMD;
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszTempUrl);
     return dwError;
 
 error:

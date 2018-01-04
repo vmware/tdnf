@@ -91,6 +91,7 @@ typedef enum
 #define TDNF_RPM_EXT                      ".rpm"
 #define TDNF_NAME                         "tdnf"
 #define DIR_SEPARATOR                     '/'
+#define SOLV_PATCH_MARKER                 "patch:"
 
 //repomd type
 #define TDNF_REPOMD_TYPE_PRIMARY          "primary"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -137,10 +137,14 @@ TDNFDownloadFile(
     dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
-    if(pszProgressData)
+    if(!pTdnf->pArgs->nQuiet && pszProgressData)
     {
-        dwError = set_progress_cb(pCurl, pszProgressData);
-        BAIL_ON_TDNF_ERROR(dwError);
+        //print progress only if tty or verbose is specified.
+        if(isatty(STDOUT_FILENO) || pTdnf->pArgs->nVerbose)
+        {
+            dwError = set_progress_cb(pCurl, pszProgressData);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     fp = fopen(pszFile, "wb");
