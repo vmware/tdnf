@@ -1066,6 +1066,12 @@ TDNFUpdateInfo(
                       pTdnf->pSack,
                       dwPkgId,
                       &pUpdateAdvPkgList);
+        //Ignore no data and continue.
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+            continue;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPackageListSize(pUpdateAdvPkgList, &nCount);
@@ -1075,6 +1081,7 @@ TDNFUpdateInfo(
         {
             dwError = SolvGetPackageId(pUpdateAdvPkgList, iAdv, &dwAdvId);
             BAIL_ON_TDNF_ERROR(dwError);
+
             dwError = TDNFPopulateUpdateInfoOfOneAdvisory(
                           pTdnf->pSack,
                           dwAdvId,

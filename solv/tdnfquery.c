@@ -878,7 +878,6 @@ error:
         *ppPkgList = NULL;
     }
     goto cleanup;
-
 }
 
 uint32_t
