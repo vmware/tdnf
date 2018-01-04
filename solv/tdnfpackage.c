@@ -1281,7 +1281,7 @@ SolvFindLowestInstalled(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = SolvFindHightestOrLowestInstalled(
+    dwError = SolvFindHighestOrLowestInstalled(
                   pSack,
                   pszPkgName,
                   &dwLowestInstalled,
@@ -1296,7 +1296,7 @@ error:
 }
 
 uint32_t
-SolvFindHightestInstalled(
+SolvFindHighestInstalled(
     PSolvSack pSack,
     const char* pszPkgName,
     Id* pdwId
@@ -1309,7 +1309,7 @@ SolvFindHightestInstalled(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = SolvFindHightestOrLowestInstalled(
+    dwError = SolvFindHighestOrLowestInstalled(
                   pSack,
                   pszPkgName,
                   &dwHighestInstalled,
@@ -1324,7 +1324,7 @@ error:
 }
 
 uint32_t
-SolvFindHightestOrLowestInstalled(
+SolvFindHighestOrLowestInstalled(
     PSolvSack pSack,
     const char* pszPkgName,
     Id* pdwId,
@@ -1335,7 +1335,7 @@ SolvFindHightestOrLowestInstalled(
     int dwPkgIndex = 0;
     int dwEvrCompare = 0;
     Id  dwInstalledId = 0;
-    Id  dwHightestOrLowestInstalled = 0;
+    Id  dwHighestOrLowestInstalled = 0;
     PSolvPackageList pInstalledPkgList = NULL;
     uint32_t dwCount = 0;
 
@@ -1354,10 +1354,10 @@ SolvFindHightestOrLowestInstalled(
     dwError = SolvGetPackageId(
                   pInstalledPkgList,
                   0,
-                  &dwHightestOrLowestInstalled);
+                  &dwHighestOrLowestInstalled);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwHightestOrLowestInstalled != 0)
+    if(dwHighestOrLowestInstalled != 0)
     {
         dwError = SolvGetPackageListSize(pInstalledPkgList, &dwCount);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -1372,27 +1372,27 @@ SolvFindHightestOrLowestInstalled(
             dwError = SolvCmpEvr(
                           pSack,
                           dwInstalledId,
-                          dwHightestOrLowestInstalled,
+                          dwHighestOrLowestInstalled,
                           &dwEvrCompare);
             BAIL_ON_TDNF_ERROR(dwError);
             if(dwFindHighest)
             {
                 if(dwEvrCompare > 0)
                 {
-                    dwHightestOrLowestInstalled = dwInstalledId;
+                    dwHighestOrLowestInstalled = dwInstalledId;
                 }
             }
             else
             {
                 if(dwEvrCompare < 0)
                 {
-                    dwHightestOrLowestInstalled = dwInstalledId;
+                    dwHighestOrLowestInstalled = dwInstalledId;
                 }
             }
         }
     }
 
-    *pdwId = dwHightestOrLowestInstalled;
+    *pdwId = dwHighestOrLowestInstalled;
 cleanup:
     if(pInstalledPkgList)
     {

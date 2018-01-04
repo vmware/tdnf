@@ -441,20 +441,20 @@ TDNFVerifyInstallPackage(
     dwError = SolvGetPkgNameFromId(pSack, dwPkg, &pszName);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvFindHightestInstalled(
+    dwError = SolvFindHighestInstalled(
                   pSack,
                   pszName,
                   &dwInstalledId);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvCmpEvr(pSack, dwPkg, dwInstalledId, &dwEvrCompare);
-    if(dwError == 0 && dwEvrCompare > 0)
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    //allow updates and downgrades with install
+    //install could specify version
+    if(dwEvrCompare)
     {
         dwInstallPackage = 1;
-    }
-    else
-    {
-        dwInstallPackage = 0;
     }
 
     *pdwInstallPackage = dwInstallPackage;
@@ -506,6 +506,11 @@ TDNFAddPackagesForInstall(
     {
         queue_push(pQueueGoal, dwHighestAvailable);
     }
+    else
+    {
+        dwError = ERROR_TDNF_ALREADY_INSTALLED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 cleanup:
     return dwError;
@@ -538,7 +543,7 @@ TDNFVerifyUpgradePackage(
     dwError = SolvGetPkgNameFromId(pSack, dwPkg, &pszName);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvFindHightestInstalled(
+    dwError = SolvFindHighestInstalled(
                   pSack,
                   pszName,
                   &dwInstalledId);
