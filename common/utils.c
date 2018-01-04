@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -91,7 +91,7 @@ TDNFRightTrim(
 
 uint32_t
 TDNFUtilsFormatSize(
-    uint32_t unSize,
+    uint64_t unSize,
     char** ppszFormattedSize
     )
 {

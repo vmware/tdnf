@@ -506,6 +506,11 @@ TDNFAddPackagesForInstall(
     {
         queue_push(pQueueGoal, dwHighestAvailable);
     }
+    else
+    {
+        dwError = ERROR_TDNF_ALREADY_INSTALLED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 cleanup:
     return dwError;

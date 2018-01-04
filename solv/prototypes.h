@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ *
+ * Licensed under the GNU Lesser General Public License v2.1 (the "License");
+ * you may not use this file except in compliance with the License. The terms
+ * of the License are located in the COPYING file of this distribution.
+ */
+
 #pragma once
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +28,7 @@ typedef struct _SolvQuery
     char**      ppszPackageNames;
     Queue       queueResult;
     uint32_t    dwNewPackages;
+    TDNF_SCOPE  nScope;
 } SolvQuery, *PSolvQuery;
 
 typedef struct _SolvPackageList
@@ -387,10 +396,12 @@ SolvGetUpdateAdvisories(
     PSolvPackageList* ppPkgList);
 
 uint32_t
-SolvFindAllUpdateCandidates(
+SolvFindAllUpDownCandidates(
     PSolvSack pSack,
-    PSolvPackageList  pInstaledPackages,
-    PSolvPackageList* ppPkgList);
+    PSolvPackageList  pInstalledPackages,
+    int up,
+    Queue *pQueueResult
+    );
 
 uint32_t
 SolvGetUpdateAdvisories(

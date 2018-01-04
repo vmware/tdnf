@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2017-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -231,7 +231,7 @@ TDNFCliInfoCommand(
 
     uint32_t dwCount = 0;
     uint32_t dwIndex = 0;
-    uint32_t dwTotalSize = 0;
+    uint64_t dwTotalSize = 0;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnInfo)
     {
@@ -269,7 +269,7 @@ TDNFCliInfoCommand(
     dwError = TDNFUtilsFormatSize(dwTotalSize, &pszFormattedSize);
     BAIL_ON_CLI_ERROR(dwError);
   
-    printf("\nTotal Size: %s (%u)\n", pszFormattedSize, dwTotalSize);
+    printf("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
 
 cleanup:
     if(pInfoArgs)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -251,74 +251,12 @@ TDNFCheckUpdates(
     uint32_t* pdwCount
     )
 {
-    uint32_t dwError = 0;
-    PSolvPackageList pInstalledPkgList = NULL;
-    PSolvPackageList pUpdateCandidates = NULL;
-    uint32_t dwCount = 0;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
-
-    if(!pTdnf || !ppPkgInfo || !pdwCount)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(!ppszPackageNameSpecs)
-    {
-        dwError = SolvFindAllInstalled(pTdnf->pSack, &pInstalledPkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    else
-    {
-        dwError = SolvFindInstalledPkgByMultipleNames(
-                      pTdnf->pSack,
-                      ppszPackageNameSpecs,
-                      &pInstalledPkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = SolvFindAllUpdateCandidates(
-                  pTdnf->pSack,
-                  pInstalledPkgList,
-                  &pUpdateCandidates);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFPopulatePkgInfoArray(
-                  pTdnf->pSack,
-                  pUpdateCandidates,
-                  DETAIL_LIST,
-                  &pPkgInfo,
-                  &dwCount);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    *ppPkgInfo = pPkgInfo;
-    *pdwCount = dwCount;
-
-cleanup:
-    if(pInstalledPkgList)
-    {
-        SolvFreePackageList(pInstalledPkgList);
-    }
-    if(pUpdateCandidates)
-    {
-        SolvFreePackageList(pUpdateCandidates);
-    }
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_MATCH)
-    {
-        dwError = 0;
-    }
-    if(ppPkgInfo)
-    {
-        *ppPkgInfo = NULL;
-    }
-    if(pdwCount)
-    {
-        *pdwCount = 0;
-    }
-    goto cleanup;
+    return TDNFList(
+               pTdnf,
+               SCOPE_UPGRADES,
+               ppszPackageNameSpecs,
+               ppPkgInfo,
+               pdwCount);
 }
 
 
@@ -1066,6 +1004,12 @@ TDNFUpdateInfo(
                       pTdnf->pSack,
                       dwPkgId,
                       &pUpdateAdvPkgList);
+        //Ignore no data and continue.
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+            continue;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPackageListSize(pUpdateAdvPkgList, &nCount);
@@ -1075,6 +1019,7 @@ TDNFUpdateInfo(
         {
             dwError = SolvGetPackageId(pUpdateAdvPkgList, iAdv, &dwAdvId);
             BAIL_ON_TDNF_ERROR(dwError);
+
             dwError = TDNFPopulateUpdateInfoOfOneAdvisory(
                           pTdnf->pSack,
                           dwAdvId,

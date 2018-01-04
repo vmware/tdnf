@@ -79,7 +79,7 @@ TDNFPrepareAllPackages(
        nAlterType == ALTER_AUTOERASE)
     {
         dwError =  TDNFFilterPackages(
-                       pTdnf->pSack,
+                       pTdnf,
                        nAlterType,
                        ppszPkgsNotResolved,
                        queueGoal);
@@ -108,7 +108,8 @@ TDNFPrepareAllPackages(
                 BAIL_ON_TDNF_ERROR(dwError);
 
                 dwError = TDNFPrepareAndAddPkg(
-                              pTdnf->pSack,
+                              pTdnf,
+                              1,
                               pszName,
                               nAlterType,
                               ppszPkgsNotResolved,
@@ -124,7 +125,8 @@ TDNFPrepareAllPackages(
         else
         {
             dwError = TDNFPrepareAndAddPkg(
-                          pTdnf->pSack,
+                          pTdnf,
+                          0,
                           pszPkgName,
                           nAlterType,
                           ppszPkgsNotResolved,
@@ -142,8 +144,9 @@ error:
     goto cleanup;
 }
 
-uint32_t TDNFFilterPackages(
-    PSolvSack pSack,
+uint32_t
+TDNFFilterPackages(
+    PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
     Queue* queueGoal)
@@ -154,12 +157,15 @@ uint32_t TDNFFilterPackages(
     uint32_t dwSize = 0;
     PSolvPackageList pInstalledPkgList = NULL;
     char* pszName = NULL;
+    PSolvSack pSack = NULL;
 
-    if(!pSack || !queueGoal || !ppszPkgsNotResolved)
+    if(!pTdnf || !pTdnf->pSack || !queueGoal || !ppszPkgsNotResolved)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    pSack = pTdnf->pSack;
 
     dwError = SolvFindAllInstalled(pSack, &pInstalledPkgList);
     if(dwError == ERROR_TDNF_NO_MATCH)
@@ -181,7 +187,8 @@ uint32_t TDNFFilterPackages(
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFPrepareAndAddPkg(
-                      pSack,
+                      pTdnf,
+                      0,
                       pszName,
                       nAlterType,
                       ppszPkgsNotResolved,
@@ -205,7 +212,8 @@ error:
 
 uint32_t
 TDNFPrepareAndAddPkg(
-    PSolvSack pSack,
+    PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
@@ -213,7 +221,7 @@ TDNFPrepareAndAddPkg(
     )
 {
     uint32_t dwError = 0;
-    if( !pSack ||
+    if( !pTdnf ||
         IsNullOrEmptyString(pszPkgName) ||
         !ppszPkgsNotResolved ||
         !queueGoal)
@@ -223,7 +231,8 @@ TDNFPrepareAndAddPkg(
     }
 
     dwError = TDNFPrepareSinglePkg(
-                  pSack,
+                  pTdnf,
+                  nIsGlobExpanded,
                   pszPkgName,
                   nAlterType,
                   ppszPkgsNotResolved,
@@ -238,7 +247,8 @@ error:
 
 uint32_t
 TDNFPrepareSinglePkg(
-    PSolvSack pSack,
+    PTDNF pTdnf,
+    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
@@ -248,8 +258,10 @@ TDNFPrepareSinglePkg(
     uint32_t dwError = 0;
     PSolvPackageList pInstalledPkgList = NULL;
     uint32_t dwCount = 0;
+    PSolvSack pSack = NULL;
 
-    if(!pSack ||
+    if(!pTdnf ||
+       !pTdnf->pSack ||
        !ppszPkgsNotResolved ||
        IsNullOrEmptyString(pszPkgName) ||
        !queueGoal)
@@ -258,6 +270,7 @@ TDNFPrepareSinglePkg(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    pSack = pTdnf->pSack;
 
     //Check if this is a known package. If not add to unresolved
     dwError = SolvCountPkgByName(pSack, pszPkgName, &dwCount);
@@ -283,6 +296,10 @@ TDNFPrepareSinglePkg(
                       pSack,
                       pszPkgName,
                       &pInstalledPkgList);
+        if(dwError == ERROR_TDNF_NO_MATCH)
+        {
+            dwError = ERROR_TDNF_ERASE_NEEDS_INSTALL;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAddPackagesForErase(
@@ -327,8 +344,20 @@ cleanup:
 error:
     if(dwError == ERROR_TDNF_ALREADY_INSTALLED)
     {
+        int nShowAlreadyInstalled = 1;
+        //dont show already installed errors in the check path
+        if(pTdnf && pTdnf->pArgs)
+        {
+            if(!strcmp(pTdnf->pArgs->ppszCmds[0], "check"))
+            {
+                nShowAlreadyInstalled = 0;
+            }
+        }
         dwError = 0;
-        fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+        if(nShowAlreadyInstalled)
+        {
+            fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+        }
     }
     if(dwError == ERROR_TDNF_NO_UPGRADE_PATH)
     {
@@ -347,6 +376,11 @@ error:
         {
             fprintf(stderr, "Error while adding not resolved packages\n");
         }
+    }
+    if(dwError == ERROR_TDNF_ERASE_NEEDS_INSTALL)
+    {
+        dwError = 0;
+//TODO: maybe restore solvedinfo based processing here.
     }
     goto cleanup;
 }

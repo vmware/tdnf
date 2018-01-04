@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -22,6 +22,7 @@
 #include "includes.h"
 
 TDNF_CLI_CONTEXT _context = {0};
+int nQuiet = 0;
 
 int main(int argc, char* argv[])
 {
@@ -79,6 +80,8 @@ int main(int argc, char* argv[])
 
     dwError = TDNFCliParseArgs(argc, argv, &pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
+
+    nQuiet = pCmdArgs->nQuiet;
 
     //If --version, show version and exit
     if(pCmdArgs->nShowVersion)
@@ -181,7 +184,7 @@ TDNFCliPrintError(
     {
         fprintf(stderr, "Error(%d) : %s\n", dwErrorCode, pszError);
     }
-    else
+    else if(!nQuiet)
     {
         fprintf(stderr, "%s\n", pszError);
     }
