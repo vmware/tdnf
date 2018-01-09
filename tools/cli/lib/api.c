@@ -530,3 +530,28 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFCliCheckCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pContext || !pContext->hTdnf || !pCmdArgs)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = pContext->pFnCheck(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    fprintf(stdout, "Check completed without issues\n");
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}

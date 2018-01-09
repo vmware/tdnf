@@ -31,6 +31,11 @@ TDNFCliInvokeAlter(
     );
 
 uint32_t
+TDNFCliInvokeCheck(
+    PTDNF_CLI_CONTEXT pContext
+    );
+
+uint32_t
 TDNFCliInvokeCheckLocal(
     PTDNF_CLI_CONTEXT pContext,
     const char *pszFolder

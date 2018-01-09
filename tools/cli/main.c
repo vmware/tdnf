@@ -32,6 +32,7 @@ int main(int argc, char* argv[])
     {
         {"autoerase",          TDNFCliAutoEraseCommand},
         {"autoremove",         TDNFCliAutoEraseCommand},
+        {"check",              TDNFCliCheckCommand},
         {"check-local",        TDNFCliCheckLocalCommand},
         {"check-update",       TDNFCliCheckUpdateCommand},
         {"clean",              TDNFCliCleanCommand},
@@ -62,6 +63,7 @@ int main(int argc, char* argv[])
     PTDNF pTdnf = NULL;
     int nFound = 0;
 
+    _context.pFnCheck = TDNFCliInvokeCheck;
     _context.pFnCheckLocal = TDNFCliInvokeCheckLocal;
     _context.pFnCheckUpdate = TDNFCliInvokeCheckUpdate;
     _context.pFnClean = TDNFCliInvokeClean;
@@ -239,6 +241,14 @@ cleanup:
 
 error:
     goto cleanup;
+}
+
+uint32_t
+TDNFCliInvokeCheck(
+    PTDNF_CLI_CONTEXT pContext
+    )
+{
+    return TDNFCheckPackages(pContext->hTdnf);
 }
 
 uint32_t
