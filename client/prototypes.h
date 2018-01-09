@@ -243,8 +243,13 @@ TDNFAddPackagesForDowngrade(
     Queue* pQueueGoal,
     const char* pszPkgName
     );
-//goal.c
 
+uint32_t
+TDNFCheckProtectedPkgs(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+//goal.c
 uint32_t
 TDNFGoal(
     PTDNF pTdnf,

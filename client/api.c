@@ -456,6 +456,11 @@ TDNFInfo(
                   &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    if(dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
+    {
+        dwError = 0;
+    }
+
     *ppPkgInfo = pPkgInfo;
     *pdwCount = dwCount;
 
@@ -530,6 +535,11 @@ TDNFList(
                   &pPkgInfo,
                   &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
+    {
+        dwError = 0;
+    }
 
     *ppPkgInfo = pPkgInfo;
     *pdwCount = dwCount;
@@ -855,6 +865,9 @@ TDNFResolve(
         }
         pPkgInfo = pPkgInfo->pNext;
     }
+
+    dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction = 
         pSolvedPkgInfo->pPkgsToInstall ||

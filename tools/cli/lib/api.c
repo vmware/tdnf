@@ -269,7 +269,10 @@ TDNFCliInfoCommand(
     dwError = TDNFUtilsFormatSize(dwTotalSize, &pszFormattedSize);
     BAIL_ON_CLI_ERROR(dwError);
   
-    printf("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
+    if(dwCount > 0)
+    {
+        printf("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
+    }
 
 cleanup:
     if(pInfoArgs)

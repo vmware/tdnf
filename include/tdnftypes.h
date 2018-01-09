@@ -171,6 +171,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsObsoleted;
     PTDNF_PKG_INFO pPkgsRemovedByDowngrade;
     char** ppszPkgsNotResolved;
+    char** ppszPkgsNotInstalled;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
 typedef struct _TDNF_CMD_OPT

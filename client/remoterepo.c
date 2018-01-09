@@ -201,7 +201,7 @@ error:
     {
         uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
         fprintf(stderr,
-                "download error: %d - %s\n",
+                "curl#%d: %s\n",
                 nCurlError,
                 curl_easy_strerror(nCurlError));
     }

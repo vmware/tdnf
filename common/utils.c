@@ -213,6 +213,16 @@ TDNFFreeSolvedPackageInfo(
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
 
+        if(pSolvedPkgInfo->ppszPkgsNotInstalled)
+        {
+            while(pSolvedPkgInfo->ppszPkgsNotInstalled[i])
+            {
+                TDNF_SAFE_FREE_MEMORY(
+                    pSolvedPkgInfo->ppszPkgsNotInstalled[i++]);
+            }
+        }
+        TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotInstalled);
+
         if(pSolvedPkgInfo->ppszPkgsNotResolved)
         {
             while(pSolvedPkgInfo->ppszPkgsNotResolved[i])

@@ -1532,7 +1532,7 @@ SolvReportProblems(
     nCount = solver_problem_count(pSolv);
     if(nCount > 0)
     {
-        fprintf(stdout, "Found %d problem(s) while resolving\n", nCount);
+        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount);
         for( i = 1; i <= nCount; ++i)
         {
             dwProbrlemId = solver_findproblemrule(pSolv, i);
@@ -1549,7 +1549,7 @@ SolvReportProblems(
                              dwTarget,
                              dwDep);
 
-            fprintf(stdout, "%d. %s\n", i, pszProblem);
+            fprintf(stderr, "%d. %s\n", i, pszProblem);
             pszProblem = NULL;
         }
     }

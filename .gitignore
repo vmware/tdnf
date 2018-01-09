@@ -68,3 +68,6 @@ ar-lib
 *.i*86
 *.x86_64
 *.hex
+
+#generated files
+*.pc
