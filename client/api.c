@@ -98,6 +98,52 @@ TDNFUninit(
     pthread_mutex_unlock(&gEnv.mutexInitialize);
 }
 
+//Check all available packages
+uint32_t
+TDNFCheckPackages(
+    PTDNF pTdnf
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+    PTDNF_CMD_ARGS pArgs = NULL;
+    int nCmdCountOrig = 0;
+    char **ppszCmdsOrig = NULL;
+    char *ppszCheckCmds[] = {"check", "*", NULL};
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pArgs = pTdnf->pArgs;
+    nCmdCountOrig = pArgs->nCmdCount;
+    ppszCmdsOrig = pArgs->ppszCmds;
+
+    //We dont intend to follow through on this install command
+    pArgs->nAssumeNo = 1;
+
+    //pass all packages available to resolve with install operation
+    pArgs->nCmdCount = 2;
+    pArgs->ppszCmds = ppszCheckCmds;
+
+    dwError = TDNFResolve(pTdnf, ALTER_INSTALL, &pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if(pArgs)
+    {
+        pArgs->nCmdCount = nCmdCountOrig;
+        pArgs->ppszCmds = ppszCmdsOrig;
+    }
+
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 //All alter commands such as install/update/erase
 uint32_t
 TDNFAlterCommand(

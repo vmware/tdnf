@@ -85,6 +85,12 @@ TDNFMakeCache(
     PTDNF pTdnf
     );
 
+//check all packages in all enables repositories
+uint32_t
+TDNFCheckPackages(
+    PTDNF pTdnf
+    );
+
 //check all packages in a local directory
 //using the local directory contents 
 //for dep resolution.

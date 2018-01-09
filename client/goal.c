@@ -312,6 +312,7 @@ TDNFGoal(
     int nFlags = 0;
     int i = 0;
     Id  dwId = 0; 
+    int nProblems = 0;
 
     if(!pTdnf || !ppInfo || !pQueuePkgList)
     {
@@ -367,8 +368,12 @@ TDNFGoal(
     solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_DOWNGRADE, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_INSTALL_ALSO_UPDATES, 1);
 
-    dwError = solver_solve(pSolv, &queueJobs);
-    BAIL_ON_TDNF_ERROR(dwError);
+    nProblems = solver_solve(pSolv, &queueJobs);
+    if(nProblems > 0)
+    {
+        dwError = ERROR_TDNF_SOLV_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pTrans = solver_create_transaction(pSolv);
     if(!pTrans)
@@ -406,6 +411,10 @@ cleanup:
     return dwError;
 
 error:
+    if(nProblems > 0 && pSolv)
+    {
+       SolvReportProblems(pSolv);
+    }
     TDNF_SAFE_FREE_MEMORY(pInfoTemp);
     if(ppInfo)
     {
