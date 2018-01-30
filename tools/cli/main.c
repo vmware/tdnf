@@ -63,6 +63,15 @@ int main(int argc, char* argv[])
     PTDNF pTdnf = NULL;
     int nFound = 0;
 
+    //granular permissions for non root users are pending.
+    //blocking all operations for non root and show the
+    //right error to avoid confusion.
+    if(geteuid() != 0)
+    {
+        dwError = ERROR_TDNF_PERM;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     _context.pFnCheck = TDNFCliInvokeCheck;
     _context.pFnCheckLocal = TDNFCliInvokeCheckLocal;
     _context.pFnCheckUpdate = TDNFCliInvokeCheckUpdate;
