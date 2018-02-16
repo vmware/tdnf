@@ -29,14 +29,15 @@ TDNFRpmExecTransaction(
 {
     uint32_t dwError = 0;
     int nKeepCachedRpms = 0;
-    TDNFRPMTS ts = {pTdnf->pArgs->nQuiet};
+    TDNFRPMTS ts = {0};
 
-    if(!pTdnf || !pTdnf->pConf || !pSolvedInfo)
+    if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    ts.nQuiet = pTdnf->pArgs->nQuiet;
     nKeepCachedRpms = pTdnf->pConf->nKeepCache;
 
     dwError = TDNFAllocateMemory(
