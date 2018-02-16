@@ -1559,3 +1559,118 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+SolvGetNevraFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    uint32_t *pdwEpoch,
+    char **ppszName,
+    char **ppszVersion,
+    char **ppszRelease,
+    char **ppszArch
+    )
+{
+    uint32_t dwError = 0;
+    const char* pszTmp = NULL;
+    Solvable *pSolv = NULL;
+    uint32_t dwEpoch = 0;
+    char *pszName = NULL;
+    char *pszEpoch = NULL;
+    char *pszVersion = NULL;
+    char *pszRelease = NULL;
+    char *pszArch = NULL;
+
+    if(!pSack ||
+       !ppszName ||
+       !ppszVersion ||
+       !ppszRelease ||
+       !ppszArch ||
+       !pdwEpoch)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszTmp = solvable_lookup_str(pSolv, SOLVABLE_NAME);
+    if(!pszTmp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszTmp, &pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszTmp = solvable_lookup_str(pSolv, SOLVABLE_ARCH);
+    if(!pszTmp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszTmp, &pszArch);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszTmp = solvable_lookup_str(pSolv, SOLVABLE_EVR);
+    if(!pszTmp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvSplitEvr(pSack,
+                           pszTmp,
+                           &pszEpoch,
+                           &pszVersion,
+                           &pszRelease);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!IsNullOrEmptyString(pszEpoch))
+    {
+        dwEpoch = strtol(pszEpoch, NULL, 10);
+    }
+
+    *pdwEpoch = dwEpoch;
+    *ppszName = pszName;
+    *ppszVersion = pszVersion;
+    *ppszRelease = pszRelease;
+    *ppszArch = pszArch;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszEpoch);
+    return dwError;
+
+error:
+    if(pdwEpoch)
+    {
+        *pdwEpoch = 0;
+    }
+    if(ppszName)
+    {
+        *ppszName = NULL;
+    }
+    if(ppszVersion)
+    {
+        *ppszVersion = NULL;
+    }
+    if(ppszRelease)
+    {
+        *ppszRelease = NULL;
+    }
+    if(ppszArch)
+    {
+        *ppszArch = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszName);
+    TDNF_SAFE_FREE_MEMORY(pszVersion);
+    TDNF_SAFE_FREE_MEMORY(pszRelease);
+    TDNF_SAFE_FREE_MEMORY(pszArch);
+    goto cleanup;
+}
