@@ -535,6 +535,50 @@ error:
 }
 
 uint32_t
+TdnfAddExcludes(
+    PTDNF pTdnf,
+    char** ppszExcludes
+    )
+{
+    uint32_t dwError = 0;
+    HyQuery hQuery = NULL;
+    HyPackageSet hPkgSet = NULL;
+
+    if(!pTdnf || !ppszExcludes)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hQuery = hy_query_create(pTdnf->hSack);
+    if(!hQuery)
+    {
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+
+    dwError = TDNFApplyPackageFilter(hQuery, ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    hPkgSet = hy_query_run_set(hQuery);
+
+    hy_sack_add_excludes(pTdnf->hSack, hPkgSet);
+
+cleanup:
+    if(hPkgSet)
+    {
+        hy_packageset_free(hPkgSet);
+    }
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
+
+    return dwError;
+error:
+    goto cleanup;
+}
+uint32_t
 TDNFList(
     PTDNF pTdnf,
     TDNF_SCOPE nScope,

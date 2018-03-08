@@ -47,6 +47,7 @@
 #include <hawkey/nevra.h>
 #include <hawkey/package.h>
 #include <hawkey/packagelist.h>
+#include <hawkey/packageset.h>
 #include <hawkey/query.h>
 #include <hawkey/reldep.h>
 #include <hawkey/repo.h>
