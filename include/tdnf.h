@@ -55,6 +55,11 @@ TDNFClean(
     PTDNF_CLEAN_INFO* ppCleanInfo
     );
 
+uint32_t
+TdnfAddExcludes(
+    PTDNF pTdnf,
+    char** ppszExcludes
+    );
 //show list of packages filtered by scope, name
 //globbing supported.
 uint32_t
