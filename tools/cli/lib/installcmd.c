@@ -178,7 +178,11 @@ TDNFCliAlterCommand(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
     }
-
+    if(pCmdArgs->nPkgsToExclude > 0)
+    {
+        dwError = TdnfAddExcludes(pContext->hTdnf, pCmdArgs->ppszPkgsToExclude);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
     nSilent = pCmdArgs->nNoOutput;
 
     dwError = TDNFCliParsePackageArgs(
