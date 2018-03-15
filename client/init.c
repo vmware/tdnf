@@ -159,20 +159,38 @@ TDNFCloneCmdArgs(
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
-                            pCmdArgs->nCmdCount,
-                            sizeof(char*),
-                            (void**)&pCmdArgs->ppszCmds
-                            );
+                  pCmdArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&pCmdArgs->ppszCmds
+                  );
     BAIL_ON_TDNF_ERROR(dwError);
         
     for(nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
     {
         dwError = TDNFAllocateString(
-                         pCmdArgsIn->ppszCmds[nIndex],
-                         &pCmdArgs->ppszCmds[nIndex]);
+                      pCmdArgsIn->ppszCmds[nIndex],
+                      &pCmdArgs->ppszCmds[nIndex]);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    pCmdArgs->nPkgsToExclude = pCmdArgsIn->nPkgsToExclude;
+    if(pCmdArgsIn->nPkgsToExclude > 0)
+    {
+        dwError = TDNFAllocateMemory(
+                      pCmdArgs->nPkgsToExclude + 1,
+                      sizeof(char*),
+                      (void**)&pCmdArgs->ppszPkgsToExclude
+                      );
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        for(nIndex = 0; nIndex < pCmdArgs->nPkgsToExclude; ++nIndex)
+        {
+            dwError = TDNFAllocateString(
+                          pCmdArgsIn->ppszPkgsToExclude[nIndex],
+                          &pCmdArgs->ppszPkgsToExclude[nIndex]);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
     if(pCmdArgsIn->pSetOpt)
     {
         dwError = TDNFCloneSetOpts(pCmdArgsIn->pSetOpt,

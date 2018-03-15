@@ -212,7 +212,8 @@ typedef struct _TDNF_CMD_ARGS
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location
     char* pszReleaseVer;   //Release version
-
+    char** ppszPkgsToExclude;
+    uint32_t nPkgsToExclude;
     //Commands and args that do not fall in options
     char** ppszCmds;
     int nCmdCount;

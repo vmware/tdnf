@@ -318,6 +318,11 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
+        for(nIndex = 0; nIndex < pCmdArgs->nPkgsToExclude; ++nIndex)
+        {
+            TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszPkgsToExclude[nIndex]);
+        }
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszPkgsToExclude);
 
         if(pCmdArgs->pSetOpt)
         {
