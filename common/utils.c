@@ -279,6 +279,7 @@ TDNFFreeUpdateInfo(
         TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszID);
         TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszDate);
         TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszDescription);
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszSeverity);
 
         TDNFFreeUpdateInfoReferences(pUpdateInfo->pReferences);
         TDNFFreeUpdateInfoPackages(pUpdateInfo->pPackages);
@@ -318,6 +319,12 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszSeverity);
+        for(nIndex = 0; nIndex < pCmdArgs->nPkgsToExclude; ++nIndex)
+        {
+            TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszPkgsToExclude[nIndex]);
+        }
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszPkgsToExclude);
 
         if(pCmdArgs->pSetOpt)
         {

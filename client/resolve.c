@@ -310,6 +310,10 @@ TDNFPrepareAllPackages(
     int nPkgIndex = 0;
     char* pszPkgName = NULL;
 
+    PTDNF_UPDATEINFO pUpdateInfo = NULL;
+    char** ppszPkgArray = NULL;
+    uint32_t dwCount = 0;
+
     if(!pTdnf || !pTdnf->pArgs || !pSolvedPkgInfo || !phPkgListGoal)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -338,46 +342,91 @@ TDNFPrepareAllPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+    if((pSolvedPkgInfo->nAlterType == ALTER_UPGRADE ||
+        pSolvedPkgInfo->nAlterType == ALTER_UPGRADEALL) &&
+        (pCmdArgs->nSecurity || pCmdArgs->pszSeverity))
     {
-        pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
-        if(TDNFIsGlob(pszPkgName))
+        dwError = TDNFUpdateInfo(pTdnf, 0, 0, &pszPkgName, &pUpdateInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(pCmdArgs->nSecurity)
         {
-            dwError = TDNFGetGlobPackages(pTdnf, pszPkgName, &hPkgListGlob);
+            dwError = GetSecurityUpdatePkgs(pUpdateInfo, &ppszPkgArray, &dwCount);
+        }
+        else
+        {
+            dwError = GetHigherSeverityUpdatePkgs(
+                          pUpdateInfo,
+                          atof(pCmdArgs->pszSeverity),
+                          &ppszPkgArray,
+                          &dwCount);
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(dwCount == 0)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
             BAIL_ON_TDNF_ERROR(dwError);
+        }
+        for(nCmdIndex = 1; nCmdIndex < dwCount; ++nCmdIndex)
+        {
+            dwError = TDNFPrepareAndAddPkg(
+                          pTdnf,
+                          1,
+                          ppszPkgArray[nCmdIndex],
+                          pSolvedPkgInfo,
+                          hPkgListGoal);
+                    BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    else
+    {
+        for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+        {
+            pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+            if(TDNFIsGlob(pszPkgName))
+            {
+                dwError = TDNFGetGlobPackages(pTdnf, pszPkgName, &hPkgListGlob);
+                BAIL_ON_TDNF_ERROR(dwError);
 
-            nPkgIndex = 0;
-            FOR_PACKAGELIST(hPkgGlob, hPkgListGlob, nPkgIndex)
+                nPkgIndex = 0;
+                FOR_PACKAGELIST(hPkgGlob, hPkgListGlob, nPkgIndex)
+                {
+                    dwError = TDNFPrepareAndAddPkg(
+                                  pTdnf,
+                                  1,
+                                  hy_package_get_name(hPkgGlob),
+                                  pSolvedPkgInfo,
+                                  hPkgListGoal);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                if(nPkgIndex == 0)
+                {
+                    dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
+            else
             {
                 dwError = TDNFPrepareAndAddPkg(
                               pTdnf,
-                              1,
-                              hy_package_get_name(hPkgGlob),
+                              0,
+                              pszPkgName,
                               pSolvedPkgInfo,
                               hPkgListGoal);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-            if(nPkgIndex == 0)
-            {
-                dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-        else
-        {
-            dwError = TDNFPrepareAndAddPkg(
-                          pTdnf,
-                          0,
-                          pszPkgName,
-                          pSolvedPkgInfo,
-                          hPkgListGoal);
-            BAIL_ON_TDNF_ERROR(dwError);
         }
     }
-
     *phPkgListGoal = hPkgListGoal;
 
 cleanup:
+    if(pUpdateInfo)
+    {
+        TDNFFreeUpdateInfo(pUpdateInfo);
+    }
+    if(ppszPkgArray)
+    {
+        TDNFFreeStringArray(ppszPkgArray);
+    }
     if(hPkgListGlob)
     {
         hy_packagelist_free(hPkgListGlob);

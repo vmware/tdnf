@@ -877,3 +877,32 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+NumSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+NumHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    double dblSeverity,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+GetSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+GetHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    double dblSeverity,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
+
