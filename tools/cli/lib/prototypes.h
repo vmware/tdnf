@@ -125,3 +125,44 @@ GetOptionAndValue(
     const char* pszOptArg,
     PTDNF_CMD_OPT* ppCmdOpt
     );
+
+uint32_t
+NumPkgsToExclude(
+    const char* pszExculde,
+    uint32_t *pdwLength
+    );
+
+uint32_t
+ParseExcludes(
+    const char* pszExclude,
+    uint32_t* pdwPkgsToExclude,
+    char*** pppszExclude
+    );
+
+uint32_t
+NumSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+NumHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    double dblSeverity,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+GetSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+GetHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    double dblSeverity,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
