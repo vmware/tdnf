@@ -233,3 +233,199 @@ error:
 
     goto cleanup;
 }
+
+uint32_t
+NumSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    if(!pInfo || !pdwCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        if(pInfo->nType == UPDATE_SECURITY)
+        {
+            pPkg = pInfo->pPackages;
+            while(pPkg)
+            {
+                dwCount++;
+                pPkg = pPkg->pNext;
+            }
+        }
+        pInfo = pInfo->pNext;
+    }
+    *pdwCount = dwCount;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+NumHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    double dblSeverity,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    if(!pInfo || !pdwCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        if(pInfo->nType == UPDATE_SECURITY)
+        {
+            if(pInfo->pszSeverity && atof(pInfo->pszSeverity) >= dblSeverity)
+            {
+                pPkg = pInfo->pPackages;
+                while(pPkg)
+                {
+                    dwCount++;
+                    pPkg = pPkg->pNext;
+                }
+            }
+        }
+        pInfo = pInfo->pNext;
+    }
+    *pdwCount = dwCount;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+GetSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    char**   ppszPkgs = NULL;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    int nIndex = 0;
+    if(!pInfo || !pdwCount || !pppszPkgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = NumSecurityUpdatePkgs(pInfo, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  dwCount + 1,
+                  sizeof(char*),
+                  (void**)&ppszPkgs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    while(pInfo)
+    {
+        if(pInfo->nType == UPDATE_SECURITY)
+        {
+            pPkg = pInfo->pPackages;
+            while(pPkg)
+            {
+                dwError = TDNFAllocateString(
+                              pPkg->pszName,
+                              &ppszPkgs[nIndex++]);
+                BAIL_ON_TDNF_ERROR(dwError);
+                pPkg = pPkg->pNext;
+            }
+        }
+        pInfo = pInfo->pNext;
+    }
+    *pppszPkgs = ppszPkgs;
+    *pdwCount  = dwCount;
+cleanup:
+    return dwError;
+
+error:
+    if(ppszPkgs)
+    {
+        TDNFFreeStringArray(ppszPkgs);
+    }
+    goto cleanup;
+}
+
+uint32_t
+GetHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    double dblSeverity,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    char**   ppszPkgs = NULL;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    int nIndex = 0;
+    if(!pInfo || !pdwCount || !pppszPkgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = NumHigherSeverityUpdatePkgs(pInfo, dblSeverity, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  dwCount + 1,
+                  sizeof(char*),
+                  (void**)&ppszPkgs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    while(pInfo)
+    {
+        if(pInfo->nType == UPDATE_SECURITY)
+        {
+            if(pInfo->pszSeverity && atof(pInfo->pszSeverity) >= dblSeverity)
+            {
+                pPkg = pInfo->pPackages;
+                while(pPkg)
+                {
+                    dwError = TDNFAllocateString(
+                                  pPkg->pszName,
+                                  &ppszPkgs[nIndex++]);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                    pPkg = pPkg->pNext;
+                }
+            }
+        }
+        pInfo = pInfo->pNext;
+    }
+    *pppszPkgs = ppszPkgs;
+    *pdwCount  = dwCount;
+cleanup:
+    return dwError;
+
+error:
+    if(ppszPkgs)
+    {
+        TDNFFreeStringArray(ppszPkgs);
+    }
+    goto cleanup;
+}

@@ -50,6 +50,9 @@ static struct option pstOptions[] =
     {"verbose",       no_argument, 0, 'v'},                //-v --verbose
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
+    {"security",      no_argument, &_opt.nSecurity, 1},    //--secutiry
+    {"exclude",       required_argument, 0, 0},            //--exclude
+    {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {0, 0, 0, 0}
 };
 
@@ -82,16 +85,15 @@ TDNFCliParseArgs(
     opterr = 0;//tell getopt to not print errors
     while (1)
     {
-                
             nOption = getopt_long (
-                           argc,
-                           argv,
-                           "46bCc:d:e:hi:qvxy",
-                           pstOptions,
-                           &nOptionIndex);
+                          argc,
+                          argv,
+                          "46bCc:d:e:hi:qvxy",
+                          pstOptions,
+                          &nOptionIndex);
             if (nOption == -1)
                 break;
-                
+
             switch (nOption)
             {
                 case 0:
@@ -227,11 +229,130 @@ TDNFCopyOptions(
     pArgs->nVerbose       = pOptionArgs->nVerbose;
     pArgs->nIPv4          = pOptionArgs->nIPv4;
     pArgs->nIPv6          = pOptionArgs->nIPv6;
+    pArgs->nSecurity      = pOptionArgs->nSecurity;
 
 cleanup:
     return dwError;
 
 error:
+    goto cleanup;
+}
+
+uint32_t
+NumPkgsToExclude(
+    const char* pszExculde,
+    uint32_t *pdwLength
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwLength = 0;
+    char* pszCopyArgs = NULL;
+    char* pszToken = NULL;
+    if(!pdwLength)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    if(!pszExculde)
+    {
+        *pdwLength = 0;
+        goto cleanup;
+    }
+
+    dwError = TDNFAllocateString(
+                  pszExculde,
+                  &pszCopyArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    pszToken = strtok(pszCopyArgs,",:");
+    while (pszToken != NULL)
+    {
+        if(strlen(pszToken) > 0)
+        {
+            dwLength++;
+        }
+        pszToken = strtok(NULL, ",:");
+    }
+
+cleanup:
+    if(pdwLength)
+    {
+        *pdwLength = dwLength;
+    }
+    TDNFFreeMemory(pszCopyArgs);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+ParseExcludes(
+    const char* pszExclude,
+    uint32_t* pdwPkgsToExclude,
+    char*** pppszExclude
+    )
+{
+    uint32_t dwError = 0;
+    char* pszCopyArgs = NULL;
+    char* pszToken = NULL;
+    char** ppszExcludedPackages = NULL;
+    uint32_t dwLength = 0;
+    int nIndex = 0;
+    if(!pszExclude || !pppszExclude)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = NumPkgsToExclude(pszExclude, &dwLength);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    if(dwLength == 0)
+    {
+        goto cleanup;
+    }
+    dwError = TDNFAllocateMemory(
+                  dwLength + 1,
+                  sizeof(char*),
+                  (void**)&ppszExcludedPackages);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = TDNFAllocateString(
+                  pszExclude,
+                  &pszCopyArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    pszToken = strtok(pszCopyArgs,",:");
+    while (pszToken != NULL)
+    {
+        if(strlen(pszToken) > 0 && nIndex < dwLength)
+        {
+            dwError = TDNFAllocateString(
+                      pszToken,
+                      &ppszExcludedPackages[nIndex++]);
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+        pszToken = strtok(NULL, ",:");
+    }
+    *pppszExclude = ppszExcludedPackages;
+    *pdwPkgsToExclude = dwLength;
+
+cleanup:
+    TDNFFreeMemory(pszCopyArgs);
+    return dwError;
+
+error:
+    if(pppszExclude)
+    {
+        *pppszExclude = NULL;
+    }
+    if(pdwPkgsToExclude)
+    {
+        *pdwPkgsToExclude = 0;
+    }
+    TDNFFreeStringArray(ppszExcludedPackages);
     goto cleanup;
 }
 
@@ -304,6 +425,21 @@ ParseOption(
             BAIL_ON_CLI_ERROR(dwError);
         }
         dwError = AddSetOpt(pCmdArgs, optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "exclude"))
+    {
+        dwError = ParseExcludes(
+                      pszArg,
+                      &pCmdArgs->nPkgsToExclude,
+                      &pCmdArgs->ppszPkgsToExclude);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "sec-severity"))
+    {
+        dwError = TDNFAllocateString(
+                      optarg,
+                      &pCmdArgs->pszSeverity);
         BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:

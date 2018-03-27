@@ -209,10 +209,13 @@ typedef struct _TDNF_CMD_ARGS
     int nVerbose;          //print debug info
     int nIPv4;             //resolve to IPv4 addresses only
     int nIPv6;             //resolve to IPv6 addresses only
+    int nSecurity;         //check only security related update
+    char* pszSeverity;     //check update as a severity level
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location
     char* pszReleaseVer;   //Release version
-
+    char** ppszPkgsToExclude;
+    uint32_t nPkgsToExclude;
     //Commands and args that do not fall in options
     char** ppszCmds;
     int nCmdCount;
@@ -291,6 +294,7 @@ typedef struct _TDNF_UPDATEINFO
     char* pszID;
     char* pszDate;
     char* pszDescription;
+    char* pszSeverity;
     PTDNF_UPDATEINFO_REF pReferences;
     PTDNF_UPDATEINFO_PKG pPackages;
     struct _TDNF_UPDATEINFO* pNext;

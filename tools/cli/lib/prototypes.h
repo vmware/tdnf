@@ -125,3 +125,16 @@ GetOptionAndValue(
     const char* pszOptArg,
     PTDNF_CMD_OPT* ppCmdOpt
     );
+
+uint32_t
+NumPkgsToExclude(
+    const char* pszExculde,
+    uint32_t *pdwLength
+    );
+
+uint32_t
+ParseExcludes(
+    const char* pszExclude,
+    uint32_t* pdwPkgsToExclude,
+    char*** pppszExclude
+    );

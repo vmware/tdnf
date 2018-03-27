@@ -201,11 +201,20 @@ TDNFCliUpdateInfoInfo(
         while(pPkg)
         {
             fprintf(stdout, "       Name : %s\n",
+                pPkg->pszName);
+            fprintf(stdout, "  File Name : %s\n",
                 pPkg->pszFileName);
             fprintf(stdout, "  Update ID : %s\n",
                 pInfo->pszID);
             fprintf(stdout, "       Type : %s\n",
                 TDNFGetUpdateInfoType(pInfo->nType));
+            if(pInfo->nType == UPDATE_SECURITY)
+            {
+                if(pInfo->pszSeverity)
+                {
+                    fprintf(stdout, "   Severity : %s\n", pInfo->pszSeverity);
+                }
+            }
             fprintf(stdout, "    Updated : %s\n",
                 pInfo->pszDate);
             fprintf(stdout, "Description : %s\n",
@@ -222,3 +231,4 @@ cleanup:
 error:
     goto cleanup;
 }
+
