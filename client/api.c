@@ -879,6 +879,8 @@ TDNFResolve(
         dwError = ERROR_TDNF_AUTOERASE_UNSUPPORTED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    dwError = TdnfAddExcludes(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
