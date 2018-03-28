@@ -121,3 +121,130 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TdnfPkgsToExclude(
+    PTDNF pTdnf,
+    uint32_t *pdwCount,
+    char***  pppszExcludes
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    uint32_t dwCount = 0;
+    char**   ppszExcludes = NULL;
+    int nIndex = 0;
+    if(!pTdnf || !pTdnf->pArgs || !pdwCount || !pppszExcludes)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, "exclude"))
+        {
+            dwCount++;
+        }
+        pSetOpt = pSetOpt->pNext;
+    }
+
+    if(dwCount > 0)
+    {
+        dwError = TDNFAllocateMemory(
+                      dwCount + 1,
+                      sizeof(char*),
+                      (void**)&ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
+        pSetOpt = pTdnf->pArgs->pSetOpt;
+        while(pSetOpt)
+        {
+            if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+               !strcasecmp(pSetOpt->pszOptName, "exclude"))
+            {
+                dwError = TDNFAllocateString(
+                      pSetOpt->pszOptValue,
+                      &ppszExcludes[nIndex++]);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+            }
+            pSetOpt = pSetOpt->pNext;
+        }
+    }
+    *pppszExcludes = ppszExcludes;
+    *pdwCount = dwCount;
+cleanup:
+
+    return dwError;
+
+error:
+    if(pppszExcludes)
+    {
+        *pppszExcludes = NULL;
+    }
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
+    TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
+    goto cleanup;
+}
+
+uint32_t
+TdnfAddExcludes(
+    PTDNF pTdnf
+    )
+{
+    uint32_t dwError = 0;
+    char** ppszExcludes = NULL;
+    uint32_t dwCount = 0;
+
+    HyQuery hQuery = NULL;
+    HyPackageSet hPkgSet = NULL;
+
+    if(!pTdnf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TdnfPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0 || !ppszExcludes)
+    {
+        goto cleanup;
+    }
+    hQuery = hy_query_create(pTdnf->hSack);
+    if(!hQuery)
+    {
+        dwError = HY_E_IO;
+        BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
+    }
+
+    dwError = TDNFApplyPackageFilter(hQuery, ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    hPkgSet = hy_query_run_set(hQuery);
+    if(hPkgSet)
+    {
+        hy_sack_add_excludes(pTdnf->hSack, hPkgSet);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
+    if(hPkgSet)
+    {
+        hy_packageset_free(hPkgSet);
+    }
+    if(hQuery)
+    {
+        hy_query_free(hQuery);
+    }
+
+    return dwError;
+error:
+    goto cleanup;
+}

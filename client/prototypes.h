@@ -877,3 +877,15 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+TdnfPkgsToExclude(
+    PTDNF pTdnf,
+    uint32_t *pdwPkgsToExclude,
+    char***  pppszExclude
+    );
+
+uint32_t
+TdnfAddExcludes(
+    PTDNF pTdnf
+    );
