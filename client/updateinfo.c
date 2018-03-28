@@ -233,3 +233,115 @@ error:
 
     goto cleanup;
 }
+
+uint32_t
+TDNFGetUpdateInfoPackages2(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG2* ppPkgs
+    )
+{
+    uint32_t dwError = 0;
+    int nCount = 0;
+    int iPkg = 0;
+    HyAdvisoryPkgList hAdvPkgList = NULL;
+    HyAdvisoryPkg hAdvPkg = NULL;
+
+    PTDNF_UPDATEINFO_PKG2 pPkgs = NULL;
+    PTDNF_UPDATEINFO_PKG2 pPkg = NULL;
+    const char* pszTemp = NULL;
+
+
+    if(!hAdv || !ppPkgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hAdvPkgList = hy_advisory_get_packages(hAdv);
+    if(!hAdvPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nCount = hy_advisorypkglist_count(hAdvPkgList);
+    for(iPkg = 0; iPkg < nCount; iPkg++)
+    {
+        hAdvPkg = hy_advisorypkglist_get_clone(hAdvPkgList, iPkg);
+        if(!hAdvPkg)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        dwError = TDNFAllocateMemory(
+                      1,
+                      sizeof(TDNF_UPDATEINFO_PKG2),
+                      (void**)&pPkg);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_NAME);
+        if(pszTemp)
+        {
+            dwError = TDNFAllocateString(pszTemp, &pPkg->pszName);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_EVR);
+        if(pszTemp)
+        {
+            dwError = TDNFAllocateString(pszTemp, &pPkg->pszEVR);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_ARCH);
+        if(pszTemp)
+        {
+            dwError = TDNFAllocateString(pszTemp, &pPkg->pszArch);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pszTemp = hy_advisorypkg_get_string(hAdvPkg, HY_ADVISORYPKG_FILENAME);
+        if(pszTemp)
+        {
+            dwError = TDNFAllocateString(pszTemp, &pPkg->pszFileName);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        pPkg->reboot_suggested = hy_advisory_get_reboot_suggested(hAdv);
+
+        hy_advisorypkg_free(hAdvPkg);
+        hAdvPkg = NULL;
+
+        pPkg->pNext = pPkgs;
+        pPkgs = pPkg;
+        pPkg = NULL;
+    }
+
+    *ppPkgs = pPkgs;
+
+cleanup:
+    if(hAdvPkg)
+    {
+        hy_advisorypkg_free(hAdvPkg);
+    }
+    if(hAdvPkgList)
+    {
+        hy_advisorypkglist_free(hAdvPkgList);
+    }
+    return dwError;
+
+error:
+    if(ppPkgs)
+    {
+        *ppPkgs = NULL;
+    }
+    if(pPkg)
+    {
+        TDNFFreeUpdateInfoPackages2(pPkg);
+    }
+    if(pPkgs)
+    {
+        TDNFFreeUpdateInfoPackages2(pPkgs);
+    }
+
+    goto cleanup;
+}
+

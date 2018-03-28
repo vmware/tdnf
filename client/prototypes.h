@@ -779,15 +779,17 @@ TDNFGetUpdateInfoPackages(
     PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
     );
 
+uint32_t
+TDNFGetUpdateInfoPackages2(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG2* ppUpdateInfoPkg
+    );
+
 void
 TDNFFreeUpdateInfoReferences(
     PTDNF_UPDATEINFO_REF pRef
     );
 
-void
-TDNFFreeUpdateInfoPackages(
-    PTDNF_UPDATEINFO_PKG pPkg
-    );
 
 //utils.c
 uint32_t
