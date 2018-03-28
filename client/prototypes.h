@@ -877,3 +877,28 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+void
+TDNFFreeUpdateInfo2(
+    PTDNF_UPDATEINFO2 pUpdateInfo
+    );
+
+void
+TDNFFreeUpdateInfoPackages2(
+    PTDNF_UPDATEINFO_PKG2 pPkg
+    );
+
+uint32_t
+TDNFGetUpdateInfoPackages2(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG2* ppPkgs
+    );
+
+uint32_t
+TDNFUpdateInfo2(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    TDNF_AVAIL nAvail,
+    char** ppszPackageNameSpecs,
+    PTDNF_UPDATEINFO2* ppUpdateInfo
+    );
