@@ -296,6 +296,28 @@ typedef struct _TDNF_UPDATEINFO
     struct _TDNF_UPDATEINFO* pNext;
 }TDNF_UPDATEINFO, *PTDNF_UPDATEINFO;
 
+typedef struct _TDNF_UPDATEINFO_PKG2
+{
+    char* pszName;
+    char* pszFileName;
+    char* pszEVR;
+    char* pszArch;
+    int   reboot_suggested;
+    struct _TDNF_UPDATEINFO_PKG2* pNext;
+}TDNF_UPDATEINFO_PKG2, *PTDNF_UPDATEINFO_PKG2;
+
+typedef struct _TDNF_UPDATEINFO2
+{
+    int nType;
+    char* pszID;
+    char* pszDate;
+    char* pszDescription;
+    char* pszSeverity;
+    PTDNF_UPDATEINFO_REF pReferences;
+    PTDNF_UPDATEINFO_PKG2 pPackages;
+    struct _TDNF_UPDATEINFO2* pNext;
+}TDNF_UPDATEINFO2, *PTDNF_UPDATEINFO2;
+
 typedef struct _TDNF_UPDATEINFO_SUMMARY
 {
     int nCount;

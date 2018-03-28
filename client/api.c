@@ -1243,6 +1243,171 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFUpdateInfo2(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    TDNF_AVAIL nAvail,
+    char** ppszPackageNameSpecs,
+    PTDNF_UPDATEINFO2* ppUpdateInfo
+    )
+{
+    uint32_t dwError = 0;
+
+    int nCount = 0;
+    int iPkg = 0;
+    int iAdv = 0;
+    time_t dwUpdated = 0;
+    int nPkgCount = 0;
+
+    PTDNF_UPDATEINFO2 pUpdateInfos = NULL;
+    PTDNF_UPDATEINFO2 pInfo = NULL;
+    const char* pszTemp = NULL;
+    const int DATELEN = 200;
+    char szDate[DATELEN];
+
+    HyPackage hPkg = NULL;
+    HyPackageList hPkgList = NULL;
+    HyAdvisoryList hAdvList = NULL;
+    HyAdvisory hAdv = NULL;
+    struct tm* pLocalTime = NULL;
+
+    if(!pTdnf || !ppszPackageNameSpecs || !ppUpdateInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetInstalled(pTdnf->hSack, &hPkgList, ppszPackageNameSpecs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    nPkgCount = hy_packagelist_count(hPkgList);
+    if(nPkgCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    FOR_PACKAGELIST(hPkg, hPkgList, iPkg)
+    {
+        hAdvList = hy_package_get_advisories(hPkg, HY_GT);
+        if(!hAdvList)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        nCount = hy_advisorylist_count(hAdvList);
+        for(iAdv = 0; iAdv < nCount; iAdv++)
+        {
+            dwError = TDNFAllocateMemory(
+                          1,
+                          sizeof(TDNF_UPDATEINFO2),
+                          (void**)&pInfo);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            hAdv = hy_advisorylist_get_clone(hAdvList, iAdv);
+            if(!hAdv)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            pInfo->nType = hy_advisory_get_type(hAdv);
+            pszTemp = hy_advisory_get_id(hAdv);
+            if(pszTemp)
+            {
+                dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            pszTemp = hy_advisory_get_description(hAdv);
+            if(pszTemp)
+            {
+                dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            pszTemp = hy_advisory_get_severity(hAdv);
+            if(pszTemp)
+            {
+                dwError = TDNFAllocateString(pszTemp, &pInfo->pszSeverity);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwUpdated = hy_advisory_get_updated(hAdv);
+            if(dwUpdated > 0)
+            {
+                pLocalTime = localtime(&dwUpdated);
+                if(!pLocalTime)
+                {
+                    dwError = ERROR_TDNF_INVALID_PARAMETER;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+                memset(szDate, 0, DATELEN);
+                dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
+                if(dwError == 0)
+                {
+                    dwError = ERROR_TDNF_INVALID_PARAMETER;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+                dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+
+            dwError = TDNFGetUpdateInfoPackages2(hAdv, &pInfo->pPackages);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            hy_advisory_free(hAdv);
+            hAdv = NULL;
+
+            pInfo->pNext = pUpdateInfos;
+            pUpdateInfos = pInfo;
+            pInfo = NULL;
+        }
+        hy_advisorylist_free(hAdvList);
+        hAdvList = NULL;
+    }
+
+    if(!pUpdateInfos)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppUpdateInfo = pUpdateInfos;
+
+cleanup:
+    if(hAdv)
+    {
+        hy_advisory_free(hAdv);
+    }
+    if(hAdvList)
+    {
+        hy_advisorylist_free(hAdvList);
+    }
+    if(hPkgList)
+    {
+        hy_packagelist_free(hPkgList);
+    }
+    return dwError;
+
+error:
+    if(ppUpdateInfo)
+    {
+        *ppUpdateInfo = NULL;
+    }
+    if(pUpdateInfos)
+    {
+        TDNFFreeUpdateInfo2(pUpdateInfos);
+    }
+    if(pInfo)
+    {
+        TDNFFreeUpdateInfo2(pInfo);
+    }
+    goto cleanup;
+}
+
 //api calls to free memory allocated by tdnfclientlib
 void
 TDNFCloseHandle(
