@@ -779,6 +779,12 @@ TDNFGetUpdateInfoPackages(
     PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
     );
 
+uint32_t
+TDNFGetUpdateInfoPackages2(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG2* ppUpdateInfoPkg
+    );
+
 void
 TDNFFreeUpdateInfoReferences(
     PTDNF_UPDATEINFO_REF pRef
@@ -787,6 +793,11 @@ TDNFFreeUpdateInfoReferences(
 void
 TDNFFreeUpdateInfoPackages(
     PTDNF_UPDATEINFO_PKG pPkg
+    );
+
+void
+TDNFFreeUpdateInfoPackages2(
+    PTDNF_UPDATEINFO_PKG2 pPkg
     );
 
 //utils.c
@@ -876,4 +887,25 @@ TDNFValidateCmdArgs(
 
 uint32_t
 TDNFIsInitialized(
+    );
+
+uint32_t
+TDNFCheckSeverityOption(
+    PTDNF pTdnf,
+    char **ppszSeverity
+    );
+
+uint32_t
+NumHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO2 pInfo,
+    double dblSeverity,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+TdnfGetSeverityUpdatePkgs(
+    PTDNF pTdnf,
+    double dblSeverity,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
     );
