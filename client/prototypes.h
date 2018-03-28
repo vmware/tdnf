@@ -877,3 +877,19 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+TDNFGetUpdateInfoPackagesEx(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG* ppUpdateInfoPkg
+    );
+
+//Show update info for specified scope 
+uint32_t
+TDNFUpdateInfoEx(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    TDNF_AVAIL nAvail,
+    char** ppszPackageNameSpecs,
+    PTDNF_UPDATEINFO* ppUpdateInfo
+    );
