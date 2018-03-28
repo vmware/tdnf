@@ -124,6 +124,15 @@ TDNFUpdateInfo(
     PTDNF_UPDATEINFO* ppUpdateInfo
     );
 
+uint32_t
+TDNFUpdateInfo2(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    TDNF_AVAIL nAvail,
+    char** ppszPackageNameSpecs,
+    PTDNF_UPDATEINFO2* ppUpdateInfo
+    );
+
 //Show update info summary
 uint32_t
 TDNFUpdateInfoSummary(
@@ -228,6 +237,11 @@ TDNFFreeSolvedPackageInfo(
 void
 TDNFFreeUpdateInfo(
     PTDNF_UPDATEINFO pUpdateInfo
+    );
+
+void
+TDNFFreeUpdateInfo2(
+    PTDNF_UPDATEINFO2 pUpdateInfo
     );
 
 void
