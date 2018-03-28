@@ -877,3 +877,9 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+TDNFGetUpdateInfoPackages2(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG2* ppPkgs
+    );
