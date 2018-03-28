@@ -46,6 +46,7 @@ TDNFCliShowHelp(
     printf("           [-q, --quiet]\n");
     printf("           [--releasever RELEASEVER] [--setopt SETOPTS]\n");
     printf("           [--refresh]\n");
+    printf("           [--exclude [file1,file2,...]]\n");
 
     printf("List of Main Commands\n");
     printf("\n");

@@ -50,6 +50,7 @@ static struct option pstOptions[] =
     {"verbose",       no_argument, 0, 'v'},                //-v --verbose
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
+    {"exclude",       required_argument, 0, 0},            //--exclude
     {0, 0, 0, 0}
 };
 
@@ -243,6 +244,8 @@ ParseOption(
     )
 {
     uint32_t dwError = 0;
+    char* pszCopyArgs = NULL;
+    char* pszToken = NULL;
 
     if(!pszName || !pCmdArgs)
     {
@@ -282,6 +285,24 @@ ParseOption(
                                       optarg);
         BAIL_ON_CLI_ERROR(dwError);
     }
+    else if(!strcasecmp(pszName, "exclude"))
+    {
+        dwError = TDNFAllocateString(
+                      pszArg,
+                      &pszCopyArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+        pszToken = strtok(pszCopyArgs,",:");
+        while (pszToken != NULL)
+        {
+            dwError = AddSetOptWithValues(
+                pCmdArgs,
+                CMDOPT_KEYVALUE,
+                pszName,
+                pszToken);
+            BAIL_ON_CLI_ERROR(dwError);
+            pszToken = strtok(NULL, ",:");
+        }
+    }
     else if(!strcasecmp(pszName, "installroot"))
     {
         dwError = TDNFAllocateString(
@@ -307,6 +328,10 @@ ParseOption(
         BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:
+    if(pszCopyArgs)
+    {
+        TDNFFreeMemory(pszCopyArgs);
+    }
     return dwError;
 
 error:
