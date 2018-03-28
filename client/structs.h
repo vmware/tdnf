@@ -85,3 +85,25 @@ typedef struct _TDNF_REPO_METADATA
     char *pszFileLists;
     char *pszUpdateInfo;
 }TDNF_REPO_METADATA,*PTDNF_REPO_METADATA;
+
+typedef struct _TDNF_UPDATEINFO_PKG2
+{
+    char* pszName;
+    char* pszFileName;
+    char* pszEVR;
+    char* pszArch;
+    int   reboot_suggested;
+    struct _TDNF_UPDATEINFO_PKG2* pNext;
+}TDNF_UPDATEINFO_PKG2, *PTDNF_UPDATEINFO_PKG2;
+
+typedef struct _TDNF_UPDATEINFO2
+{
+    int nType;
+    char* pszID;
+    char* pszDate;
+    char* pszDescription;
+    char* pszSeverity;
+    PTDNF_UPDATEINFO_REF pReferences;
+    PTDNF_UPDATEINFO_PKG2 pPackages;
+    struct _TDNF_UPDATEINFO2* pNext;
+}TDNF_UPDATEINFO2, *PTDNF_UPDATEINFO2;

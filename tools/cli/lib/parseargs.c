@@ -50,6 +50,7 @@ static struct option pstOptions[] =
     {"verbose",       no_argument, 0, 'v'},                //-v --verbose
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
+    {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {0, 0, 0, 0}
 };
 
@@ -279,6 +280,14 @@ ParseOption(
         dwError = AddSetOptWithValues(pCmdArgs,
                                       CMDOPT_DISABLEREPO,
                                       DISABLEREPO,
+                                      optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "sec-severity"))
+    {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                                      CMDOPT_KEYVALUE,
+                                      pszName,
                                       optarg);
         BAIL_ON_CLI_ERROR(dwError);
     }
