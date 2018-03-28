@@ -226,8 +226,23 @@ TDNFFreeSolvedPackageInfo(
     );
 
 void
+TDNFFreeUpdateInfoPackages(
+    PTDNF_UPDATEINFO_PKG pPkg
+    );
+
+void
+TDNFFreeUpdateInfoPackages2(
+    PTDNF_UPDATEINFO_PKG2 pPkg
+    );
+
+void
 TDNFFreeUpdateInfo(
     PTDNF_UPDATEINFO pUpdateInfo
+    );
+
+void
+TDNFFreeUpdateInfo2(
+    PTDNF_UPDATEINFO2 pUpdateInfo
     );
 
 void
