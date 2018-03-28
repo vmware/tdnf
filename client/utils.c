@@ -611,3 +611,41 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
 }
+
+void
+TDNFFreeUpdateInfoPackages2(
+    PTDNF_UPDATEINFO_PKG2 pPkgs
+    )
+{
+    PTDNF_UPDATEINFO_PKG2 pTemp = NULL;
+    while(pPkgs)
+    {
+        TDNF_SAFE_FREE_MEMORY(pPkgs->pszName);
+        TDNF_SAFE_FREE_MEMORY(pPkgs->pszFileName);
+        TDNF_SAFE_FREE_MEMORY(pPkgs->pszEVR);
+        TDNF_SAFE_FREE_MEMORY(pPkgs->pszArch);
+
+        pTemp = pPkgs;
+        pPkgs = pPkgs->pNext;
+
+        TDNF_SAFE_FREE_MEMORY(pTemp);
+    }
+}
+
+void
+TDNFFreeUpdateInfo2(
+    PTDNF_UPDATEINFO2 pUpdateInfo
+    )
+{
+    if(pUpdateInfo)
+    {
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszID);
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszDate);
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszDescription);
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo->pszSeverity);
+
+        TDNFFreeUpdateInfoReferences(pUpdateInfo->pReferences);
+        TDNFFreeUpdateInfoPackages2(pUpdateInfo->pPackages);
+        TDNF_SAFE_FREE_MEMORY(pUpdateInfo);
+    }
+}
