@@ -877,3 +877,50 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+TDNFGetUpdateInfoPackages2(
+    HyAdvisory hAdv,
+    PTDNF_UPDATEINFO_PKG2* ppUpdateInfoPkg
+    );
+
+void
+TDNFFreeUpdateInfoPackages2(
+    PTDNF_UPDATEINFO_PKG2 pPkg
+    );
+
+void
+TDNFFreeUpdateInfo2(
+    PTDNF_UPDATEINFO2 pUpdateInfo
+    );
+
+uint32_t
+TDNFUpdateInfo2(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    TDNF_AVAIL nAvail,
+    char** ppszPackageNameSpecs,
+    PTDNF_UPDATEINFO2* ppUpdateInfo
+    );
+
+uint32_t
+TDNFCheckSeverityOption(
+    PTDNF pTdnf,
+    char **ppszSeverity
+    );
+
+uint32_t
+NumHigherSeverityUpdatePkgs(
+    PTDNF_UPDATEINFO2 pInfo,
+    double dblSeverity,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+TdnfGetSeverityUpdatePkgs(
+    PTDNF pTdnf,
+    double dblSeverity,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
+
