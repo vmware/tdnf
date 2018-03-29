@@ -233,3 +233,167 @@ error:
 
     goto cleanup;
 }
+
+uint32_t
+TDNFCheckSecurityOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSecurity
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    uint32_t dwSecurity = 0;
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    //There could be overrides to enable/disable
+    //repo such as cmdline args, api overrides
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, "security"))
+        {
+            dwSecurity = 1;
+            break;
+         }
+         pSetOpt = pSetOpt->pNext;
+    }
+
+    *pdwSecurity = dwSecurity;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwSecurity)
+    {
+        *pdwSecurity = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+NumSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    if(!pInfo || !pdwCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        if(pInfo->nType == UPDATE_SECURITY)
+        {
+            pPkg = pInfo->pPackages;
+            while(pPkg)
+            {
+                dwCount++;
+                pPkg = pPkg->pNext;
+            }
+        }
+        pInfo = pInfo->pNext;
+    }
+    *pdwCount = dwCount;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TdnfGetSecurityUpdatePkgs(
+    PTDNF pTdnf,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    char**   ppszPkgs = NULL;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    int nIndex = 0;
+    char* pszPkgName = NULL;
+
+    PTDNF_UPDATEINFO pUpdateInfo = NULL;
+    char** ppszPkgArray = NULL;
+    PTDNF_UPDATEINFO pInfo = NULL;
+
+    if(!pTdnf || !pdwCount || !pppszPkgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFUpdateInfo(pTdnf, 0, 0, &pszPkgName, &pUpdateInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pInfo = pUpdateInfo;
+    dwError = NumSecurityUpdatePkgs(pInfo, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0)
+    {
+        goto cleanup;
+    }
+
+    dwError = TDNFAllocateMemory(
+                  dwCount + 1,
+                  sizeof(char*),
+                  (void**)&ppszPkgs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(pInfo = pUpdateInfo; pInfo; pInfo = pInfo->pNext)
+    {
+        if(pInfo->nType == UPDATE_SECURITY)
+        {
+            pPkg = pInfo->pPackages;
+            while(pPkg)
+            {
+                dwError = TDNFAllocateString(
+                              pPkg->pszName,
+                              &ppszPkgs[nIndex++]);
+                BAIL_ON_TDNF_ERROR(dwError);
+                pPkg = pPkg->pNext;
+            }
+        }
+    }
+    *pppszPkgs = ppszPkgs;
+    *pdwCount  = dwCount;
+cleanup:
+    if(pUpdateInfo)
+    {
+        TDNFFreeUpdateInfo(pUpdateInfo);
+    }
+    if(ppszPkgArray)
+    {
+        TDNFFreeStringArray(ppszPkgArray);
+    }
+    return dwError;
+
+error:
+    if(pppszPkgs)
+    {
+        *pppszPkgs = NULL;
+    }
+    if(ppszPkgs)
+    {
+        TDNFFreeStringArray(ppszPkgs);
+    }
+    goto cleanup;
+}

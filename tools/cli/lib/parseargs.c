@@ -50,6 +50,7 @@ static struct option pstOptions[] =
     {"verbose",       no_argument, 0, 'v'},                //-v --verbose
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
+    {"security",      no_argument, 0, 0},                  //--security
     {0, 0, 0, 0}
 };
 
@@ -294,6 +295,15 @@ ParseOption(
         dwError = TDNFAllocateString(
                       optarg,
                       &pCmdArgs->pszReleaseVer);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "security"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
         BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "setopt"))

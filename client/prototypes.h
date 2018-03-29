@@ -877,3 +877,22 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+TDNFCheckSecurityOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSecurity
+    );
+
+uint32_t
+NumSecurityUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+TdnfGetSecurityUpdatePkgs(
+    PTDNF pTdnf,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
