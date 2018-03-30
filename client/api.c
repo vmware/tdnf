@@ -1116,6 +1116,11 @@ TDNFUpdateInfo(
     HyAdvisory hAdv = NULL;
     struct tm* pLocalTime = NULL;
 
+    char*  pszSeverity = NULL;
+    HyAdvisoryType nType = HY_ADVISORY_UNKNOWN;
+    uint32_t dwSecurity = 0;
+    uint32_t dwKeepEntry = 1;
+
     if(!pTdnf || !ppszPackageNameSpecs || !ppUpdateInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -1132,6 +1137,12 @@ TDNFUpdateInfo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFCheckSeverityOption(pTdnf, &pszSeverity);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFCheckSecurityOption(pTdnf, &dwSecurity);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     FOR_PACKAGELIST(hPkg, hPkgList, iPkg)
     {
         hAdvList = hy_package_get_advisories(hPkg, HY_GT);
@@ -1144,11 +1155,6 @@ TDNFUpdateInfo(
         nCount = hy_advisorylist_count(hAdvList);
         for(iAdv = 0; iAdv < nCount; iAdv++)
         {
-            dwError = TDNFAllocateMemory(
-                          1,
-                          sizeof(TDNF_UPDATEINFO),
-                          (void**)&pInfo);
-            BAIL_ON_TDNF_ERROR(dwError);
 
             hAdv = hy_advisorylist_get_clone(hAdvList, iAdv);
             if(!hAdv)
@@ -1157,50 +1163,76 @@ TDNFUpdateInfo(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
 
-            pInfo->nType = hy_advisory_get_type(hAdv);
-            pszTemp = hy_advisory_get_id(hAdv);
-            if(pszTemp)
+            nType = hy_advisory_get_type(hAdv);
+            pszTemp = hy_advisory_get_severity(hAdv);
+            dwKeepEntry = 1;
+            if(dwSecurity)
             {
-                dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            pszTemp = hy_advisory_get_description(hAdv);
-            if(pszTemp)
-            {
-                dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-
-            dwUpdated = hy_advisory_get_updated(hAdv);
-            if(dwUpdated > 0)
-            {
-                pLocalTime = localtime(&dwUpdated);
-                if(!pLocalTime)
+                if(nType != HY_ADVISORY_SECURITY)
                 {
-                    dwError = ERROR_TDNF_INVALID_PARAMETER;
-                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                    dwKeepEntry = 0;
                 }
-                memset(szDate, 0, DATELEN);
-                dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
-                if(dwError == 0)
-                {
-                    dwError = ERROR_TDNF_INVALID_PARAMETER;
-                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-                }
-                dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
-                BAIL_ON_TDNF_ERROR(dwError);
             }
+            else if(pszSeverity)
+            {
+                if(!pszTemp || atof(pszSeverity) > atof(pszTemp))
+                {
+                    dwKeepEntry = 0;
+                }
+            }
+            if(dwKeepEntry)
+            {
+                dwError = TDNFAllocateMemory(
+                              1,
+                              sizeof(TDNF_UPDATEINFO),
+                              (void**)&pInfo);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                pInfo->nType = nType;
+                pszTemp = hy_advisory_get_id(hAdv);
+                if(pszTemp)
+                {
+                    dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                pszTemp = hy_advisory_get_description(hAdv);
+                if(pszTemp)
+                {
+                    dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+
+                dwUpdated = hy_advisory_get_updated(hAdv);
+                if(dwUpdated > 0)
+                {
+                    pLocalTime = localtime(&dwUpdated);
+                    if(!pLocalTime)
+                    {
+                        dwError = ERROR_TDNF_INVALID_PARAMETER;
+                        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                    }
+                    memset(szDate, 0, DATELEN);
+                    dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
+                    if(dwError == 0)
+                    {
+                        dwError = ERROR_TDNF_INVALID_PARAMETER;
+                        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                    }
+                    dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
 
 
-            dwError = TDNFGetUpdateInfoPackages(hAdv, &pInfo->pPackages);
-            BAIL_ON_TDNF_ERROR(dwError);
+                    dwError = TDNFGetUpdateInfoPackages(hAdv, &pInfo->pPackages);
+                BAIL_ON_TDNF_ERROR(dwError);
 
+
+                pInfo->pNext = pUpdateInfos;
+                pUpdateInfos = pInfo;
+                pInfo = NULL;
+            }
             hy_advisory_free(hAdv);
             hAdv = NULL;
-
-            pInfo->pNext = pUpdateInfos;
-            pUpdateInfos = pInfo;
-            pInfo = NULL;
         }
         hy_advisorylist_free(hAdvList);
         hAdvList = NULL;
