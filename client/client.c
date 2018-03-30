@@ -123,7 +123,7 @@ error:
 }
 
 uint32_t
-TdnfPkgsToExclude(
+TDNFPkgsToExclude(
     PTDNF pTdnf,
     uint32_t *pdwCount,
     char***  pppszExcludes
@@ -193,7 +193,7 @@ error:
 }
 
 uint32_t
-TdnfAddExcludes(
+TDNFAddExcludes(
     PTDNF pTdnf
     )
 {
@@ -210,7 +210,7 @@ TdnfAddExcludes(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TdnfPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
+    dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(dwCount == 0 || !ppszExcludes)
