@@ -879,13 +879,42 @@ TDNFIsInitialized(
     );
 
 uint32_t
-TdnfPkgsToExclude(
+TDNFPkgsToExclude(
     PTDNF pTdnf,
     uint32_t *pdwPkgsToExclude,
     char***  pppszExclude
     );
 
 uint32_t
-TdnfAddExcludes(
+TDNFAddExcludes(
     PTDNF pTdnf
     );
+
+uint32_t
+TDNFGetOneUpdateinfo(
+    HyAdvisoryList hAdvList,
+    int iAdv,
+    uint32_t dwSecurity,
+    const char*  pszSeverity,
+    PTDNF_UPDATEINFO* ppUpdateInfo);
+
+uint32_t
+TDNFGetSecuritySeverityOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSecurity,
+    char **ppszSeverity
+    );
+
+uint32_t
+TDNFNumUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+TDNFGetUpdatePkgs(
+    PTDNF pTdnf,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
+
