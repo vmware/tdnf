@@ -51,6 +51,8 @@ static struct option pstOptions[] =
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
     {"exclude",       required_argument, 0, 0},            //--exclude
+    {"security",      no_argument, 0, 0},                  //--security
+    {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {0, 0, 0, 0}
 };
 
@@ -283,6 +285,24 @@ ParseOption(
                                       CMDOPT_DISABLEREPO,
                                       DISABLEREPO,
                                       optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "security"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "sec-severity"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      optarg);
         BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "exclude"))
