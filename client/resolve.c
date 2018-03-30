@@ -304,11 +304,16 @@ TDNFPrepareAllPackages(
     HyPackageList hPkgListGoal = NULL;
     HyPackageList hPkgListGlob = NULL;
     HyPackage hPkgGlob = NULL;
+    uint32_t dwSecurity = 0;
 
     PTDNF_CMD_ARGS pCmdArgs = NULL;
     int nCmdIndex = 0;
     int nPkgIndex = 0;
     char* pszPkgName = NULL;
+
+    char*  pszSeverity = NULL;
+    char** ppszPkgArray = NULL;
+    uint32_t dwCount = 0;
 
     if(!pTdnf || !pTdnf->pArgs || !pSolvedPkgInfo || !phPkgListGoal)
     {
@@ -338,46 +343,76 @@ TDNFPrepareAllPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
-    {
-        pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
-        if(TDNFIsGlob(pszPkgName))
-        {
-            dwError = TDNFGetGlobPackages(pTdnf, pszPkgName, &hPkgListGlob);
-            BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFCheckSeverityOption(pTdnf, &pszSeverity);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-            nPkgIndex = 0;
-            FOR_PACKAGELIST(hPkgGlob, hPkgListGlob, nPkgIndex)
-            {
-                dwError = TDNFPrepareAndAddPkg(
-                              pTdnf,
-                              1,
-                              hy_package_get_name(hPkgGlob),
-                              pSolvedPkgInfo,
-                              hPkgListGoal);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            if(nPkgIndex == 0)
-            {
-                dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-        else
+    dwError = TDNFCheckSecurityOption(pTdnf, &dwSecurity);
+    BAIL_ON_TDNF_ERROR(dwError);
+    if((pSolvedPkgInfo->nAlterType == ALTER_UPGRADEALL ||
+        pSolvedPkgInfo->nAlterType == ALTER_UPGRADE) &&
+       (dwSecurity || pszSeverity))
+    {
+        pSolvedPkgInfo->nAlterType = ALTER_UPGRADE;
+        dwError = TDNFGetUpdatePkgs(pTdnf, &ppszPkgArray, &dwCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+        for(nPkgIndex = 0; nPkgIndex < dwCount; ++nPkgIndex)
         {
             dwError = TDNFPrepareAndAddPkg(
                           pTdnf,
                           0,
-                          pszPkgName,
+                          ppszPkgArray[nPkgIndex],
                           pSolvedPkgInfo,
                           hPkgListGoal);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
+    else
+    {
+        for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+        {
+            pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+            if(TDNFIsGlob(pszPkgName))
+            {
+                dwError = TDNFGetGlobPackages(pTdnf, pszPkgName, &hPkgListGlob);
+                BAIL_ON_TDNF_ERROR(dwError);
 
+                nPkgIndex = 0;
+                FOR_PACKAGELIST(hPkgGlob, hPkgListGlob, nPkgIndex)
+                {
+                    dwError = TDNFPrepareAndAddPkg(
+                                  pTdnf,
+                                  1,
+                                  hy_package_get_name(hPkgGlob),
+                                  pSolvedPkgInfo,
+                                  hPkgListGoal);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                if(nPkgIndex == 0)
+                {
+                    dwError = TDNFAddNotResolved(pSolvedPkgInfo, pszPkgName);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
+            else
+            {
+                dwError = TDNFPrepareAndAddPkg(
+                              pTdnf,
+                              0,
+                              pszPkgName,
+                              pSolvedPkgInfo,
+                              hPkgListGoal);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
     *phPkgListGoal = hPkgListGoal;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
+    if(ppszPkgArray)
+    {
+        TDNFFreeStringArray(ppszPkgArray);
+    }
     if(hPkgListGlob)
     {
         hy_packagelist_free(hPkgListGlob);

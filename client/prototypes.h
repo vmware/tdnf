@@ -889,3 +889,30 @@ uint32_t
 TdnfAddExcludes(
     PTDNF pTdnf
     );
+
+
+uint32_t
+TDNFCheckSecurityOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSecurity
+    );
+
+uint32_t
+TDNFCheckSeverityOption(
+    PTDNF pTdnf,
+    char **ppszSeverity
+    );
+
+uint32_t
+TDNFNumUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+TDNFGetUpdatePkgs(
+    PTDNF pTdnf,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    );
+
