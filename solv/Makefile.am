@@ -7,8 +7,8 @@ libtdnfsolv_la_SOURCES = \
     tdnfrepo.c \
     tdnfquery.c \
     tdnfpackage.c
-    
+
 libtdnfsolv_la_LDFLAGS =  \
     -static \
-    -lrpm  \
-    -lsolv
+    @RPM_LIBS@ \
+    @LIBSOLV_LIBS@
