@@ -26,6 +26,5 @@ libtdnf_la_LIBADD =  \
     @top_builddir@/solv/libtdnfsolv.la \
     $(top_builddir)/common/libcommon.la \
     @LIBCURL_LIBS@ \
-    -lrpm  \
-    -lsolv \
-    -lsolvext
+    @RPM_LIBS@ \
+    @LIBSOLVEXT_LIBS@
