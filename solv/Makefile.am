@@ -10,5 +10,5 @@ libtdnfsolv_la_SOURCES = \
     
 libtdnfsolv_la_LDFLAGS =  \
     -static \
-    -lrpm  \
-    -lsolv
+    @RPM_LIBS@ \
+    @LIBSOLV_LIBS@
