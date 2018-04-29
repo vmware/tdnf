@@ -6,6 +6,6 @@ includedir=@includedir@/tdnf
 Name: tdnf-cli-libs
 Description: tdnf cli libs
 Version: @VERSION@
-Requires:
+Requires: tdnf
 Libs: -L${libdir} -ltdnfcli
 Cflags: -I${includedir}
