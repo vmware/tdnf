@@ -53,6 +53,7 @@ static struct option pstOptions[] =
     {"exclude",       required_argument, 0, 0},            //--exclude
     {"security",      no_argument, 0, 0},                  //--security
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
+    {"retry",         required_argument, 0, 0},            //--retry
     {0, 0, 0, 0}
 };
 
@@ -345,6 +346,15 @@ ParseOption(
             BAIL_ON_CLI_ERROR(dwError);
         }
         dwError = AddSetOpt(pCmdArgs, optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, RETRY))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      optarg);
         BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:
