@@ -347,6 +347,9 @@ TDNFGoal(
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFAddExcludes(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pSolv = solver_create(pTdnf->pSack->pPool);
     if(pSolv == NULL)
     {
