@@ -313,6 +313,8 @@ TDNFGoal(
     int i = 0;
     Id  dwId = 0; 
     int nProblems = 0;
+    char** ppszExcludes = NULL;
+    uint32_t dwCount = 0;
 
     if(!pTdnf || !ppInfo || !pQueuePkgList)
     {
@@ -346,6 +348,20 @@ TDNFGoal(
     }
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (dwCount != 0 && ppszExcludes)
+    {
+        if (!pTdnf->pSack || !pTdnf->pSack->pPool)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pSolv = solver_create(pTdnf->pSack->pPool);
     if(pSolv == NULL)
@@ -399,6 +415,7 @@ TDNFGoal(
     *ppInfo = pInfoTemp;
 
 cleanup:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
     queue_free(&queueJobs);
     if(pTrans)
     {

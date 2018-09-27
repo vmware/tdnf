@@ -1559,3 +1559,117 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+SolvAddExcludes(
+    Pool* pPool,
+    char** ppszExcludes
+    )
+{
+     uint32_t dwError = 0;
+     Map *pExcludes = NULL;
+
+     if (!pPool || !ppszExcludes)
+     {
+         dwError = ERROR_TDNF_INVALID_PARAMETER;
+         BAIL_ON_TDNF_ERROR(dwError);
+     }
+
+     dwError = TDNFAllocateMemory(
+                           1,
+                           sizeof(Map),
+                           (void**)&pExcludes);
+     BAIL_ON_TDNF_ERROR(dwError);
+
+     map_init(pExcludes, pPool->nsolvables);
+
+     dwError = SolvDataIterator(pPool, ppszExcludes, pExcludes);
+     BAIL_ON_TDNF_ERROR(dwError);
+
+     if (!pPool->considered)
+     {
+         dwError = TDNFAllocateMemory(
+                              1,
+                              sizeof(Map),
+                              (void**)&pPool->considered);
+         map_init(pPool->considered, pPool->nsolvables);
+     }
+     else
+     {
+         map_grow(pPool->considered, pPool->nsolvables);
+     }
+     map_setall(pPool->considered);
+
+     if (pExcludes)
+     {
+         map_subtract(pPool->considered, pExcludes);
+     }
+cleanup:
+    TDNFFreeMemory(pExcludes);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvDataIterator(
+     Pool* pPool,
+     char** ppszExcludes,
+     Map* m
+     )
+{
+    Dataiterator di;
+    Id keyname = SOLVABLE_NAME;
+    int flags = 0;
+    char **ppszPackagesTemp = NULL;
+    uint32_t dwError;
+
+    if (!pPool || !ppszExcludes || !m)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppszPackagesTemp = ppszExcludes;
+    while(ppszPackagesTemp && *ppszPackagesTemp)
+    {
+          flags = SEARCH_STRING;
+          if (SolvIsGlob(*ppszPackagesTemp))
+          {
+              flags = SEARCH_GLOB;
+          }
+          dwError = dataiterator_init(&di, pPool, 0, 0, keyname, *ppszPackagesTemp, flags);
+          BAIL_ON_TDNF_ERROR(dwError);
+          while (dataiterator_step(&di))
+          {
+              MAPSET(m, di.solvid);
+          }
+          dataiterator_free(&di);
+          ++ppszPackagesTemp;
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+int
+SolvIsGlob(
+    const char* pszString
+    )
+{
+    int nResult = 0;
+    while(*pszString)
+    {
+        char ch = *pszString;
+
+        if(ch == '*' || ch == '?' || ch == '[')
+        {
+            nResult = 1;
+            break;
+        }
+
+        pszString++;
+    }
+    return nResult;
+}
