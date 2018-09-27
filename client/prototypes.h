@@ -332,6 +332,13 @@ TDNFGetDownGradePackages(
     PTDNF_PKG_INFO* pRemovePkgInfo
     );
 
+uint32_t
+TDNFPkgsToExclude(
+    PTDNF pTdnf,
+    uint32_t *pdwPkgsToExclude,
+    char***  pppszExclude
+    );
+
 //config.c
 int
 TDNFConfGetRpmVerbosity(
