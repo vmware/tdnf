@@ -462,6 +462,23 @@ SolvReportProblems(
     Solver* pSolv
     );
 
+uint32_t
+SolvAddExcludes(
+    Pool* pPool,
+    char** ppszExcludes
+    );
+
+uint32_t
+SolvDataIterator(
+     Pool* pPool,
+     char** ppszExcludes,
+     Map* m
+     );
+
+int
+SolvIsGlob(
+    const char* pszString
+    );
 #ifdef __cplusplus
 }
 #endif
