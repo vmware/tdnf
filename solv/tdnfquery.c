@@ -418,6 +418,11 @@ SolvGenerateCommonJob(
     ppszPkgNames = pQuery->ppszPackageNames;
     queue_init(&queueJob);
     pPool = pQuery->pSack->pPool;
+    if (!pPool || !pPool->solvables || !pPool->whatprovides)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
     if(ppszPkgNames)
     {
         while(*ppszPkgNames)
