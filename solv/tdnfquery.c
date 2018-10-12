@@ -426,6 +426,11 @@ SolvGenerateCommonJob(
             nRetFlags = 0;
 
             queue_empty(&queueJob);
+            if (!pPool || !pPool->solvables || !pPool->whatprovides)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+            }
 
             nRetFlags = selection_make(
                          pPool,
