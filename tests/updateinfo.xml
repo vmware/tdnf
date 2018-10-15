@@ -1,0 +1,21 @@
+<updates>
+    <update from="photonpublish@vmware.com" status="stable" type="security" version="1.0.2">
+      <id>PHSA-2017-2.0-0001</id>
+      <title>tdnf-test-multiversion</title>
+      <severity>7.5</severity>
+      <release>1</release>
+      <rights>Copyright 2007 Company Inc</rights>
+      <issued date="2007-12-28 16:42:30"/>
+      <updated date="2008-03-14 12:00:00"/>
+      <description>This update includes a fix for a denial-of-service issue.</description>
+      <pkglist>
+        <collection short="1">
+          <name>Photon 1</name>
+          <package arch="x86_64" name="tdnf-test-multiversion" release="1" version="1.0.2">
+            <filename>tdnf-test-multiversion-1.0.2-1.x86_64.rpm</filename>
+            <reboot_suggested>True</reboot_suggested>
+          </package>
+        </collection>
+      </pkglist>
+    </update>
+</updates>

@@ -53,7 +53,7 @@ error:
 uint32_t
 TDNFPrepareAllPackages(
     PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
+    TDNF_ALTERTYPE* pAlterType,
     char** ppszPkgsNotResolved,
     Queue* queueGoal
     )
@@ -65,15 +65,21 @@ TDNFPrepareAllPackages(
     char* pszPkgName = NULL;
     char* pszName = NULL;
     Queue queueLocal = {0};
+    char*  pszSeverity = NULL;
+    uint32_t dwSecurity = 0;
+    char** ppszPkgArray = NULL;
+    uint32_t dwCount = 0;
+    TDNF_ALTERTYPE nAlterType = 0;
 
     if(!pTdnf || !pTdnf->pSack ||
-       !pTdnf->pArgs || !ppszPkgsNotResolved || !queueGoal)
+       !pTdnf->pArgs || !ppszPkgsNotResolved || !queueGoal || !pAlterType)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
     queue_init(&queueLocal);
     pCmdArgs = pTdnf->pArgs;
+    nAlterType = *pAlterType;
 
     if(nAlterType == ALTER_DOWNGRADEALL ||
        nAlterType == ALTER_AUTOERASE)
@@ -86,56 +92,85 @@ TDNFPrepareAllPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+    dwError = TDNFGetSecuritySeverityOption(
+                  pTdnf,
+                  &dwSecurity,
+                  &pszSeverity);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if ((nAlterType == ALTER_UPGRADEALL ||
+         nAlterType == ALTER_UPGRADE) &&
+        (dwSecurity || pszSeverity))
     {
-        pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
-        if(TDNFIsGlob(pszPkgName))
-        {
-            queue_empty(&queueLocal);
-            dwError = TDNFGetGlobPackages(
-                          pTdnf->pSack,
-                          pszPkgName,
-                          &queueLocal);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            nPkgIndex = 0;
-            for(nPkgIndex = 0; nPkgIndex < queueLocal.count; nPkgIndex++)
-            {
-                dwError = SolvGetPkgNameFromId(
-                              pTdnf->pSack,
-                              queueLocal.elements[nPkgIndex],
-                              &pszName);
-                BAIL_ON_TDNF_ERROR(dwError);
-
-                dwError = TDNFPrepareAndAddPkg(
-                              pTdnf,
-                              1,
-                              pszName,
-                              nAlterType,
-                              ppszPkgsNotResolved,
-                              queueGoal);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            if(queueLocal.count == 0)
-            {
-                dwError = TDNFAddNotResolved(ppszPkgsNotResolved, pszPkgName);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-        else
+        *pAlterType = ALTER_UPGRADE;
+        dwError = TDNFGetUpdatePkgs(pTdnf, &ppszPkgArray, &dwCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+        for(nPkgIndex = 0; nPkgIndex < dwCount; ++nPkgIndex)
         {
             dwError = TDNFPrepareAndAddPkg(
                           pTdnf,
                           0,
-                          pszPkgName,
-                          nAlterType,
+                          ppszPkgArray[nPkgIndex],
+                          *pAlterType,
                           ppszPkgsNotResolved,
                           queueGoal);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
+    else
+    {
+       for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+       {
+           pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+           if(TDNFIsGlob(pszPkgName))
+           {
+               queue_empty(&queueLocal);
+               dwError = TDNFGetGlobPackages(
+                             pTdnf->pSack,
+                             pszPkgName,
+                             &queueLocal);
+               BAIL_ON_TDNF_ERROR(dwError);
+
+               nPkgIndex = 0;
+               for(nPkgIndex = 0; nPkgIndex < queueLocal.count; nPkgIndex++)
+               {
+                   dwError = SolvGetPkgNameFromId(
+                                 pTdnf->pSack,
+                                 queueLocal.elements[nPkgIndex],
+                                 &pszName);
+                   BAIL_ON_TDNF_ERROR(dwError);
+
+                   dwError = TDNFPrepareAndAddPkg(
+                                 pTdnf,
+                                 1,
+                                 pszName,
+                                 nAlterType,
+                                 ppszPkgsNotResolved,
+                                 queueGoal);
+                   BAIL_ON_TDNF_ERROR(dwError);
+               }
+               if(queueLocal.count == 0)
+               {
+                   dwError = TDNFAddNotResolved(ppszPkgsNotResolved, pszPkgName);
+                   BAIL_ON_TDNF_ERROR(dwError);
+               }
+           }
+           else
+           {
+               dwError = TDNFPrepareAndAddPkg(
+                             pTdnf,
+                             0,
+                             pszPkgName,
+                             nAlterType,
+                             ppszPkgsNotResolved,
+                             queueGoal);
+               BAIL_ON_TDNF_ERROR(dwError);
+           }
+       }
+    }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
     TDNF_SAFE_FREE_MEMORY(pszName);
     queue_free(&queueLocal);
     return dwError;
