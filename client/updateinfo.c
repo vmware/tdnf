@@ -244,6 +244,8 @@ uint32_t
 TDNFPopulateUpdateInfoOfOneAdvisory(
     PSolvSack pSack,
     Id dwAdvId,
+    uint32_t dwSecurity,
+    const char*  pszSeverity,
     PTDNF_UPDATEINFO* ppInfo)
 {
     uint32_t dwError = 0;
@@ -252,6 +254,7 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
     const char *pszType = 0;
     PTDNF_UPDATEINFO pInfo = NULL;
     const char* pszTemp = NULL;
+    uint32_t dwKeepEntry = 1;
     const int DATELEN = 200;
     char szDate[DATELEN];
 
@@ -263,71 +266,94 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(
-                  1,
-                  sizeof(TDNF_UPDATEINFO),
-                  (void**)&pInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     pszType = pool_lookup_str(pSack->pPool,
                               dwAdvId,
                               SOLVABLE_PATCHCATEGORY);
-    pInfo->nType = UPDATE_UNKNOWN;
-    if (pszType == NULL)
+    pszTemp = pool_lookup_str(
+                  pSack->pPool,
+                  dwAdvId,
+                  UPDATE_SEVERITY);
+    if (dwSecurity)
+    {
+        if (strcmp (pszType, "security"))
+        {
+            dwKeepEntry = 0;
+        }
+    }
+    else if (pszSeverity)
+    {
+         if(!pszTemp || atof(pszSeverity) > atof(pszTemp))
+         {
+             dwKeepEntry = 0;
+         }
+    }
+
+    if (dwKeepEntry)
+    {
+        dwError = TDNFAllocateMemory(
+                      1,
+                      sizeof(TDNF_UPDATEINFO),
+                      (void**)&pInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         pInfo->nType = UPDATE_UNKNOWN;
-    else if (!strcmp (pszType, "bugfix"))
-        pInfo->nType = UPDATE_BUGFIX;
-    else if (!strcmp (pszType, "enhancement"))
-        pInfo->nType = UPDATE_ENHANCEMENT;
-    else if (!strcmp (pszType, "security"))
-        pInfo->nType = UPDATE_SECURITY;
+        if (pszType == NULL)
+            pInfo->nType = UPDATE_UNKNOWN;
+        else if (!strcmp (pszType, "bugfix"))
+            pInfo->nType = UPDATE_BUGFIX;
+        else if (!strcmp (pszType, "enhancement"))
+            pInfo->nType = UPDATE_ENHANCEMENT;
+        else if (!strcmp (pszType, "security"))
+            pInfo->nType = UPDATE_SECURITY;
 
-    pszTemp = pool_lookup_str(
-                  pSack->pPool,
-                  dwAdvId,
-                  SOLVABLE_NAME);
-    if(pszTemp)
-    {
-        dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pszTemp = pool_lookup_str(
-                  pSack->pPool,
-                  dwAdvId,
-                  SOLVABLE_DESCRIPTION);
-    if(pszTemp)
-    {
-        dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwUpdated = pool_lookup_num(
-                    pSack->pPool,
-                    dwAdvId,
-                    SOLVABLE_BUILDTIME,
-                    0);
-    if(dwUpdated > 0)
-    {
-        pLocalTime = localtime(&dwUpdated);
-        if(!pLocalTime)
+        pszTemp = pool_lookup_str(
+                      pSack->pPool,
+                      dwAdvId,
+                      SOLVABLE_NAME);
+        if(pszTemp)
         {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            dwError = TDNFAllocateString(pszTemp, &pInfo->pszID);
+            BAIL_ON_TDNF_ERROR(dwError);
         }
-        memset(szDate, 0, DATELEN);
-        dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
-        if(dwError == 0)
+        pszTemp = pool_lookup_str(
+                      pSack->pPool,
+                      dwAdvId,
+                      SOLVABLE_DESCRIPTION);
+        if(pszTemp)
         {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            dwError = TDNFAllocateString(pszTemp, &pInfo->pszDescription);
+            BAIL_ON_TDNF_ERROR(dwError);
         }
-        dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+
+        dwUpdated = pool_lookup_num(
+                        pSack->pPool,
+                        dwAdvId,
+                        SOLVABLE_BUILDTIME,
+                        0);
+        if(dwUpdated > 0)
+        {
+            pLocalTime = localtime(&dwUpdated);
+            if(!pLocalTime)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            memset(szDate, 0, DATELEN);
+            dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
+            if(dwError == 0)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+
+        dwError = TDNFGetUpdateInfoPackages(pSack, dwAdvId, &pInfo->pPackages);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-
-    dwError = TDNFGetUpdateInfoPackages(pSack, dwAdvId, &pInfo->pPackages);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     *ppInfo = pInfo;
 
@@ -342,6 +368,172 @@ error:
     if(pInfo)
     {
         TDNFFreeUpdateInfo(pInfo);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetSecuritySeverityOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSecurity,
+    char **ppszSeverity
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    uint32_t dwSecurity = 0;
+    char* pszSeverity = NULL;
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, "sec-severity"))
+        {
+            dwError = TDNFAllocateString(pSetOpt->pszOptValue, &pszSeverity);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, "security"))
+        {
+            dwSecurity = 1;
+        }
+
+         pSetOpt = pSetOpt->pNext;
+    }
+
+    *pdwSecurity = dwSecurity;
+    *ppszSeverity = pszSeverity;
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
+    if(ppszSeverity)
+    {
+        *ppszSeverity = NULL;
+    }
+    if(pdwSecurity)
+    {
+        *pdwSecurity = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFNumUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    if(!pInfo || !pdwCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while(pInfo)
+    {
+        pPkg = pInfo->pPackages;
+        while(pPkg)
+        {
+            dwCount++;
+            pPkg = pPkg->pNext;
+        }
+        pInfo = pInfo->pNext;
+    }
+    *pdwCount = dwCount;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetUpdatePkgs(
+    PTDNF pTdnf,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    char**   ppszPkgs = NULL;
+    PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    int nIndex = 0;
+    char* pszPkgName = NULL;
+
+    PTDNF_UPDATEINFO pUpdateInfo = NULL;
+    PTDNF_UPDATEINFO pInfo = NULL;
+
+    if(!pTdnf || !pdwCount || !pppszPkgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFUpdateInfo(pTdnf, 0, 0, &pszPkgName, &pUpdateInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pInfo = pUpdateInfo;
+    dwError = TDNFNumUpdatePkgs(pInfo, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0)
+    {
+        goto cleanup;
+    }
+
+    dwError = TDNFAllocateMemory(
+                  dwCount + 1,
+                  sizeof(char*),
+                  (void**)&ppszPkgs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(pInfo = pUpdateInfo; pInfo; pInfo = pInfo->pNext)
+    {
+        pPkg = pInfo->pPackages;
+        while(pPkg)
+        {
+            dwError = TDNFAllocateString(
+                          pPkg->pszName,
+                          &ppszPkgs[nIndex++]);
+            BAIL_ON_TDNF_ERROR(dwError);
+            pPkg = pPkg->pNext;
+        }
+
+    }
+    *pppszPkgs = ppszPkgs;
+    *pdwCount  = dwCount;
+cleanup:
+    if(pUpdateInfo)
+    {
+        TDNFFreeUpdateInfo(pUpdateInfo);
+    }
+    return dwError;
+
+error:
+    if(pppszPkgs)
+    {
+        *pppszPkgs = NULL;
+    }
+    if(ppszPkgs)
+    {
+        TDNFFreeStringArray(ppszPkgs);
     }
     goto cleanup;
 }

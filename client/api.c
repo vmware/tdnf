@@ -831,6 +831,7 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -842,7 +843,7 @@ TDNFResolve(
 
     dwError = TDNFPrepareAllPackages(
                   pTdnf,
-                  nAlterType,
+                  &nAlterType,
                   ppszPkgsNotResolved,
                   &queueGoal);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -1037,6 +1038,9 @@ TDNFUpdateInfo(
     PTDNF_UPDATEINFO pUpdateInfos = NULL;
     PTDNF_UPDATEINFO pInfo = NULL;
 
+    char*  pszSeverity = NULL;
+    uint32_t dwSecurity = 0;
+
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool ||
        !ppUpdateInfo)
     {
@@ -1058,6 +1062,12 @@ TDNFUpdateInfo(
     }
 
     dwError = SolvGetPackageListSize(pInstalledPkgList, &dwSize);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGetSecuritySeverityOption(
+                  pTdnf,
+                  &dwSecurity,
+                  &pszSeverity);
     BAIL_ON_TDNF_ERROR(dwError);
 
     for(dwPkgIndex = 0; dwPkgIndex < dwSize; dwPkgIndex++)
@@ -1088,12 +1098,17 @@ TDNFUpdateInfo(
             dwError = TDNFPopulateUpdateInfoOfOneAdvisory(
                           pTdnf->pSack,
                           dwAdvId,
+                          dwSecurity,
+                          pszSeverity,
                           &pInfo);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            pInfo->pNext = pUpdateInfos;
-            pUpdateInfos = pInfo;
-            pInfo = NULL;
+            if(pInfo)
+            {
+                pInfo->pNext = pUpdateInfos;
+                pUpdateInfos = pInfo;
+                pInfo = NULL;
+            }
         }
         SolvFreePackageList(pUpdateAdvPkgList);
         pUpdateAdvPkgList = NULL;
@@ -1122,6 +1137,7 @@ cleanup:
     {
         SolvFreePackageList(pUpdateAdvPkgList);
     }
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
     return dwError;
 
 error:
