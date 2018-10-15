@@ -543,7 +543,7 @@ TDNFFreeReposInternal(
 uint32_t
 TDNFPrepareAllPackages(
     PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
+    TDNF_ALTERTYPE* pAlterType,
     char** ppszPkgsNotResolved,
     Queue* pQueueGoal
     );
@@ -702,7 +702,29 @@ uint32_t
 TDNFPopulateUpdateInfoOfOneAdvisory(
     PSolvSack pSack,
     Id dwAdvId,
+    uint32_t dwSecurity,
+    const char*  pszSeverity,
     PTDNF_UPDATEINFO* ppInfo
+    );
+
+uint32_t
+TDNFGetSecuritySeverityOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSecurity,
+    char **ppszSeverity
+    );
+
+uint32_t
+TDNFNumUpdatePkgs(
+    PTDNF_UPDATEINFO pInfo,
+    uint32_t *pdwCount
+    );
+
+uint32_t
+TDNFGetUpdatePkgs(
+    PTDNF pTdnf,
+    char*** pppszPkgs,
+    uint32_t *pdwCount
     );
 
 //utils.c

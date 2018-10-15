@@ -349,18 +349,21 @@ TDNFGoal(
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (dwCount != 0 && ppszExcludes)
+    if (nAlterType == ALTER_UPGRADEALL)
     {
-        if (!pTdnf->pSack || !pTdnf->pSack->pPool)
+        dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (dwCount != 0 && ppszExcludes)
         {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            if (!pTdnf->pSack || !pTdnf->pSack->pPool)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
-        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pSolv = solver_create(pTdnf->pSack->pPool);
@@ -451,6 +454,10 @@ TDNFAddGoal(
 {
     uint32_t dwError = 0;
     char* pszPkg = NULL;
+    char** ppszExcludes = NULL;
+    char** ppszPackagesTemp = NULL;
+    char* pszName = NULL;
+    uint32_t dwCount = 0;
     Queue queueJob = {0};
 
     if(!pQueueJobs || dwId == 0 || !pTdnf->pSack || !pTdnf->pSack->pPool)
@@ -460,6 +467,33 @@ TDNFAddGoal(
     }
 
     queue_init(&queueJob);
+    if (nAlterType == ALTER_UPGRADE)
+    {
+        dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if (dwCount != 0 && ppszExcludes)
+        {
+            dwError = SolvGetPkgNameFromId(
+                          pTdnf->pSack,
+                          dwId,
+                          &pszName);
+            BAIL_ON_TDNF_ERROR(dwError);
+            ppszPackagesTemp = ppszExcludes;
+            while(ppszPackagesTemp && *ppszPackagesTemp)
+            {
+               if (SolvIsGlob(*ppszPackagesTemp))
+               {
+                   if (!fnmatch(*ppszPackagesTemp, pszName, 0))
+                      goto cleanup;
+               }
+               else if (!strcmp(pszName, *ppszPackagesTemp))
+               {
+                   goto cleanup;
+               }
+               ++ppszPackagesTemp;
+            }
+        }
+    }
     switch(nAlterType)
     {
         case ALTER_DOWNGRADEALL:
@@ -487,6 +521,8 @@ TDNFAddGoal(
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPkg);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
+    TDNF_SAFE_FREE_MEMORY(pszName);
     queue_free(&queueJob);
     return dwError;
 

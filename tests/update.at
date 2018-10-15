@@ -63,3 +63,37 @@ TDNF_CLI_W_CHROOT update --exclude tdnf-test-multiversion -y
 [ignore],
 [ignore])
 AT_CLEANUP
+
+AT_SETUP([update with security])
+AT_KEYWORDS([update])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT update --security -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
+
+AT_SETUP([update with sec-severity GT than updates])
+AT_KEYWORDS([update])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT update --sec-severity 7.8 -y
+],
+[125],
+[ignore],
+[ignore])
+AT_CLEANUP
+
+AT_SETUP([update with sec-severity LE than updates])
+AT_KEYWORDS([update])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT update --sec-severity 7.5 -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
+
