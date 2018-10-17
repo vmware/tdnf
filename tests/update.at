@@ -97,3 +97,13 @@ TDNF_CLI_W_CHROOT update --sec-severity 7.5 -y
 [ignore])
 AT_CLEANUP
 
+AT_SETUP([update with reboot-required])
+AT_KEYWORDS([update])
+AT_CHECK([
+TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.1 -y
+TDNF_CLI_W_CHROOT update --reboot-required -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP

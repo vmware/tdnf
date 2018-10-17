@@ -246,6 +246,7 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
     Id dwAdvId,
     uint32_t dwSecurity,
     const char*  pszSeverity,
+    uint32_t dwRebootRequired,
     PTDNF_UPDATEINFO* ppInfo)
 {
     uint32_t dwError = 0;
@@ -257,6 +258,7 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
     uint32_t dwKeepEntry = 1;
     const int DATELEN = 200;
     char szDate[DATELEN];
+    int dwReboot = 0;
 
     struct tm* pLocalTime = NULL;
 
@@ -274,6 +276,10 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
                   pSack->pPool,
                   dwAdvId,
                   UPDATE_SEVERITY);
+    dwReboot = pool_lookup_void(
+                       pSack->pPool,
+                       dwAdvId,
+                       UPDATE_REBOOT);
     if (dwSecurity)
     {
         if (strcmp (pszType, "security"))
@@ -286,6 +292,13 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
          if(!pszTemp || atof(pszSeverity) > atof(pszTemp))
          {
              dwKeepEntry = 0;
+         }
+    }
+    if (dwRebootRequired)
+    {
+         if(dwReboot == 0)
+         {
+            dwKeepEntry = 0;
          }
     }
 
@@ -306,6 +319,8 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
             pInfo->nType = UPDATE_ENHANCEMENT;
         else if (!strcmp (pszType, "security"))
             pInfo->nType = UPDATE_SECURITY;
+
+        pInfo->nRebootRequired = dwReboot;
 
         pszTemp = pool_lookup_str(
                       pSack->pPool,
@@ -534,6 +549,45 @@ error:
     if(ppszPkgs)
     {
         TDNFFreeStringArray(ppszPkgs);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetRebootRequiredOption(
+    PTDNF pTdnf,
+    uint32_t *pdwRebootRequired
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    uint32_t dwRebootRequired = 0;
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+          !strcasecmp(pSetOpt->pszOptName, "reboot-required"))
+        {
+            dwRebootRequired = 1;
+        }
+        pSetOpt = pSetOpt->pNext;
+    }
+    *pdwRebootRequired = dwRebootRequired;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwRebootRequired)
+    {
+       *pdwRebootRequired = 0;
     }
     goto cleanup;
 }

@@ -53,6 +53,7 @@ static struct option pstOptions[] =
     {"exclude",       required_argument, 0, 0},            //--exclude
     {"security",      no_argument, 0, 0},                  //--security
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
+    {"reboot-required", no_argument, 0, 0},                //--reboot-required
     {0, 0, 0, 0}
 };
 
@@ -326,6 +327,15 @@ ParseOption(
             BAIL_ON_CLI_ERROR(dwError);
             pszToken = strtok_r(NULL, ",:", &pszTokenSave);
         }
+    }
+    else if(!strcasecmp(pszName, "reboot-required"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "installroot"))
     {
