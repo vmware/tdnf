@@ -69,6 +69,7 @@ TDNFPrepareAllPackages(
     uint32_t dwSecurity = 0;
     char** ppszPkgArray = NULL;
     uint32_t dwCount = 0;
+    uint32_t dwRebootRequired = 0;
     TDNF_ALTERTYPE nAlterType = 0;
 
     if(!pTdnf || !pTdnf->pSack ||
@@ -98,9 +99,14 @@ TDNFPrepareAllPackages(
                   &pszSeverity);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFGetRebootRequiredOption(
+                  pTdnf,
+                  &dwRebootRequired);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if ((nAlterType == ALTER_UPGRADEALL ||
          nAlterType == ALTER_UPGRADE) &&
-        (dwSecurity || pszSeverity))
+        (dwSecurity || pszSeverity || dwRebootRequired))
     {
         //pAlterType is changed to ALTER_UPGRADE and later used in TDNFGoal() to add exclude the
         // list of packages that are added in --exclude option.
