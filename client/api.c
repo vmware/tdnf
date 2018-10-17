@@ -1034,6 +1034,7 @@ TDNFUpdateInfo(
     PSolvPackageList pUpdateAdvPkgList = NULL;
     Id dwAdvId = 0;
     Id dwPkgId = 0;
+    uint32_t dwRebootRequired = 0;
 
     PTDNF_UPDATEINFO pUpdateInfos = NULL;
     PTDNF_UPDATEINFO pInfo = NULL;
@@ -1070,6 +1071,11 @@ TDNFUpdateInfo(
                   &pszSeverity);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFGetRebootRequiredOption(
+                  pTdnf,
+                  &dwRebootRequired);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     for(dwPkgIndex = 0; dwPkgIndex < dwSize; dwPkgIndex++)
     {
         dwError = SolvGetPackageId(pInstalledPkgList, dwPkgIndex, &dwPkgId);
@@ -1100,6 +1106,7 @@ TDNFUpdateInfo(
                           dwAdvId,
                           dwSecurity,
                           pszSeverity,
+                          dwRebootRequired,
                           &pInfo);
             BAIL_ON_TDNF_ERROR(dwError);
 

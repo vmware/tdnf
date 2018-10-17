@@ -704,6 +704,7 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
     Id dwAdvId,
     uint32_t dwSecurity,
     const char*  pszSeverity,
+    uint32_t dwRebootRequired,
     PTDNF_UPDATEINFO* ppInfo
     );
 
@@ -725,6 +726,12 @@ TDNFGetUpdatePkgs(
     PTDNF pTdnf,
     char*** pppszPkgs,
     uint32_t *pdwCount
+    );
+
+uint32_t
+TDNFGetRebootRequiredOption(
+    PTDNF pTdnf,
+    uint32_t *pdwRebootRequired
     );
 
 //utils.c

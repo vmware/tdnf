@@ -208,6 +208,8 @@ TDNFCliUpdateInfoInfo(
                 TDNFGetUpdateInfoType(pInfo->nType));
             fprintf(stdout, "    Updated : %s\n",
                 pInfo->pszDate);
+            fprintf(stdout, "Needs Reboot: %d\n",
+                pInfo->nRebootRequired);
             fprintf(stdout, "Description : %s\n",
                 pInfo->pszDescription);
 
