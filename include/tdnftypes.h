@@ -286,6 +286,7 @@ typedef struct _TDNF_UPDATEINFO
     char* pszID;
     char* pszDate;
     char* pszDescription;
+    int nRebootRequired;
     PTDNF_UPDATEINFO_REF pReferences;
     PTDNF_UPDATEINFO_PKG pPackages;
     struct _TDNF_UPDATEINFO* pNext;
