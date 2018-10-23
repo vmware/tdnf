@@ -41,6 +41,9 @@ TDNFUpdateInfoSummary(
     HyAdvisory hAdv = NULL;
     HyAdvisoryType nType = HY_ADVISORY_UNKNOWN;
     int nTypeCount = HY_ADVISORY_ENHANCEMENT;
+    char*  pszSeverity = NULL;
+    uint32_t dwSecurity = 0;
+    const char* pszTemp = NULL;
 
     if(!pTdnf || !ppszPackageNameSpecs || !ppSummary)
     {
@@ -69,6 +72,12 @@ TDNFUpdateInfoSummary(
     pSummary[HY_ADVISORY_BUGFIX].nType = UPDATE_BUGFIX;
     pSummary[HY_ADVISORY_ENHANCEMENT].nType = UPDATE_ENHANCEMENT;
 
+    dwError = TDNFGetSecuritySeverityOption(
+                  pTdnf,
+                  &dwSecurity,
+                  &pszSeverity);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     FOR_PACKAGELIST(hPkg, hPkgList, iPkg)
     {
         hAdvList = hy_package_get_advisories(hPkg, HY_GT);
@@ -87,6 +96,21 @@ TDNFUpdateInfoSummary(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             nType = hy_advisory_get_type(hAdv);
+            if (dwSecurity)
+            {
+                if (nType != HY_ADVISORY_SECURITY)
+                {
+                    continue;
+                }
+            }
+            else if (pszSeverity)
+            {
+                pszTemp = hy_advisory_get_severity(hAdv);
+                if (!pszTemp || atof(pszSeverity) > atof(pszTemp))
+                {
+                   continue;
+                }
+            }
             if(nType < HY_ADVISORY_UNKNOWN || nType > HY_ADVISORY_ENHANCEMENT)
             {
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -102,6 +126,7 @@ TDNFUpdateInfoSummary(
     *ppSummary = pSummary;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
     if(hAdv)
     {
         hy_advisory_free(hAdv);
