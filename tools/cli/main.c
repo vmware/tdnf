@@ -182,7 +182,11 @@ TDNFCliPrintError(
     {
         dwErrorCode = 0;
     }
-    if(dwErrorCode)
+    if (dwErrorCode == ERROR_TDNF_NO_DATA)
+    {
+        printf("No Data Available\n");
+    }
+    else if(dwErrorCode)
     {
         fprintf(stderr, "Error(%d) : %s\n", dwErrorCode, pszError);
     }
