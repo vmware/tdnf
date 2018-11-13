@@ -1166,6 +1166,8 @@ TDNFUpdateInfo(
 
     if(!pUpdateInfos)
     {
+        printf(
+            "%d updates available\n", nCount);
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }

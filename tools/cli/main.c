@@ -152,7 +152,7 @@ cleanup:
 
 error:
     TDNFCliPrintError(dwError);
-    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO)
+    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO || dwError == ERROR_TDNF_NO_DATA)
     {
         // Nothing to do should not return an error code
         dwError = 0;
@@ -178,13 +178,9 @@ TDNFCliPrintError(
         dwError = TDNFGetErrorString(dwErrorCode, &pszError);
         BAIL_ON_CLI_ERROR(dwError);
     }
-    if(dwErrorCode == ERROR_TDNF_CLI_NOTHING_TO_DO)
+    if(dwErrorCode == ERROR_TDNF_CLI_NOTHING_TO_DO || dwErrorCode == ERROR_TDNF_NO_DATA)
     {
         dwErrorCode = 0;
-    }
-    if (dwErrorCode == ERROR_TDNF_NO_DATA)
-    {
-        printf("No data available\n");
     }
     else if(dwErrorCode)
     {
