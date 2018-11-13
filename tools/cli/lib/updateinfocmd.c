@@ -91,10 +91,6 @@ cleanup:
     return dwError;
 
 error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
     goto cleanup;
 }
 
@@ -108,6 +104,7 @@ TDNFCliUpdateInfoSummary(
 {
     uint32_t dwError = 0;
     int i = 0;
+    int nCount = 0;
     PTDNF_UPDATEINFO_SUMMARY pSummary = NULL;
 
     if(!pContext || !pCmdArgs)
@@ -127,11 +124,19 @@ TDNFCliUpdateInfoSummary(
     {
         if(pSummary[i].nCount > 0)
         {
+            nCount++;
             printf(
                 "%d %s notice(s)\n",
                 pSummary[i].nCount,
                 TDNFGetUpdateInfoType(pSummary[i].nType));
         }
+    }
+    if (nCount == 0)
+    {
+        printf(
+            "%d updates. \n", nCount);
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
 cleanup:
