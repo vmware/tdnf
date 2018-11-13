@@ -152,7 +152,7 @@ cleanup:
 
 error:
     TDNFCliPrintError(dwError);
-    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO)
+    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO || dwError == ERROR_TDNF_NO_DATA)
     {
         // Nothing to do should not return an error code
         dwError = 0;
@@ -184,7 +184,8 @@ TDNFCliPrintError(
     }
     if (dwErrorCode == ERROR_TDNF_NO_DATA)
     {
-        printf("No data available\n");
+        dwErrorCode = 0;
+        fprintf(stderr, "Error(%d) : %s\n", dwErrorCode, pszError);
     }
     else if(dwErrorCode)
     {
