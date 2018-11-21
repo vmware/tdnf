@@ -1173,6 +1173,7 @@ TDNFUpdateInfo(
     *ppUpdateInfo = pUpdateInfos;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
     if(hAdvList)
     {
         hy_advisorylist_free(hAdvList);
