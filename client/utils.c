@@ -611,3 +611,53 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
 }
+
+uint32_t
+TDNFGetOptValue(
+    PTDNF pTdnf,
+    const char *pszKey,
+    char **ppszValue
+    )
+{
+    uint32_t dwError = 0;
+    char *pszValue = NULL;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+
+    if (!pTdnf || IsNullOrEmptyString(pszKey) || !ppszValue)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, pszKey))
+        {
+            dwError = TDNFAllocateString(pSetOpt->pszOptValue, &pszValue);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            break;
+        }
+
+        pSetOpt = pSetOpt->pNext;
+    }
+
+    if (pszValue)
+    {
+        *ppszValue = pszValue;
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppszValue)
+    {
+        *ppszValue = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszValue);
+    goto cleanup;
+}
