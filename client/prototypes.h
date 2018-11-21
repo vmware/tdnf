@@ -791,6 +791,12 @@ TDNFFreeUpdateInfoPackages(
 
 //utils.c
 uint32_t
+TDNFGetOptValue(
+    PTDNF pTdnf,
+    const char *pszKey,
+    char **ppszValue
+    );
+uint32_t
 TDNFIsSystemError(
     uint32_t dwError
     );

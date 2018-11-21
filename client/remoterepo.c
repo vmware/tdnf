@@ -85,8 +85,9 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
-TDNFDownloadFile(
+_TDNFDownloadFile(
     PTDNF pTdnf,
     const char *pszRepo,
     const char *pszFileUrl,
@@ -206,6 +207,58 @@ error:
                 curl_easy_strerror(nCurlError));
     }
     goto cleanup;
+}
+
+uint32_t
+TDNFDownloadFile(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszFileUrl,
+    const char *pszFile,
+    const char *pszProgressData
+    )
+{
+    uint32_t dwError = 0;
+    int nRetriesLeft = 10;
+    char *pszRetry = NULL;
+
+    if(!pTdnf ||
+       !pTdnf->pArgs ||
+       IsNullOrEmptyString(pszFileUrl) ||
+       IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+
+    dwError = TDNFGetOptValue(pTdnf, "retry", &pszRetry);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (!IsNullOrEmptyString(pszRetry))
+    {
+        nRetriesLeft = atoi(pszRetry);
+    }
+
+retry:
+    dwError = _TDNFDownloadFile(
+                  pTdnf,
+                  pszRepo,
+                  pszFileUrl,
+                  pszFile,
+                  pszProgressData);
+    if (TDNFIsCurlError(dwError) && nRetriesLeft > 0)
+    {
+        fprintf(stdout, "Download error: %d. Retrying\n", dwError);
+        sleep(1);
+        --nRetriesLeft;
+        goto retry;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszRetry);
+    return dwError;
 }
 
 uint32_t
