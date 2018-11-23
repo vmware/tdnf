@@ -152,7 +152,7 @@ error:
 
 uint32_t
 SolvReadYumRepo(
-    PSolvSack pSack,
+    Repo *pRepo,
     const char *pszRepoName,
     const char *pszRepomd,
     const char *pszPrimary,
@@ -161,21 +161,12 @@ SolvReadYumRepo(
     )
 {
     uint32_t dwError = 0;
-    Repo* pRepo = NULL;
-    Pool* pPool = NULL;
-    if(!pSack || !pSack->pPool || !pszRepoName || !pszRepomd || !pszPrimary)
+    if(!pRepo || !pszRepoName || !pszRepomd || !pszPrimary)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pPool = pSack->pPool;
-    pRepo = repo_create(pPool, pszRepoName);
-    if( !pRepo )
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
 
     dwError = SolvLoadRepomd(pRepo, pszRepomd);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -196,17 +187,12 @@ SolvReadYumRepo(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pool_createwhatprovides(pPool);
 
 cleanup: 
 
     return dwError;
 
 error:
-    if(pRepo)
-    {
-        repo_free(pRepo, 1);
-    }
     goto cleanup;
 }
 
@@ -286,6 +272,331 @@ error:
     if(pRepo)
     {
         repo_free(pRepo, 1);
+    }
+    goto cleanup;
+}
+
+uint32_t
+SolvCalculateCookieForRepoMD(
+    char* pszRepoMD,
+    unsigned char* pszCookie
+    )
+{
+    uint32_t dwError = 0;
+    FILE *fp = NULL;
+    Chksum *pChkSum = NULL;
+    int nLen = 0;
+    char buf[4096];
+
+    if (!pszRepoMD)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    fp = fopen(pszRepoMD, "r");
+    if (fp == NULL)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pChkSum = solv_chksum_create(REPOKEY_TYPE_SHA256);
+    if (!pChkSum)
+    {
+        dwError = ERROR_TDNF_SOLV_CHKSUM;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    solv_chksum_add(pChkSum, SOLV_COOKIE_IDENT, strlen(SOLV_COOKIE_IDENT));
+
+    while ((nLen = fread(buf, 1, sizeof(buf), fp)) > 0)
+    {
+          solv_chksum_add(pChkSum, buf, nLen);
+    }
+    solv_chksum_free(pChkSum, pszCookie);
+
+cleanup:
+    if (fp != NULL)
+    {
+        fclose(fp);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvGetMetaDataCachePath(
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
+    PSolvSack pSack,
+    char** ppszCachePath
+    )
+{
+    char *pszCachePath = NULL;
+    uint32_t dwError = 0;
+    Repo *pRepo = NULL;
+
+    if (!pSolvRepoInfo || !pSack || !pSolvRepoInfo->pRepo || !ppszCachePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    pRepo = pSolvRepoInfo->pRepo;
+    if (!IsNullOrEmptyString(pRepo->name))
+    {
+        dwError = TDNFAllocateStringPrintf(
+                      &pszCachePath,
+                      "%s/%s/%s/%s.solv",
+                      pSack->pszCacheDir,
+                      pRepo->name,
+                      TDNF_SOLVCACHE_DIR_NAME,
+                      pRepo->name);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    *ppszCachePath = pszCachePath;
+cleanup:
+    return dwError;
+error:
+    TDNF_SAFE_FREE_MEMORY(pszCachePath);
+    goto cleanup;
+}
+
+uint32_t
+SolvAddSolvMetaData(
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
+    char *pszTempSolvFile
+    )
+{
+    uint32_t dwError = 0;
+    Repo *pRepo = NULL;
+    FILE *fp = NULL;
+    int i = 0;
+
+    if (!pSolvRepoInfo || !pSolvRepoInfo->pRepo || !pszTempSolvFile)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pRepo = pSolvRepoInfo->pRepo;
+    if (!pRepo->pool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    for (i = pRepo->start; i < pRepo->end; i++)
+    {
+         if (pRepo->pool->solvables[i].repo != pRepo)
+         {
+             break;
+         }
+    }
+    if (i < pRepo->end)
+    {
+        goto cleanup;
+    }
+    fp = fopen (pszTempSolvFile, "r");
+    if (fp == NULL)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    repo_empty(pRepo, 1);
+    if (repo_add_solv(pRepo, fp, SOLV_ADD_NO_STUBS))
+    {
+        dwError = ERROR_TDNF_ADD_SOLV;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+cleanup:
+    if (fp != NULL)
+    {
+        fclose(fp);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvUseMetaDataCache(
+    PSolvSack pSack,
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
+    int       *nUseMetaDataCache
+    )
+{
+    uint32_t dwError = 0;
+    FILE *fp = NULL;
+    Repo *pRepo = NULL;
+    unsigned char *pszCookie = NULL;
+    unsigned char pszTempCookie[32];
+    char *pszCacheFilePath = NULL;
+
+    if (!pSack || !pSolvRepoInfo || !pSolvRepoInfo->pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    pRepo = pSolvRepoInfo->pRepo;
+    pszCookie = pSolvRepoInfo->nCookieSet ? pSolvRepoInfo->cookie : 0;
+
+    dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, pSack, &pszCacheFilePath);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    if (IsNullOrEmptyString(pszCacheFilePath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    fp = fopen(pszCacheFilePath, "r");
+    if (fp == NULL)
+    {
+        dwError = ERROR_TDNF_SOLV_CACHE_NOT_CREATED;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    // Reading the cookie from cached Solv File
+    if (fseek (fp, -sizeof(pszTempCookie), SEEK_END) || fread (pszTempCookie, sizeof(pszTempCookie), 1, fp) != 1)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    // compare the calculated cookie with the one read from Solv file
+    if (pszCookie && memcmp (pszCookie, pszTempCookie, sizeof(pszTempCookie)) != 0)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    rewind(fp);
+    if (repo_add_solv(pRepo, fp, 0))
+    {
+        dwError = ERROR_TDNF_ADD_SOLV;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    *nUseMetaDataCache = 1;
+
+cleanup:
+    if (fp != NULL)
+    {
+       fclose(fp);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszCacheFilePath);
+    return dwError;
+error:
+    if (dwError == ERROR_TDNF_SOLV_CACHE_NOT_CREATED)
+    {
+        dwError = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+SolvCreateMetaDataCache(
+    PSolvSack pSack,
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo
+    )
+{
+    uint32_t dwError = 0;
+    Repo *pRepo = NULL;
+    FILE *fp = NULL;
+    int fd = 0;
+    char *pszSolvCacheDir = NULL;
+    char *pszTempSolvFile = NULL;
+    char *pszCacheFilePath = NULL;
+
+    if (!pSack || !pSolvRepoInfo|| !pSolvRepoInfo->nCookieSet)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pRepo = pSolvRepoInfo->pRepo;
+    dwError = TDNFAllocateStringPrintf(
+                  &pszSolvCacheDir,
+                  "%s/%s/%s",
+                  pSack->pszCacheDir,
+                  pRepo->name,
+                  TDNF_SOLVCACHE_DIR_NAME);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    if (access(pszSolvCacheDir, W_OK| X_OK) != 0)
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+        }
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+        dwError = TDNFUtilsMakeDirs(pszSolvCacheDir);
+        if (dwError == ERROR_TDNF_ALREADY_EXISTS)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    pszTempSolvFile = solv_dupjoin(pszSolvCacheDir, "/", ".newsolv-XXXXXX");
+    fd = mkstemp(pszTempSolvFile);
+    if (fd < 0)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    fchmod (fd, 0444);
+    fp = fdopen(fd, "w");
+    if (fp == NULL)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    if (repo_write(pRepo, fp))
+    {
+        dwError = ERROR_TDNF_REPO_WRITE;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    if (fwrite(pSolvRepoInfo->cookie, SOLV_COOKIE_LEN, 1, fp) != 1)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    if (fclose(fp))
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    fp = NULL;
+    dwError = SolvAddSolvMetaData(pSolvRepoInfo, pszTempSolvFile);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, pSack, &pszCacheFilePath);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    if (IsNullOrEmptyString(pszCacheFilePath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    if (rename (pszTempSolvFile, pszCacheFilePath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    unlink(pszTempSolvFile);
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszTempSolvFile);
+    TDNF_SAFE_FREE_MEMORY(pszSolvCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszCacheFilePath);
+    return dwError;
+error:
+    if (fp != NULL)
+    {
+        fclose(fp);
+        unlink(pszTempSolvFile);
+    }
+    else if (fd > 0)
+    {
+        close(fd);
+        unlink(pszTempSolvFile);
     }
     goto cleanup;
 }

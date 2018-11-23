@@ -277,6 +277,87 @@ error:
 }
 
 uint32_t
+TDNFRemoveSolvCache(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    )
+{
+    uint32_t dwError = 0;
+    char* pszSolvCacheDir = NULL;
+    char* pszFilePath = NULL;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
+
+    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszSolvCacheDir,
+                  "%s/%s/%s",
+                  pTdnf->pConf->pszCacheDir,
+                  pszRepoId,
+                  TDNF_SOLVCACHE_DIR_NAME);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pDir = opendir(pszSolvCacheDir);
+    if(pDir == NULL)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    while ((pEnt = readdir (pDir)) != NULL )
+    {
+        if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
+        {
+            continue;
+        }
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pszFilePath,
+                      "%s/%s",
+                      pszSolvCacheDir,
+                      pEnt->d_name);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(pszFilePath)
+        {
+            if(unlink(pszFilePath))
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            TDNF_SAFE_FREE_MEMORY(pszFilePath);
+            pszFilePath = NULL;
+        }
+        else
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    if(rmdir(pszSolvCacheDir))
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszSolvCacheDir);
+    if(pDir)
+    {
+        closedir(pDir);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFRepoApplyProxySettings(
     PTDNF_CONF pConf,
     CURL *pCurl

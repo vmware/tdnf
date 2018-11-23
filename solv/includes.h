@@ -3,6 +3,8 @@
 #include <sys/utsname.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
 // libsolv
 #include <solv/evr.h>
 #include <solv/pool.h>
@@ -20,6 +22,7 @@
 #include <solv/selection.h>
 #include <solv/solverdebug.h>
 #include <solv/testcase.h>
+#include <solv/chksum.h>
 
 #include <tdnf.h>
 #include "defines.h"

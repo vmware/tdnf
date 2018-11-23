@@ -92,6 +92,14 @@ extern "C" {
 #define ERROR_TDNF_SOLV_NO_SOLUTION   (ERROR_TDNF_SOLV_BASE + 10)
 // the capability was not available
 #define ERROR_TDNF_SOLV_NO_CAPABILITY (ERROR_TDNF_SOLV_BASE + 11)
+// Solv Checksum Error
+#define ERROR_TDNF_SOLV_CHKSUM        (ERROR_TDNF_SOLV_BASE + 12)
+// Solv file write failed
+#define ERROR_TDNF_REPO_WRITE         (ERROR_TDNF_SOLV_BASE + 13)
+// Solv File not created
+#define ERROR_TDNF_SOLV_CACHE_NOT_CREATED  (ERROR_TDNF_SOLV_BASE + 14)
+// Add solv file to repo failed
+#define ERROR_TDNF_ADD_SOLV            (ERROR_TDNF_SOLV_BASE + 15)
 //Repo errors 1400 to 1469
 #define ERROR_TDNF_REPO_BASE                 1400
 

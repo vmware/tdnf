@@ -36,6 +36,13 @@ typedef struct _SolvPackageList
     Queue       queuePackages;
 } SolvPackageList, *PSolvPackageList;
 
+typedef struct _SOLV_REPO_INFO_INTERNAL_
+{
+    Repo*         pRepo;
+    unsigned char cookie[SOLV_COOKIE_LEN];
+    int           nCookieSet;
+}SOLV_REPO_INFO_INTERNAL, *PSOLV_REPO_INFO_INTERNAL;
+
 // tdnfpackage.c
 uint32_t
 SolvGetPkgInfoFromId(
@@ -412,7 +419,7 @@ SolvGetUpdateAdvisories(
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(
-    PSolvSack pSack,
+    Repo *pRepo,
     const char *pszRepoName,
     const char *pszRepomd,
     const char *pszPrimary,
@@ -479,6 +486,39 @@ int
 SolvIsGlob(
     const char* pszString
     );
+
+uint32_t
+SolvCalculateCookieForRepoMD(
+    char* pszRepoMD,
+    unsigned char* pszCookie
+    );
+
+uint32_t
+SolvGetMetaDataCachePath(
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
+    PSolvSack pSack,
+    char** ppszCachePath
+    );
+
+uint32_t
+SolvAddSolvMetaData(
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
+    char *pszTempSolvFile
+    );
+
+uint32_t
+SolvCreateMetaDataCache(
+    PSolvSack pSack,
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo
+    );
+
+uint32_t
+SolvUseMetaDataCache(
+    PSolvSack pSack,
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
+    int       *nUseMetaDataCache
+    );
+
 #ifdef __cplusplus
 }
 #endif
