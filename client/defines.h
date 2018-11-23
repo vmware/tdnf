@@ -139,6 +139,7 @@ typedef enum
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
+#define TDNF_SOLVCACHE_DIR_NAME           "solvcache"
 #define TDNF_REPO_DEFAULT_METADATA_EXPIRE "8294400"//48 hours in seconds
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
 //var names
@@ -177,6 +178,10 @@ typedef enum
     {ERROR_TDNF_SOLV_VALIDATION,     "ERROR_TDNF_SOLV_VALIDATION",     "Solv - validation check failed"}, \
     {ERROR_TDNF_SOLV_NO_SOLUTION,    "ERROR_TDNF_SOLV_NO_SOLUTION",    "Solv - goal found no solutions"}, \
     {ERROR_TDNF_SOLV_NO_CAPABILITY,  "ERROR_TDNF_SOLV_NO_CAPABILITY",  "Solv - the capability was not available"}, \
+    {ERROR_TDNF_SOLV_CHKSUM,         "ERROR_TDNF_SOLV_CHKSUM",         "Solv - Checksum creation failed"}, \
+    {ERROR_TDNF_REPO_WRITE,          "ERROR_TDNF_REPO_WRITE",          "Solv - Failed to write repo"}, \
+    {ERROR_TDNF_SOLV_CACHE_NOT_CREATED, "ERROR_TDNF_SOLV_CACHE_NOT_CREATED", "Solv - Solv cache not found"}, \
+    {ERROR_TDNF_ADD_SOLV,            "ERROR_TDNF_ADD_SOLV",            "Solv - Failed to add solv"}, \
     {ERROR_TDNF_REPO_BASE,           "ERROR_TDNF_REPO_BASE",           "Repo error base"}, \
     {ERROR_TDNF_REPO_PERFORM,        "ERROR_TDNF_REPO_PERFORM",        "Error during repo handle execution"}, \
     {ERROR_TDNF_REPO_GETINFO,        "ERROR_TDNF_REPO_GETINFO",        "Repo during repo result getinfo"}, \

@@ -34,14 +34,19 @@ TDNFInitRepo(
     char* pszLastRefreshMarker = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
     PTDNF_CONF pConf = NULL;
+    Repo* pRepo = NULL;
+    Pool* pPool = NULL;;
+    int nUseMetaDataCache = 0;
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !pRepoData || !pSack)
+    if(!pTdnf || !pTdnf->pConf || !pRepoData || !pSack || !pSack->pPool)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pConf = pTdnf->pConf;
+    pPool = pSack->pPool;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRepoCacheDir,
@@ -63,8 +68,38 @@ TDNFInitRepo(
                             &pRepoMD);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFInitRepoFromMetadata(pSack, pRepoData->pszId, pRepoMD);
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(SOLV_REPO_INFO_INTERNAL),
+                  (void**)&pSolvRepoInfo);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    pRepo = repo_create(pPool, pRepoData->pszId);
+
+    if (!pRepo || !pRepoMD || !pRepoMD->pszRepoMD)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pSolvRepoInfo->pRepo = pRepo;
+    pRepo->appdata = pSolvRepoInfo;
+
+    dwError = SolvCalculateCookieForRepoMD(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pSolvRepoInfo->nCookieSet = 1;
+    dwError = SolvUseMetaDataCache(pSack, pSolvRepoInfo, &nUseMetaDataCache);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (nUseMetaDataCache == 0)
+    {
+        dwError = TDNFInitRepoFromMetadata(pSolvRepoInfo->pRepo, pRepoData->pszId, pRepoMD);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvCreateMetaDataCache(pSack, pSolvRepoInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pool_createwhatprovides(pPool);
 
     dwError = TDNFAllocateStringPrintf(
                   &pszLastRefreshMarker,
@@ -81,9 +116,13 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
     TDNF_SAFE_FREE_MEMORY(pszRepoDataDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pSolvRepoInfo);
     return dwError;
-
 error:
+    if(pRepo)
+    {
+        repo_free(pRepo, 1);
+    }
     //If there is an error during init, log the error
     //remove any cache data that could be potentially corrupt.
     if(pRepoData)
@@ -101,23 +140,22 @@ error:
     }
     goto cleanup;
 }
-
 uint32_t
 TDNFInitRepoFromMetadata(
-    PSolvSack pSack,
+    Repo *pRepo,
     const char* pszRepoName,
     PTDNF_REPO_METADATA pRepoMD
     )
 {
     uint32_t dwError = 0;
 
-    if(!pSack || !pRepoMD || IsNullOrEmptyString(pszRepoName))
+    if(!pRepo || !pRepoMD || IsNullOrEmptyString(pszRepoName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvReadYumRepo(pSack,
+    dwError = SolvReadYumRepo(pRepo,
                   pszRepoName,
                   pRepoMD->pszRepoMD,
                   pRepoMD->pszPrimary,

@@ -136,3 +136,8 @@ void
 TDNFFreePackageInfoContents(
     PTDNF_PKG_INFO pPkgInfo
     );
+
+uint32_t
+TDNFUtilsMakeDirs(
+    const char* pszPath
+    );

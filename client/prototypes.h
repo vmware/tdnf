@@ -125,6 +125,12 @@ TDNFRepoRemoveCache(
     );
 
 uint32_t
+TDNFRemoveSolvCache(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    );
+
+uint32_t
 TDNFRepoApplyProxySettings(
     PTDNF_CONF pConf,
     CURL *pCurl
@@ -424,7 +430,7 @@ TDNFConfigReplaceVars(
 //repo.c
 uint32_t
 TDNFInitRepoFromMetadata(
-    PSolvSack pSack,
+    Repo *pRepo,
     const char* pszRepoName,
     PTDNF_REPO_METADATA pRepoMD
     );
@@ -768,11 +774,6 @@ TDNFIsGlob(
 
 uint32_t
 TDNFUtilsMakeDir(
-    const char* pszPath
-    );
-
-uint32_t
-TDNFUtilsMakeDirs(
     const char* pszPath
     );
 
