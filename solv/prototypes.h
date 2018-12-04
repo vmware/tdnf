@@ -253,6 +253,17 @@ SolvFindHighestOrLowestInstalled(
     uint32_t dwFindHighest
     );
 
+uint32_t
+SolvGetNevraFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    uint32_t *pdwEpoch,
+    char **ppszName,
+    char **ppszVersion,
+    char **ppszRelease,
+    char **ppszArch
+    );
+
 // tdnfpool.c
 uint32_t
 SolvCreateSack(
