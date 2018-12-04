@@ -676,9 +676,42 @@ SolvApplyListQuery(
         for (nIndex = 0; nIndex < pQuery->queueJob.count ; nIndex += 2)
         {
             queue_empty(&queueTmp);
-            pool_job2solvables(pQuery->pSack->pPool, &queueTmp,
-                               pQuery->queueJob.elements[nIndex],
-                               pQuery->queueJob.elements[nIndex + 1]);
+            Id p, pp, how, what;
+            what = pQuery->queueJob.elements[nIndex + 1];
+            how = SOLVER_SELECTMASK & pQuery->queueJob.elements[nIndex];
+            Pool *pool = pQuery->pSack->pPool;
+            if (how == SOLVER_SOLVABLE_ALL)
+            {
+               FOR_POOL_SOLVABLES(p)
+               {
+                  if(is_pseudo_package(pool, &pool->solvables[p]))
+                     continue;
+                  queue_push(&queueTmp, p);
+               }
+            }
+            else if (how == SOLVER_SOLVABLE_REPO)
+            {
+               Repo *repo = pool_id2repo(pool, what);
+               Solvable *s;
+               if (repo)
+               {
+	           FOR_REPO_SOLVABLES(repo, p, s)
+                   {
+                      if (is_pseudo_package(pool, &pool->solvables[p]))
+                          continue;
+	              queue_push(&queueTmp, p);
+                   }
+	       }
+            }
+            else
+            {
+               FOR_JOB_SELECT(p, pp, how, what)
+               {
+                  if (is_pseudo_package(pool, &pool->solvables[p]))
+                      continue;
+	          queue_push(&queueTmp, p);
+               }
+            }
             queue_insertn(&pQuery->queueResult,
                           pQuery->queueResult.count,
                           queueTmp.count,
