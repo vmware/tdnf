@@ -40,6 +40,9 @@ TDNFUpdateInfoSummary(
     uint32_t nType = 0;
     PTDNF_UPDATEINFO_SUMMARY pSummary = NULL;
     const char *pszType = 0;
+    char *pszSeverity = NULL;
+    uint32_t dwSecurity = 0;
+    const char* pszTemp = NULL;
 
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool ||
        !ppSummary)
@@ -74,6 +77,12 @@ TDNFUpdateInfoSummary(
     pSummary[UPDATE_SECURITY].nType = UPDATE_SECURITY;
     pSummary[UPDATE_BUGFIX].nType = UPDATE_BUGFIX;
     pSummary[UPDATE_ENHANCEMENT].nType = UPDATE_ENHANCEMENT;
+
+    dwError = TDNFGetSecuritySeverityOption(
+                  pTdnf,
+                  &dwSecurity,
+                  &pszSeverity);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     for(dwPkgIndex = 0; dwPkgIndex < dwSize; dwPkgIndex++)
     {
@@ -113,6 +122,20 @@ TDNFUpdateInfoSummary(
                 nType = UPDATE_ENHANCEMENT;
             else if (!strcmp (pszType, "security"))
                 nType = UPDATE_SECURITY;
+            if (dwSecurity)
+            {
+                if (nType != UPDATE_SECURITY)
+                    continue;
+            }
+            else if (pszSeverity)
+            {
+                pszTemp = pool_lookup_str(
+                              pTdnf->pSack->pPool,
+                              dwAdvId,
+                              UPDATE_SEVERITY);
+                if (!pszTemp || atof(pszSeverity) > atof(pszTemp))
+                    continue;
+            }
             pSummary[nType].nCount++;
         }
         SolvFreePackageList(pUpdateAdvPkgList);
@@ -121,6 +144,7 @@ TDNFUpdateInfoSummary(
     *ppSummary = pSummary;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSeverity);
     if(pInstalledPkgList)
     {
         SolvFreePackageList(pInstalledPkgList);
