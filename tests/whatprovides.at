@@ -37,7 +37,7 @@ AT_KEYWORDS([whatprovides])
 AT_CHECK([
 TDNF_CLI_W_CHROOT whatprovides aa
 ],
-[125],
+[0],
 [ignore],
 [ignore])
 AT_CLEANUP

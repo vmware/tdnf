@@ -1041,6 +1041,7 @@ TDNFUpdateInfo(
 
     char*  pszSeverity = NULL;
     uint32_t dwSecurity = 0;
+    int nUpdates = 0;
 
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool ||
        !ppUpdateInfo)
@@ -1112,6 +1113,7 @@ TDNFUpdateInfo(
 
             if(pInfo)
             {
+                nUpdates++;
                 pInfo->pNext = pUpdateInfos;
                 pUpdateInfos = pInfo;
                 pInfo = NULL;
@@ -1123,12 +1125,8 @@ TDNFUpdateInfo(
 
     if(!pUpdateInfos)
     {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(!pUpdateInfos)
-    {
+        printf(
+           "\n%d updates.\n", nUpdates);
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
