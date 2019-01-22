@@ -137,7 +137,10 @@ cleanup:
         pArgs->nCmdCount = nCmdCountOrig;
         pArgs->ppszCmds = ppszCmdsOrig;
     }
-
+    if(pSolvedPkgInfo)
+    {
+       TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
+    }
     return dwError;
 
 error:

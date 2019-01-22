@@ -266,9 +266,9 @@ AddKeyToKeyRing(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszKeyData);
     return dwError;
 error:
-    TDNF_SAFE_FREE_MEMORY(pszKeyData);
     if(pPubkey)
     {
         rpmPubkeyFree(pPubkey);
