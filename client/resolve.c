@@ -162,6 +162,8 @@ TDNFPrepareAllPackages(
                                      ppszPkgsNotResolved,
                                      queueGoal);
                        BAIL_ON_TDNF_ERROR(dwError);
+                       TDNF_SAFE_FREE_MEMORY(pszName);
+                       pszName = NULL;
                    }
                }
            }
