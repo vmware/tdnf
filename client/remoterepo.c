@@ -98,7 +98,8 @@ TDNFDownloadFile(
     CURL *pCurl = NULL;
     FILE *fp = NULL;
     char *pszUserPass = NULL;
-    uint32_t nStatus = 0;
+    /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
+    long lStatus = 0;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -162,14 +163,14 @@ TDNFDownloadFile(
 
     dwError = curl_easy_getinfo(pCurl,
                                 CURLINFO_RESPONSE_CODE,
-                                &nStatus);
+                                &lStatus);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
-    if(nStatus >= 400)
+    if(lStatus >= 400)
     {
         fprintf(stderr,
-                "Error: %d when downloading %s\n. Please check repo url.\n",
-                nStatus,
+                "Error: %ld when downloading %s\n. Please check repo url.\n",
+                lStatus,
                 pszFileUrl);
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

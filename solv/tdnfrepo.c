@@ -560,6 +560,7 @@ SolvCreateMetaDataCache(
     }
     if (fclose(fp))
     {
+        fp = NULL;/* so that error branch will not attempt to close again */
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }

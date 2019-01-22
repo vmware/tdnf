@@ -579,7 +579,6 @@ SolvApplyUpDownScope(
 {
     uint32_t dwError = 0;
     PSolvPackageList pInstalledPkgList = NULL;
-    PSolvPackageList pUpDownCandidates = NULL;
 
     if(!pQuery || !pQuery->pSack)
     {
@@ -612,10 +611,6 @@ cleanup:
     if(pInstalledPkgList)
     {
         SolvFreePackageList(pInstalledPkgList);
-    }
-    if(pUpDownCandidates)
-    {
-        SolvFreePackageList(pUpDownCandidates);
     }
     return dwError;
 
@@ -1081,7 +1076,6 @@ SolvFindAllUpDownCandidates(
     uint32_t dwPkgIndex = 0;
     Queue queueUpDown = {0};
     Id dwPkgId = 0;
-    PSolvPackageList pUpDownCandidates = NULL;
 
     if(!pSack ||
        !pSack->pPool ||
@@ -1121,9 +1115,5 @@ cleanup:
     return dwError;
 
 error:
-    if(pUpDownCandidates)
-    {
-        SolvFreePackageList(pUpDownCandidates);
-    }
     goto cleanup;
 }
