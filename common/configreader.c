@@ -203,6 +203,7 @@ TDNFFreeConfigData(
         return;
     }
     TdnfFreeConfigSections(pData->pSections);
+    TDNF_SAFE_FREE_MEMORY(pData->pszConfFile);
     TDNF_SAFE_FREE_MEMORY(pData);
 }
 
@@ -358,6 +359,7 @@ TDNFProcessConfigLine(
 
         dwError = pfnConfSectionCB(pData, pszSection);
         BAIL_ON_TDNF_ERROR(dwError);
+        TDNF_SAFE_FREE_MEMORY(pszSection);
     }
     else if(pfnConfKeyValueCB)
     {

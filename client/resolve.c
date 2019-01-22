@@ -162,6 +162,7 @@ TDNFPrepareAllPackages(
                                      ppszPkgsNotResolved,
                                      queueGoal);
                        BAIL_ON_TDNF_ERROR(dwError);
+                       TDNF_SAFE_FREE_MEMORY(pszName);
                    }
                }
            }
@@ -181,7 +182,6 @@ TDNFPrepareAllPackages(
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszSeverity);
-    TDNF_SAFE_FREE_MEMORY(pszName);
     queue_free(&queueLocal);
     return dwError;
 
