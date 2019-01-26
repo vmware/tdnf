@@ -6,6 +6,6 @@ includedir=@includedir@/tdnf
 Name: tdnf
 Description: tiny dandified yum
 Version: @VERSION@
-Requires: libsolv rpm-libs curl-libs
+Requires:libsolv rpm
 Libs: -L${libdir} -ltdnf
 Cflags: -I${includedir}
