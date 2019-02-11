@@ -815,7 +815,6 @@ SolvApplySearch(
     queue_init(&queueSel);
     queue_init(&queueResult);
     pPool = pQuery->pSack->pPool;
-    pool_createwhatprovides(pPool);
 
     for(nIndex = dwStartIndex; nIndex < dwEndIndex; nIndex++)
     {

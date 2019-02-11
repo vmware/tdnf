@@ -99,7 +99,6 @@ TDNFInitRepo(
         dwError = SolvCreateMetaDataCache(pSack, pSolvRepoInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    pool_createwhatprovides(pPool);
 
     dwError = TDNFAllocateStringPrintf(
                   &pszLastRefreshMarker,

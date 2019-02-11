@@ -113,6 +113,7 @@ SolvInitSack(
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     pool_set_installed(pPool, pRepo);
+    pool_createwhatprovides(pPool);
 
     pSack->pPool = pPool;
     *ppSack = pSack;
