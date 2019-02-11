@@ -418,6 +418,10 @@ SolvGenerateCommonJob(
     ppszPkgNames = pQuery->ppszPackageNames;
     queue_init(&queueJob);
     pPool = pQuery->pSack->pPool;
+    if (pPool && !pPool->whatprovides)
+    {
+        pool_createwhatprovides(pPool);
+    }
     if(ppszPkgNames)
     {
         while(*ppszPkgNames)
