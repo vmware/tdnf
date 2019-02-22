@@ -193,7 +193,7 @@ TDNFRefreshSack(
             if(pTempRepo->nEnabled)
             {
                 //Check if expired since last sync per metadata_expire
-                if(!nCleanMetadata && pTempRepo->lMetadataExpire >= 0)
+                if(pTempRepo->lMetadataExpire >= 0)
                 {
                     dwError = TDNFAllocateStringPrintf(
                                   &pszRepoCacheDir,
@@ -212,14 +212,8 @@ TDNFRefreshSack(
                     pszRepoCacheDir = NULL;
                 }
 
-                if(nCleanMetadata || nMetadataExpired)
+                if(nMetadataExpired)
                 {
-                    if(!pTdnf->pArgs->nQuiet)
-                    {
-                        fprintf(stdout,
-                                "Refreshing metadata for: '%s'\n",
-                                pTempRepo->pszName);
-                    }
                     dwError = TDNFRepoRemoveCache(pTdnf, pTempRepo->pszId);
                     if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
                     {

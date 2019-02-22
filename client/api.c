@@ -358,6 +358,9 @@ TDNFClean(
             dwError = TDNFRepoRemoveCache(pTdnf,*ppszReposUsed);
             BAIL_ON_TDNF_ERROR(dwError);
 
+            dwError = TDNFRemoveSolvCache(pTdnf, *ppszReposUsed);
+            BAIL_ON_TDNF_ERROR(dwError);
+
             ++ppszReposUsed;
         }
     }

@@ -125,6 +125,18 @@ TDNFRepoRemoveCache(
     );
 
 uint32_t
+TDNFRemoveLastRefreshMarker(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    );
+
+uint32_t
+TDNFRemoveTmpRepodata(
+    const char* pszTmpRepodataDir,
+    const char* pszTmpRepoMDFile
+    );
+
+uint32_t
 TDNFRemoveSolvCache(
     PTDNF pTdnf,
     const char* pszRepoId
@@ -505,6 +517,12 @@ TDNFFindRepoMDPart(
 void
 TDNFFreeRepoMetadata(
     PTDNF_REPO_METADATA pRepoMD
+    );
+
+uint32_t
+TDNFReplaceRepoMDFile(
+    const char *pszSrcFile,
+    const char *pszDstFile
     );
 
 //repolist.c
