@@ -177,10 +177,15 @@ TDNFRefreshSack(
     uint32_t dwError = 0;
     char* pszRepoCacheDir = NULL;
     int nMetadataExpired = 0;
-    if(!pTdnf)
+    if(!pTdnf || !pTdnf->pArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (nCleanMetadata == 1)
+    {
+        pTdnf->pArgs->nRefresh = 1;
     }
 
     //If there is an empty repo directory, do nothing
@@ -193,7 +198,7 @@ TDNFRefreshSack(
             if(pTempRepo->nEnabled)
             {
                 //Check if expired since last sync per metadata_expire
-                if(!nCleanMetadata && pTempRepo->lMetadataExpire >= 0)
+                if(pTempRepo->lMetadataExpire >= 0)
                 {
                     dwError = TDNFAllocateStringPrintf(
                                   &pszRepoCacheDir,
@@ -212,14 +217,8 @@ TDNFRefreshSack(
                     pszRepoCacheDir = NULL;
                 }
 
-                if(nCleanMetadata || nMetadataExpired)
+                if(nMetadataExpired)
                 {
-                    if(!pTdnf->pArgs->nQuiet)
-                    {
-                        fprintf(stdout,
-                                "Refreshing metadata for: '%s'\n",
-                                pTempRepo->pszName);
-                    }
                     dwError = TDNFRepoRemoveCache(pTdnf, pTempRepo->pszId);
                     if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
                     {

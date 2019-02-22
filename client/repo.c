@@ -135,6 +135,8 @@ error:
         if(pTdnf)
         {
             TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
+            TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
+            TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
         }
     }
     goto cleanup;
@@ -282,8 +284,12 @@ TDNFGetRepoMD(
     uint32_t dwError = 0;
     char *pszRepoMDFile = NULL;
     char *pszRepoMDUrl = NULL;
+    char *pszTmpRepoDataDir = NULL;
+    char *pszTmpRepoMDFile = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
+    unsigned char pszCookie[SOLV_COOKIE_LEN];
+    unsigned char pszTmpCookie[SOLV_COOKIE_LEN];
 
     if(!pTdnf ||
        !pRepoData ||
@@ -325,6 +331,54 @@ TDNFGetRepoMD(
     dwError = TDNFAllocateString(pRepoData->pszId, &pRepoMDRel->pszRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    // Calculate sha1sum for the existing repomd xml and compare with the new downloaded
+    // repomd xml file for refresh / makecache commands
+    if (pTdnf->pArgs->nRefresh && access(pszRepoMDFile, F_OK) == 0)
+    {
+        dwError = SolvCalculateCookieForRepoMD(pszRepoMDFile, pszCookie);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pszTmpRepoDataDir,
+                      "%s/tmp",
+                      pszRepoDataDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pszTmpRepoMDFile,
+                      "%s/%s",
+                      pszTmpRepoDataDir,
+                      TDNF_REPO_METADATA_FILE_NAME);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFUtilsMakeDirs(pszTmpRepoDataDir);
+        if(dwError == ERROR_TDNF_ALREADY_EXISTS)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(
+                      pTdnf,
+                      pRepoData->pszId,
+                      pszRepoMDUrl,
+                      pszTmpRepoMDFile,
+                      pRepoData->pszId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+
+        dwError = SolvCalculateCookieForRepoMD(pszTmpRepoMDFile, pszTmpCookie);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+
+        if (memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)) != 0)
+        {
+            // Different shasum , replace repomd
+            dwError = TDNFReplaceRepoMDFile( pszTmpRepoMDFile, pszRepoMDFile);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
     if(access(pszRepoMDFile, F_OK))
     {
         if(errno != ENOENT)
@@ -332,7 +386,12 @@ TDNFGetRepoMD(
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
-
+        if(!pTdnf->pArgs->nQuiet)
+        {
+           fprintf(stdout,
+                   "Refreshing metadata for: '%s'\n",
+                    pRepoData->pszName);
+        }
         dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
         if(dwError == ERROR_TDNF_ALREADY_EXISTS)
         {
@@ -363,6 +422,9 @@ TDNFGetRepoMD(
 
 cleanup:
     TDNFFreeRepoMetadata(pRepoMDRel);
+    TDNFRemoveTmpRepodata(pszTmpRepoDataDir, pszTmpRepoMDFile);
+    TDNF_SAFE_FREE_MEMORY(pszTmpRepoMDFile);
+    TDNF_SAFE_FREE_MEMORY(pszTmpRepoDataDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDFile);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDUrl);
     return dwError;
@@ -661,4 +723,26 @@ TDNFFreeRepoMetadata(
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszFileLists);
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszUpdateInfo);
     TDNF_SAFE_FREE_MEMORY(pRepoMD);
+}
+
+uint32_t
+TDNFReplaceRepoMDFile(
+    const char *pszSrcFile,
+    const char *pszDstFile
+    )
+{
+    uint32_t dwError = 0;
+
+    if (IsNullOrEmptyString(pszSrcFile) || IsNullOrEmptyString(pszDstFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = rename (pszSrcFile, pszDstFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
 }

@@ -277,6 +277,75 @@ error:
 }
 
 uint32_t
+TDNFRemoveTmpRepodata(
+    const char* pszTmpRepodataDir,
+    const char* pszTmpRepoMDFile
+    )
+{
+    uint32_t dwError = 0;
+
+    if (IsNullOrEmptyString(pszTmpRepodataDir) || IsNullOrEmptyString(pszTmpRepoMDFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (unlink(pszTmpRepoMDFile))
+    {
+        if (errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    if (rmdir(pszTmpRepodataDir))
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFRemoveLastRefreshMarker(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    )
+{
+    uint32_t dwError = 0;
+    char* pszLastRefreshMarker = NULL;
+
+    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszLastRefreshMarker,
+                  "%s/%s/%s",
+                  pTdnf->pConf->pszCacheDir,
+                  pszRepoId,
+                  TDNF_REPO_METADATA_MARKER);
+    BAIL_ON_TDNF_ERROR(dwError);
+    if (pszLastRefreshMarker)
+    {
+        if(unlink(pszLastRefreshMarker))
+        {
+           dwError = errno;
+           BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+    }
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFRemoveSolvCache(
     PTDNF pTdnf,
     const char* pszRepoId
