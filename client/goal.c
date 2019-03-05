@@ -305,6 +305,7 @@ TDNFGoal(
     uint32_t dwError = 0;
 
     PTDNF_SOLVED_PKG_INFO pInfoTemp = NULL;
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
     Solver *pSolv = NULL;
     Transaction *pTrans = NULL;
     Queue queueJobs = {0};
@@ -433,7 +434,8 @@ cleanup:
 error:
     if(nProblems > 0 && pSolv)
     {
-       SolvReportProblems(pSolv);
+       TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+       SolvReportProblems(pSolv, dwSkipProblem);
     }
     TDNF_SAFE_FREE_MEMORY(pInfoTemp);
     if(ppInfo)

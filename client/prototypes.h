@@ -853,3 +853,9 @@ TDNFValidateCmdArgs(
 uint32_t
 TDNFIsInitialized(
     );
+
+uint32_t
+TDNFGetSkipProblemOption(
+    PTDNF pTdnf,
+    TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
+    );
