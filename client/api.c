@@ -168,6 +168,71 @@ error:
     goto cleanup;
 }
 
+/**
+ * Use case : tdnf check --skipconflicts --skipobsoletes
+ *            tdnf check --skipconflicts
+ *            tdnf check --skipobsoletes
+ *            tdnf check
+ * Description: This will verify if "tdnf check" command
+ *              is given with --skipconflicts or --skipobsoletes
+ *              or with both option, then set the problem type
+ *              variable accordingly.
+ * Arguments:
+ *     pTdnf: Handler for TDNF command
+ *     pdwSkipProblem: enum value which tells which kind of problem is set
+ *
+ * Return:
+ *         0 : if success
+ *         non zero: if error occurs
+ *
+ */
+uint32_t
+TDNFGetSkipProblemOption(
+    PTDNF pTdnf,
+    TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
+
+    if(!pTdnf || !pTdnf->pArgs || !pdwSkipProblem)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (!strcasecmp(pTdnf->pArgs->ppszCmds[0], "check"))
+    {
+      pSetOpt = pTdnf->pArgs->pSetOpt;
+
+      while(pSetOpt)
+      {
+          if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+            !strcasecmp(pSetOpt->pszOptName, "skipconflicts"))
+          {
+              dwSkipProblem |= SKIPPROBLEM_CONFLICTS;
+          }
+          if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, "skipobsoletes"))
+          {
+             dwSkipProblem |= SKIPPROBLEM_OBSOLETES;
+          }
+          pSetOpt = pSetOpt->pNext;
+      }
+    }
+    *pdwSkipProblem = dwSkipProblem;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwSkipProblem)
+    {
+       *pdwSkipProblem = SKIPPROBLEM_NONE;
+    }
+    goto cleanup;
+}
+
 //check a local rpm folder for dependency issues.
 uint32_t
 TDNFCheckLocalPackages(
@@ -187,6 +252,7 @@ TDNFCheckLocalPackages(
     int nLen = 0;
     int nLenRpmExt = 0;
     Pool *pCmdLinePool = NULL;
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
 
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool || !pszLocalPath)
     {
@@ -261,7 +327,9 @@ TDNFCheckLocalPackages(
 
     if (solver_solve(pSolv, &queueJobs) != 0)
     {
-        dwError = SolvReportProblems(pSolv);
+        dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = SolvReportProblems(pSolv, dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
 
         //Fail the check

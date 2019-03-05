@@ -1509,11 +1509,14 @@ error:
 
 uint32_t
 SolvReportProblems(
-    Solver* pSolv
+    Solver* pSolv,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
     uint32_t dwError = 0;
+    uint32_t dwSkipProbCount = 0;
     int i = 0;
+    int j = 0;
     int nCount = 0;
     Id dwProbrlemId = 0;
     Id dwSource = 0;
@@ -1530,9 +1533,31 @@ SolvReportProblems(
     }
 
     nCount = solver_problem_count(pSolv);
+    /**
+     * Below condition check is added to count the number of skip problems
+     * */
+    if((nCount > 0) && (dwSkipProblem != SKIPPROBLEM_NONE))
+    {
+        for( i = 1; i <= nCount; ++i)
+        {
+            dwProbrlemId = solver_findproblemrule(pSolv, i);
+            type = solver_ruleinfo(
+                       pSolv,
+                       dwProbrlemId,
+                       &dwSource,&dwTarget,
+                       &dwDep);
+            if ((dwSkipProblem == SKIPPROBLEM_CONFLICTS) && (type == SOLVER_RULE_PKG_CONFLICTS))
+              dwSkipProbCount++;
+            else if ((dwSkipProblem == SKIPPROBLEM_OBSOLETES) && (type == SOLVER_RULE_PKG_OBSOLETES))
+              dwSkipProbCount++;
+            else if ((dwSkipProblem == SKIPPROBLEM_CONFLICTS_OBSOLETES) && ((type == SOLVER_RULE_PKG_OBSOLETES) || (type == SOLVER_RULE_PKG_CONFLICTS)))
+              dwSkipProbCount++;
+        }
+    }
+
     if(nCount > 0)
     {
-        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount);
+        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount - dwSkipProbCount);
         for( i = 1; i <= nCount; ++i)
         {
             dwProbrlemId = solver_findproblemrule(pSolv, i);
@@ -1542,6 +1567,15 @@ SolvReportProblems(
                        &dwSource,&dwTarget,
                        &dwDep);
 
+            if (dwSkipProblem != SKIPPROBLEM_NONE)
+            {
+              if ((dwSkipProblem == SKIPPROBLEM_CONFLICTS) && (type == SOLVER_RULE_PKG_CONFLICTS))
+                continue;
+              else if ((dwSkipProblem == SKIPPROBLEM_OBSOLETES) && (type == SOLVER_RULE_PKG_OBSOLETES))
+                continue;
+              else if ((dwSkipProblem == SKIPPROBLEM_CONFLICTS_OBSOLETES) && ((type == SOLVER_RULE_PKG_OBSOLETES) || (type == SOLVER_RULE_PKG_CONFLICTS)))
+                continue;
+            }
             pszProblem = solver_problemruleinfo2str(
                              pSolv,
                              type,
@@ -1549,7 +1583,7 @@ SolvReportProblems(
                              dwTarget,
                              dwDep);
 
-            fprintf(stderr, "%d. %s\n", i, pszProblem);
+            fprintf(stderr, "%d. %s\n", ++j, pszProblem);
             pszProblem = NULL;
         }
     }
