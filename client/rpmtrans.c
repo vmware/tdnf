@@ -278,6 +278,11 @@ TDNFRunTransaction(
         fprintf(stdout, "Testing transaction\n");
     }
 
+    if (pTdnf->pArgs->nNoGPGCheck)
+    {
+        rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
+        rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
+    }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -454,6 +459,12 @@ TDNFTransAddInstallPkg(
         dwError = 0;
     }
     BAIL_ON_TDNF_RPM_ERROR(dwError);
+
+    if (!nGPGCheck)
+    {
+        rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
+        rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
+    }
 
     dwError = rpmtsAddInstallElement(
                   pTS->pTS,
