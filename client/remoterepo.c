@@ -85,6 +85,33 @@ error:
     goto cleanup;
 }
 
+static
+uint32_t
+_handle_curl_cb(
+    PTDNF pTdnf,
+    CURL *pCurl,
+    const char *pszUrl
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pOpt = NULL;
+
+    dwError = TDNFGetCmdOpt(pTdnf, CMDOPT_CURL_INIT_CB, &pOpt);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pOpt->pfnCurlConfigCB)
+    {
+        pOpt->pfnCurlConfigCB(pCurl, pszUrl);
+    }
+
+error:
+    if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
+    {
+        dwError = 0;/* callback not set */
+    }
+    return dwError;
+}
+
 uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
@@ -115,6 +142,9 @@ TDNFDownloadFile(
         dwError = ERROR_TDNF_CURL_INIT;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    /* if callback present for extra curl options */
+    dwError = _handle_curl_cb(pTdnf, pCurl, pszFileUrl);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRepoGetUserPass(pTdnf, pszRepo, &pszUserPass);
     BAIL_ON_TDNF_ERROR(dwError);

@@ -24,6 +24,7 @@
 
 #define ENABLEREPO        "enablerepo"
 #define DISABLEREPO       "disablerepo"
+#define CURLCB            "curlcb"
 
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 

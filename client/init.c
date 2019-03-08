@@ -151,9 +151,16 @@ TDNFCloneSetOpts(
                                      &pCmdOptCurrent->pszOptName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
-                                     &pCmdOptCurrent->pszOptValue);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (pCmdOptCurrent->nType == CMDOPT_CURL_INIT_CB)
+        {
+           pCmdOptCurrent->pfnCurlConfigCB = TDNFCurlConfigCB;
+        }
+        else
+        {
+           dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
+                                        &pCmdOptCurrent->pszOptValue);
+           BAIL_ON_TDNF_ERROR(dwError);
+        }
 
         ppCmdOptCurrent = &(pCmdOptCurrent->pNext);
         pCmdOptIn = pCmdOptIn->pNext;
@@ -254,6 +261,25 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     return dwError;
 
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCurlConfigCB(
+    CURL *pCurl,
+    const char *pszUrl
+    )
+{
+     uint32_t dwError = 0;
+     if (!pCurl || IsNullOrEmptyString(pszUrl))
+     {
+         dwError = ERROR_TDNF_INVALID_PARAMETER;
+         BAIL_ON_TDNF_ERROR(dwError);
+     }
+     printf("Keerthana:: %s URL = %s \n",__func__,pszUrl);
+cleanup:
+    return dwError;
 error:
     goto cleanup;
 }

@@ -54,6 +54,7 @@ static struct option pstOptions[] =
     {"security",      no_argument, 0, 0},                  //--security
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {"reboot-required", no_argument, 0, 0},                //--reboot-required
+    {"curlcb", no_argument, 0, 0},                         //--curl-cb
     {0, 0, 0, 0}
 };
 
@@ -290,6 +291,14 @@ ParseOption(
                                       CMDOPT_DISABLEREPO,
                                       DISABLEREPO,
                                       optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if (!strcasecmp(pszName, "curlcb"))
+    {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                                      CMDOPT_CURL_INIT_CB,
+                                      CURLCB,
+                                      "1");
         BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "security"))

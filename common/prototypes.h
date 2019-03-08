@@ -136,3 +136,9 @@ void
 TDNFFreePackageInfoContents(
     PTDNF_PKG_INFO pPkgInfo
     );
+
+uint32_t
+TDNFCurlConfigCB(
+    CURL *pCurl,
+    const char *pszUrl
+    );

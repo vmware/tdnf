@@ -87,9 +87,15 @@ AddSetOptWithValues(
     dwError = TDNFAllocateString(pszOptArg, &pCmdOpt->pszOptName);
     BAIL_ON_CLI_ERROR(dwError);
 
-    dwError = TDNFAllocateString(pszOptValue, &pCmdOpt->pszOptValue);
-    BAIL_ON_CLI_ERROR(dwError);
-
+    if (pCmdOpt->nType != CMDOPT_CURL_INIT_CB)
+    {    
+        dwError = TDNFAllocateString(pszOptValue, &pCmdOpt->pszOptValue);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else
+    {
+         pCmdOpt->pfnCurlConfigCB = TDNFCurlConfigCB;
+    }
     pSetOptTemp = pCmdArgs->pSetOpt;
     if(!pSetOptTemp)
     {

@@ -611,3 +611,43 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
 }
+
+uint32_t
+TDNFGetCmdOpt(
+    PTDNF pTdnf,
+    TDNF_CMDOPT_TYPE optType,
+    PTDNF_CMD_OPT *ppOpt
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pOpt = NULL;
+    int nFound = 0;
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (pOpt = pTdnf->pArgs->pSetOpt;
+         pOpt;
+         pOpt = pOpt->pNext)
+    {
+        if (pOpt->nType == optType)
+        {
+            nFound = 1;
+            break;
+        }
+    }
+
+    if (!nFound)
+    {
+        dwError = ERROR_TDNF_FILE_NOT_FOUND;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppOpt = pOpt;
+
+error:
+    return dwError;
+}
