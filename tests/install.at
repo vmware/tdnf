@@ -51,3 +51,14 @@ TDNF_CLI_W_CHROOT install tdnf-test-multiversion-1.0.2 -y
 [ignore],
 [ignore])
 AT_CLEANUP
+
+AT_SETUP([install without gpgcheck])
+AT_KEYWORDS([install])
+AT_CHECK([
+TDNF_ENABLE_GPGCHECK
+TDNF_CLI_W_CHROOT --nogpgcheck install tdnf-test-two -y
+],
+[0],
+[ignore],
+[ignore])
+AT_CLEANUP
