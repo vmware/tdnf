@@ -21,6 +21,7 @@ rpm --root $abs_top_builddir/tests/testroot --initdb
 mkdir -p $abs_top_builddir/tests/testroot/var/cache/tdnf
 mkdir -p $abs_top_builddir/tests/testroot/etc/yum.repos.d
 mkdir -p $abs_top_builddir/tests/testroot/etc/tdnf
+mkdir -p $abs_top_builddir/tests/testroot/etc/pki/rpm-gpg
 mkdir $abs_top_builddir/tests/testroot/BUILD
 mkdir $abs_top_builddir/tests/testroot/RPMS
 mkdir $abs_top_builddir/tests/testroot/SRPMS
@@ -29,6 +30,24 @@ cat << EOF > $abs_top_builddir/tests/testroot/etc/tdnf/tdnf.conf
 [main]
 repodir=$abs_top_builddir/tests/testroot/etc/yum.repos.d
 cachedir=$abs_top_builddir/tests/testroot/var/cache/tdnf
+EOF
+
+cat << EOF > $abs_top_builddir/tests/testroot/etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.4.7 (GNU/Linux)
+
+mI0ESAP+VwEEAMZylR8dOijUPNn3He3GdgM/kOXEhn3uQl+sRMNJUDm1qebi2D5b
+Qa7GNBIlXm3DEMAS+ZlkiFQ4WnhUq5awEXU7MGcWCEGfums5FckV2tysSfn7HeWd
+9mkEnsY2CUZF54lyKfY0f+vdFd6QdYo6b+YxGnLyiunEYHXSEo1TNj1vABEBAAG0
+QlZNd2FyZSwgSW5jLiAtLSBMaW51eCBQYWNrYWdpbmcgS2V5IC0tIDxsaW51eC1w
+YWNrYWdlc0B2bXdhcmUuY29tPoi8BBMBAgAmBQJIA/5XAhsDBQkRcu4ZBgsJCAcD
+AgQVAggDBBYCAwECHgECF4AACgkQwLXgq2b9SUkw0AP/UlmWQIjMNcYfTKCOOyFx
+Csl3bY5OZ6HZs4qCRvzESVTyKs0YN1gX5YDDRmE5EbaqSO7OLriA7p81CYhstYID
+GjVTBqH/zJz/DGKQUv0A7qGvnX4MDt/cvvgEXjGpeRx42le/mkPsHdwbG/8jKveY
+S/eu0g9IenS49i0hcOnjShGIRgQQEQIABgUCSAQWfAAKCRD1ZoIQEyn810LTAJ9k
+IOziCqa/awfBvlLq4eRgN/NnkwCeJLOuL6eAueYjaODTcFEGKUXlgM4=
+=bXtp
+-----END PGP PUBLIC KEY BLOCK-----
 EOF
 ]])
 
@@ -41,9 +60,14 @@ cat << EOF > $abs_top_builddir/tests/testroot/etc/yum.repos.d/basic.repo
 [basic]
 name=basic
 baseurl=file://$abs_top_builddir/tests/testroot/RPMS
+gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
 gpgcheck=0
 enabled=1
 EOF
+]])
+
+m4_define([TDNF_ENABLE_GPGCHECK],[[
+sed -i 's/gpgcheck=0/gpgcheck=1/g' $abs_top_builddir/tests/testroot/etc/yum.repos.d/basic.repo
 ]])
 
 m4_define([TDNF_CHROOT_CLEAN],[[
