@@ -863,6 +863,13 @@ TDNFAppendPath(
     char **ppszPath
     );
 
+uint32_t
+TDNFGetCmdOpt(
+    PTDNF pTdnf,
+    TDNF_CMDOPT_TYPE cmdType,
+    PTDNF_CMD_OPT *ppOpt
+    );
+
 //validate.c
 uint32_t
 TDNFValidateCmdArgs(

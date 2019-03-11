@@ -151,9 +151,12 @@ TDNFCloneSetOpts(
                                      &pCmdOptCurrent->pszOptName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
-                                     &pCmdOptCurrent->pszOptValue);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (pCmdOptCurrent->nType != CMDOPT_CURL_INIT_CB)
+        {
+           dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
+                                        &pCmdOptCurrent->pszOptValue);
+           BAIL_ON_TDNF_ERROR(dwError);
+        }
 
         ppCmdOptCurrent = &(pCmdOptCurrent->pNext);
         pCmdOptIn = pCmdOptIn->pNext;
