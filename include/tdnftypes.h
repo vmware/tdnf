@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <curl/curl.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,7 +135,8 @@ typedef enum
     CMDOPT_NONE = -1,
     CMDOPT_KEYVALUE,
     CMDOPT_ENABLEREPO,
-    CMDOPT_DISABLEREPO
+    CMDOPT_DISABLEREPO,
+    CMDOPT_CURL_INIT_CB
 }TDNF_CMDOPT_TYPE;
 
 typedef struct _TDNF_ *PTDNF;
@@ -175,11 +178,27 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     char** ppszPkgsNotInstalled;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
+/*
+ * api clients can set this callback via setopts
+ * once set, tdnf curl calls will call this function
+ * before any curl options are set. this can be used
+ * to modify curl opts outside the ones tdnf uses.
+*/
+typedef uint32_t
+(*PFN_CURL_CONFIG_CB)(
+    CURL *pCurl,
+    const char *pszUrl
+    );
+
 typedef struct _TDNF_CMD_OPT
 {
     int nType;
     char* pszOptName;
-    char* pszOptValue;
+    union
+    {
+        char* pszOptValue;
+        PFN_CURL_CONFIG_CB pfnCurlConfigCB;
+    };
     struct _TDNF_CMD_OPT* pNext;
 }TDNF_CMD_OPT, *PTDNF_CMD_OPT;
 

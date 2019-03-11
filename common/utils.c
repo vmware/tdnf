@@ -307,7 +307,14 @@ TDNFFreeCmdOpt(
     while(pCmdOpt)
     {
         TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptName);
-        TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptValue);
+        if (pCmdOpt->nType != CMDOPT_CURL_INIT_CB)
+        {
+            TDNF_SAFE_FREE_MEMORY(pCmdOpt->pszOptValue);
+        }
+        else
+        {
+            pCmdOpt->pfnCurlConfigCB = NULL;
+        }
         pCmdOptTemp = pCmdOpt->pNext;
         TDNF_SAFE_FREE_MEMORY(pCmdOpt);
         pCmdOpt = pCmdOptTemp;

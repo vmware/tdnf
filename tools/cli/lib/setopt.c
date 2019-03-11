@@ -73,7 +73,7 @@ AddSetOptWithValues(
 
     if(!pCmdArgs ||
        IsNullOrEmptyString(pszOptArg) ||
-       IsNullOrEmptyString(pszOptValue))
+       IsNullOrEmptyString(pszOptValue) || nType == CMDOPT_CURL_INIT_CB)
     {
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
