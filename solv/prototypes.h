@@ -477,7 +477,8 @@ SolvLoadRepomdUpdateinfo(
 
 uint32_t
 SolvReportProblems(
-    Solver* pSolv
+    Solver* pSolv,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     );
 
 uint32_t

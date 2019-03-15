@@ -1507,15 +1507,45 @@ error:
     goto cleanup;
 }
 
+/**
+ * Description: This function should check problem type and
+ *              skipProblemType if both matches then return true
+ *              else return false
+ * Arguments:
+ *        SolverRuleinfo : Solver problem type
+ *        TDNF_SKIPPROBLEM_TYPE: user specified problem type
+ * Return:
+ *      1 : if solver problem type and user specified problem matches
+ *      0 : if not matches
+ */
+static uint32_t
+__should_skip(
+    SolverRuleinfo type,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
+    )
+{
+    uint32_t dwResult = 0;
+    if (((dwSkipProblem == SKIPPROBLEM_CONFLICTS) && (type == SOLVER_RULE_PKG_CONFLICTS)) ||
+        ((dwSkipProblem == SKIPPROBLEM_OBSOLETES) && (type == SOLVER_RULE_PKG_OBSOLETES)) ||
+        ((dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES)) && ((type == SOLVER_RULE_PKG_OBSOLETES) || (type == SOLVER_RULE_PKG_CONFLICTS))))
+    {
+        dwResult = 1;
+    }
+    return dwResult;
+}
+
 uint32_t
 SolvReportProblems(
-    Solver* pSolv
+    Solver* pSolv,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
     uint32_t dwError = 0;
+    uint32_t dwSkipProbCount = 0;
     int i = 0;
+    int j = 0;
     int nCount = 0;
-    Id dwProbrlemId = 0;
+    Id dwProblemId = 0;
     Id dwSource = 0;
     Id dwTarget = 0;
     Id dwDep = 0;
@@ -1530,18 +1560,42 @@ SolvReportProblems(
     }
 
     nCount = solver_problem_count(pSolv);
-    if(nCount > 0)
+    /**
+     * Below condition check is added to count the number of skip problems
+     * */
+    if((nCount > 0) && (dwSkipProblem != SKIPPROBLEM_NONE))
     {
-        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount);
         for( i = 1; i <= nCount; ++i)
         {
-            dwProbrlemId = solver_findproblemrule(pSolv, i);
+            dwProblemId = solver_findproblemrule(pSolv, i);
             type = solver_ruleinfo(
                        pSolv,
-                       dwProbrlemId,
+                       dwProblemId,
+                       &dwSource,&dwTarget,
+                       &dwDep);
+            if (__should_skip(type, dwSkipProblem))
+            {
+                dwSkipProbCount++;
+            }
+        }
+    }
+
+    if(nCount > 0)
+    {
+        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount - dwSkipProbCount);
+        for( i = 1; i <= nCount; ++i)
+        {
+            dwProblemId = solver_findproblemrule(pSolv, i);
+            type = solver_ruleinfo(
+                       pSolv,
+                       dwProblemId,
                        &dwSource,&dwTarget,
                        &dwDep);
 
+            if (__should_skip(type, dwSkipProblem))
+            {
+                continue;
+            }
             pszProblem = solver_problemruleinfo2str(
                              pSolv,
                              type,
@@ -1549,7 +1603,7 @@ SolvReportProblems(
                              dwTarget,
                              dwDep);
 
-            fprintf(stderr, "%d. %s\n", i, pszProblem);
+            fprintf(stderr, "%d. %s\n", ++j, pszProblem);
             pszProblem = NULL;
         }
     }
