@@ -54,6 +54,8 @@ static struct option pstOptions[] =
     {"security",      no_argument, 0, 0},                  //--security
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {"retry",         required_argument, 0, 0},            //--retry
+    {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
+    {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {0, 0, 0, 0}
 };
 
@@ -87,7 +89,7 @@ TDNFCliParseArgs(
     while (1)
     {
                 
-            nOption = getopt_long (
+            nOption = getopt_long_only (
                            argc,
                            argv,
                            "46bCc:d:e:hi:qvxy",
@@ -336,6 +338,24 @@ ParseOption(
         dwError = TDNFAllocateString(
                       optarg,
                       &pCmdArgs->pszReleaseVer);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "skipconflicts"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "skipobsoletes"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
         BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "setopt"))

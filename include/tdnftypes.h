@@ -142,6 +142,14 @@ typedef enum
     CMDOPT_DISABLEREPO
 }TDNF_CMDOPT_TYPE;
 
+// skip problem type
+typedef enum
+{
+    SKIPPROBLEM_NONE=0,
+    SKIPPROBLEM_CONFLICTS,
+    SKIPPROBLEM_OBSOLETES
+}TDNF_SKIPPROBLEM_TYPE;
+
 typedef struct _TDNF_ *PTDNF;
 
 typedef struct _TDNF_PKG_INFO
