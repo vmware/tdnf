@@ -32,6 +32,7 @@ TDNFGoal(
     HyGoal hGoal = NULL;
     HyPackage hPkg = NULL;
     PTDNF_SOLVED_PKG_INFO pInfoTemp = NULL;
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
 
     int nFlags = 0;
     int i = 0;
@@ -108,7 +109,8 @@ cleanup:
 error:
     if(hGoal)
     {
-        TDNFGoalReportProblems(hGoal);
+        TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+        TDNFGoalReportProblems(hGoal, dwSkipProblem);
         hy_goal_free(hGoal);
     }
     goto cleanup;
@@ -310,13 +312,43 @@ error:
     goto cleanup;
 }
 
+/**
+ * Description: This function should check problem type and
+ *              skipProblemType if both matches then return true
+ *              else return false
+ * Arguments:
+ *        char * : Solver problem type
+ *        TDNF_SKIPPROBLEM_TYPE: user specified problem type
+ * Return:
+ *      1 : if solver problem type and user specified problem matches
+ *      0 : if not matches
+ */
+static uint32_t
+__should_skip(
+    char *pszProblem,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
+    )
+{
+    uint32_t dwResult = 0;
+    if (((dwSkipProblem == SKIPPROBLEM_CONFLICTS) && (strstr(pszProblem, "conflicts"))) ||
+        ((dwSkipProblem == SKIPPROBLEM_OBSOLETES) && (strstr(pszProblem, "obsoletes"))) ||
+        ((dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES)) && ((strstr(pszProblem, "conflicts")) || (strstr(pszProblem, "obsoletes")))))
+    {
+        dwResult = 1;
+    }
+    return dwResult;
+}
+
 uint32_t
 TDNFGoalReportProblems(
-    HyGoal hGoal
+    HyGoal hGoal,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
     uint32_t dwError = 0;
+    uint32_t dwSkipProbCount = 0;
     int i = 0;
+    int j = 0;
     int nCount = 0;
     char* pszProblem = NULL;
 
@@ -327,14 +359,36 @@ TDNFGoalReportProblems(
     }
 
     nCount = hy_goal_count_problems(hGoal);
-    if(nCount > 0)
+    /**
+     * Below condition check is added to count the number of skip problems
+     * */
+    if((nCount > 0) && (dwSkipProblem != SKIPPROBLEM_NONE))
     {
-        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount);
         for(; i < nCount; ++i)
         {
             pszProblem = hy_goal_describe_problem(hGoal, i);
-            fprintf(stderr, "%d. %s\n", i+1, pszProblem);
+            if (__should_skip(pszProblem, dwSkipProblem))
+            {
+              dwSkipProbCount++;
+            }
+            hy_free(pszProblem);
+            pszProblem = NULL;
+        }
+    }
 
+    if(nCount > 0)
+    {
+        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount - dwSkipProbCount);
+        for(i = 0; i < nCount; ++i)
+        {
+            pszProblem = hy_goal_describe_problem(hGoal, i);
+            if (__should_skip(pszProblem, dwSkipProblem))
+            {
+                hy_free(pszProblem);
+                pszProblem = NULL;
+                continue;
+            }
+            fprintf(stderr, "%d. %s\n", ++j, pszProblem);
             hy_free(pszProblem);
             pszProblem = NULL;
         }

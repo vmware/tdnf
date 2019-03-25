@@ -177,6 +177,71 @@ FTSEntcmp(const FTSENT **ppEntFirst, const FTSENT **ppEntSecond)
     return strcmp((*ppEntFirst)->fts_name, (*ppEntSecond)->fts_name);
 }
 
+/**
+ * Use case : tdnf check --skipconflicts --skipobsoletes
+ *            tdnf check --skipconflicts
+ *            tdnf check --skipobsoletes
+ *            tdnf check
+ * Description: This will verify if "tdnf check" command
+ *              is given with --skipconflicts or --skipobsoletes
+ *              or with both option, then set the problem type
+ *              variable accordingly.
+ * Arguments:
+ *     pTdnf: Handler for TDNF command
+ *     pdwSkipProblem: enum value which tells which kind of problem is set
+ *
+ * Return:
+ *         0 : if success
+ *         non zero: if error occurs
+ *
+ */
+uint32_t
+TDNFGetSkipProblemOption(
+    PTDNF pTdnf,
+    TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
+
+    if(!pTdnf || !pTdnf->pArgs || !pdwSkipProblem)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (!strcasecmp(pTdnf->pArgs->ppszCmds[0], "check"))
+    {
+      pSetOpt = pTdnf->pArgs->pSetOpt;
+
+      while(pSetOpt)
+      {
+          if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+            !strcasecmp(pSetOpt->pszOptName, "skipconflicts"))
+          {
+              dwSkipProblem |= SKIPPROBLEM_CONFLICTS;
+          }
+          if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+           !strcasecmp(pSetOpt->pszOptName, "skipobsoletes"))
+          {
+             dwSkipProblem |= SKIPPROBLEM_OBSOLETES;
+          }
+          pSetOpt = pSetOpt->pNext;
+      }
+    }
+    *pdwSkipProblem = dwSkipProblem;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwSkipProblem)
+    {
+       *pdwSkipProblem = SKIPPROBLEM_NONE;
+    }
+    goto cleanup;
+}
+
 //check a local rpm folder for dependency issues.
 uint32_t
 TDNFCheckLocalPackages(
@@ -197,6 +262,7 @@ TDNFCheckLocalPackages(
     int nIsDir = 0;
     char* pszLocalPathCopy = NULL;
     char *pszPathlist[2] = {NULL, NULL};
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
 
     if(!pTdnf || !pszLocalPath)
     {
@@ -265,7 +331,7 @@ TDNFCheckLocalPackages(
 
         printf ("%s\n", pEnt->fts_path);
     }
-    
+
     fprintf(stdout, "Found %d packages\n", hy_packagelist_count(hPkgList));
 
     hGoal = hy_goal_create(hSack);
@@ -280,11 +346,12 @@ TDNFCheckLocalPackages(
         dwError = hy_goal_install(hGoal, hPkg);
         BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
     }
-    
+
     dwError = hy_goal_run_flags(hGoal, HY_ALLOW_UNINSTALL);
     if(dwError)
     {
-        TDNFGoalReportProblems(hGoal);
+        TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+        TDNFGoalReportProblems(hGoal, dwSkipProblem);
         BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
     }
 
@@ -598,7 +665,7 @@ cleanup:
     {
         hy_query_free(hQuery);
     }
-  
+
     return dwError;
 error:
     if(ppPkgInfo)
@@ -853,8 +920,8 @@ error:
     goto cleanup;
 }
 
-//Resolve alter command before presenting 
-//the goal steps to user for approval 
+//Resolve alter command before presenting
+//the goal steps to user for approval
 uint32_t
 TDNFResolve(
     PTDNF pTdnf,
@@ -920,7 +987,7 @@ TDNFResolve(
     dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pSolvedPkgInfo->nNeedAction = 
+    pSolvedPkgInfo->nNeedAction =
         pSolvedPkgInfo->pPkgsToInstall ||
         pSolvedPkgInfo->pPkgsToUpgrade ||
         pSolvedPkgInfo->pPkgsToDowngrade ||

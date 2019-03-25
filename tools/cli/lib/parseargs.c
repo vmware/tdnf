@@ -41,7 +41,7 @@ static struct option pstOptions[] =
     {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"quiet",         no_argument, &_opt.nQuiet, 1},       //--nogpgcheck
-    {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
+    {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh
     {"releasever",    required_argument, 0, 0},            //--releasever
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
     {"setopt",        required_argument, 0, 0},            //--set or override options
@@ -54,6 +54,8 @@ static struct option pstOptions[] =
     {"security",      no_argument, 0, 0},                  //--security
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {"retry",         required_argument, 0, 0},            //--retry
+    {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
+    {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {0, 0, 0, 0}
 };
 
@@ -86,8 +88,8 @@ TDNFCliParseArgs(
     opterr = 0;//tell getopt to not print errors
     while (1)
     {
-                
-            nOption = getopt_long (
+
+            nOption = getopt_long_only (
                            argc,
                            argv,
                            "46bCc:d:e:hi:qvxy",
@@ -95,7 +97,7 @@ TDNFCliParseArgs(
                            &nOptionIndex);
             if (nOption == -1)
                 break;
-                
+
             switch (nOption)
             {
                 case 0:
@@ -175,7 +177,7 @@ TDNFCliParseArgs(
                                 sizeof(char*),
                                 (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);
-        
+
         while (optind < argc)
         {
             dwError = TDNFAllocateString(
@@ -338,6 +340,24 @@ ParseOption(
                       &pCmdArgs->pszReleaseVer);
         BAIL_ON_CLI_ERROR(dwError);
     }
+    else if(!strcasecmp(pszName, "skipconflicts"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "skipobsoletes"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
     else if(!strcasecmp(pszName, "setopt"))
     {
         if(!optarg)
@@ -382,7 +402,7 @@ ParseRpmVerbosity(
         char* pszTypeName;
         int nType;
     };
-    struct stTemp  stTypes[] = 
+    struct stTemp  stTypes[] =
     {
         {"emergency",  TDNF_RPMLOG_EMERG},
         {"alert",      TDNF_RPMLOG_ALERT},

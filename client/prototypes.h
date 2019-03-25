@@ -310,7 +310,8 @@ TDNFGoal(
 
 uint32_t
 TDNFGoalReportProblems(
-    HyGoal hGoal
+    HyGoal hGoal,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     );
 
 uint32_t
@@ -922,5 +923,11 @@ TDNFGetUpdatePkgs(
     PTDNF pTdnf,
     char*** pppszPkgs,
     uint32_t *pdwCount
+    );
+
+uint32_t
+TDNFGetSkipProblemOption(
+    PTDNF pTdnf,
+    TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
     );
 
