@@ -56,6 +56,8 @@ static struct option pstOptions[] =
     {"reboot-required", no_argument, 0, 0},                //--reboot-required
     {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
+    {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
+    {"skipdigest", no_argument, 0, 0},                     //--skipdigest to skip verifying RPM digest
     {0, 0, 0, 0}
 };
 
@@ -363,6 +365,24 @@ ParseOption(
         BAIL_ON_CLI_ERROR(dwError);
     }
     else if(!strcasecmp(pszName, "skipobsoletes"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "skipsignature"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "skipdigest"))
     {
         dwError = AddSetOptWithValues(
                       pCmdArgs,

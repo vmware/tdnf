@@ -225,6 +225,145 @@ error:
 }
 
 uint32_t
+TDNFGetSkipSignatureOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSkipSignature
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    uint32_t dwSkipSignature = 0;
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+          !strcasecmp(pSetOpt->pszOptName, "skipsignature"))
+        {
+            dwSkipSignature = 1;
+            break;
+        }
+        pSetOpt = pSetOpt->pNext;
+    }
+    *pdwSkipSignature = dwSkipSignature;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwSkipSignature)
+    {
+       *pdwSkipSignature = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetSkipDigestOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSkipDigest
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    uint32_t dwSkipDigest = 0;
+
+    if(!pTdnf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSetOpt = pTdnf->pArgs->pSetOpt;
+
+    while(pSetOpt)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
+          !strcasecmp(pSetOpt->pszOptName, "skipdigest"))
+        {
+            dwSkipDigest = 1;
+            break;
+        }
+        pSetOpt = pSetOpt->pNext;
+    }
+    *pdwSkipDigest = dwSkipDigest;
+cleanup:
+    return dwError;
+
+error:
+    if(pdwSkipDigest)
+    {
+       *pdwSkipDigest = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetGPGSignatureCheck(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    int* pnGPGSigCheck,
+    char** ppszUrlGPGKey
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    int nGPGSigCheck = 0;
+    uint32_t dwSkipSignature = 0;
+    char* pszUrlGPGKey = NULL;
+
+    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo) || !pnGPGSigCheck)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetSkipSignatureOption(pTdnf, &dwSkipSignature);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!(pTdnf->pArgs->nNoGPGCheck || dwSkipSignature))
+    {
+        dwError = TDNFGetRepoById(pTdnf, pszRepo, &pRepo);
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(pRepo)
+        {
+            nGPGSigCheck = pRepo->nGPGCheck;
+            if(nGPGSigCheck)
+            {
+                dwError = TDNFAllocateString(
+                             pRepo->pszUrlGPGKey,
+                             &pszUrlGPGKey);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+
+    *pnGPGSigCheck = nGPGSigCheck;
+    *ppszUrlGPGKey = pszUrlGPGKey;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppszUrlGPGKey)
+    {
+        *ppszUrlGPGKey = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
+    goto cleanup;
+}
+
+uint32_t
 TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszId,

@@ -50,6 +50,8 @@ TDNFCliShowHelp(
     printf("           [--security]\n");
     printf("           [--sec-severity CVSS_v3.0_Severity]\n");
     printf("           [--reboot-required]\n");
+    printf("           [--skipsignature]\n");
+    printf("           [--skipdigest]\n");
 
     printf("List of Main Commands\n");
     printf("\n");

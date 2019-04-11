@@ -463,6 +463,26 @@ TDNFGetGPGCheck(
     );
 
 uint32_t
+TDNFGetGPGSignatureCheck(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    int* pnGPGSigCheck,
+    char** ppszUrlGPGKey
+    );
+
+uint32_t
+TDNFGetSkipSignatureOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSkipSignature
+    );
+
+uint32_t
+TDNFGetSkipDigestOption(
+    PTDNF pTdnf,
+    uint32_t *pdwSkipDigest
+    );
+
+uint32_t
 TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszName,

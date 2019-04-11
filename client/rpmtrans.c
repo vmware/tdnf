@@ -237,7 +237,15 @@ doCheck(PTDNFRPMTS pTS)
             while(rpmpsNextIterator(psi) >= 0)
             {
                 prob = rpmpsGetProblem(psi);
-                printf("%s\n", rpmProblemString(prob));
+                char *msg = rpmProblemString(prob);
+                if (strstr(msg, "no digest") != NULL)
+                {
+                    printf("%s. Use --skipdigest to ignore\n", msg);
+                }
+                else
+                {
+                    printf("%s\n", msg);
+                }
                 rpmProblemFree(prob);
             }
             rpmpsFreeIterator(psi);
@@ -255,6 +263,9 @@ TDNFRunTransaction(
 {
     uint32_t dwError = 0;
     int nSilent = 0;
+    int rpmVfyLevelMask = 0;
+    uint32_t dwSkipSignature = 0;
+    uint32_t dwSkipDigest = 0;
 
     if(!pTS || !pTdnf || !pTdnf->pArgs)
     {
@@ -272,6 +283,12 @@ TDNFRunTransaction(
 
     rpmtsClean(pTS->pTS);
 
+    dwError = TDNFGetSkipSignatureOption(pTdnf, &dwSkipSignature);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGetSkipDigestOption(pTdnf, &dwSkipDigest);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     //TODO do callbacks for output
     if(!nSilent)
     {
@@ -282,6 +299,21 @@ TDNFRunTransaction(
     {
         rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
         rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
+    }
+
+    else if (dwSkipSignature || dwSkipDigest)
+    {
+         if (dwSkipSignature)
+         {
+             rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NOSIGNATURES);
+             rpmVfyLevelMask |= RPMSIG_SIGNATURE_TYPE;
+         }
+         if (dwSkipDigest)
+         {
+             rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS);
+             rpmVfyLevelMask |= RPMSIG_DIGEST_TYPE;
+         }
+         rpmtsSetVfyLevel(pTS->pTS, ~rpmVfyLevelMask);
     }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
@@ -365,6 +397,7 @@ TDNFTransAddInstallPkg(
 {
     uint32_t dwError = 0;
     int nGPGCheck = 0;
+    int nGPGSigCheck = 0;
     char* pszRpmCacheDir = NULL;
     char* pszFilePath = NULL;
     char* pszFilePathCopy = NULL;
@@ -433,9 +466,9 @@ TDNFTransAddInstallPkg(
 
     //Check override, then repo config and launch
     //gpg check if needed
-    dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
+    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);
-    if(nGPGCheck)
+    if(nGPGSigCheck)
     {
         dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -454,12 +487,14 @@ TDNFTransAddInstallPkg(
                   pszFilePath,
                   &rpmHeader);
     //If not checking gpg sigs, ignore signature errors
-    if(!nGPGCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
+    if(!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
     {
         dwError = 0;
     }
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 
+    dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
+    BAIL_ON_TDNF_ERROR(dwError);
     if (!nGPGCheck)
     {
         rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
