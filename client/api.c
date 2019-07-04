@@ -1178,6 +1178,7 @@ TDNFUpdateInfo(
 
     char*  pszSeverity = NULL;
     uint32_t dwSecurity = 0;
+    int nUpdates = 0;
 
     if(!pTdnf || !ppszPackageNameSpecs || !ppUpdateInfo)
     {
@@ -1222,6 +1223,7 @@ TDNFUpdateInfo(
             BAIL_ON_TDNF_ERROR(dwError);
             if(pInfo)
             {
+                nUpdates++;
                 pInfo->pNext = pUpdateInfos;
                 pUpdateInfos = pInfo;
                 pInfo = NULL;
@@ -1234,7 +1236,7 @@ TDNFUpdateInfo(
     if(!pUpdateInfos)
     {
         printf(
-            "\n%d updates.\n", nCount);
+            "\n%d updates.\n", nUpdates);
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
