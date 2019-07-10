@@ -832,6 +832,10 @@ TDNFParseRepoMD(
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
+    if (fp)
+    {
+        fclose(fp);
+    }
     if(pRepo)
     {
         repo_free(pRepo, 0);
