@@ -8,6 +8,7 @@ Makefile.in
 *.status
 *.log
 *.pc
+*.spec
 
 
 # autoconf
@@ -38,6 +39,10 @@ ar-lib
 /tests/atconfig
 /tests/testsuite
 /tests/package.m4
+/python/.deps
+/python/.libs
+/python/setup.py
+/python/tdnf/__pycache__
 
 # Object files
 *.o

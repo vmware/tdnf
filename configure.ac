@@ -40,6 +40,25 @@ AM_CONDITIONAL([RPM], [test "$have_rpm" = "yes"])
 echo "Looking for rpm.org librpm headers"
 AC_CHECK_HEADERS(rpm/header.h)
 
+AC_ARG_ENABLE([python],
+    [AS_HELP_STRING([--enable-python], [build tdnf python bindings (default: disabled)])],
+    [
+      if test x"$enableval" = x"yes"
+      then
+        AM_PATH_PYTHON([2.7],
+        [WITH_PYTHON_INCLUDE=`${PYTHON} -c 'from distutils.sysconfig import *; import sys; sys.stdout.write(get_python_inc())'`
+        CPPFLAGS="$CPPFLAGS -I$WITH_PYTHON_INCLUDE"
+        AC_CHECK_HEADER([Python.h],[],[AC_MSG_ERROR([missing Python.h])])
+        AC_SEARCH_LIBS([Py_Main],[python${PYTHON_VERSION} python],
+                       [WITH_PYTHON_LIB="$ac_res"],
+                       [AC_MSG_ERROR([missing python library])])
+        ])
+      fi
+    ])
+
+AC_SUBST(WITH_PYTHON_INCLUDE)
+AC_SUBST(WITH_PYTHON_LIB)
+AM_CONDITIONAL(ENABLE_PYTHON,[test "$WITH_PYTHON_INCLUDE"])
 
 #makefiles
 AC_CONFIG_FILES([Makefile
@@ -50,6 +69,8 @@ AC_CONFIG_FILES([Makefile
                  tools/Makefile
                  tools/cli/Makefile
                  tools/cli/lib/Makefile
+                 python/Makefile
+                 python/setup.py
                 ])
 
 #tdnf conf dir
