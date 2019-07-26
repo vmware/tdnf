@@ -7,40 +7,45 @@
  */
 
 #include "includes.h"
+#include "tdnfpyrepodata.h"
 
 static char tdnf__doc__[] = "";
 
 PyObject *pyTDNFError = NULL;
 
 static int
-prepareInitModule(
+TDNFPyPrepareInitModule(
     )
 {
+    if (PyType_Ready(&repodataType) < 0) return 0;
     return 1;
 }
 
-static PyMethodDef tdnfMethods[] =
+static PyMethodDef TDNFPyMethods[] =
 {
+    {"repolist", (PyCFunction)TDNFPyRepoList, METH_VARARGS|METH_KEYWORDS,
+     "repolist() -- returns a list of enabled repositories\n\n"
+     "repolist(all=True) -- returns a list of all repositories"},
     {NULL}  /* Sentinel */
 };
 
 static int
-initModule(
+TDNFPyInitModule(
     PyObject *pModule
     )
 {
     int ret = 0;
-    int error = 0;
+    int dwError = 0;
     PyObject *pyDict = NULL;
 
-    error = TDNFInit();
-    BAIL_ON_TDNF_ERROR(error);
+    dwError = TDNFInit();
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pyDict = PyModule_GetDict(pModule);
     if (!pyDict)
     {
-        error = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(error);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pyTDNFError = PyErr_NewException("_tdnf.error", NULL, NULL);
@@ -50,6 +55,9 @@ initModule(
     }
 
     PyModule_AddStringConstant(pModule, "__version__", TDNFGetVersion());
+
+    dwError = TDNFPyAddEnums(pModule);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     ret = 1;
 
@@ -65,7 +73,7 @@ static struct PyModuleDef tdnfModule =
     "_tdnf",     /* name of module */
     tdnf__doc__, /* module documentation, may be NULL */
     0,           /* m_size */
-    tdnfMethods
+    TDNFPyMethods
 };
 
 PyObject *
@@ -74,7 +82,7 @@ PyInit__tdnf(
 {
     PyObject *pModule = NULL;
 
-    if (!prepareInitModule())
+    if (!TDNFPyPrepareInitModule())
         return NULL;
 
     pModule = PyModule_Create(&tdnfModule);
@@ -83,7 +91,7 @@ PyInit__tdnf(
         goto error;
     }
 
-    if(!initModule(pModule))
+    if(!TDNFPyInitModule(pModule))
     {
         goto error;
     }
@@ -138,13 +146,13 @@ init_tdnf(
 {
     PyObject *pModule = NULL;
 
-    if (!prepareInitModule())
+    if (!TDNFPyPrepareInitModule())
         return;
 
-    pModule = Py_InitModule3("_tdnf", tdnfMethods, tdnf__doc__);
+    pModule = Py_InitModule3("_tdnf", TDNFPyMethods, tdnf__doc__);
     if(pModule)
     {
-        initModule(pModule);
+        TDNFPyInitModule(pModule);
     }
 }
 

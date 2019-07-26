@@ -9,7 +9,9 @@ _tdnf_la_CPPFLAGS = \
 
 _tdnf_la_SOURCES = \
     tdnfbase.c \
+    tdnfpycommands.c \
     tdnfmodule.c \
+    tdnfpyrepodata.c \
     utils.c
 
 _tdnf_la_LDFLAGS= -module -avoid-version

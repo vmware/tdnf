@@ -57,3 +57,59 @@ string_from_py_string(
     }
     return pszResult;
 }
+
+void
+TDNFPyRaiseException(
+    PyObject *self,
+    uint32_t dwErrorCode
+    )
+{
+    uint32_t dwError = 0;
+    char *pszError = NULL;
+    char *pszMessage = NULL;
+
+    dwError = TDNFGetErrorString(dwErrorCode, &pszError);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pszMessage,
+                                       "Error = %d: %s",
+                                       dwErrorCode,
+                                       pszError);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    PyErr_SetString(PyExc_Exception, pszMessage);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszMessage);
+    TDNF_SAFE_FREE_MEMORY(pszError);
+    return;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFPyAddEnums(PyObject *pModule)
+{
+    uint32_t dwError = 0;
+    if (!pModule)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = PyModule_AddIntMacro(pModule, REPOLISTFILTER_ALL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = PyModule_AddIntMacro(pModule, REPOLISTFILTER_ENABLED);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = PyModule_AddIntMacro(pModule, REPOLISTFILTER_DISABLED);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
