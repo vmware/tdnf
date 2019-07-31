@@ -25,7 +25,7 @@ tdnfmodule = Extension('tdnf._tdnf',
                     extra_compile_args = cflags,
                     extra_link_args = link_args)
 
-setup (name = '@PACKAGE_NAME@-python',
+setup (name = '@PACKAGE_NAME@',
        version = '@VERSION@',
        description = 'Python bindings for @PACKAGE_NAME@',
        packages = ['@PACKAGE_NAME@'],

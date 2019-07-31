@@ -85,7 +85,6 @@ mkdir -p %{buildroot}/var/cache/tdnf
 
 pushd python
 python2 setup.py install --skip-build --root %{buildroot}
-rm -f %{buildroot}%{python_sitearch}/tdnf.so
 python3 setup.py install --skip-build --root %{buildroot}
 popd
 
@@ -139,11 +138,11 @@ popd
 
 %files -n python2-tdnf
     %{python_sitearch}/%{name}/
-    %{python_sitearch}/%{name}_python-*.egg-info
+    %{python_sitearch}/%{name}-*.egg-info
 
 %files -n python3-tdnf
     %{_python3_sitearch}/%{name}/
-    %{_python3_sitearch}/%{name}_python-*.egg-info
+    %{_python3_sitearch}/%{name}-*.egg-info
 
 %changelog
 *   Fri Jan 23 2015 Priyesh Padmavilasom <ppadmavilasom@vmware.com> 1.0
