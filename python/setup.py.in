@@ -18,8 +18,10 @@ if os.access('Makefile.am', os.F_OK):
 
 tdnfmodule = Extension('tdnf._tdnf',
                     libraries = ['tdnf'],
-                    sources = ['tdnfmodule.c',
-                               'tdnfbase.c',
+                    sources = ['tdnfbase.c',
+                               'tdnfpyrepodata.c',
+                               'tdnfpycommands.c',
+                               'tdnfmodule.c',
                                'utils.c'],
 
                     extra_compile_args = cflags,

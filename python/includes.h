@@ -14,3 +14,5 @@
 #include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "structs.h"
+#include "tdnfpycommands.h"
+#include "prototypes.h"

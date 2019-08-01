@@ -17,3 +17,12 @@ typedef struct _PY_TDNF_BASE_
 {
     PyObject_HEAD
 }PY_TDNF_BASE, *PPY_TDNF_BASE;
+
+typedef struct _PY_TDNF_REPODATA
+{
+    PyObject_HEAD
+    PyObject *id;
+    PyObject *name;
+    PyObject *baseurl;
+    int enabled;
+}PY_TDNF_REPODATA, *PPY_TDNF_REPODATA;
