@@ -58,6 +58,65 @@ string_from_py_string(
     return pszResult;
 }
 
+uint32_t
+TDNFPyListAsStringList(
+    PyObject *pyList,
+    char ***pppszStrings,
+    size_t *pnCount
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszStrings = NULL;
+    size_t i = 0;
+    size_t nCount = 0;
+
+    if(!pyList || !pppszStrings)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    nCount = PyList_Size(pyList);
+    if(nCount == 0)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = TDNFAllocateMemory(nCount + 1,
+                                 sizeof(char *),
+                                 (void **)&ppszStrings);
+    BAIL_ON_TDNF_ERROR(dwError);
+    for(i = 0; i < nCount; ++i)
+    {
+        PyObject *pyItem = NULL;
+        PyObject *pyString = NULL;
+        pyItem = PyList_GetItem(pyList, i);
+        dwError = py_string_as_string(pyItem, &pyString);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateString(PyBytes_AsString(pyString),
+                                    &ppszStrings[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *pppszStrings = ppszStrings;
+    *pnCount = nCount;
+
+cleanup:
+    return dwError;
+
+error:
+    if(pppszStrings)
+    {
+        *pppszStrings = NULL;
+    }
+    if(pnCount)
+    {
+        *pnCount = 0;
+    }
+    TDNFFreeStringArray(ppszStrings);
+    goto cleanup;
+}
+
 void
 TDNFPyRaiseException(
     PyObject *self,

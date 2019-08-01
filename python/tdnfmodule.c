@@ -25,7 +25,34 @@ static PyMethodDef TDNFPyMethods[] =
 {
     {"repolist", (PyCFunction)TDNFPyRepoList, METH_VARARGS|METH_KEYWORDS,
      "repolist() -- returns a list of enabled repositories\n\n"
-     "repolist(all=True) -- returns a list of all repositories"},
+     "repolist(filter=tdnf.REPOLISTFILTER_ALL) -- returns a list of all repositories"},
+    {"install", (PyCFunction)TDNFPyInstall, METH_VARARGS|METH_KEYWORDS,
+     "install(list of package names) -- install packages\n\n"
+     "Eg: import tdnf;tdnf.install(pkgs=['curl','curl-devel'])\n\n"
+     "options: quiet=True -- dont print progress\n\n"
+     "options: refresh=True -- refresh cache before install\n\n"},
+    {"update", (PyCFunction)TDNFPyUpdate, METH_VARARGS|METH_KEYWORDS,
+     "update(optional list of package names) -- update packages\n\n"
+     "Eg: import tdnf;tdnf.update() -- update all\n\n"
+     "Eg: import tdnf;tdnf.update(pkgs=['curl']) -- update curl\n\n"
+     "options: quiet=True -- dont print progress\n\n"
+     "options: refresh=True -- refresh cache before update\n\n"},
+    {"downgrade", (PyCFunction)TDNFPyDowngrade, METH_VARARGS|METH_KEYWORDS,
+     "downgrade(optional list of package names) -- downgrade packages\n\n"
+     "Eg: import tdnf;tdnf.downgrade() -- downgrade all\n\n"
+     "Eg: import tdnf;tdnf.downgrade(pkgs=['curl']) -- downgrade curl\n\n"
+     "options: quiet=True -- dont print progress\n\n"
+     "options: refresh=True -- refresh cache before downgrade\n\n"},
+    {"erase", (PyCFunction)TDNFPyErase, METH_VARARGS|METH_KEYWORDS,
+     "erase(list of package names) -- erase packages\n\n"
+     "Eg: import tdnf;tdnf.erase(['wget']) -- erase wget\n\n"
+     "options: quiet=True -- dont print progress\n\n"
+     "options: refresh=True -- refresh cache before remove\n\n"},
+    {"distro_sync", (PyCFunction)TDNFPyDistroSync, METH_VARARGS|METH_KEYWORDS,
+     "distro_sync() -- distro sync installed packages\n\n"
+     "Eg: import tdnf;tdnf.distro_sync() -- distro sync all\n\n"
+     "options: quiet=True -- dont print progress\n\n"
+     "options: refresh=True -- refresh cache before distro sync\n\n"},
     {NULL}  /* Sentinel */
 };
 
