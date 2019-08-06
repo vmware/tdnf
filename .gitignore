@@ -39,6 +39,8 @@ ar-lib
 /tests/atconfig
 /tests/testsuite
 /tests/package.m4
+tests/testroot/
+tests/testsuite.dir/
 /python/.deps
 /python/.libs
 /python/setup.py

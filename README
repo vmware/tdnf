@@ -7,6 +7,11 @@ autoreconf
 ./configure
 make
 
+You could also build tdnf using docker using the following commands:
+
+docker build -t photon/tdnf-build .
+docker run --rm -it -v$(pwd):/build -w/build photon/tdnf-build
+
 create a conf file named tdnf.conf under \etc\tdnf with the following content
 
 [main]
