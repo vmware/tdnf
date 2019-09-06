@@ -1525,11 +1525,45 @@ __should_skip(
     )
 {
     uint32_t dwResult = 0;
-    if (((dwSkipProblem == SKIPPROBLEM_CONFLICTS) && (type == SOLVER_RULE_PKG_CONFLICTS)) ||
-        ((dwSkipProblem == SKIPPROBLEM_OBSOLETES) && (type == SOLVER_RULE_PKG_OBSOLETES)) ||
-        ((dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES)) && ((type == SOLVER_RULE_PKG_OBSOLETES) || (type == SOLVER_RULE_PKG_CONFLICTS))))
+    if (dwSkipProblem == SKIPPROBLEM_CONFLICTS)
     {
-        dwResult = 1;
+        switch(type)
+        {
+             case SOLVER_RULE_PKG_CONFLICTS:
+             case SOLVER_RULE_PKG_SELF_CONFLICT:
+                 dwResult = 1;
+                 break;
+             default:
+                 break;
+        }
+    }
+    else if (dwSkipProblem == SKIPPROBLEM_OBSOLETES)
+    {
+        switch(type)
+        {
+             case SOLVER_RULE_PKG_OBSOLETES:
+             case SOLVER_RULE_PKG_IMPLICIT_OBSOLETES:
+             case SOLVER_RULE_PKG_INSTALLED_OBSOLETES:
+                 dwResult = 1;
+                 break;
+             default:
+                 break;
+        }
+    }
+    else if (dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES))
+    {
+        switch(type)
+        {
+             case SOLVER_RULE_PKG_CONFLICTS:
+             case SOLVER_RULE_PKG_SELF_CONFLICT:
+             case SOLVER_RULE_PKG_OBSOLETES:
+             case SOLVER_RULE_PKG_IMPLICIT_OBSOLETES:
+             case SOLVER_RULE_PKG_INSTALLED_OBSOLETES:
+                 dwResult = 1;
+                 break;
+             default:
+                 break;
+        }
     }
     return dwResult;
 }
