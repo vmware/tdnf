@@ -55,7 +55,7 @@ m4_define([TDNF_BUILD_INSTALL_RPMS],[[
 rpmbuild  --define "_topdir $abs_top_builddir/tests/testroot" -r $abs_top_builddir/tests/testroot -ba $abs_top_builddir/tests/specs/*.spec
 createrepo $abs_top_builddir/tests/testroot/RPMS
 modifyrepo $abs_top_builddir/tests/specs/updateinfo.xml $abs_top_builddir/tests/testroot/RPMS/repodata/
-modifyrepo_c $abs_top_builddir/tests/updateinfo.xml $abs_top_builddir/tests/testroot/RPMS/repodata
+modifyrepo $abs_top_builddir/tests/updateinfo.xml $abs_top_builddir/tests/testroot/RPMS/repodata
 cat << EOF > $abs_top_builddir/tests/testroot/etc/yum.repos.d/basic.repo
 [basic]
 name=basic
