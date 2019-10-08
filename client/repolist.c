@@ -128,16 +128,17 @@ TDNFLoadReposFromFile(
     PTDNF_REPO_DATA_INTERNAL* ppRepos
     )
 {
+    char *pszRepo = NULL;
     uint32_t dwError = 0;
-
-    char* pszRepo = NULL;
-    char* pszMetadataExpire = NULL;
+    char *pszMetadataExpire = NULL;
 
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
 
     PCONF_DATA pData = NULL;
     PCONF_SECTION pSections = NULL;
+
+    UNUSED(pTdnf);
 
     dwError = TDNFReadConfigFile(pszRepoFile, 0, &pData);
     BAIL_ON_TDNF_ERROR(dwError);

@@ -19,7 +19,7 @@ base_dealloc(PPY_TDNF_BASE self)
 static PyObject *
 base_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PPY_TDNF_BASE self = NULL;
+    PPY_TDNF_BASE self;
 
     self = (PPY_TDNF_BASE)type->tp_alloc(type, 0);
     if (self != NULL)

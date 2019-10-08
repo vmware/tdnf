@@ -96,7 +96,7 @@ TDNFAllocateStringPrintf(
     )
 {
     uint32_t dwError = 0;
-    size_t nSize = 0;
+    int32_t nSize = 0;
     char* pszDst = NULL;
     char chDstTest = '\0';
     va_list argList;
@@ -117,7 +117,7 @@ TDNFAllocateStringPrintf(
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    nSize = nSize + 1;
+    nSize++;
 
     if(nSize > TDNF_DEFAULT_MAX_STRING_LEN)
     {

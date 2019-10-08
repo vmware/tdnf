@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 {
     uint32_t dwError = 0;
     PTDNF_CMD_ARGS pCmdArgs = NULL;
-    TDNF_CLI_CMD_MAP arCmdMap[] = 
+    TDNF_CLI_CMD_MAP arCmdMap[] =
     {
         {"autoerase",          TDNFCliAutoEraseCommand},
         {"autoremove",         TDNFCliAutoEraseCommand},
@@ -193,7 +193,7 @@ TDNFCliPrintError(
     }
     if(dwErrorCode)
     {
-        fprintf(stderr, "Error(%d) : %s\n", dwErrorCode, pszError);
+        fprintf(stderr, "Error(%u) : %s\n", dwErrorCode, pszError);
     }
     else if(!nQuiet)
     {
@@ -207,7 +207,7 @@ cleanup:
 error:
     fprintf(
         stderr,
-        "Retrieving error string for %d failed with %d\n",
+        "Retrieving error string for %u failed with %u\n",
         dwErrorCode,
         dwError);
     goto cleanup;
@@ -217,7 +217,7 @@ void
 TDNFCliShowVersion(
     )
 {
-    fprintf(stdout, "%s: %s\n", PACKAGE_NAME, TDNFGetVersion());
+    printf("%s: %s\n", PACKAGE_NAME, TDNFGetVersion());
 }
 
 uint32_t
@@ -237,10 +237,10 @@ TDNFCliVerboseShowEnv(
     pOpt = pCmdArgs->pSetOpt;
     if(pOpt)
     {
-        fprintf(stdout, "Setting options:\n");
+        printf("Setting options:\n");
         while(pOpt)
         {
-            fprintf(stdout, "\t%s = %s\n", pOpt->pszOptName, pOpt->pszOptValue);
+            printf("\t%s = %s\n", pOpt->pszOptName, pOpt->pszOptValue);
             pOpt = pOpt->pNext;
         }
     }

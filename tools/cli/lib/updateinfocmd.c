@@ -33,13 +33,13 @@ TDNFGetUpdateInfoType(
     {
         case UPDATE_SECURITY:
             pszType = "Security";
-            break; 
+            break;
         case UPDATE_BUGFIX:
             pszType = "Bugfix";
-            break; 
+            break;
         case UPDATE_ENHANCEMENT:
             pszType = "Enhancement";
-            break; 
+            break;
     }
 
     return pszType;
@@ -52,7 +52,7 @@ TDNFCliUpdateInfoCommand(
     )
 {
     uint32_t dwError = 0;
-  
+
     PTDNF_UPDATEINFO pUpdateInfo = NULL;
     PTDNF_UPDATEINFO_ARGS pInfoArgs = NULL;
 
@@ -169,11 +169,10 @@ TDNFCliUpdateInfoList(
         pPkg = pInfo->pPackages;
         while(pPkg)
         {
-            fprintf(stdout, "%s %s %s\n",
-                pInfo->pszID,
-                TDNFGetUpdateInfoType(pInfo->nType),
-                pPkg->pszFileName);
-            
+            printf("%s %s %s\n", pInfo->pszID,
+                    TDNFGetUpdateInfoType(pInfo->nType),
+                    pPkg->pszFileName);
+
             pPkg = pPkg->pNext;
         }
         pInfo = pInfo->pNext;
@@ -205,18 +204,18 @@ TDNFCliUpdateInfoInfo(
         pPkg = pInfo->pPackages;
         while(pPkg)
         {
-            fprintf(stdout, "       Name : %s\n",
-                pPkg->pszFileName);
-            fprintf(stdout, "  Update ID : %s\n",
-                pInfo->pszID);
-            fprintf(stdout, "       Type : %s\n",
-                TDNFGetUpdateInfoType(pInfo->nType));
-            fprintf(stdout, "    Updated : %s\n",
-                pInfo->pszDate);
-            fprintf(stdout, "Needs Reboot: %d\n",
-                pInfo->nRebootRequired);
-            fprintf(stdout, "Description : %s\n",
-                pInfo->pszDescription);
+            printf("       Name : %s\n"
+                   "  Update ID : %s\n"
+                   "       Type : %s\n"
+                   "    Updated : %s\n"
+                   "Needs Reboot: %d\n"
+                   "Description : %s\n",
+                        pPkg->pszFileName,
+                        pInfo->pszID,
+                        TDNFGetUpdateInfoType(pInfo->nType),
+                        pInfo->pszDate,
+                        pInfo->nRebootRequired,
+                        pInfo->pszDescription);
 
             pPkg = pPkg->pNext;
         }

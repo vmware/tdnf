@@ -19,6 +19,9 @@
  *
  */
 
+#ifndef __CLI_INCLUDES_H__
+#define __CLI_INCLUDES_H__
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -35,3 +38,5 @@
 #include "prototypes.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"
+
+#endif /* __CLI_INCLUDES_H__ */

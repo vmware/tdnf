@@ -162,7 +162,7 @@ TDNFInitRepoFromMetadata(
                   pRepoMD->pszPrimary,
                   pRepoMD->pszFileLists,
                   pRepoMD->pszUpdateInfo);
-cleanup: 
+cleanup:
     return dwError;
 
 error:
@@ -527,8 +527,7 @@ TDNFGetRepoMD(
         }
         if(!pTdnf->pArgs->nQuiet)
         {
-           fprintf(stdout,
-                   "Refreshing metadata for: '%s'\n",
+           printf("Refreshing metadata for: '%s'\n",
                     pRepoData->pszName);
         }
         dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
@@ -802,8 +801,7 @@ TDNFParseRepoMD(
     dwError = repo_add_repomdxml(pRepo, fp, 0);
     if(dwError)
     {
-        fprintf(stdout,
-                "Error(%d) parsing repomd: %s\n",
+        printf("Error(%u) parsing repomd: %s\n",
                 dwError,
                 pool_errstr(pPool));
     }

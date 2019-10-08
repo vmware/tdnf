@@ -270,7 +270,7 @@ TDNFCheckLocalPackages(
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    fprintf(stdout, "Checking all packages from: %s\n", pszLocalPath);
+    printf("Checking all packages from: %s\n", pszLocalPath);
 
     pCmdLinePool = pool_create();
     pool_set_rootdir(pCmdLinePool, pTdnf->pArgs->pszInstallRoot);
@@ -313,7 +313,7 @@ TDNFCheckLocalPackages(
         pszRPMPath = NULL;
     }
     repo_internalize(pCmdlineRepo);
-    fprintf(stdout, "Found %d packages\n", dwPackagesFound);
+    printf("Found %u packages\n", dwPackagesFound);
 
     pSolv = solver_create(pCmdLinePool);
     if(pSolv == NULL)
@@ -500,8 +500,8 @@ TDNFInfo(
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PSolvPackageList pPkgList = NULL;
 
-    if(!pTdnf || !pTdnf->pSack ||!pdwCount || !ppPkgInfo || 
-       !ppszPackageNameSpecs || !pTdnf->pSack)
+    if(!pTdnf || !pTdnf->pSack ||!pdwCount || !ppPkgInfo ||
+       !ppszPackageNameSpecs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -875,8 +875,8 @@ error:
     goto cleanup;
 }
 
-//Resolve alter command before presenting 
-//the goal steps to user for approval 
+//Resolve alter command before presenting
+//the goal steps to user for approval
 uint32_t
 TDNFResolve(
     PTDNF pTdnf,
@@ -898,7 +898,7 @@ TDNFResolve(
     }
 
     queue_init(&queueGoal);
-    
+
     if(nAlterType == ALTER_AUTOERASE)
     {
         dwError = ERROR_TDNF_AUTOERASE_UNSUPPORTED;
@@ -944,7 +944,7 @@ TDNFResolve(
     dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pSolvedPkgInfo->nNeedAction = 
+    pSolvedPkgInfo->nNeedAction =
         pSolvedPkgInfo->pPkgsToInstall ||
         pSolvedPkgInfo->pPkgsToUpgrade ||
         pSolvedPkgInfo->pPkgsToDowngrade ||
@@ -1040,7 +1040,7 @@ TDNFSearchCommand(
                   (void**)&pPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(nIndex = 0; nIndex < unCount; nIndex++)
+    for(nIndex = 0; (uint32_t)nIndex < unCount; nIndex++)
     {
         PTDNF_PKG_INFO pPkg = &pPkgInfo[nIndex];
 
@@ -1117,6 +1117,9 @@ TDNFUpdateInfo(
     uint32_t dwSecurity = 0;
     int nUpdates = 0;
 
+    UNUSED(nScope);
+    UNUSED(nAvail);
+
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool ||
        !ppUpdateInfo)
     {
@@ -1171,7 +1174,7 @@ TDNFUpdateInfo(
         dwError = SolvGetPackageListSize(pUpdateAdvPkgList, &nCount);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        for(iAdv = 0; iAdv < nCount; iAdv++)
+        for(iAdv = 0; (uint32_t)iAdv < nCount; iAdv++)
         {
             dwError = SolvGetPackageId(pUpdateAdvPkgList, iAdv, &dwAdvId);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -1199,8 +1202,7 @@ TDNFUpdateInfo(
 
     if(!pUpdateInfos)
     {
-        printf(
-           "\n%d updates.\n", nUpdates);
+        printf("\n%d updates.\n", nUpdates);
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }

@@ -162,14 +162,11 @@ TDNFFreePackageInfoArray(
     uint32_t unLength
     )
 {
-    uint32_t unIndex = 0;
-    if(pPkgInfoArray && unLength > 0)
-    {
-        for(unIndex = 0; unIndex < unLength; ++unIndex)
-        {
-            TDNFFreePackageInfoContents(&pPkgInfoArray[unIndex]);
-        }
+    if (pPkgInfoArray) {
+        while (unLength)
+            TDNFFreePackageInfoContents(&pPkgInfoArray[unLength--]);
     }
+
     TDNF_SAFE_FREE_MEMORY(pPkgInfoArray);
 }
 
@@ -294,7 +291,7 @@ TDNFFreeUpdateInfo(
 
         TDNFFreeUpdateInfoReferences(pUpdateInfo->pReferences);
         TDNFFreeUpdateInfoPackages(pUpdateInfo->pPackages);
-        TDNF_SAFE_FREE_MEMORY(pUpdateInfo);
+        TDNFFreeMemory(pUpdateInfo);
     }
 }
 

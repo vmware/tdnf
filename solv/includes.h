@@ -1,3 +1,6 @@
+#ifndef __SOLV_INCLUDES_H__
+#define __SOLV_INCLUDES_H__
+
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/utsname.h>
@@ -31,3 +34,5 @@
 #include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "prototypes.h"
+
+#endif /* __SOLV_INCLUDES_H__ */

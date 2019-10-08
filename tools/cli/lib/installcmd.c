@@ -46,7 +46,7 @@ TDNFCliEraseCommand(
     )
 {
     uint32_t dwError = 0;
-    
+
     dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_ERASE);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -112,7 +112,7 @@ TDNFCliDowngradeCommand(
     {
         nAlterType = ALTER_DOWNGRADEALL;
     }
-    
+
     dwError = TDNFCliAlterCommand(pContext, pCmdArgs, nAlterType);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -130,7 +130,7 @@ TDNFCliAutoEraseCommand(
     )
 {
     uint32_t dwError = 0;
-    
+
     dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_AUTOERASE);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -231,7 +231,7 @@ TDNFCliAlterCommand(
         {
             if(!nSilent && pSolvedPkgInfo->nNeedDownload)
             {
-                fprintf(stdout, "\nDownloading:\n");
+                printf("\nDownloading:\n");
             }
 
             dwError = pContext->pFnAlter(
@@ -242,7 +242,7 @@ TDNFCliAlterCommand(
 
             if(!nSilent)
             {
-                fprintf(stdout, "\nComplete!\n");
+                printf("\nComplete!\n");
             }
         }
         else

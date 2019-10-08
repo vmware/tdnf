@@ -32,7 +32,7 @@ TDNFGetErrorString(
     int i = 0;
     int nCount = 0;
     uint32_t dwActualError = 0;
-    
+
 
     //Allow mapped error strings to override
     TDNF_ERROR_DESC arErrorDesc[] = TDNF_ERROR_TABLE;
@@ -41,7 +41,7 @@ TDNFGetErrorString(
 
     for(i = 0; i < nCount; i++)
     {
-        if (dwErrorCode == arErrorDesc[i].nCode)
+        if (dwErrorCode == (uint32_t)arErrorDesc[i].nCode)
         {
             dwError = TDNFAllocateString(arErrorDesc[i].pszDesc, &pszError);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -50,7 +50,7 @@ TDNFGetErrorString(
     }
 
 
-    //Get system error 
+    //Get system error
     if(!pszError && TDNFIsSystemError(dwErrorCode))
     {
         dwActualError = TDNFGetSystemError(dwErrorCode);
@@ -69,7 +69,7 @@ TDNFGetErrorString(
         dwError = TDNFAllocateString(TDNF_UNKNOWN_ERROR_STRING, &pszError);
         BAIL_ON_TDNF_ERROR(dwError);
     }
- 
+
     *ppszError = pszError;
 cleanup:
     return dwError;
@@ -121,13 +121,13 @@ TDNFIsGlob(
     while(*pszString)
     {
         char ch = *pszString;
-        
+
         if(ch == '*' || ch == '?' || ch == '[')
         {
             nResult = 1;
             break;
         }
-        
+
         pszString++;
     }
     return nResult;
@@ -212,7 +212,7 @@ TDNFUtilsMakeDirs(
     }
     dwError = TDNFUtilsMakeDir(pszTempPath);
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszTempPath);
     return dwError;
@@ -443,7 +443,7 @@ TDNFParseMetadataExpire(
     long lMetadataExpire = -1;
     char* pszError = NULL;
 
-    if(!lMetadataExpire || IsNullOrEmptyString(pszMetadataExpire))
+    if(!plMetadataExpire || IsNullOrEmptyString(pszMetadataExpire))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

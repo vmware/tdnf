@@ -44,6 +44,8 @@ TDNFUpdateInfoSummary(
     uint32_t dwSecurity = 0;
     const char* pszTemp = NULL;
 
+    UNUSED(nAvail);
+
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool ||
        !ppSummary)
     {
@@ -104,7 +106,7 @@ TDNFUpdateInfoSummary(
         dwError = SolvGetPackageListSize(pUpdateAdvPkgList, &nCount);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        for(iAdv = 0; iAdv < nCount; iAdv++)
+        for(iAdv = 0; (uint32_t)iAdv < nCount; iAdv++)
         {
             dwError = SolvGetPackageId(pUpdateAdvPkgList, iAdv, &dwAdvId);
             BAIL_ON_TDNF_ERROR(dwError);

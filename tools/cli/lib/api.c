@@ -26,14 +26,14 @@ TDNFCliGetErrorString(
     char* pszError = NULL;
     int i = 0;
     int nCount = 0;
-    
+
     TDNF_ERROR_DESC arErrorDesc[] = TDNF_CLI_ERROR_TABLE;
 
     nCount = sizeof(arErrorDesc)/sizeof(arErrorDesc[0]);
 
     for(i = 0; i < nCount; i++)
     {
-        if (dwErrorCode == arErrorDesc[i].nCode)
+        if (dwErrorCode == (uint32_t)arErrorDesc[i].nCode)
         {
             dwError = TDNFAllocateString(arErrorDesc[i].pszDesc, &pszError);
             BAIL_ON_CLI_ERROR(dwError);
@@ -67,7 +67,7 @@ TDNFCliCleanCommand(
 
     dwError = TDNFCliParseCleanArgs(pCmdArgs, &nCleanType);
     BAIL_ON_CLI_ERROR(dwError);
-  
+
     dwError = pContext->pFnClean(pContext, nCleanType, &pTDNFCleanInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -106,7 +106,9 @@ TDNFCliCountCommand(
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
- 
+
+    UNUSED(pCmdArgs);
+
     if(!pContext || !pContext->hTdnf || !pContext->pFnCount)
     {
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
@@ -116,7 +118,7 @@ TDNFCliCountCommand(
     dwError = pContext->pFnCount(pContext, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
-    printf("Package count = %d\n", dwCount);
+    printf("Package count = %u\n", dwCount);
 
 cleanup:
     return dwError;
@@ -142,7 +144,7 @@ TDNFCliListCommand(
     char szNameAndArch[MAX_COL_LEN] = {0};
     char szVersionAndRelease[MAX_COL_LEN] = {0};
 
-    #define COL_COUNT 3 
+    #define COL_COUNT 3
     //Name.Arch | Version-Release | Repo
     int nColPercents[COL_COUNT] = {55, 25, 15};
     int nColWidths[COL_COUNT] = {0};
@@ -222,7 +224,7 @@ TDNFCliInfoCommand(
     )
 {
     uint32_t dwError = 0;
-  
+
     char* pszFormattedSize = NULL;
 
     PTDNF_PKG_INFO pPkgInfo = NULL;
@@ -265,10 +267,10 @@ TDNFCliInfoCommand(
 
         dwTotalSize += pPkg->dwInstallSizeBytes;
     }
-  
+
     dwError = TDNFUtilsFormatSize(dwTotalSize, &pszFormattedSize);
     BAIL_ON_CLI_ERROR(dwError);
-  
+
     if(dwCount > 0)
     {
         printf("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
@@ -394,7 +396,7 @@ TDNFCliCheckLocalCommand(
     dwError = pContext->pFnCheckLocal(pContext, pCmdArgs->ppszCmds[1]);
     BAIL_ON_CLI_ERROR(dwError);
 
-    fprintf(stdout, "Check completed without issues\n");
+    printf("Check completed without issues\n");
 
 cleanup:
     return dwError;
@@ -441,7 +443,7 @@ TDNFCliProvidesCommand(
             pPkgInfo->pszRelease,
             pPkgInfo->pszArch,
             pPkgInfo->pszSummary);
-        fprintf(stdout, "Repo\t : %s\n", pPkgInfo->pszRepoName);
+        printf("Repo\t : %s\n", pPkgInfo->pszRepoName);
         pPkgInfo = pPkgInfo->pNext;
     }
 
@@ -525,7 +527,7 @@ TDNFCliMakeCacheCommand(
     //Empty as refresh flag is set for makecache command
     //and will execute refresh on all enabled repos
 
-    fprintf(stdout, "Metadata cache created.\n");
+    printf("Metadata cache created.\n");
 
 cleanup:
     return dwError;
@@ -551,7 +553,7 @@ TDNFCliCheckCommand(
     dwError = pContext->pFnCheck(pContext);
     BAIL_ON_CLI_ERROR(dwError);
 
-    fprintf(stdout, "Check completed without issues\n");
+    printf("Check completed without issues\n");
 cleanup:
     return dwError;
 

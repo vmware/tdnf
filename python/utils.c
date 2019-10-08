@@ -87,7 +87,7 @@ TDNFPyListAsStringList(
     BAIL_ON_TDNF_ERROR(dwError);
     for(i = 0; i < nCount; ++i)
     {
-        PyObject *pyItem = NULL;
+        PyObject *pyItem;
         PyObject *pyString = NULL;
         pyItem = PyList_GetItem(pyList, i);
         dwError = py_string_as_string(pyItem, &pyString);

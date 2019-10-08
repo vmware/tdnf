@@ -1,4 +1,5 @@
 AC_INIT(tdnf, 2.0.0)
+AM_SILENT_RULES([yes])
 AC_MSG_NOTICE([tdnf configuration])
 
 AC_CANONICAL_SYSTEM

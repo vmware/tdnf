@@ -113,7 +113,7 @@ TDNFPrepareAllPackages(
         *pAlterType = ALTER_UPGRADE;
         dwError = TDNFGetUpdatePkgs(pTdnf, &ppszPkgArray, &dwCount);
         BAIL_ON_TDNF_ERROR(dwError);
-        for(nPkgIndex = 0; nPkgIndex < dwCount; ++nPkgIndex)
+        for(nPkgIndex = 0; (uint32_t)nPkgIndex < dwCount; ++nPkgIndex)
         {
             dwError = TDNFPrepareAndAddPkg(
                           pTdnf,
@@ -306,6 +306,8 @@ TDNFPrepareSinglePkg(
     PSolvPackageList pInstalledPkgList = NULL;
     uint32_t dwCount = 0;
     PSolvSack pSack = NULL;
+
+    UNUSED(nIsGlobExpanded);
 
     if(!pTdnf ||
        !pTdnf->pSack ||

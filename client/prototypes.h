@@ -18,6 +18,9 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
+#ifndef __CLIENT_PROTOTYPES_H__
+#define __CLIENT_PROTOTYPES_H__
+
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
@@ -296,7 +299,7 @@ TDNFGoalGetAllResultsIgnoreNoData(
 uint32_t
 TDNFGetPackagesWithSpecifiedType(
     Transaction* pTrans,
-    PTDNF pTdnf, 
+    PTDNF pTdnf,
     PTDNF_PKG_INFO* pPkgInfo,
     Id dwType
     );
@@ -905,3 +908,5 @@ TDNFGetSkipProblemOption(
     PTDNF pTdnf,
     TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
     );
+
+#endif /* __CLIENT_PROTOTYPES_H__ */
