@@ -23,5 +23,5 @@ Part of tdnf test spec. Basic install/remove/upgrade test
 %files
 
 %changelog
-*       Fri Apr 22 2015 Priyesh Padmavilasom <ppadmavilasom@vmware.com> 1.0.1
--       Initial build.  First version
+*       Wed Apr 22 2015 Priyesh Padmavilasom <ppadmavilasom@vmware.com> 1.0.1
+-       Initial build. First version

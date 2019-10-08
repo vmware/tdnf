@@ -31,27 +31,22 @@ progress_cb(
 {
     double dPercent;
 
-    if(dlTotal > 0)
-    {
-        dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
-        if(!isatty(STDOUT_FILENO))
-        {
-            fprintf(stdout, "%s %3.0f%% %ld\n",
-                (char*)pUserData,
-                dPercent,
-                dlNow);
-        }
-        else
-        {
-            fprintf(
-                stdout,
-                "%-35s %10ld  %5.0f%%\r",
-                (char*)pUserData,
-                dlNow,
-                dPercent);
-        }
-        fflush(stdout);
+    UNUSED(ulNow);
+    UNUSED(ulTotal);
+
+    if (dlTotal <= 0) {
+        return 0;
     }
+
+    dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
+    if (!isatty(STDOUT_FILENO)) {
+        printf("%s %3.0f%% %ld\n", (char *)pUserData, dPercent, dlNow);
+    } else {
+        printf("%-35s %10ld %5.0f%%\r", (char *)pUserData, dlNow, dPercent);
+    }
+
+    fflush(stdout);
+
     return 0;
 }
 
@@ -232,7 +227,7 @@ error:
     {
         uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
         fprintf(stderr,
-                "curl#%d: %s\n",
+                "curl#%u: %s\n",
                 nCurlError,
                 curl_easy_strerror(nCurlError));
     }
@@ -255,7 +250,7 @@ TDNFDownloadPackage(
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
 
-    if(!pTdnf || 
+    if(!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszPackageLocation) ||
        IsNullOrEmptyString(pszPkgName) ||
@@ -296,7 +291,7 @@ TDNFDownloadPackage(
 
     if(!nSilent)
     {
-        fprintf(stdout, "\n");
+        printf("\n");
     }
 
 cleanup:

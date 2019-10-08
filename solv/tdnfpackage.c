@@ -769,7 +769,7 @@ SolvGetPackageId(
     )
 {
     uint32_t dwError = 0;
-    if(!pPkgList || dwPkgIndex >= pPkgList->queuePackages.count)
+    if(!pPkgList || dwPkgIndex >= (uint32_t)pPkgList->queuePackages.count)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -857,7 +857,7 @@ SolvGetLatest(
 
     pszName1 = pool_id2str(pSack->pPool, pSolv1->name);
     pszEvr1 = solvable_lookup_str(pSolv1, SOLVABLE_EVR);
-    for( ; dwPkgIter < pPkgList->count;  dwPkgIter++)
+    for( ; dwPkgIter < (uint32_t)pPkgList->count;  dwPkgIter++)
     {
         pSolv2 = pool_id2solvable(pSack->pPool, pPkgList->elements[dwPkgIter]);
         if(!pSolv2)
@@ -1237,7 +1237,7 @@ SolvFindHighestAvailable(
     dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
+    for(dwPkgIndex = 1; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
     {
         dwError = SolvGetPackageId(
                       pAvailabePkgList,
@@ -1362,7 +1362,7 @@ SolvFindHighestOrLowestInstalled(
         dwError = SolvGetPackageListSize(pInstalledPkgList, &dwCount);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        for(dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
+        for(dwPkgIndex = 1; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
         {
             dwError = SolvGetPackageId(
                           pInstalledPkgList,
@@ -1616,7 +1616,7 @@ SolvReportProblems(
 
     if(nCount > 0)
     {
-        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount - dwSkipProbCount);
+        fprintf(stderr, "Found %u problem(s) while resolving\n", nCount - dwSkipProbCount);
         for( i = 1; i <= nCount; ++i)
         {
             dwProblemId = solver_findproblemrule(pSolv, i);

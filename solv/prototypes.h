@@ -7,6 +7,7 @@
  */
 
 #pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -111,7 +112,7 @@ SolvGetPkgUrlFromId(
     uint32_t dwPkgId,
     char** ppszUrl);
 
-uint32_t 
+uint32_t
 SolvGetPkgLocationFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,

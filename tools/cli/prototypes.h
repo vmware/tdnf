@@ -21,7 +21,6 @@
 
 #pragma once
 
-
 //invoke tdnf library methods
 uint32_t
 TDNFCliInvokeAlter(

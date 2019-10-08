@@ -70,7 +70,7 @@ TDNFLoadRepoData(
                       pEnt->d_name);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, &pRepos);
+        dwError = TDNFLoadReposFromFile(pszRepoFilePath, &pRepos);
         BAIL_ON_TDNF_ERROR(dwError);
 
         TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
@@ -123,15 +123,13 @@ error:
 
 uint32_t
 TDNFLoadReposFromFile(
-    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA_INTERNAL* ppRepos
     )
 {
+    char *pszRepo = NULL;
     uint32_t dwError = 0;
-
-    char* pszRepo = NULL;
-    char* pszMetadataExpire = NULL;
+    char *pszMetadataExpire = NULL;
 
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;

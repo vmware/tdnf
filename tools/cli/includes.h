@@ -19,6 +19,12 @@
  *
  */
 
+#ifndef __CLI_INCLUDES_H__
+#define __CLI_INCLUDES_H__
+
+/* Use this to get rid of variable/parameter unused warning */
+#define UNUSED(var) ((void)(var))
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -35,3 +41,5 @@
 #include "prototypes.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"
+
+#endif /* __CLI_INCLUDES_H__ */

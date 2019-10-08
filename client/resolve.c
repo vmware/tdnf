@@ -113,11 +113,10 @@ TDNFPrepareAllPackages(
         *pAlterType = ALTER_UPGRADE;
         dwError = TDNFGetUpdatePkgs(pTdnf, &ppszPkgArray, &dwCount);
         BAIL_ON_TDNF_ERROR(dwError);
-        for(nPkgIndex = 0; nPkgIndex < dwCount; ++nPkgIndex)
+        for(nPkgIndex = 0; (uint32_t)nPkgIndex < dwCount; ++nPkgIndex)
         {
             dwError = TDNFPrepareAndAddPkg(
                           pTdnf,
-                          0,
                           ppszPkgArray[nPkgIndex],
                           *pAlterType,
                           ppszPkgsNotResolved,
@@ -156,7 +155,6 @@ TDNFPrepareAllPackages(
 
                        dwError = TDNFPrepareAndAddPkg(
                                      pTdnf,
-                                     1,
                                      pszName,
                                      nAlterType,
                                      ppszPkgsNotResolved,
@@ -171,7 +169,6 @@ TDNFPrepareAllPackages(
            {
                dwError = TDNFPrepareAndAddPkg(
                              pTdnf,
-                             0,
                              pszPkgName,
                              nAlterType,
                              ppszPkgsNotResolved,
@@ -235,7 +232,6 @@ TDNFFilterPackages(
 
         dwError = TDNFPrepareAndAddPkg(
                       pTdnf,
-                      0,
                       pszName,
                       nAlterType,
                       ppszPkgsNotResolved,
@@ -260,7 +256,6 @@ error:
 uint32_t
 TDNFPrepareAndAddPkg(
     PTDNF pTdnf,
-    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
@@ -279,7 +274,6 @@ TDNFPrepareAndAddPkg(
 
     dwError = TDNFPrepareSinglePkg(
                   pTdnf,
-                  nIsGlobExpanded,
                   pszPkgName,
                   nAlterType,
                   ppszPkgsNotResolved,
@@ -295,7 +289,6 @@ error:
 uint32_t
 TDNFPrepareSinglePkg(
     PTDNF pTdnf,
-    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,

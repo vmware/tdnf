@@ -1,3 +1,6 @@
+#ifndef __SOLV_DEFINES_H__
+#define __SOLV_DEFINES_H__
+
 #define SYSTEM_REPO_NAME "@System"
 #define CMDLINE_REPO_NAME "@commandline"
 #define SOLV_COOKIE_IDENT "tdnf"
@@ -19,3 +22,5 @@
             goto error;                                            \
         }                                                          \
     } while(0)
+
+#endif /* __SOLV_DEFINES_H__ */

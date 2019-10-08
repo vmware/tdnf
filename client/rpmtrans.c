@@ -169,7 +169,7 @@ TDNFPopulateTransaction(
                       pTS,
                       pTdnf,
                       pSolvedInfo->pPkgsToReinstall);
-        BAIL_ON_TDNF_ERROR(dwError);    
+        BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToUpgrade)
     {
@@ -190,7 +190,6 @@ TDNFPopulateTransaction(
     {
         dwError = TDNFTransAddObsoletedPkgs(
                       pTS,
-                      pTdnf,
                       pSolvedInfo->pPkgsObsoleted);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -292,7 +291,7 @@ TDNFRunTransaction(
     //TODO do callbacks for output
     if(!nSilent)
     {
-        fprintf(stdout, "Testing transaction\n");
+        printf("Testing transaction\n");
     }
 
     if (pTdnf->pArgs->nNoGPGCheck)
@@ -322,7 +321,7 @@ TDNFRunTransaction(
     //TODO do callbacks for output
     if(!nSilent)
     {
-        fprintf(stdout, "Running transaction\n");
+        printf("Running transaction\n");
     }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_NONE);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
@@ -438,7 +437,7 @@ TDNFTransAddInstallPkg(
         if(errno != ENOENT)
         {
             dwError = errno;
-        } 
+        }
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
 
         dwError = TDNFUtilsMakeDirs(pszDownloadCacheDir);
@@ -583,16 +582,17 @@ error:
 uint32_t
 TDNFTransAddObsoletedPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf,
     PTDNF_PKG_INFO pInfo
     )
 {
     uint32_t dwError = 0;
+
     if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
     while(pInfo)
     {
         dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
@@ -665,6 +665,9 @@ TDNFRpmCB(
     char* pszFileName = (char*)key;
     PTDNFRPMTS pTS = (PTDNFRPMTS)data;
 
+    UNUSED(total);
+    UNUSED(amount);
+
     switch (what)
     {
         case RPMCALLBACK_INST_OPEN_FILE:
@@ -689,15 +692,15 @@ TDNFRpmCB(
                 break;
             if(what == RPMCALLBACK_INST_START)
             {
-                fprintf(stdout, "%s", "Installing/Updating: ");
+                printf("%s", "Installing/Updating: ");
             }
             else
             {
-                fprintf(stdout, "%s", "Removing: ");
+                printf("%s", "Removing: ");
             }
             {
                 char* pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
-                fprintf(stdout, "%s\n", pszNevra);
+                printf("%s\n", pszNevra);
                 free(pszNevra);
                 (void)fflush(stdout);
             }

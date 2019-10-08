@@ -106,7 +106,7 @@ cleanup:
     return dwError > 0 ? -1 : 0;
 
 error:
-    fprintf(stderr, "Error = %d\n", dwError);
+    fprintf(stderr, "Error = %u\n", dwError);
     goto cleanup;
 }
 
@@ -115,10 +115,10 @@ TDNFPyRepoDataRepr(
     PyObject *self
     )
 {
+    char *pszRepr = NULL;
     uint32_t dwError = 0;
     PyObject *pyRepr = Py_None;
     PPY_TDNF_REPODATA pRepoData = NULL;
-    char *pszRepr = NULL;
 
     pRepoData = (PPY_TDNF_REPODATA)self;
     dwError = TDNFAllocateStringPrintf(
@@ -138,7 +138,7 @@ cleanup:
     return pyRepr;
 
 error:
-    printf("Error = %d\n", dwError);
+    printf("Error = %u\n", dwError);
     pyRepr = Py_None;
     goto cleanup;
 
