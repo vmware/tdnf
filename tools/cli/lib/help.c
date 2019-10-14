@@ -99,6 +99,9 @@ TDNFCliHelpCommand(
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
+    UNUSED(pContext);
+    UNUSED(pCmdArgs);
     TDNFCliShowHelp();
+
     return 0;
 }

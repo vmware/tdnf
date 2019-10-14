@@ -6,6 +6,9 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
+#ifndef __COMMON_INCLUDES_H__
+#define __COMMON_INCLUDES_H__
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,3 +23,5 @@
 #include "defines.h"
 #include "structs.h"
 #include "prototypes.h"
+
+#endif /* __COMMON_INCLUDES_H__ */

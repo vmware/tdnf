@@ -11,12 +11,15 @@
  *
  * Abstract :
  *
- *            commonlib 
+ *            commonlib
  *
  *            common library
  *
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
+
+#ifndef __COMMON_PROTOTYPES_H__
+#define __COMMON_PROTOTYPES_H__
 
 //memory.c
 uint32_t
@@ -141,3 +144,5 @@ uint32_t
 TDNFUtilsMakeDirs(
     const char* pszPath
     );
+
+#endif /* __COMMON_PROTOTYPES_H__ */

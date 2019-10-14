@@ -31,16 +31,16 @@ TDNFPrintConfigData(
     PKEYVALUE pKeyValue = NULL;
     if(!pData) return;
 
-    fprintf(stdout, "File: %s\n", pData->pszConfFile);
+    printf("File: %s\n", pData->pszConfFile);
 
     pSection = pData->pSections;
     while(pSection)
     {
-        fprintf(stdout, "[%s]\n", pSection->pszName);
+        printf("[%s]\n", pSection->pszName);
         pKeyValue = pSection->pKeyValues;
         while(pKeyValue)
         {
-            fprintf(stdout, "%s=%s\n", pKeyValue->pszKey, pKeyValue->pszValue);
+            printf("%s=%s\n", pKeyValue->pszKey, pKeyValue->pszValue);
             pKeyValue = pKeyValue->pNext;
         }
         pSection = pSection->pNext;
@@ -56,8 +56,8 @@ TDNFGetSectionBoundaries(
     )
 {
     uint32_t dwError = 0;
-    const char *pszStart = NULL;
     const char *pszEnd = NULL;
+    const char *pszStart = NULL;
 
     pszStart = strchr(pszLine, '[');
     if(!pszStart)

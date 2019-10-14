@@ -23,7 +23,7 @@ uint32_t
 TDNFInit(
     );
 
-//Open a handle using initial args 
+//Open a handle using initial args
 //args can define a command, have config overrides
 uint32_t
 TDNFOpenHandle(
@@ -40,7 +40,7 @@ TDNFCheckUpdates(
     uint32_t* pdwCount
     );
 
-//clean local cache. all is the only type 
+//clean local cache. all is the only type
 //currently supported.
 uint32_t
 TDNFClean(
@@ -92,7 +92,7 @@ TDNFCheckPackages(
     );
 
 //check all packages in a local directory
-//using the local directory contents 
+//using the local directory contents
 //for dep resolution.
 uint32_t
 TDNFCheckLocalPackages(
@@ -108,12 +108,10 @@ TDNFProvides(
     PTDNF_PKG_INFO* ppPkgInfo
     );
 
-//Show update info for specified scope 
+//Show update info for specified scope
 uint32_t
 TDNFUpdateInfo(
     PTDNF pTdnf,
-    TDNF_SCOPE nScope,
-    TDNF_AVAIL nAvail,
     char** ppszPackageNameSpecs,
     PTDNF_UPDATEINFO* ppUpdateInfo
     );
@@ -122,7 +120,6 @@ TDNFUpdateInfo(
 uint32_t
 TDNFUpdateInfoSummary(
     PTDNF pTdnf,
-    TDNF_AVAIL nAvail,
     char** ppszPackageNameSpecs,
     PTDNF_UPDATEINFO_SUMMARY* ppSummary
     );
@@ -141,7 +138,7 @@ TDNFGetVersion(
     );
 
 //Search installed and available packages for keywords
-//in description, name 
+//in description, name
 uint32_t
 TDNFSearchCommand(
     PTDNF pTdnf,
@@ -165,17 +162,17 @@ TDNFResolve(
 
 //This function will alter the current
 //install state.
-//install/update/erase/downgrade are 
+//install/update/erase/downgrade are
 //represented as altertype.
 uint32_t
 TDNFAlterCommand(
     PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
-    ); 
+    );
 
 //Show a descriptive error message
-//divided into different areas like 
+//divided into different areas like
 //solv, repo, rpm and generic tdnf errors.
 uint32_t
 TDNFGetErrorString(

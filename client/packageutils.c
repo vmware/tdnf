@@ -118,7 +118,7 @@ TDNFPopulatePkgInfoArray(
                   (void**)&pPkgInfos);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for (dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
+    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
     {
         pPkgInfo = &pPkgInfos[dwPkgIndex];
 
@@ -270,7 +270,7 @@ TDNFPackageGetDowngrade(
     dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
+    for(dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
     {
         dwError = SolvGetPackageId( pAvailabePkgList,
                                     dwPkgIndex,
@@ -396,7 +396,7 @@ TDNFAddPackagesForErase(
     dwError = SolvGetPackageListSize(pInstalledPkgList, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
+    for(dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
     {
         dwError = SolvGetPackageId(
                       pInstalledPkgList,
@@ -752,7 +752,7 @@ TDNFPopulatePkgInfos(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
+    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
     {
         dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);

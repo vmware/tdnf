@@ -18,6 +18,12 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
+#ifndef __CLIENT_INCLUDES_H__
+#define __CLIENT_INCLUDES_H__
+
+/* Use this to get rid of variable/parameter unused warning */
+#define UNUSED(var) ((void)(var))
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -59,3 +65,4 @@
 #include "../common/prototypes.h"
 #include "prototypes.h"
 
+#endif /* __CLIENT_INCLUDES_H__ */

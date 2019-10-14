@@ -21,7 +21,6 @@
 
 #pragma once
 
-
 #define ENABLEREPO        "enablerepo"
 #define DISABLEREPO       "disablerepo"
 

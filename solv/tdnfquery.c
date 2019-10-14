@@ -321,7 +321,7 @@ SolvApplyPackageFilter(
     pQuery->ppszPackageNames = ppszCopyOfPkgNames;
 
 cleanup:
-  
+
     return dwError;
 error:
     if(dwError == ERROR_TDNF_NO_DATA)
@@ -516,7 +516,7 @@ SolvRunSolv(
     int nJob = 0;
     Solver *pSolv = NULL;
 
-    if(!queueJobs->count && (dwMainMode == MODE_UPDATE || 
+    if(!queueJobs->count && (dwMainMode == MODE_UPDATE ||
        dwMainMode == MODE_DISTUPGRADE ||
        dwMainMode == MODE_VERIFY))
     {
@@ -526,7 +526,7 @@ SolvRunSolv(
     for (nJob = 0; nJob < queueJobs->count; nJob += 2)
     {
         queueJobs->elements[nJob] |= dwMode;
-        if (dwMode == SOLVER_UPDATE && 
+        if (dwMode == SOLVER_UPDATE &&
             pool_isemptyupdatejob(
                 pQuery->pSack->pPool,
                 queueJobs->elements[nJob],
@@ -671,7 +671,7 @@ SolvApplyListQuery(
         for (nIndex = 0; nIndex < pQuery->queueJob.count ; nIndex += 2)
         {
             queue_empty(&queueTmp);
-            Id p, pp, how, what;
+            Id p = 0, pp = 0, how = 0, what = 0;
             what = pQuery->queueJob.elements[nIndex + 1];
             how = SOLVER_SELECTMASK & pQuery->queueJob.elements[nIndex];
             Pool *pool = pQuery->pSack->pPool;
@@ -687,9 +687,10 @@ SolvApplyListQuery(
             else if (how == SOLVER_SOLVABLE_REPO)
             {
                Repo *repo = pool_id2repo(pool, what);
-               Solvable *s;
                if (repo)
                {
+                   Solvable *s = NULL;
+
 	           FOR_REPO_SOLVABLES(repo, p, s)
                    {
                       if (is_pseudo_package(pool, &pool->solvables[p]))

@@ -371,7 +371,7 @@ TDNFReadKeyValue(
     char* pszVal = NULL;
     char* pszValue = NULL;
     PKEYVALUE pKeyValues = NULL;
-    
+
     if(!pSection || !pszKeyName || !ppszValue)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -434,7 +434,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
-        TDNF_SAFE_FREE_MEMORY(pConf);
+        TDNFFreeMemory(pConf);
     }
 }
 

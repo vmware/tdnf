@@ -18,6 +18,9 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
+#ifndef __CLIENT_PROTOTYPES_H__
+#define __CLIENT_PROTOTYPES_H__
+
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
@@ -296,7 +299,7 @@ TDNFGoalGetAllResultsIgnoreNoData(
 uint32_t
 TDNFGetPackagesWithSpecifiedType(
     Transaction* pTrans,
-    PTDNF pTdnf, 
+    PTDNF pTdnf,
     PTDNF_PKG_INFO* pPkgInfo,
     Id dwType
     );
@@ -548,7 +551,6 @@ TDNFReplaceRepoMDFile(
 //repolist.c
 uint32_t
 TDNFLoadReposFromFile(
-    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA_INTERNAL* ppRepos
     );
@@ -595,7 +597,6 @@ TDNFPrepareAllPackages(
 uint32_t
 TDNFPrepareAndAddPkg(
     PTDNF pTdnf,
-    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
@@ -605,7 +606,6 @@ TDNFPrepareAndAddPkg(
 uint32_t
 TDNFPrepareSinglePkg(
     PTDNF pTdnf,
-    int nIsGlobExpanded,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
@@ -660,7 +660,6 @@ TDNFTransAddErasePkgs(
 uint32_t
 TDNFTransAddObsoletedPkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf,
     PTDNF_PKG_INFO pInfo
     );
 
@@ -905,3 +904,5 @@ TDNFGetSkipProblemOption(
     PTDNF pTdnf,
     TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
     );
+
+#endif /* __CLIENT_PROTOTYPES_H__ */

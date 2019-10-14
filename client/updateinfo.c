@@ -23,7 +23,6 @@
 uint32_t
 TDNFUpdateInfoSummary(
     PTDNF pTdnf,
-    TDNF_AVAIL nAvail,
     char** ppszPackageNameSpecs,
     PTDNF_UPDATEINFO_SUMMARY* ppSummary
     )
@@ -104,7 +103,7 @@ TDNFUpdateInfoSummary(
         dwError = SolvGetPackageListSize(pUpdateAdvPkgList, &nCount);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        for(iAdv = 0; iAdv < nCount; iAdv++)
+        for(iAdv = 0; (uint32_t)iAdv < nCount; iAdv++)
         {
             dwError = SolvGetPackageId(pUpdateAdvPkgList, iAdv, &dwAdvId);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -525,7 +524,7 @@ TDNFGetUpdatePkgs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFUpdateInfo(pTdnf, 0, 0, &pszPkgName, &pUpdateInfo);
+    dwError = TDNFUpdateInfo(pTdnf, &pszPkgName, &pUpdateInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pInfo = pUpdateInfo;
