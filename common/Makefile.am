@@ -4,6 +4,7 @@ libcommon_la_SOURCES = \
     memory.c \
     strings.c \
     configreader.c \
+    setopt.c \
     utils.c
 
 libcommon_la_CPPFLAGS = \

@@ -12,7 +12,6 @@ libtdnfcli_la_SOURCES = \
     parselistargs.c \
     parserepolistargs.c \
     parseupdateinfo.c \
-    setopt.c \
     updateinfocmd.c
 
 libtdnfcli_la_LIBADD =  \
