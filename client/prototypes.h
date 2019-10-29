@@ -716,13 +716,6 @@ TDNFFreeCachedRpmsArray(
     PTDNF_CACHED_RPM_LIST pArray
     );
 
-//memory.c
-void
-TDNFFreeCmdOpt(
-    PTDNF_CMD_OPT pCmdOpt
-    );
-
-
 //updateinfo.c
 uint32_t
 TDNFGetUpdateInfoPackages(

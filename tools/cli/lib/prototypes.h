@@ -104,24 +104,3 @@ TDNFCliValidateOptions(
     const char* pszArg,
     struct option* pKnownOptions
     );
-
-//setopt.c
-uint32_t
-AddSetOpt(
-    PTDNF_CMD_ARGS pCmdArgs,
-    const char* pszOptArg
-    );
-
-uint32_t
-AddSetOptWithValues(
-    PTDNF_CMD_ARGS pCmdArgs,
-    int nType,
-    const char* pszOptArg,
-    const char* pszOptValue
-    );
-
-uint32_t
-GetOptionAndValue(
-    const char* pszOptArg,
-    PTDNF_CMD_OPT* ppCmdOpt
-    );

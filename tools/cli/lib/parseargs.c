@@ -399,6 +399,10 @@ ParseOption(
             BAIL_ON_CLI_ERROR(dwError);
         }
         dwError = AddSetOpt(pCmdArgs, optarg);
+        if (dwError == ERROR_TDNF_SETOPT_NO_EQUALS)
+        {
+            dwError = ERROR_TDNF_CLI_SETOPT_NO_EQUALS;
+        }
         BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:
