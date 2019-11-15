@@ -5,11 +5,11 @@
 import pytest
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_test_cache(utils):
+def setup_test(utils):
     yield
-    teardown_test_cache(utils)
+    teardown_test(utils)
 
-def teardown_test_cache(utils):
+def teardown_test(utils):
     pass
 
 def test_clean_no_args(utils):

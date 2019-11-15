@@ -2,18 +2,19 @@
 #
 #   Author: Siddharth Chandrasekaran <csiddharth@vmware.com>
 
+import os
 import pytest
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_test_cache(utils):
+def setup_test(utils):
     utils.run([ 'cp', '/etc/yum.repos.d/photon.repo', '/etc/yum.repos.d/photon.repo.bak' ])
     utils.run([ 'cp', '/etc/yum.repos.d/photon-iso.repo', '/etc/yum.repos.d/photon-iso.repo.bak' ])
     utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/etc/yum.repos.d/photon.repo' ])
     utils.run([ 'sed', '-i', 's/enabled=1/enabled=0/g', '/etc/yum.repos.d/photon-test.repo' ])
     yield
-    teardown_test_cache(utils)
+    teardown_test(utils)
 
-def teardown_test_cache(utils):
+def teardown_test(utils):
     utils.run([ 'cp', '/etc/yum.repos.d/photon.repo.bak', '/etc/yum.repos.d/photon.repo' ])
     utils.run([ 'cp', '/etc/yum.repos.d/photon-iso.repo.bak', '/etc/yum.repos.d/photon-iso.repo' ])
     utils.run([ 'sed', '-i', 's/enabled=1/enabled=0/g', '/etc/yum.repos.d/photon.repo' ])
@@ -72,3 +73,14 @@ def test_install_with_keepcache_false(utils):
 
     assert (check_package_in_cache(utils, pkgname) == False)
 
+def test_disable_repo_make_cache(utils):
+    before = os.path.getmtime('/var/cache/tdnf/photon/lastrefresh')
+    utils.run([ 'tdnf', '--disablerepo=*', 'makecache' ])
+    after = os.path.getmtime('/var/cache/tdnf/photon/lastrefresh')
+    assert (before == after)
+
+def test_enable_repo_make_cache(utils):
+    before = os.path.getmtime('/var/cache/tdnf/photon/lastrefresh')
+    utils.run([ 'tdnf', '--disablerepo=*', '--enablerepo=photon', 'makecache' ])
+    after = os.path.getmtime('/var/cache/tdnf/photon/lastrefresh')
+    assert (before < after)

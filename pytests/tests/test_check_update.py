@@ -5,12 +5,12 @@
 import pytest
 
 @pytest.fixture(scope='module', autouse=True)
-def setup_test_cache(utils):
+def setup_test(utils):
     utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/etc/yum.repos.d/photon-extras.repo' ])
     yield
-    teardown_test_cache(utils)
+    teardown_test(utils)
 
-def teardown_test_cache(utils):
+def teardown_test(utils):
     utils.run([ 'sed', '-i', 's/enabled=1/enabled=0/g', '/etc/yum.repos.d/photon-extras.repo' ])
     pass
 
@@ -22,6 +22,7 @@ def test_check_update_invalid_args(utils):
     ret = utils.run([ 'tdnf', 'check-update', 'abcd', '1234' ])
     assert (ret['retval'] == 0)
 
+@pytest.mark.skip(reason='FIXME: chooses a suitbale package that works in Docker')
 def test_check_update_multi_version_package(utils):
     package = utils.config["mulversion_pkgname"] + '-' + utils.config["mulversion_lower"]
     ret = utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', package ])

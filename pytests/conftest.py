@@ -30,7 +30,9 @@ class JsonWrapper(object):
 
 class TestUtils(object):
     def __init__(self):
-        self.config = JsonWrapper('config.json').read()
+        cur_dir = os.path.dirname(os.path.realpath(__file__))
+        config_file = os.path.join(cur_dir, 'config.json')
+        self.config = JsonWrapper(config_file).read()
 
     def check_package(self, package):
         """ Check if a package exists """
