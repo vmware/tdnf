@@ -7,3 +7,7 @@ autoreconf
 ./configure
 make
 make check
+
+# pytests
+make install
+cd pytests && pytest --verbose

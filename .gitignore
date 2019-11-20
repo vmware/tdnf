@@ -44,7 +44,8 @@ tests/testsuite.dir/
 /python/.deps
 /python/.libs
 /python/setup.py
-/python/tdnf/__pycache__
+__pycache__/
+.pytest_cache/
 
 # Object files
 *.o
