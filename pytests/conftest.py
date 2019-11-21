@@ -34,10 +34,11 @@ class JsonWrapper(object):
 
 
 class TestUtils(object):
-    def __init__(self):
+    def __init__(self, cli_args):
         cur_dir = os.path.dirname(os.path.realpath(__file__))
         config_file = os.path.join(cur_dir, 'config.json')
         self.config = JsonWrapper(config_file).read()
+        self.config.update(cli_args)
 
     def check_package(self, package):
         """ Check if a package exists """
@@ -97,6 +98,8 @@ class TestUtils(object):
         return True, None
 
     def run(self, cmd):
+        if cmd[0] is 'tdnf' and self.config['build_dir']:
+            cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
         use_shell = not isinstance(cmd, list)
         process = subprocess.Popen(cmd, shell=use_shell,
                                    stdout=subprocess.PIPE,
@@ -122,9 +125,22 @@ def restore_config_files():
     # Restore /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
     pass
 
+def pytest_addoption(parser):
+    group = parser.getgroup("tdnf", "tdnf specifc options")
+    group.addoption(
+        "--build-dir", action="store", default="",
+        help="directory containing tdnf binary to be tested"
+    )
+
 @pytest.fixture(scope='session')
-def utils():
-    test_utils = TestUtils()
+def tdnf_args(request):
+    arg = {}
+    arg['build_dir'] = request.config.getoption("--build-dir")
+    return arg
+
+@pytest.fixture(scope='session')
+def utils(tdnf_args):
+    test_utils = TestUtils(tdnf_args)
     backup_config_files()
     yield test_utils
     restore_config_files()
