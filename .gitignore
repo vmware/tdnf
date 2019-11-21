@@ -79,3 +79,6 @@ __pycache__/
 
 #generated files
 *.pc
+
+# build directory
+build/

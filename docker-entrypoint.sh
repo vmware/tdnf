@@ -1,13 +1,7 @@
 #!/bin/bash
 
-aclocal
-libtoolize
-automake --add-missing
-autoreconf
-./configure
+mkdir build && cd build
+cmake ..
 make
 make check
 
-# pytests
-make install
-cd pytests && pytest --verbose
