@@ -9,27 +9,31 @@
 from distutils.core import setup, Extension
 import os
 
-link_args = []
-cflags = []
+cflags = [
+    '-I@PYTDNF_INC_DIR@'
+]
 
-if os.access('Makefile.am', os.F_OK):
-    cflags.append('-I../include')
-    link_args.extend(['-Wl,-L../client/.libs'])
+link_args = [
+    '-Wl,-L@PYTDNF_LIB_DIR@'
+]
+
+pytdnf_sources = [
+    '@PYTDNF_SRC_DIR@/tdnfbase.c',
+    '@PYTDNF_SRC_DIR@/tdnfpyrepodata.c',
+    '@PYTDNF_SRC_DIR@/tdnfpycommands.c',
+    '@PYTDNF_SRC_DIR@/tdnfmodule.c',
+    '@PYTDNF_SRC_DIR@/utils.c'
+]
 
 tdnfmodule = Extension('tdnf._tdnf',
-                    libraries = ['tdnf'],
-                    sources = ['tdnfbase.c',
-                               'tdnfpyrepodata.c',
-                               'tdnfpycommands.c',
-                               'tdnfmodule.c',
-                               'utils.c'],
+                       libraries = ['tdnf'],
+                       sources = pytdnf_sources,
+                       extra_compile_args = cflags,
+                       extra_link_args = link_args)
 
-                    extra_compile_args = cflags,
-                    extra_link_args = link_args)
-
-setup (name = '@PACKAGE_NAME@',
-       version = '@VERSION@',
-       description = 'Python bindings for @PACKAGE_NAME@',
-       packages = ['@PACKAGE_NAME@'],
+setup (name = '@PYTDNF_PACKAGE_NAME@',
+       version = '@PYTDNF_VERSION@',
+       description = 'Python bindings for @PYTDNF_PACKAGE_NAME@',
+       packages = ['@PYTDNF_PACKAGE_NAME@'],
        url='https://github.com/vmware/tdnf',
        ext_modules = [tdnfmodule])
