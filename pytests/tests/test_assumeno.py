@@ -13,7 +13,8 @@ import pytest
 def setup_test(utils):
     # remove sglversion_pkgname at the beginning of tests
     pkgname = utils.config['sglversion_pkgname']
-    utils.run([ 'tdnf', 'erase', '-y', pkgname ])
+    if utils.check_package(pkgname):
+        utils.run([ 'tdnf', 'erase', '-y', pkgname ])
     yield
     teardown_test(utils)
 
@@ -27,5 +28,7 @@ def test_assumeno_install(utils):
 
 def test_assumeno_erase(utils):
     pkgname = utils.config['sglversion_pkgname']
+    utils.run([ 'tdnf', 'install', '-y', pkgname ])
+    assert (utils.check_package(pkgname) == True)
     utils.run([ 'tdnf', '--assumeno',  'erase', pkgname ])
-    assert (utils.check_package(pkgname) == False)
+    assert (utils.check_package(pkgname) == True)
