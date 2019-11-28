@@ -173,7 +173,7 @@ install(TARGETS ${TDNF_BIN} RUNTIME DESTINATION bin COMPONENT binary)
 ##
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf.conf"
-    DESTINATION "/ect/tdnf"
+    DESTINATION "/etc/tdnf"
     COMPONENT resources
 )
 
