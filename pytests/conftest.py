@@ -11,9 +11,12 @@ import pytest
 import json
 import subprocess
 import os
+import re
+import errno
 import shutil
 import ssl
 import requests
+from pprint import pprint
 from urllib.parse import urlparse
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 
@@ -34,11 +37,28 @@ class JsonWrapper(object):
 
 
 class TestUtils(object):
+
     def __init__(self, cli_args):
         cur_dir = os.path.dirname(os.path.realpath(__file__))
         config_file = os.path.join(cur_dir, 'config.json')
         self.config = JsonWrapper(config_file).read()
         self.config.update(cli_args)
+
+    def assert_file_exists(self, file_path):
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+
+    def enable_repo(self, repo):
+        repo_path = os.path.join('/etc/yum.repos.d/', repo)
+        self.assert_file_exists(repo_path)
+        self.run([ 'sed', '-i', '/enabled=/d', repo_path ])
+        self.run([ 'sed', '-i', '$ a enabled=1', repo_path ])
+
+    def disable_repo(self, repo):
+        repo_path = os.path.join('/etc/yum.repos.d/', repo)
+        self.assert_file_exists(repo_path)
+        self.run([ 'sed', '-i', '/enabled=/d', repo_path ])
+        self.run([ 'sed', '-i', '$ a enabled=0', repo_path ])
 
     def check_package(self, package):
         """ Check if a package exists """
@@ -94,7 +114,6 @@ class TestUtils(object):
         r.raw.decode_content = True
         with open(out, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
-
         return True, None
 
     def run(self, cmd):
@@ -106,23 +125,51 @@ class TestUtils(object):
                                    stderr=subprocess.PIPE)
         process.wait()
         out, err = process.communicate()
-        ret = {}
-        ret['stdout'] = []
-        ret['stdout'] = []
-        ret['retval'] = process.returncode
-        if out:
-            ret['stdout'] = out.decode().split('\n')
-        if err:
-            ret['strerr'] = err.decode().split('\n')
+        stdout = out.decode()
+        stderr = err.decode()
+        retval = process.returncode
+        capture = re.match(r'^Error\((\d+)\) :', stderr)
+        if capture:
+            retval = int(capture.groups()[0])
 
+        ret = {}
+        if stdout:
+            ret['stdout'] = stdout.split('\n')
+        else:
+            ret['stdout'] = []
+        if stderr:
+            ret['stderr'] = stderr.split('\n')
+        else:
+            ret['stderr'] = []
+        ret['retval'] = retval
         return ret
+
+def backup_files(conf_dir):
+    for file in os.listdir(conf_dir):
+        if file.endswith('.bak'):
+            continue
+        src  = os.path.join(conf_dir, file)
+        dest = os.path.join(conf_dir, os.path.basename(file) + '.bak')
+        shutil.copyfile(src, dest)
+
+def restore_files(conf_dir):
+    for file in os.listdir(conf_dir):
+        if not file.endswith('.bak'):
+            continue
+        src = os.path.join(conf_dir, file)
+        dest = os.path.join(conf_dir, os.path.basename(file).replace('.bak', ''))
+        shutil.move(src, dest)
 
 def backup_config_files():
     # Backup /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
+    backup_files('/etc/yum.repos.d/')
+    backup_files('/etc/tdnf/')
     pass
 
 def restore_config_files():
     # Restore /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
+    restore_files('/etc/yum.repos.d/')
+    restore_files('/etc/tdnf/')
     pass
 
 def pytest_addoption(parser):

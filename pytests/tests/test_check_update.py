@@ -11,12 +11,12 @@ import pytest
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
-    utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/etc/yum.repos.d/photon-extras.repo' ])
+    utils.enable_repo('photon-extras.repo')
     yield
     teardown_test(utils)
 
 def teardown_test(utils):
-    utils.run([ 'sed', '-i', 's/enabled=1/enabled=0/g', '/etc/yum.repos.d/photon-extras.repo' ])
+    utils.disable_repo('photon-extras.repo')
     pass
 
 def test_check_update_no_arg(utils):

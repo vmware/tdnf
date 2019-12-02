@@ -12,18 +12,14 @@ import pytest
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
-    utils.run([ 'cp', '/etc/yum.repos.d/photon.repo', '/etc/yum.repos.d/photon.repo.bak' ])
-    utils.run([ 'cp', '/etc/yum.repos.d/photon-iso.repo', '/etc/yum.repos.d/photon-iso.repo.bak' ])
-    utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/etc/yum.repos.d/photon.repo' ])
-    utils.run([ 'sed', '-i', 's/enabled=1/enabled=0/g', '/etc/yum.repos.d/photon-test.repo' ])
+    utils.enable_repo('photon.repo')
+    utils.disable_repo('photon-test.repo')
     yield
     teardown_test(utils)
 
 def teardown_test(utils):
-    utils.run([ 'cp', '/etc/yum.repos.d/photon.repo.bak', '/etc/yum.repos.d/photon.repo' ])
-    utils.run([ 'cp', '/etc/yum.repos.d/photon-iso.repo.bak', '/etc/yum.repos.d/photon-iso.repo' ])
-    utils.run([ 'sed', '-i', 's/enabled=1/enabled=0/g', '/etc/yum.repos.d/photon.repo' ])
-    utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/etc/yum.repos.d/photon-test.repo' ])
+    utils.disable_repo('photon.repo')
+    utils.enable_repo('photon-test.repo')
 
 def clean_cache(utils):
     utils.run([ 'rm', '-rf', '/var/cache/tdnf' ])
