@@ -160,17 +160,18 @@ def restore_files(conf_dir):
         dest = os.path.join(conf_dir, os.path.basename(file).replace('.bak', ''))
         shutil.move(src, dest)
 
-def backup_config_files():
+def backup_config_files(utils):
     # Backup /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
     backup_files('/etc/yum.repos.d/')
     backup_files('/etc/tdnf/')
-    pass
+    utils.assert_file_exists('/etc/yum.repos.d/photon-test.repo')
 
-def restore_config_files():
+def restore_config_files(utils):
     # Restore /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
     restore_files('/etc/yum.repos.d/')
     restore_files('/etc/tdnf/')
-    pass
+    if os.path.isfile('/etc/yum.repos.d/photon-test.repo'):
+        os.remove('/etc/yum.repos.d/photon-test.repo')
 
 def pytest_addoption(parser):
     group = parser.getgroup("tdnf", "tdnf specifc options")
@@ -188,6 +189,6 @@ def tdnf_args(request):
 @pytest.fixture(scope='session')
 def utils(tdnf_args):
     test_utils = TestUtils(tdnf_args)
-    backup_config_files()
+    backup_config_files(test_utils)
     yield test_utils
-    restore_config_files()
+    restore_config_files(test_utils)
