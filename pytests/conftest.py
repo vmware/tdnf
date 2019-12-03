@@ -42,7 +42,8 @@ class TestUtils(object):
         cur_dir = os.path.dirname(os.path.realpath(__file__))
         config_file = os.path.join(cur_dir, 'config.json')
         self.config = JsonWrapper(config_file).read()
-        self.config.update(cli_args)
+        if cli_args:
+            self.config.update(cli_args)
 
     def assert_file_exists(self, file_path):
         if not os.path.isfile(file_path):
@@ -117,16 +118,16 @@ class TestUtils(object):
         return True, None
 
     def run(self, cmd):
-        if cmd[0] is 'tdnf' and self.config['build_dir']:
+        if cmd[0] is 'tdnf' and 'build_dir' in self.config and self.config['build_dir']:
             cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
         use_shell = not isinstance(cmd, list)
         process = subprocess.Popen(cmd, shell=use_shell,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        process.wait()
+        #process.wait()
         out, err = process.communicate()
-        stdout = out.decode()
-        stderr = err.decode()
+        stdout = out.decode().strip()
+        stderr = err.decode().strip()
         retval = process.returncode
         capture = re.match(r'^Error\((\d+)\) :', stderr)
         if capture:
@@ -170,8 +171,6 @@ def restore_config_files(utils):
     # Restore /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
     restore_files('/etc/yum.repos.d/')
     restore_files('/etc/tdnf/')
-    if os.path.isfile('/etc/yum.repos.d/photon-test.repo'):
-        os.remove('/etc/yum.repos.d/photon-test.repo')
 
 def pytest_addoption(parser):
     group = parser.getgroup("tdnf", "tdnf specifc options")
