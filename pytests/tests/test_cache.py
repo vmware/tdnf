@@ -43,7 +43,7 @@ def test_install_without_cache(utils):
 
     pkgname = utils.config["sglversion_pkgname"]
     if utils.check_package(pkgname):
-        utils.remove_package(pkgname)
+        utils.erase_package(pkgname)
 
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname ])
 
@@ -55,7 +55,7 @@ def test_install_with_cache(utils):
 
     pkgname = utils.config["sglversion_pkgname"]
     if utils.check_package(pkgname):
-        utils.remove_package(pkgname)
+        utils.erase_package(pkgname)
 
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname ])
 
@@ -68,7 +68,7 @@ def test_install_with_keepcache_false(utils):
 
     pkgname = utils.config["sglversion_pkgname"]
     if utils.check_package(pkgname):
-        utils.remove_package(pkgname)
+        utils.erase_package(pkgname)
 
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname ])
 

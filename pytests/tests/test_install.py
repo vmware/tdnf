@@ -19,10 +19,6 @@ def setup_test(utils):
 def teardown_test(utils):
     pass
 
-def erase_package(utils, pkgname, pkgversion):
-    utils.run([ 'tdnf', 'erase', '-y', pkgname ])
-    assert(utils.check_package(pkgname) == False)
-
 def test_install_no_arg(utils):
     ret = utils.run([ 'tdnf', 'install' ])
     assert(ret['retval'] == 1001)
@@ -35,6 +31,7 @@ def test_install_package_with_version_suffix(utils):
     pkgname = utils.config["mulversion_pkgname"]
     pkgversion = utils.config["mulversion_lower"]
     utils.erase_package(pkgname)
+
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion ])
     assert(utils.check_package(pkgname) == True)
 

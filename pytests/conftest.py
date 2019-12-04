@@ -69,11 +69,21 @@ class TestUtils(object):
                 return True
         return False
 
-    def remove_package(self, package):
-        ret = self.run([ 'tdnf', 'erase', '-y', package ])
-        if ret['retval'] != 0:
-            return False
-        return True
+    def erase_package(self, pkgname, pkgversion=None):
+        if pkgversion:
+            pkg = pkgname + '-' + pkgversion
+        else:
+            pkg = pkgname
+        self.run([ 'tdnf', 'erase', '-y', pkg ])
+        assert(self.check_package(pkgname) == False)
+
+    def install_package(utils, pkgname, pkgversion=None):
+        if pkgversion:
+            pkg = pkgname + '-' + pkgversion
+        else:
+            pkg = pkgname
+        utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkg ])
+        assert(utils.check_package(pkgname) == True)
 
     def _requests_get(self, url, verify):
         try:

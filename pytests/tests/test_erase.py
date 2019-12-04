@@ -19,14 +19,6 @@ def setup_test(utils):
 def teardown_test(utils):
     pass
 
-def install_package(utils, pkgname, pkgversion):
-    if pkgversion:
-        pkg = pkgname + '-' + pkgversion
-    else:
-        pkg = pkgname
-    utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkg ])
-    assert(utils.check_package(pkgname) == True)
-
 def test_erase_no_arg(utils):
     ret = utils.run([ 'tdnf', 'erase' ])
     assert (ret['stderr'][0] == 'Nothing to do.')
