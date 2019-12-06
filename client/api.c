@@ -20,6 +20,9 @@
 
 #include "includes.h"
 
+extern const char *PACKAGE_VERSION;
+extern const char *PACKAGE_NAME;
+
 static TDNF_ENV gEnv = {0};
 
 uint32_t
@@ -1265,4 +1268,11 @@ TDNFGetVersion(
     )
 {
     return PACKAGE_VERSION;
+}
+
+const char*
+TDNFGetPackageName(
+    )
+{
+    return PACKAGE_NAME;
 }

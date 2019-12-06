@@ -137,6 +137,11 @@ const char*
 TDNFGetVersion(
     );
 
+//package name
+const char*
+TDNFGetPackageName(
+    );
+
 //Search installed and available packages for keywords
 //in description, name
 uint32_t

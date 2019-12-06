@@ -217,7 +217,7 @@ void
 TDNFCliShowVersion(
     )
 {
-    printf("%s: %s\n", PACKAGE_NAME, TDNFGetVersion());
+    printf("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());
 }
 
 uint32_t

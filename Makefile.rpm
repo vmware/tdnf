@@ -1,3 +1,0 @@
-rpm:
-	autoreconf -mif
-	./configure --enable-python && make rpm
