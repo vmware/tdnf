@@ -187,7 +187,7 @@ typedef enum
     {ERROR_TDNF_TRANS_INCOMPLETE,    "ERROR_TDNF_TRANS_INCOMPLETE",    "Incomplete rpm transaction"}, \
     {ERROR_TDNF_TRANS_PKG_NOT_FOUND, "ERROR_TDNF_TRANS_PKG_NOT_FOUND", "Failed to find rpm package"}, \
     {ERROR_TDNF_NO_SEARCH_RESULTS,   "ERROR_TDNF_NO_SEARCH_RESULTS",   "No matches found"}, \
-    {ERROR_TDNF_RPMRC_NOTFOUND,      "ERROR_TDNF_RPMRC_NOTFOUND",      "rpm generic error - not found"}, \
+    {ERROR_TDNF_RPMRC_NOTFOUND,      "ERROR_TDNF_RPMRC_NOTFOUND",      "rpm generic error - not found(possible corrupt rpm file"}, \
     {ERROR_TDNF_RPMRC_FAIL,          "ERROR_TDNF_RPMRC_FAIL",          "rpm generic failure"}, \
     {ERROR_TDNF_RPMRC_NOTTRUSTED,    "ERROR_TDNF_RPMRC_NOTTRUSTED",    "rpm signature is OK, but key is not trusted"}, \
     {ERROR_TDNF_RPMRC_NOKEY,         "ERROR_TDNF_RPMRC_NOKEY",         "public key is unavailable. install public key using rpm --import or use --nogpgcheck to ignore."}, \

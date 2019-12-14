@@ -538,6 +538,7 @@ cleanup:
     return dwError;
 
 error:
+    fprintf(stderr, "Error processing package: %s\n", pszPackageLocation);
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pRpmCache);
     goto cleanup;
