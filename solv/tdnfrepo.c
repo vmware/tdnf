@@ -248,9 +248,14 @@ SolvReadInstalledRpms(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    if(pszCacheFileName)
+    if(pszCacheFileName && access(pszCacheFileName, F_OK) == 0)
     {
         pCacheFile = fopen(pszCacheFileName, "r");
+        if(!pCacheFile)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
     }
 
     dwFlags = REPO_REUSE_REPODATA | RPM_ADD_WITH_HDRID | REPO_USE_ROOTDIR;
