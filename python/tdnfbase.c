@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include "tdnfbase.h"
 
 static char base__doc__[] = "";
 

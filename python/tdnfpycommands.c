@@ -7,7 +7,6 @@
  */
 
 #include "includes.h"
-#include <tdnf/tdnf.h>
 
 /* returns a list of repos */
 PyObject *
