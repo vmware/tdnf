@@ -9,7 +9,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(tdnf)
+project(tdnf VERSION 2.0.0 LANGUAGES C)
 set(PROJECT_YEAR 2019)
 
 # Ensure correct directory paths are used for installation
@@ -117,11 +117,20 @@ add_library(${LIB_TDNF_CLIENT} SHARED
 
 set_target_properties(${LIB_TDNF_CLIENT} PROPERTIES
     OUTPUT_NAME "tdnf"
-    VERSION "2.0.0"
-    SOVERSION "2"
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
 )
 
 install(TARGETS ${LIB_TDNF_CLIENT} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
+
+# configure and install pkgconfig file
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/client/tdnf.pc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/client/tdnf.pc" @ONLY
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/client/tdnf.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
 
 ##
 ## build libtdnfcli.so
@@ -146,11 +155,20 @@ list(APPEND LIB_TDNF_CLI_SRC
 add_library(${LIB_TDNF_CLI} SHARED ${LIB_TDNF_CLI_SRC})
 
 set_target_properties(${LIB_TDNF_CLI} PROPERTIES
-    VERSION "2.0.0"
-    SOVERSION "2"
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
 )
 
 install(TARGETS ${LIB_TDNF_CLI} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
+
+# configure and install pkgconfig file
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/cli/lib/tdnfcli.pc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/tools/cli/lib/tdnfcli.pc" @ONLY
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tools/cli/lib/tdnfcli.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
 
 ##
 ## libtdnf + libtdnfcli headers

@@ -57,7 +57,7 @@ if ("${GIT_BRANCH}" STREQUAL "")
     set(GIT_BRANCH "NONE")
 endif()
 if ("${VERSION_STRING}" STREQUAL "")
-    set(VERSION_STRING "0.0.0")
+    set(VERSION_STRING ${PROJECT_VERSION})
 endif()
 
 string(CONCAT BUILD_META_C
