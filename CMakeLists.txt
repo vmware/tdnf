@@ -12,6 +12,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 project(tdnf)
 set(PROJECT_YEAR 2019)
 
+# Ensure correct directory paths are used for installation
+include(GNUInstallDirs)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
 include(BuildMetaData)
@@ -24,6 +27,9 @@ endif()
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Ensure that we don't accidentally install into /usr/etc
+set(CMAKE_INSTALL_FULL_SYSCONDIR "/etc")
 
 ##
 ## C Flags
@@ -115,7 +121,7 @@ set_target_properties(${LIB_TDNF_CLIENT} PROPERTIES
     SOVERSION "2"
 )
 
-install(TARGETS ${LIB_TDNF_CLIENT} LIBRARY DESTINATION lib COMPONENT library)
+install(TARGETS ${LIB_TDNF_CLIENT} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
 
 ##
 ## build libtdnfcli.so
@@ -144,7 +150,13 @@ set_target_properties(${LIB_TDNF_CLI} PROPERTIES
     SOVERSION "2"
 )
 
-install(TARGETS ${LIB_TDNF_CLI} LIBRARY DESTINATION lib COMPONENT library)
+install(TARGETS ${LIB_TDNF_CLI} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
+
+##
+## libtdnf + libtdnfcli headers
+##
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/tdnf")
 
 ##
 ## tdnf binary
@@ -166,20 +178,21 @@ target_link_libraries(${TDNF_BIN} PUBLIC
     ${CURL_LIBRARIES}
 )
 
-install(TARGETS ${TDNF_BIN} RUNTIME DESTINATION bin COMPONENT binary)
+install(TARGETS ${TDNF_BIN} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary)
 
 ##
 ## Other static resources
 ##
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf.conf"
-    DESTINATION "/etc/tdnf"
+    DESTINATION "${CMAKE_INSTALL_FULL_SYSCONFDIR}/tdnf"
     COMPONENT resources
 )
 
 install(DIRECTORY DESTINATION "share/bash-completion/completions")
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf-completion.bash"
-    DESTINATION "share/bash-completion/completions"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/bash-completion/completions"
+    RENAME "tdnf"
     COMPONENT resources
 )
 
