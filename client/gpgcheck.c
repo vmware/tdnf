@@ -370,5 +370,9 @@ cleanup:
     return dwError;
 
 error:
+    if (pszPkgFile)
+    {
+        fprintf(stderr, "Error verifying signature of: %s\n", pszPkgFile);
+    }
     goto cleanup;
 }
