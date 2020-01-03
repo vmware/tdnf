@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/include/tdnf
+
+Name: tdnf
+Description: Tiny Dandified YUM
+Version: @PROJECT_VERSION@
+Provides: libtdnf = @PROJECT_VERSION@
+Requires: libsolv libsolvext rpm libcurl
+Libs: -L${libdir} -ltdnf
+Cflags: -I${includedir}

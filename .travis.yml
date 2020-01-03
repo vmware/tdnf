@@ -1,5 +1,12 @@
+language: minimal
+
 services:
   - docker
 
+env:
+  - DIST=fedora
+  - DIST=photon
+
 script:
-  - bash ./docker-build.sh
+  - docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
+  - docker run --rm -it -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh

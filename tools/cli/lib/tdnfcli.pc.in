@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/include/tdnf
+
+Name: tdnfcli
+Description: TDNF CLI interface library
+Version: @PROJECT_VERSION@
+Provides: libtdnfcli = @PROJECT_VERSION@
+Requires: tdnf = @PROJECT_VERSION@
+Libs: -L${libdir} -ltdnfcli
+Cflags: -I${includedir}

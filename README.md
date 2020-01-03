@@ -5,18 +5,14 @@
 In order to compile, from the checkout directory, run the following
 
 ```sh
-aclocal
-libtoolize
-automake --add-missing
-autoreconf
-./configure
+cmake
 make
 ```
 
 You could also build tdnf using docker using the following commands:
 
 ```sh
-docker build -t photon/tdnf-build .
+docker build -t photon/tdnf-build -f ci/Dockerfile.photon .
 docker run --rm -it -v$(pwd):/build -w/build photon/tdnf-build
 ```
 
