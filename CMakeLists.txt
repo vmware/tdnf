@@ -17,12 +17,18 @@ include(GNUInstallDirs)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
-include(BuildMetaData)
 include(CreatePackages)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
+
+#make config.h with
+#PACKAGE_NAME and PACKAGE_VERSION defined
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/client/config.h.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/client/config.h" @ONLY
+)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -45,17 +51,6 @@ add_c_compiler_flag(-O0 DEBUG)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Custom command produces build_meta_data.c, and a dummy output that's
-# not actually produced, in order to force Version.cmake to always be
-# re-run before the build
-ADD_CUSTOM_COMMAND(
-    OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build_meta_data.c
-            ${CMAKE_CURRENT_BINARY_DIR}/_build_meta_data.c
-    COMMAND ${CMAKE_COMMAND} -P
-            ${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildMetaData.cmake
-    COMMENT "Generating build meta data.."
-)
-
 ##
 ## build libtdnfclient.so
 ##
@@ -74,7 +69,6 @@ find_package(CURL REQUIRED)
 set(LIB_TDNF_CLIENT tdnfclient)
 
 list(APPEND LIB_TDNF_COMMMON_SRC
-    "${CMAKE_BINARY_DIR}/build_meta_data.c"
     "common/memory.c"
     "common/strings.c"
     "common/configreader.c"
@@ -217,6 +211,10 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf-completion.bash"
 ##
 ## check target
 ##
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/pytests/config.json.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pytests/config.json" @ONLY
+)
 
 add_custom_target(check
     COMMAND pytest --build-dir=${CMAKE_CURRENT_BINARY_DIR}

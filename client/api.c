@@ -19,9 +19,7 @@
  */
 
 #include "includes.h"
-
-extern const char *PACKAGE_VERSION;
-extern const char *PACKAGE_NAME;
+#include "config.h"
 
 static TDNF_ENV gEnv = {0};
 
