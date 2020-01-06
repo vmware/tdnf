@@ -217,6 +217,10 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf-completion.bash"
 ##
 ## check target
 ##
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/pytests/config.json.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pytests/config.json" @ONLY
+)
 
 add_custom_target(check
     COMMAND pytest --build-dir=${CMAKE_CURRENT_BINARY_DIR}

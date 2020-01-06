@@ -1,4 +1,6 @@
 {
+    "project_name": "@PROJECT_NAME@",
+    "project_version": "@VERSION_STRING@",
     "sglversion_pkgname": "gzip",
     "mulversion_pkgname": "cloud-init",
     "mulversion_lower": "18.3-4.ph3",
