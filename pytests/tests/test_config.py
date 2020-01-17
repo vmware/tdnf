@@ -12,30 +12,30 @@ import pytest
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
-    utils.disable_repo('photon.repo')
-    utils.run([ 'cp', '/etc/tdnf/tdnf.conf', '/etc/tdnf/mytdnf.conf' ])
-    utils.run([ 'sed', '-i', '/repodir/d', '/etc/tdnf/mytdnf.conf' ])
-    utils.run([ 'sed', '-i', '$ a repodir=/etc/myrepo', '/etc/tdnf/mytdnf.conf' ])
-    utils.run([ 'mkdir', '-p', '/etc/myrepo' ])
-    utils.run([ 'cp', '/etc/yum.repos.d/photon.repo', '/etc/myrepo/photon.repo' ])
-    utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/etc/myrepo/photon.repo' ])
+    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
+    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
+    utils.run([ 'mkdir', '-p', '/tmp/myrepo' ])
+    utils.run([ 'cp', tdnf_conf, '/tmp/myrepo/mytdnf.conf' ])
+    utils.run([ 'sed', '-i', '/repodir/d', '/tmp/myrepo/mytdnf.conf' ])
+    utils.run([ 'sed', '-i', '$ a repodir=/tmp/myrepo', '/tmp/myrepo/mytdnf.conf' ])
+    utils.run([ 'cp', tdnf_repo, '/tmp/myrepo/photon.repo' ])
+    utils.run([ 'sed', '-i', 's/enabled=0/enabled=1/g', '/tmp/myrepo/photon.repo' ])
     yield
     teardown_test(utils)
 
 def teardown_test(utils):
-    utils.run([ 'rm', '/etc/tdnf/mytdnf.conf' ])
-    utils.run([ 'rm', '-rf', '/etc/myrepo' ])
+    utils.run([ 'rm', '-rf', '/tmp/myrepo' ])
 
 def test_config_invalid(utils):
-    ret = utils.run([ 'tdnf', '--config', '/etc/tdnf/test123.conf', 'list', 'tdnf' ])
+    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/test123.conf', 'list', 'tdnf-test-one' ])
     assert(ret['retval'] == 1602)
 
 def test_config_list(utils):
-    ret = utils.run([ 'tdnf', '--config', '/etc/tdnf/mytdnf.conf', 'list', 'tdnf' ])
+    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
     assert(ret['retval'] == 0)
 
 def test_config_list_with_disable_repos(utils):
-    ret = utils.run([ 'tdnf', '--disablerepo=*', '--config', '/etc/tdnf/mytdnf.conf', 'list', 'tdnf' ])
+    ret = utils.run([ 'tdnf', '--disablerepo=*', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
     assert(ret['retval'] == 0)
 
     for line in ret['stdout']:
@@ -44,6 +44,6 @@ def test_config_list_with_disable_repos(utils):
         assert (False) # force fail test
 
 def test_config_invaid_repodir(utils):
-    utils.run([ 'sed', '-i', 's#repodir=/etc/myrepo#repodir=/etc/invalid#g', '/etc/tdnf/mytdnf.conf' ])
-    ret = utils.run([ 'tdnf', '--config', '/etc/tdnf/mytdnf.conf', 'list', 'tdnf' ])
+    utils.run([ 'sed', '-i', 's#repodir=/tmp/myrepo#repodir=/etc/invalid#g', '/tmp/myrepo/mytdnf.conf' ])
+    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
     assert(ret['retval'] == 2605)

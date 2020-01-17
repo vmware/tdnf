@@ -11,12 +11,10 @@ import pytest
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
-    utils.enable_repo('photon-extras.repo')
     yield
     teardown_test(utils)
 
 def teardown_test(utils):
-    utils.disable_repo('photon-extras.repo')
     pass
 
 def test_check_update_no_arg(utils):

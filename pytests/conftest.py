@@ -16,6 +16,7 @@ import errno
 import shutil
 import ssl
 import requests
+import configparser
 from pprint import pprint
 from urllib.parse import urlparse
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
@@ -44,22 +45,14 @@ class TestUtils(object):
         self.config = JsonWrapper(config_file).read()
         if cli_args:
             self.config.update(cli_args)
+        script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
+        self.run([ 'sh', script, self.config['repo_path'] ])
+        self.tdnf_config = configparser.ConfigParser()
+        self.tdnf_config.read(os.path.join(self.config['repo_path'], 'tdnf.conf'))
 
     def assert_file_exists(self, file_path):
         if not os.path.isfile(file_path):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-
-    def enable_repo(self, repo):
-        repo_path = os.path.join('/etc/yum.repos.d/', repo)
-        self.assert_file_exists(repo_path)
-        self.run([ 'sed', '-i', '/enabled=/d', repo_path ])
-        self.run([ 'sed', '-i', '$ a enabled=1', repo_path ])
-
-    def disable_repo(self, repo):
-        repo_path = os.path.join('/etc/yum.repos.d/', repo)
-        self.assert_file_exists(repo_path)
-        self.run([ 'sed', '-i', '/enabled=/d', repo_path ])
-        self.run([ 'sed', '-i', '$ a enabled=0', repo_path ])
 
     def check_package(self, package):
         """ Check if a package exists """
@@ -128,8 +121,12 @@ class TestUtils(object):
         return True, None
 
     def run(self, cmd):
-        if cmd[0] is 'tdnf' and 'build_dir' in self.config and self.config['build_dir']:
-            cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
+        if cmd[0] is 'tdnf':
+            if 'build_dir' in self.config:
+                cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
+            if cmd[1] is not '--config':
+                cmd.insert(1, '-c')
+                cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
         use_shell = not isinstance(cmd, list)
         process = subprocess.Popen(cmd, shell=use_shell,
                                    stdout=subprocess.PIPE,
@@ -155,33 +152,6 @@ class TestUtils(object):
         ret['retval'] = retval
         return ret
 
-def backup_files(conf_dir):
-    for file in os.listdir(conf_dir):
-        if file.endswith('.bak'):
-            continue
-        src  = os.path.join(conf_dir, file)
-        dest = os.path.join(conf_dir, os.path.basename(file) + '.bak')
-        shutil.copyfile(src, dest)
-
-def restore_files(conf_dir):
-    for file in os.listdir(conf_dir):
-        if not file.endswith('.bak'):
-            continue
-        src = os.path.join(conf_dir, file)
-        dest = os.path.join(conf_dir, os.path.basename(file).replace('.bak', ''))
-        shutil.move(src, dest)
-
-def backup_config_files(utils):
-    # Backup /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
-    backup_files('/etc/yum.repos.d/')
-    backup_files('/etc/tdnf/')
-    utils.assert_file_exists('/etc/yum.repos.d/photon-test.repo')
-
-def restore_config_files(utils):
-    # Restore /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
-    restore_files('/etc/yum.repos.d/')
-    restore_files('/etc/tdnf/')
-
 def pytest_addoption(parser):
     group = parser.getgroup("tdnf", "tdnf specifc options")
     group.addoption(
@@ -192,12 +162,12 @@ def pytest_addoption(parser):
 @pytest.fixture(scope='session')
 def tdnf_args(request):
     arg = {}
-    arg['build_dir'] = request.config.getoption("--build-dir")
+    build_dir = request.config.getoption("--build-dir")
+    if build_dir:
+        arg['build_dir'] = build_dir
     return arg
 
 @pytest.fixture(scope='session')
 def utils(tdnf_args):
     test_utils = TestUtils(tdnf_args)
-    backup_config_files(test_utils)
-    yield test_utils
-    restore_config_files(test_utils)
+    return test_utils

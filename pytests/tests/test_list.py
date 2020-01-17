@@ -20,7 +20,7 @@ def teardown_test(utils):
 def helper_test_list_sub_cmd(utils, sub_cmd):
     ret = utils.run([ 'tdnf', 'list', sub_cmd ])
     assert(ret['retval'] == 0)
-    ret = utils.run([ 'tdnf', 'list', sub_cmd, 'tdnf' ])
+    ret = utils.run([ 'tdnf', 'list', sub_cmd, utils.config["sglversion_pkgname"] ])
     assert(ret['retval'] == 0)
     ret = utils.run([ 'tdnf', 'list', sub_cmd, 'invalid_package' ])
     assert(ret['retval'] == 1011)
@@ -28,7 +28,7 @@ def helper_test_list_sub_cmd(utils, sub_cmd):
 def test_list_top(utils):
     ret = utils.run([ 'tdnf', 'list' ])
     assert(ret['retval'] == 0)
-    ret = utils.run([ 'tdnf', 'list', 'tdnf' ])
+    ret = utils.run([ 'tdnf', 'list', utils.config["sglversion_pkgname"] ])
     assert(ret['retval'] == 0)
     ret = utils.run([ 'tdnf', 'list', 'invalid_package' ])
     assert(ret['retval'] == 1011)

@@ -4,7 +4,7 @@ MAINTAINER csiddharth@vmware.com
 
 
 RUN dnf -q -y upgrade
-RUN dnf -q -y install gcc make cmake libcurl-devel rpm-devel libsolv-devel \
+RUN dnf -q -y install gcc make cmake libcurl-devel rpm-devel rpm-build libsolv-devel \
                       popt-devel sed createrepo_c glib2-devel libxml2 findutils \
                       python3-pytest python3-requests python3-urllib3 python3-pyOpenSSL \
                       python3 python3-devel
