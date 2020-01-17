@@ -13,6 +13,16 @@ set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CM
 #set(CPACK_RPM_PACKAGE_ARCHITECTURE "noarch")
 set(CPACK_GENERATOR "RPM")
 
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_IGNORE_FILES
+    /.git
+    .travis.yml
+    /ci/*
+    .pytest_cache/*
+    __pycache__/*
+    /build*
+)
+
 #set(CPACK_RPM_PRE_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/pre.sh")
 #set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/post.sh")
 include(CPack)
