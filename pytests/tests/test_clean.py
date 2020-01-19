@@ -19,28 +19,28 @@ def teardown_test(utils):
 
 def test_clean_no_args(utils):
     ret = utils.run([ 'tdnf', 'clean' ])
-    assert (ret['retval'] == 135)
+    assert (ret['retval'] == 903)
 
 def test_clean_invalid_arg(utils):
     ret = utils.run([ 'tdnf', 'clean', 'abcde' ])
-    assert (ret['retval'] == 133)
+    assert (ret['retval'] == 901)
 
 def test_clean_packages(utils):
     ret = utils.run([ 'tdnf', 'clean', 'packages' ])
-    assert (ret['retval'] == 248)
+    assert (ret['retval'] == 1016)
 
 def test_clean_dbcache(utils):
     ret = utils.run([ 'tdnf', 'clean', 'dbcache' ])
-    assert (ret['retval'] == 248)
+    assert (ret['retval'] == 1016)
 
 def test_clean_metadata(utils):
     ret = utils.run([ 'tdnf', 'clean', 'metadata' ])
-    assert (ret['retval'] == 248)
+    assert (ret['retval'] == 1016)
 
 def test_clean_expire_cache(utils):
     ret = utils.run([ 'tdnf', 'clean', 'expire-cache' ])
-    assert (ret['retval'] == 248)
+    assert (ret['retval'] == 1016)
 
 def test_clean_plugins(utils):
     ret = utils.run([ 'tdnf', 'clean', 'plugins' ])
-    assert (ret['retval'] == 248)
+    assert (ret['retval'] == 1016)

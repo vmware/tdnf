@@ -11,9 +11,13 @@ import pytest
 import json
 import subprocess
 import os
+import re
+import errno
 import shutil
 import ssl
 import requests
+import configparser
+from pprint import pprint
 from urllib.parse import urlparse
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
 
@@ -34,11 +38,21 @@ class JsonWrapper(object):
 
 
 class TestUtils(object):
+
     def __init__(self, cli_args):
         cur_dir = os.path.dirname(os.path.realpath(__file__))
         config_file = os.path.join(cur_dir, 'config.json')
         self.config = JsonWrapper(config_file).read()
-        self.config.update(cli_args)
+        if cli_args:
+            self.config.update(cli_args)
+        script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
+        self.run([ 'sh', script, self.config['repo_path'] ])
+        self.tdnf_config = configparser.ConfigParser()
+        self.tdnf_config.read(os.path.join(self.config['repo_path'], 'tdnf.conf'))
+
+    def assert_file_exists(self, file_path):
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
 
     def check_package(self, package):
         """ Check if a package exists """
@@ -48,11 +62,21 @@ class TestUtils(object):
                 return True
         return False
 
-    def remove_package(self, package):
-        ret = self.run([ 'tdnf', 'erase', '-y', package ])
-        if ret['retval'] != 0:
-            return False
-        return True
+    def erase_package(self, pkgname, pkgversion=None):
+        if pkgversion:
+            pkg = pkgname + '-' + pkgversion
+        else:
+            pkg = pkgname
+        self.run([ 'tdnf', 'erase', '-y', pkg ])
+        assert(self.check_package(pkgname) == False)
+
+    def install_package(utils, pkgname, pkgversion=None):
+        if pkgversion:
+            pkg = pkgname + '-' + pkgversion
+        else:
+            pkg = pkgname
+        utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkg ])
+        assert(utils.check_package(pkgname) == True)
 
     def _requests_get(self, url, verify):
         try:
@@ -94,36 +118,39 @@ class TestUtils(object):
         r.raw.decode_content = True
         with open(out, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
-
         return True, None
 
     def run(self, cmd):
-        if cmd[0] is 'tdnf' and self.config['build_dir']:
-            cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
+        if cmd[0] is 'tdnf':
+            if 'build_dir' in self.config:
+                cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
+            if cmd[1] is not '--config':
+                cmd.insert(1, '-c')
+                cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
         use_shell = not isinstance(cmd, list)
         process = subprocess.Popen(cmd, shell=use_shell,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        process.wait()
+        #process.wait()
         out, err = process.communicate()
+        stdout = out.decode().strip()
+        stderr = err.decode().strip()
+        retval = process.returncode
+        capture = re.match(r'^Error\((\d+)\) :', stderr)
+        if capture:
+            retval = int(capture.groups()[0])
+
         ret = {}
-        ret['stdout'] = []
-        ret['stdout'] = []
-        ret['retval'] = process.returncode
-        if out:
-            ret['stdout'] = out.decode().split('\n')
-        if err:
-            ret['strerr'] = err.decode().split('\n')
-
+        if stdout:
+            ret['stdout'] = stdout.split('\n')
+        else:
+            ret['stdout'] = []
+        if stderr:
+            ret['stderr'] = stderr.split('\n')
+        else:
+            ret['stderr'] = []
+        ret['retval'] = retval
         return ret
-
-def backup_config_files():
-    # Backup /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
-    pass
-
-def restore_config_files():
-    # Restore /etc/yum.repos.d/* and /etc/tdnf/tdnf.conf
-    pass
 
 def pytest_addoption(parser):
     group = parser.getgroup("tdnf", "tdnf specifc options")
@@ -135,12 +162,12 @@ def pytest_addoption(parser):
 @pytest.fixture(scope='session')
 def tdnf_args(request):
     arg = {}
-    arg['build_dir'] = request.config.getoption("--build-dir")
+    build_dir = request.config.getoption("--build-dir")
+    if build_dir:
+        arg['build_dir'] = build_dir
     return arg
 
 @pytest.fixture(scope='session')
 def utils(tdnf_args):
     test_utils = TestUtils(tdnf_args)
-    backup_config_files()
-    yield test_utils
-    restore_config_files()
+    return test_utils
