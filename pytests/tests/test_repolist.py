@@ -38,3 +38,8 @@ def test_repolist_disabled(utils):
 def test_repolist_invalid(utils):
     ret = utils.run([ 'tdnf', 'repolist', 'invalid_repo' ])
     assert(ret['retval'] == 901)
+
+#memcheck
+def test_repolist_memcheck(utils):
+    ret = utils.run_memcheck(['tdnf', 'repolist'])
+    assert(ret['retval'] == 0)

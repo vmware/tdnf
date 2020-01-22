@@ -17,6 +17,7 @@ import shutil
 import ssl
 import requests
 import configparser
+import distutils.spawn
 from pprint import pprint
 from urllib.parse import urlparse
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
@@ -49,6 +50,33 @@ class TestUtils(object):
         self.run([ 'sh', script, self.config['repo_path'] ])
         self.tdnf_config = configparser.ConfigParser()
         self.tdnf_config.read(os.path.join(self.config['repo_path'], 'tdnf.conf'))
+        self.config['valgrind_enabled'] = False
+        #check execution environment and enable valgrind if suitable
+        self.check_valgrind()
+
+    def _version_number(self, version):
+        version_parts = version.split('.')
+        return version_parts[0] * 1000 + version_parts[1] * 100 + version_parts[2]
+
+    #valgrind versions less than minimum required might not
+    #support all the options specified or might have known
+    #errors
+    def check_valgrind(self):
+        valgrind = distutils.spawn.find_executable('valgrind')
+        if not valgrind:
+            self.config['valgrind_disabled_reason'] = 'valgrind not found'
+        else:
+            stream = os.popen(valgrind + ' --version') #nosec
+            valgrind_version = stream.read()
+            if valgrind_version:
+                valgrind_version = valgrind_version.replace('valgrind-', '')
+                valgrind_minimum_version = self.config['valgrind_minimum_version']
+                if self._version_number(valgrind_version) >= \
+                   self._version_number(valgrind_minimum_version):
+                    self.config['valgrind_enabled'] = True
+                else:
+                    self.config['valgrind_disabled_reason'] = \
+                    'valgrind minimum version required: ' + valgrind_minimum_version
 
     def assert_file_exists(self, file_path):
         if not os.path.isfile(file_path):
@@ -120,19 +148,41 @@ class TestUtils(object):
             shutil.copyfileobj(r.raw, f)
         return True, None
 
-    def run(self, cmd):
+    def _decorate_tdnf_cmd_for_test(self, cmd):
         if cmd[0] is 'tdnf':
             if 'build_dir' in self.config:
                 cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
             if cmd[1] is not '--config':
                 cmd.insert(1, '-c')
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
+
+    def _skip_if_valgrind_disabled(self):
+        if  not self.config['valgrind_enabled']:
+            pytest.skip(self.config['valgrind_disabled_reason'])
+
+    def run_memcheck(self, cmd):
+        self._skip_if_valgrind_disabled()
+        self._decorate_tdnf_cmd_for_test(cmd)
+        memcheck_cmd = ['valgrind',
+                        '--leak-check=full',
+                        '--exit-on-first-error=yes',
+                        '--error-exitcode=1']
+        return self._run(memcheck_cmd + cmd, retvalonly=True)
+
+    def run(self, cmd):
+        self._decorate_tdnf_cmd_for_test(cmd)
+        return self._run(cmd)
+
+    def _run(self, cmd, retvalonly=False):
         use_shell = not isinstance(cmd, list)
-        process = subprocess.Popen(cmd, shell=use_shell,
+        process = subprocess.Popen(cmd, shell=use_shell, #nosec
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         #process.wait()
         out, err = process.communicate()
+        if retvalonly:
+            return {'retval':process.returncode}
+
         stdout = out.decode().strip()
         stderr = err.decode().strip()
         retval = process.returncode
