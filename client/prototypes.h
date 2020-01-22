@@ -898,4 +898,14 @@ TDNFGetSkipProblemOption(
     TDNF_SKIPPROBLEM_TYPE *pdwSkipProblem
     );
 
+/* plugins.c */
+uint32_t
+TDNFLoadPlugins(
+    PTDNF pTdnf
+    );
+
+void
+TDNFFreePlugins(
+    PTDNF_PLUGIN pPlugins
+    );
 #endif /* __CLIENT_PROTOTYPES_H__ */

@@ -699,6 +699,9 @@ TDNFOpenHandle(
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFLoadPlugins(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = SolvInitSack(
                   &pSack,
                   pTdnf->pConf->pszCacheDir,
@@ -1257,6 +1260,7 @@ TDNFCloseHandle(
         {
             SolvFreeSack(pTdnf->pSack);
         }
+        TDNFFreePlugins(pTdnf->pPlugins);
         TDNFFreeMemory(pTdnf);
     }
 }

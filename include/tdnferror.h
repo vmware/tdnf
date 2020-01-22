@@ -126,6 +126,10 @@ extern "C" {
 #define ERROR_TDNF_RPM_GPG_NO_MATCH          1514
 #define ERROR_TDNF_RPM_CHECK                 1515
 #define ERROR_TDNF_SETOPT_NO_EQUALS          1516
+#define ERROR_TDNF_PLUGINS_DISABLED          1517
+#define ERROR_TDNF_NO_PLUGIN_CONF_DIR        1518
+#define ERROR_TDNF_PLUGIN_LOAD_ERROR         1519
+#define ERROR_TDNF_OPT_NOT_FOUND             1520
 
 //RPM Transaction
 #define ERROR_TDNF_TRANS_INCOMPLETE     1525

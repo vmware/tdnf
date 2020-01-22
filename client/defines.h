@@ -114,6 +114,11 @@ typedef enum
 #define TDNF_CONF_KEY_DISTROVERPKG        "distroverpkg"
 #define TDNF_CONF_KEY_DISTROARCHPKG       "distroarchpkg"
 #define TDNF_CONF_KEY_MAX_STRING_LEN      "maxstringlen"
+#define TDNF_CONF_KEY_PLUGINS             "plugins"
+#define TDNF_CONF_KEY_NO_PLUGINS          "noplugins"
+#define TDNF_CONF_KEY_PLUGIN_PATH         "pluginpath"
+#define TDNF_CONF_KEY_PLUGIN_CONF_PATH    "pluginconfpath"
+#define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"
@@ -144,6 +149,16 @@ typedef enum
 //var names
 #define TDNF_VAR_RELEASEVER               "$releasever"
 #define TDNF_VAR_BASEARCH                 "$basearch"
+/* dummy setopt values */
+#define TDNF_SETOPT_NAME_DUMMY             "opt.dummy.name"
+#define TDNF_SETOPT_VALUE_DUMMY            "opt.dummy.value"
+/* plugin defines */
+#define TDNF_DEFAULT_PLUGINS_ENABLED      0
+#define TDNF_DEFAULT_PLUGIN_PATH          "/usr/lib/tdnf-plugins"
+#define TDNF_DEFAULT_PLUGIN_CONF_PATH     "/etc/tdnf/pluginconf.d"
+#define TDNF_PLUGIN_CONF_EXT              ".conf"
+#define TDNF_PLUGIN_CONF_EXT_LEN          5
+#define TDNF_PLUGIN_CONF_MAIN_SECTION     "main"
 
 #define TDNF_UNKNOWN_ERROR_STRING "Unknown error"
 #define TDNF_ERROR_TABLE \
@@ -204,4 +219,5 @@ typedef enum
     {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
     {ERROR_TDNF_SELF_ERASE, "ERROR_TDNF_SELF_ERASE", "The operation would result in removing the protected package : tdnf"},\
     {ERROR_TDNF_PERM, "ERROR_TDNF_PERM", "Operation not permitted. You have to be root."},\
+    {ERROR_TDNF_OPT_NOT_FOUND, "ERROR_TDNF_OPT_NOT_FOUND", "A required option was not found"},\
 };
