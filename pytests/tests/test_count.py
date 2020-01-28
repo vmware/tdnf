@@ -22,3 +22,8 @@ def teardown_test(utils):
 def test_count(utils):
     ret = utils.run([ 'tdnf', 'count' ])
     assert(ret['retval'] == 0)
+
+#memcheck
+def test_count_memcheck(utils):
+    ret = utils.run_memcheck(['tdnf', 'count'])
+    assert(ret['retval'] == 0)

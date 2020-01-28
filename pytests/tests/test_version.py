@@ -22,3 +22,8 @@ def test_version(utils):
     ret = utils.run([ 'tdnf', '--version' ])
     assert(ret['retval'] == 0)
     assert(ret['stdout'][0] == expected_version_string)
+
+#memcheck
+def test_version_memcheck(utils):
+    ret = utils.run_memcheck([ 'tdnf', '--version' ])
+    assert(ret['retval'] == 0)
