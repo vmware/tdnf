@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -391,30 +391,6 @@ TDNFConfGetValue(
     );
 
 uint32_t
-TDNFReadKeyValue(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    const char* pszDefault,
-    char** ppszValue
-    );
-
-uint32_t
-TDNFReadKeyValueBoolean(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    int nDefault,
-    int* pnValue
-    );
-
-uint32_t
-TDNFReadKeyValueInt(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    int nDefault,
-    int* pnValue
-    );
-
-uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,
     const char* pszConfFile,
@@ -551,6 +527,7 @@ TDNFReplaceRepoMDFile(
 //repolist.c
 uint32_t
 TDNFLoadReposFromFile(
+    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA_INTERNAL* ppRepos
     );
@@ -904,8 +881,41 @@ TDNFLoadPlugins(
     PTDNF pTdnf
     );
 
+uint32_t
+TDNFPluginRaiseEvent(
+    PTDNF pTdnf,
+    PTDNF_EVENT_CONTEXT pContext
+    );
+
 void
 TDNFFreePlugins(
     PTDNF_PLUGIN pPlugins
     );
+
+void
+TDNFShowPluginError(
+    PTDNF pTdnf,
+    uint32_t nErrorCode
+    );
+/* eventdata.c */
+
+uint32_t
+TDNFAddEventDataString(
+    PTDNF_EVENT_CONTEXT pContext,
+    const char *pcszName,
+    const char *pcszStr
+    );
+
+uint32_t
+TDNFAddEventDataPtr(
+    PTDNF_EVENT_CONTEXT pContext,
+    const char *pcszName,
+    const void *pPtr
+    );
+
+void
+TDNFFreeEventData(
+    PTDNF_EVENT_DATA pData
+    );
+
 #endif /* __CLIENT_PROTOTYPES_H__ */

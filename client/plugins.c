@@ -23,11 +23,18 @@ _TDNFLoadPlugins(
     PTDNF_PLUGIN *ppPlugins
     );
 
+static
+uint32_t
+_TDNFInitPlugins(
+    PTDNF pTdnf,
+    PTDNF_PLUGIN pPlugins
+    );
+
 /*
- * plugins are c libraries which are dynamically loaded
+ * Plugins are c libraries which are dynamically loaded.
  * if noplugins is set, this function returns immediately
- * without further processing
- * files with extension .conf are enumerated from the config
+ * without further processing.
+ * Files with extension ".conf" are enumerated from the config
  * directory.
  * If a plugin is disabled by command line override,
  * the config is skipped.
@@ -56,6 +63,9 @@ TDNFLoadPlugins(
     dwError = _TDNFLoadPlugins(pTdnf->pArgs, &pPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = _TDNFInitPlugins(pTdnf, pPlugins);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pTdnf->pPlugins = pPlugins;
 
 cleanup:
@@ -72,12 +82,64 @@ error:
 
 static
 uint32_t
+_TDNFInitPlugins(
+    PTDNF pTdnf,
+    PTDNF_PLUGIN pPlugins
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PLUGIN pPlugin = NULL;
+    TDNF_EVENT_CONTEXT stContext = {0};
+
+    if (!pTdnf || !pPlugins)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* plugin event init */
+    stContext.nEvent = MAKE_PLUGIN_EVENT(TDNF_PLUGIN_EVENT_TYPE_INIT,
+                           TDNF_PLUGIN_EVENT_STATE_CREATE,
+                           TDNF_PLUGIN_EVENT_PHASE_START);
+    dwError = TDNFAddEventDataPtr(
+                  &stContext,
+                  TDNF_EVENT_ITEM_TDNF_HANDLE,
+                  pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(pPlugin = pPlugins; pPlugin; pPlugin = pPlugin->pNext)
+    {
+        if (!pPlugin->nEnabled)
+        {
+            continue;
+        }
+
+        dwError = pPlugin->stInterface.pFnInitialize(NULL, &pPlugin->pHandle);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = pPlugin->stInterface.pFnEvent(pPlugin->pHandle, &stContext);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    TDNFFreeEventData(stContext.pData);
+    return dwError;
+
+error:
+    TDNFShowPluginError(pTdnf, dwError);
+    goto cleanup;
+}
+
+static
+uint32_t
 _TDNFGetPluginSettings(
     struct plugin_config *pConf
     )
 {
     uint32_t dwError = 0;
     int nHasOpt = 0;
+    char *pszConfPath = NULL;
+    char *pszPath = NULL;
 
     if(!pConf)
     {
@@ -96,23 +158,43 @@ _TDNFGetPluginSettings(
 
     dwError = TDNFGetOptWithDefault(
                   pConf->pArgs, TDNF_CONF_KEY_PLUGIN_CONF_PATH,
-                  TDNF_DEFAULT_PLUGIN_CONF_PATH, &pConf->pszConfPath);
+                  TDNF_DEFAULT_PLUGIN_CONF_PATH, &pszConfPath);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetOptWithDefault(
                   pConf->pArgs, TDNF_CONF_KEY_PLUGIN_PATH,
-                  TDNF_DEFAULT_PLUGIN_PATH, &pConf->pszPath);
+                  TDNF_DEFAULT_PLUGIN_PATH, &pszPath);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    TDNF_SAFE_FREE_MEMORY(pConf->pszConfPath);
+    TDNF_SAFE_FREE_MEMORY(pConf->pszPath);
+
+    pConf->pszConfPath = pszConfPath;
+    pConf->pszPath = pszPath;
 
 cleanup:
     return dwError;
 
 error:
-    TDNF_SAFE_FREE_MEMORY(pConf->pszConfPath);
-    TDNF_SAFE_FREE_MEMORY(pConf->pszPath);
-    pConf->pszConfPath = NULL;
-    pConf->pszPath = NULL;
+    TDNF_SAFE_FREE_MEMORY(pszConfPath);
+    TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
+}
+
+static
+void
+_TDNFClosePlugin(
+    PTDNF_PLUGIN pPlugin
+    )
+{
+    if (pPlugin->stInterface.pFnCloseHandle)
+    {
+        pPlugin->stInterface.pFnCloseHandle(pPlugin->pHandle);
+    }
+    if (pPlugin->pModule)
+    {
+        dlclose(pPlugin->pModule);
+    }
 }
 
 static
@@ -125,7 +207,7 @@ _TDNFFreePlugin(
     {
         if (pPlugin->pHandle)
         {
-            dlclose(pPlugin->pHandle);
+            _TDNFClosePlugin(pPlugin);
         }
         TDNF_SAFE_FREE_MEMORY(pPlugin->pszName);
         TDNFFreeMemory(pPlugin);
@@ -372,6 +454,7 @@ _TDNFLoadPluginLib(
     )
 {
     uint32_t dwError = 0;
+    PFN_TDNF_PLUGIN_LOAD_INTERFACE pFnLoadInterface = NULL;
 
     if (IsNullOrEmptyString(pszLib) || !pPlugin)
     {
@@ -380,7 +463,7 @@ _TDNFLoadPluginLib(
     }
 
     /* exists */
-    if (pPlugin->pHandle)
+    if (pPlugin->pModule)
     {
         goto cleanup;
     }
@@ -388,23 +471,54 @@ _TDNFLoadPluginLib(
     /* clear error */
     dlerror();
 
-    pPlugin->pHandle = dlopen(pszLib, RTLD_NOW);
-    if(!pPlugin->pHandle)
+    pPlugin->pModule = dlopen(pszLib, RTLD_NOW);
+    if(!pPlugin->pModule)
     {
         fprintf(stderr, "Error loading plugin: %s\n", pszLib);
         dwError = ERROR_TDNF_PLUGIN_LOAD_ERROR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    pFnLoadInterface = dlsym(pPlugin->pModule,
+                             TDNF_FN_NAME_PLUGIN_LOAD_INTERFACE);
+    if (!pFnLoadInterface)
+    {
+        dwError = ERROR_TDNF_PLUGIN_LOAD_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = pFnLoadInterface(&pPlugin->stInterface);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /*
+     * final validation for all the function pointers.
+     * if any fail to populate, plugin will be disabled.
+    */
+    if (!pPlugin->stInterface.pFnInitialize ||
+        !pPlugin->stInterface.pFnEventsNeeded ||
+        !pPlugin->stInterface.pFnGetErrorString ||
+        !pPlugin->stInterface.pFnEvent ||
+        !pPlugin->stInterface.pFnCloseHandle)
+    {
+        dwError = ERROR_TDNF_PLUGIN_LOAD_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    printf("Loaded plugin: %s\n", pPlugin->pszName);
+
 cleanup:
     return dwError;
 
 error:
     fprintf(stderr, "Error: %d dlerror: %s\n", dwError, dlerror());
-    if (pPlugin && pPlugin->pHandle)
+    if (pPlugin)
     {
-        dlclose(pPlugin->pHandle);
-        pPlugin->pHandle = NULL;
+        if (pPlugin->pModule)
+        {
+            dlclose(pPlugin->pModule);
+            pPlugin->pModule = NULL;
+        }
+        pPlugin->nEnabled = 0;
     }
     dwError = 0; /* okay to proceed without any or all plugins */
     goto cleanup;
@@ -512,4 +626,108 @@ TDNFFreePlugins(
         _TDNFFreePlugin(pPlugins);
         pPlugins = pPlugin;
     }
+}
+
+uint32_t
+TDNFPluginRaiseEvent(
+    PTDNF pTdnf,
+    PTDNF_EVENT_CONTEXT pContext
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PLUGIN pPlugin = NULL;
+
+    if (!pTdnf || !pContext)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(pPlugin = pTdnf->pPlugins; pPlugin; pPlugin = pPlugin->pNext)
+    {
+        if (pPlugin->nEnabled == 0)
+        {
+            continue;
+        }
+
+        dwError = pPlugin->stInterface.pFnEvent(pPlugin->pHandle, pContext);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    TDNFShowPluginError(pTdnf, dwError);
+    goto cleanup;
+}
+
+void
+TDNFShowPluginError(
+    PTDNF pTdnf,
+    uint32_t nErrorCode
+    )
+{
+    char *pszError = NULL;
+    if (!pTdnf || nErrorCode == 0)
+    {
+        goto cleanup;
+    }
+
+    if (!TDNFGetPluginErrorString(pTdnf, nErrorCode, &pszError))
+    {
+        fprintf(stderr, "Plugin error: %s\n", pszError);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszError);
+    return;
+}
+
+uint32_t
+TDNFGetPluginErrorString(
+    PTDNF pTdnf,
+    uint32_t nErrorCode,
+    char **ppszError
+    )
+{
+    uint32_t dwError = 0;
+    char *pszError = 0;
+    PTDNF_PLUGIN pPlugin = NULL;
+
+    if (!pTdnf || nErrorCode == 0 || !ppszError)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* run till an enabled plugin returns error or all plugins queried */
+    for(pPlugin = pTdnf->pPlugins; pPlugin && !pszError; pPlugin = pPlugin->pNext)
+    {
+        if (pPlugin->nEnabled == 0)
+        {
+            continue;
+        }
+
+        dwError = pPlugin->stInterface.pFnGetErrorString(
+                      pPlugin->pHandle,
+                      nErrorCode,
+                      &pszError);
+        if (dwError == ERROR_TDNF_NO_PLUGIN_ERROR)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (IsNullOrEmptyString(pszError))
+    {
+        dwError = ERROR_TDNF_NO_PLUGIN_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    *ppszError = pszError;
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszError);
+    goto cleanup;
 }

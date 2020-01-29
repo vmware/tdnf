@@ -3,6 +3,7 @@
     "project_version": "@PROJECT_VERSION@",
     "repo_path": "@CMAKE_CURRENT_BINARY_DIR@/repo",
     "test_path": "@CMAKE_CURRENT_SOURCE_DIR@/pytests",
+    "plugin_path": "@CMAKE_CURRENT_BINARY_DIR@/plugins/lib",
     "sglversion_pkgname": "tdnf-test-one",
     "mulversion_pkgname": "tdnf-test-multiversion",
     "mulversion_lower": "1.0.1-1",

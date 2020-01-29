@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2020 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
@@ -88,6 +88,7 @@ list(APPEND LIB_TDNF_CLIENT_SRC
     "client/clean.c"
     "client/client.c"
     "client/config.c"
+    "client/eventdata.c"
     "client/goal.c"
     "client/gpgcheck.c"
     "client/init.c"
@@ -252,3 +253,4 @@ add_custom_target(package_pytdnf
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/python"
 )
 
+add_subdirectory("${PROJECT_SOURCE_DIR}/plugins")

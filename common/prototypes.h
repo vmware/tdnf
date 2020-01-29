@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -104,6 +104,30 @@ TDNFConfigGetSection(
     PCONF_DATA pData,
     const char *pszGroup,
     PCONF_SECTION *ppSection
+    );
+
+uint32_t
+TDNFReadKeyValue(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    const char* pszDefault,
+    char** ppszValue
+    );
+
+uint32_t
+TDNFReadKeyValueBoolean(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    int nDefault,
+    int* pnValue
+    );
+
+uint32_t
+TDNFReadKeyValueInt(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    int nDefault,
+    int* pnValue
     );
 
 void
