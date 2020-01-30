@@ -40,6 +40,9 @@ TDNFCliShowHelp(
     printf("           [--debugsolver]\n");
     printf("           [--disablerepo=<repoid>]\n");
     printf("           [--enablerepo=<repoid>]\n");
+    printf("           [--noplugins]\n");
+    printf("           [--enableplugin=<plugin_name>]\n");
+    printf("           [--disableplugin=<plugin_name>]\n");
     printf("           [--rpmverbosity [debug level name]] [-v] [-y] [--assumeno]\n");
     printf("           [--version] [--installroot [path]]\n");
     printf("           [--nogpgcheck]\n");

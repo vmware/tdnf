@@ -100,7 +100,7 @@ _handle_curl_cb(
     }
 
 error:
-    if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
+    if (dwError == ERROR_TDNF_OPT_NOT_FOUND)
     {
         dwError = 0;/* callback not set */
     }

@@ -642,7 +642,7 @@ TDNFGetCmdOpt(
 
     if (!nFound)
     {
-        dwError = ERROR_TDNF_FILE_NOT_FOUND;
+        dwError = ERROR_TDNF_OPT_NOT_FOUND;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

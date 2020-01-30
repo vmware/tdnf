@@ -57,7 +57,10 @@ static struct option pstOptions[] =
     {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
-    {"skipdigest", no_argument, 0, 0},                     //--skipdigest to skip verifying RPM digest
+    {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
+    {"noplugins",     no_argument, 0, 0},                  //--noplugins
+    {"disableplugin", required_argument, 0, 0},            //--disableplugin
+    {"enableplugin",  required_argument, 0, 0},            //--enableplugin
     {0, 0, 0, 0}
 };
 
@@ -403,6 +406,31 @@ ParseOption(
         {
             dwError = ERROR_TDNF_CLI_SETOPT_NO_EQUALS;
         }
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if (!strcasecmp(pszName, "noplugins"))
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      pszName,
+                      "1");
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "enableplugin"))
+    {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                                      CMDOPT_ENABLEPLUGIN,
+                                      pszName,
+                                      optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if(!strcasecmp(pszName, "disableplugin"))
+    {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                                      CMDOPT_DISABLEPLUGIN,
+                                      pszName,
+                                      optarg);
         BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:

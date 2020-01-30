@@ -20,6 +20,14 @@
 
 #pragma once
 
+typedef struct _TDNF_PLUGIN_
+{
+    char *pszName;
+    int nEnabled;
+    void *pHandle;
+    struct _TDNF_PLUGIN_ *pNext;
+}TDNF_PLUGIN, *PTDNF_PLUGIN;
+
 typedef struct _TDNF_REPO_DATA_INTERNAL_
 {
     int nEnabled;
@@ -43,6 +51,7 @@ typedef struct _TDNF_
     PTDNF_CMD_ARGS pArgs;
     PTDNF_CONF pConf;
     PTDNF_REPO_DATA_INTERNAL pRepos;
+    PTDNF_PLUGIN pPlugins;
 }TDNF;
 
 typedef struct _TDNF_CACHED_RPM_ENTRY

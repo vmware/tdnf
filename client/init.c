@@ -103,6 +103,15 @@ TDNFCloneCmdArgs(
                                    &pCmdArgs->pSetOpt);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else /* if there are no setopt values, prime it to ensure non null */
+    {
+        dwError = AddSetOptWithValues(
+                      pCmdArgs,
+                      CMDOPT_KEYVALUE,
+                      TDNF_SETOPT_NAME_DUMMY,
+                      TDNF_SETOPT_VALUE_DUMMY);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     *ppCmdArgs = pCmdArgs;
 

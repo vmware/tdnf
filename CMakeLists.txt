@@ -9,7 +9,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(tdnf VERSION 2.0.0 LANGUAGES C)
+project(tdnf VERSION 2.1.0 LANGUAGES C)
 set(PROJECT_YEAR 2019)
 
 # Ensure correct directory paths are used for installation
@@ -47,7 +47,7 @@ add_c_compiler_flag(-std=gnu99)
 
 add_c_compiler_flag(-O3 RELEASE)
 add_c_compiler_flag(-s RELEASE)
-add_c_compiler_flag(-O0 DEBUG)
+add_c_compiler_flag(-g DEBUG)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -92,6 +92,7 @@ list(APPEND LIB_TDNF_CLIENT_SRC
     "client/gpgcheck.c"
     "client/init.c"
     "client/packageutils.c"
+    "client/plugins.c"
     "client/repo.c"
     "client/remoterepo.c"
     "client/repolist.c"

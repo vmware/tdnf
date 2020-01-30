@@ -20,6 +20,13 @@
 
 #include "includes.h"
 
+static
+uint32_t
+_TDNFConfigReadPluginSettings(
+    PCONF_SECTION pSection,
+    PTDNF pTdnf
+    );
+
 int
 TDNFConfGetRpmVerbosity(
     PTDNF pTdnf
@@ -119,6 +126,10 @@ TDNFReadConfig(
                   pConf);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = _TDNFConfigReadPluginSettings(
+                  pSection,
+                  pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pConf = pConf;
 
@@ -492,5 +503,93 @@ cleanup:
 
 error:
     TDNF_SAFE_FREE_MEMORY(pszDst);
+    goto cleanup;
+}
+
+/*
+ * Read the following settings from tdnf.conf
+ * plugins - 0/1. 0 = no plugins. default is 0
+ * pluginpath - path to look for plugin libraries. default /usr/lib/tdnf-plugins
+ * pluginconfpath - path to look for plugin config files. default /etc/tdnf/pluginconf.d
+*/
+static
+uint32_t
+_TDNFConfigReadPluginSettings(
+    PCONF_SECTION pSection,
+    PTDNF pTdnf
+    )
+{
+    uint32_t dwError = 0;
+    char *pszValue = NULL;
+    int nPlugins = 0;
+
+    if(!pSection || !pTdnf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* if there is a command line override to disable plugins, exit early */
+    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_NO_PLUGINS, &nPlugins);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (nPlugins)
+    {
+        goto cleanup;
+    }
+
+    /* plugins option to enable or disable plugins. default 0 */
+    dwError = TDNFReadKeyValueInt(
+                  pSection,
+                  TDNF_CONF_KEY_PLUGINS,
+                  TDNF_DEFAULT_PLUGINS_ENABLED,
+                  &nPlugins);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /*
+     * config file having a plugins=0 setting is the same as
+     * --noplugins from cmd line
+    */
+    if (nPlugins == 0)
+    {
+        dwError = TDNFSetOpt(
+                      pTdnf->pArgs,
+                      TDNF_CONF_KEY_NO_PLUGINS, "1");
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        /* no further reads required */
+        goto cleanup;
+    }
+
+    /* plugin conf path - default to /etc/tdnf/pluginconf.d */
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  TDNF_CONF_KEY_PLUGIN_CONF_PATH,
+                  TDNF_DEFAULT_PLUGIN_CONF_PATH,
+                  &pszValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_CONF_PATH, pszValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    TDNFFreeMemory(pszValue);
+    pszValue = NULL;
+
+    /* plugin path - default to /usr/lib/tdnf-plugins */
+    dwError = TDNFReadKeyValue(
+                  pSection,
+                  TDNF_CONF_KEY_PLUGIN_PATH,
+                  TDNF_DEFAULT_PLUGIN_PATH,
+                  &pszValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_PATH, pszValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszValue);
+    return dwError;
+
+error:
     goto cleanup;
 }
