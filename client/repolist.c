@@ -50,7 +50,7 @@ TDNFLoadRepoData(
     if(pDir == NULL)
     {
         dwError = ERROR_TDNF_REPO_DIR_OPEN;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     while ((pEnt = readdir (pDir)) != NULL )

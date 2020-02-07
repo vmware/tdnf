@@ -46,4 +46,4 @@ def test_config_list_with_disable_repos(utils):
 def test_config_invaid_repodir(utils):
     utils.run([ 'sed', '-i', 's#repodir=/tmp/myrepo#repodir=/etc/invalid#g', '/tmp/myrepo/mytdnf.conf' ])
     ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
-    assert(ret['retval'] == 2605)
+    assert(ret['retval'] == 1005)
