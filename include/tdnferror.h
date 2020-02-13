@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -131,10 +131,16 @@ extern "C" {
 #define ERROR_TDNF_NO_PLUGIN_CONF_DIR        1518
 #define ERROR_TDNF_PLUGIN_LOAD_ERROR         1519
 #define ERROR_TDNF_OPT_NOT_FOUND             1520
+#define ERROR_TDNF_PLUGIN_NO_MORE_EVENTS     1521
+#define ERROR_TDNF_NO_PLUGIN_ERROR           1522
 
 //RPM Transaction
 #define ERROR_TDNF_TRANS_INCOMPLETE     1525
 #define ERROR_TDNF_TRANS_PKG_NOT_FOUND  1526
+
+/* event context */
+#define ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND      1551
+#define ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE   1552
 
 // No search results found
 #define ERROR_TDNF_NO_SEARCH_RESULTS    1599
@@ -147,6 +153,8 @@ extern "C" {
 #define ERROR_TDNF_FILE_NOT_FOUND       (ERROR_TDNF_SYSTEM_BASE + ENOENT)
 #define ERROR_TDNF_ACCESS_DENIED        (ERROR_TDNF_SYSTEM_BASE + EACCES)
 #define ERROR_TDNF_ALREADY_EXISTS       (ERROR_TDNF_SYSTEM_BASE + EEXIST)
+
+#define ERROR_TDNF_PLUGIN_BASE          2000
 
 #define CMD_INSTALL "install"
 

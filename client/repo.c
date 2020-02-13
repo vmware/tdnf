@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -413,6 +413,53 @@ error:
 }
 
 uint32_t
+TDNFEventRepoMDDownloadEnd(
+    PTDNF pTdnf,
+    const char *pcszRepoId,
+    const char *pcszRepoMDUrl,
+    const char *pcszRepoMDFile
+    )
+{
+    uint32_t dwError = 0;
+    TDNF_EVENT_CONTEXT stContext = {0};
+
+    if (!pTdnf ||
+        IsNullOrEmptyString(pcszRepoId) ||
+        IsNullOrEmptyString(pcszRepoMDUrl) ||
+        IsNullOrEmptyString(pcszRepoMDFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    stContext.nEvent = MAKE_PLUGIN_EVENT(
+                           TDNF_PLUGIN_EVENT_TYPE_REPO_MD,
+                           TDNF_PLUGIN_EVENT_STATE_DOWNLOAD,
+                           TDNF_PLUGIN_EVENT_PHASE_END);
+    dwError = TDNFAddEventDataString(&stContext,
+                  TDNF_EVENT_ITEM_REPO_ID,
+                  pcszRepoId);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFAddEventDataString(&stContext,
+                  TDNF_EVENT_ITEM_REPO_MD_URL,
+                  pcszRepoMDUrl);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFAddEventDataString(&stContext,
+                  TDNF_EVENT_ITEM_REPO_MD_FILE,
+                  pcszRepoMDFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPluginRaiseEvent(pTdnf, &stContext);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNFFreeEventData(stContext.pData);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
     PTDNF_REPO_DATA_INTERNAL pRepoData,
@@ -427,8 +474,11 @@ TDNFGetRepoMD(
     char *pszTmpRepoMDFile = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
-    unsigned char pszCookie[SOLV_COOKIE_LEN];
-    unsigned char pszTmpCookie[SOLV_COOKIE_LEN];
+    unsigned char pszCookie[SOLV_COOKIE_LEN] = {0};
+    unsigned char pszTmpCookie[SOLV_COOKIE_LEN] = {0};
+    int nNeedDownload = 0;
+    int nNewRepoMDFile = 0;
+    int nReplaceRepoMD = 0;
 
     if(!pTdnf ||
        !pRepoData ||
@@ -470,24 +520,37 @@ TDNFGetRepoMD(
     dwError = TDNFAllocateString(pRepoData->pszId, &pRepoMDRel->pszRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    // Calculate sha1sum for the existing repomd xml and compare with the new downloaded
-    // repomd xml file for refresh / makecache commands
-    if (pTdnf->pArgs->nRefresh && access(pszRepoMDFile, F_OK) == 0)
+    /* if repomd.xml file is not present, set flag to download */
+    if (access(pszRepoMDFile, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        nNeedDownload = 1;
+    }
+    /* if refresh flag is set, get shasum of existing repomd file */
+    else if (pTdnf->pArgs->nRefresh)
     {
         dwError = SolvCalculateCookieForRepoMD(pszRepoMDFile, pszCookie);
         BAIL_ON_TDNF_ERROR(dwError);
+        nNeedDownload = 1;
+    }
 
+    /* download repomd.xml to tmp */
+    if(nNeedDownload)
+    {
+        if(!pTdnf->pArgs->nQuiet)
+        {
+           printf("Refreshing metadata for: '%s'\n",
+                    pRepoData->pszName);
+        }
+        /* always download to tmp */
         dwError = TDNFAllocateStringPrintf(
                       &pszTmpRepoDataDir,
                       "%s/tmp",
                       pszRepoDataDir);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFAllocateStringPrintf(
-                      &pszTmpRepoMDFile,
-                      "%s/%s",
-                      pszTmpRepoDataDir,
-                      TDNF_REPO_METADATA_FILE_NAME);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFUtilsMakeDirs(pszTmpRepoDataDir);
@@ -495,6 +558,13 @@ TDNFGetRepoMD(
         {
             dwError = 0;
         }
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pszTmpRepoMDFile,
+                      "%s/%s",
+                      pszTmpRepoDataDir,
+                      TDNF_REPO_METADATA_FILE_NAME);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFDownloadFile(
@@ -505,45 +575,37 @@ TDNFGetRepoMD(
                       pRepoData->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-
-        dwError = SolvCalculateCookieForRepoMD(pszTmpRepoMDFile, pszTmpCookie);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-
-        if (memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)) != 0)
-        {
-            // Different shasum , replace repomd
-            dwError = TDNFReplaceRepoMDFile( pszTmpRepoMDFile, pszRepoMDFile);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-
-    if(access(pszRepoMDFile, F_OK))
-    {
-        if(errno != ENOENT)
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-        if(!pTdnf->pArgs->nQuiet)
-        {
-           printf("Refreshing metadata for: '%s'\n",
-                    pRepoData->pszName);
-        }
-        dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
-        if(dwError == ERROR_TDNF_ALREADY_EXISTS)
-        {
-            dwError = 0;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFDownloadFile(
+        /* plugin event indicating a repomd download happened */
+        dwError = TDNFEventRepoMDDownloadEnd(
                       pTdnf,
                       pRepoData->pszId,
                       pszRepoMDUrl,
-                      pszRepoMDFile,
-                      pRepoData->pszId);
+                      pszTmpRepoMDFile);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        nNewRepoMDFile = 1;
+    }
+
+    if (nNewRepoMDFile)
+    {
+        nReplaceRepoMD = 1;
+        /* compare shasum if applicable */
+        if (pszCookie[0])
+        {
+            dwError = SolvCalculateCookieForRepoMD(pszTmpRepoMDFile, pszTmpCookie);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+            {
+                nReplaceRepoMD = 0;
+            }
+        }
+
+        if (nReplaceRepoMD)
+        {
+            dwError = TDNFReplaceRepoMDFile(pszTmpRepoMDFile, pszRepoMDFile);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     dwError = TDNFParseRepoMD(pRepoMDRel);
@@ -568,6 +630,7 @@ cleanup:
     return dwError;
 
 error:
+    fprintf(stderr, "Error: %s %d\n", __FUNCTION__, dwError);
     TDNFFreeRepoMetadata(pRepoMD);
     goto cleanup;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -70,7 +70,7 @@ TDNFLoadRepoData(
                       pEnt->d_name);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFLoadReposFromFile(pszRepoFilePath, &pRepos);
+        dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, &pRepos);
         BAIL_ON_TDNF_ERROR(dwError);
 
         TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
@@ -119,10 +119,80 @@ error:
     {
         TDNFFreeReposInternal(pReposAll);
     }
-    goto cleanup;}
+    goto cleanup;
+}
+
+uint32_t
+TDNFEventRepoReadConfigEnd(
+    PTDNF pTdnf,
+    PCONF_SECTION pSection
+    )
+{
+    uint32_t dwError = 0;
+    TDNF_EVENT_CONTEXT stContext = {0};
+
+    if (!pTdnf || !pSection)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    stContext.nEvent = MAKE_PLUGIN_EVENT(
+                           TDNF_PLUGIN_EVENT_TYPE_REPO,
+                           TDNF_PLUGIN_EVENT_STATE_READCONFIG,
+                           TDNF_PLUGIN_EVENT_PHASE_END);
+    dwError = TDNFAddEventDataPtr(&stContext,
+                  TDNF_EVENT_ITEM_REPO_SECTION,
+                  pSection);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPluginRaiseEvent(pTdnf, &stContext);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNFFreeEventData(stContext.pData);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFEventRepoReadConfigStart(
+    PTDNF pTdnf,
+    PCONF_SECTION pSection
+    )
+{
+    uint32_t dwError = 0;
+    TDNF_EVENT_CONTEXT stContext = {0};
+
+    if (!pTdnf || !pSection)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    stContext.nEvent = MAKE_PLUGIN_EVENT(
+                           TDNF_PLUGIN_EVENT_TYPE_REPO,
+                           TDNF_PLUGIN_EVENT_STATE_READCONFIG,
+                           TDNF_PLUGIN_EVENT_PHASE_START);
+    dwError = TDNFAddEventDataPtr(&stContext,
+                  TDNF_EVENT_ITEM_REPO_SECTION,
+                  pSection);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPluginRaiseEvent(pTdnf, &stContext);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNFFreeEventData(stContext.pData);
+    return dwError;
+error:
+    goto cleanup;
+}
 
 uint32_t
 TDNFLoadReposFromFile(
+    PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA_INTERNAL* ppRepos
     )
@@ -139,9 +209,14 @@ TDNFLoadReposFromFile(
 
     dwError = TDNFReadConfigFile(pszRepoFile, 0, &pData);
     BAIL_ON_TDNF_ERROR(dwError);
+
     pSections = pData->pSections;
     for(; pSections; pSections = pSections->pNext)
     {
+        /* plugin event repo readconfig start */
+        dwError = TDNFEventRepoReadConfigStart(pTdnf, pSections);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         pszRepo = pSections->pszName;
 
         dwError = TDNFAllocateMemory(
@@ -230,6 +305,10 @@ TDNFLoadReposFromFile(
 
         TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
         pszMetadataExpire = NULL;
+
+        /* plugin event repo readconfig end */
+        dwError = TDNFEventRepoReadConfigEnd(pTdnf, pSections);
+        BAIL_ON_TDNF_ERROR(dwError);
 
         pRepo->pNext = pRepos;
         pRepos = pRepo;

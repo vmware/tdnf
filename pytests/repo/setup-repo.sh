@@ -38,6 +38,29 @@ createrepo ${PUBLISH_PATH} > /dev/null 2>&1
 modifyrepo ${REPO_SRC_DIR}/updateinfo-1.xml ${PUBLISH_PATH}/repodata
 modifyrepo ${REPO_SRC_DIR}/updateinfo-2.xml ${PUBLISH_PATH}/repodata
 
+#gpgkey data for unattended key generation
+GPG_PASS=`openssl rand -base64 8`
+cat << EOF > ${TEST_REPO_DIR}/gpgkeydata
+     %echo Generating a key for repogpgcheck signatures
+     Key-Type: default
+     Subkey-Type: default
+     Name-Real: tdnf test
+     Name-Comment: tdnf test key
+     Name-Email: tdnftest@tdnf.test
+     Expire-Date: 0
+     Passphrase: ${GPG_PASS}
+     %commit
+     %echo done
+EOF
+
+#generate a key non interactively. this is used in testing
+#repogpgcheck plugin
+gpg --batch --generate-key ${TEST_REPO_DIR}/gpgkeydata
+#gpg sign repomd.xml
+echo ${GPG_PASS} | gpg --batch --passphrase-fd 0 \
+--pinentry-mode loopback \
+--detach-sign --armor ${PUBLISH_PATH}/repodata/repomd.xml
+
 cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test.repo
 [photon-test]
 name=basic

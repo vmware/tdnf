@@ -1,0 +1,36 @@
+#
+# Copyright (C) 2020 VMware, Inc. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v2 (the "License");
+# you may not use this file except in compliance with the License. The terms
+# of the License are located in the COPYING file of this distribution.
+#
+
+project(tdnfrepogpgcheck VERSION 1.0.0 LANGUAGES C)
+
+### External dependency: libgpgme
+find_package(Gpgme REQUIRED)
+
+add_library(${PROJECT_NAME} SHARED
+    api.c
+    repogpgcheck.c
+)
+
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+#make config.h with
+#PACKAGE_NAME and PACKAGE_VERSION defined
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/config.h" @ONLY
+)
+
+target_link_libraries(
+    ${PROJECT_NAME}
+    ${CMAKE_BINARY_DIR}/lib/libtdnf.so
+    ${GPGME_LIBRARIES}
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins/lib/${PROJECT_NAME})
+install(TARGETS ${PROJECT_NAME} DESTINATION lib/tdnf-plugins)
