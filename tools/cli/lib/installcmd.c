@@ -247,7 +247,8 @@ TDNFCliAlterCommand(
         }
         else
         {
-            printf("Exiting on user Command\n");
+            dwError = ERROR_TDNF_OPERATION_ABORTED;
+            BAIL_ON_CLI_ERROR(dwError);
         }
     }
 
