@@ -11,23 +11,22 @@ project(tdnfrepogpgcheck VERSION 1.0.0 LANGUAGES C)
 ### External dependency: libgpgme
 find_package(Gpgme REQUIRED)
 
-add_library(${PROJECT_NAME} SHARED
-    api.c
-    repogpgcheck.c
-)
-
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 #make config.h with
 #PACKAGE_NAME and PACKAGE_VERSION defined
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/config.h" @ONLY
+    config.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/config.h @ONLY
 )
 
-target_link_libraries(
-    ${PROJECT_NAME}
-    ${CMAKE_BINARY_DIR}/lib/libtdnf.so
+add_library(${PROJECT_NAME} SHARED
+    api.c
+    repogpgcheck.c
+)
+
+target_link_libraries(${PROJECT_NAME}
+    ${LIB_TDNF}
     ${GPGME_LIBRARIES}
 )
 
