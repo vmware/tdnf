@@ -314,7 +314,8 @@ TDNFPrepareSinglePkg(
 
     //Check if this is a known package. If not add to unresolved
     dwError = SolvCountPkgByName(pSack, pszPkgName, &dwCount);
-    if(dwError || dwCount == 0)
+    BAIL_ON_TDNF_ERROR(dwError);
+    if (dwCount == 0)
     {
         dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
         BAIL_ON_TDNF_ERROR(dwError);

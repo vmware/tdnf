@@ -510,7 +510,7 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error: %d dlerror: %s\n", dwError, dlerror());
+    fprintf(stderr, "Error: %u dlerror: %s\n", dwError, dlerror());
     if (pPlugin)
     {
         if (pPlugin->pModule)

@@ -218,7 +218,7 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error: %s %d\n", __FUNCTION__, dwError);
+    fprintf(stderr, "Error: %s %u\n", __FUNCTION__, dwError);
     goto cleanup;
 }
 

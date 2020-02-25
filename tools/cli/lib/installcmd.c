@@ -258,6 +258,11 @@ cleanup:
     return dwError;
 
 error:
+    if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
+    {
+        dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
+    }
+
     goto cleanup;
 }
 

@@ -134,6 +134,7 @@ int main(int argc, char* argv[])
 
                 dwError = arCmdMap[nCommandCount].pFnCmd(&_context, pCmdArgs);
                 BAIL_ON_CLI_ERROR(dwError);
+
                 break;
             }
         };
@@ -161,11 +162,13 @@ cleanup:
 
 error:
     TDNFCliPrintError(dwError);
-    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO || dwError == ERROR_TDNF_NO_DATA)
+    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO ||
+        dwError == ERROR_TDNF_NO_DATA)
     {
         // Nothing to do should not return an error code
         dwError = 0;
     }
+
     goto cleanup;
 }
 
@@ -177,25 +180,32 @@ TDNFCliPrintError(
     uint32_t dwError = 0;
     char* pszError = NULL;
 
-    if(dwErrorCode < ERROR_TDNF_BASE)
+    if (!dwErrorCode)
+    {
+        return dwError;
+    }
+
+    if (dwErrorCode < ERROR_TDNF_BASE)
     {
         dwError = TDNFCliGetErrorString(dwErrorCode, &pszError);
-        BAIL_ON_CLI_ERROR(dwError);
     }
     else
     {
         dwError = TDNFGetErrorString(dwErrorCode, &pszError);
-        BAIL_ON_CLI_ERROR(dwError);
     }
-    if(dwErrorCode == ERROR_TDNF_CLI_NOTHING_TO_DO || dwErrorCode == ERROR_TDNF_NO_DATA)
+    BAIL_ON_CLI_ERROR(dwError || !pszError);
+
+    if (dwErrorCode == ERROR_TDNF_CLI_NOTHING_TO_DO ||
+        dwErrorCode == ERROR_TDNF_NO_DATA)
     {
         dwErrorCode = 0;
     }
-    if(dwErrorCode)
+
+    if (dwErrorCode)
     {
         fprintf(stderr, "Error(%u) : %s\n", dwErrorCode, pszError);
     }
-    else if(!nQuiet)
+    else if (!nQuiet)
     {
         fprintf(stderr, "%s\n", pszError);
     }
@@ -205,11 +215,9 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(
-        stderr,
-        "Retrieving error string for %u failed with %u\n",
-        dwErrorCode,
-        dwError);
+    fprintf(stderr, "Retrieving error string for %u failed with %u\n",
+            dwErrorCode, dwError);
+
     goto cleanup;
 }
 

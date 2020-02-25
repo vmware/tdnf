@@ -9,7 +9,10 @@ Makefile.in
 *.log
 *.pc
 *.spec
+*.patch
+*.diff
 
+tags
 
 # autoconf
 /autom4te.cache
