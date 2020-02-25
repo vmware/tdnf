@@ -6,4 +6,12 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-add_subdirectory("repogpgcheck")
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+add_library(${LIB_TDNF_COMMON}
+    configreader.c
+    memory.c
+    setopt.c
+    strings.c
+    utils.c
+)

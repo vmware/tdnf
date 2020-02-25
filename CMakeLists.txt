@@ -23,13 +23,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-#make config.h with
-#PACKAGE_NAME and PACKAGE_VERSION defined
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/client/config.h.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/client/config.h" @ONLY
-)
-
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -44,16 +37,13 @@ set(CMAKE_INSTALL_FULL_SYSCONDIR "/etc")
 add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
 add_c_compiler_flag(-std=gnu99)
+add_c_compiler_flag(-fPIC)
 
 add_c_compiler_flag(-O3 RELEASE)
 add_c_compiler_flag(-s RELEASE)
 add_c_compiler_flag(-g DEBUG)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-##
-## build libtdnfclient.so
-##
 
 ### External dependency: rpm-devel
 find_package(PkgConfig REQUIRED)
@@ -65,150 +55,6 @@ find_package(LibSolv REQUIRED ext)
 
 ### External dependency: libcurl
 find_package(CURL REQUIRED)
-
-set(LIB_TDNF_CLIENT tdnfclient)
-
-list(APPEND LIB_TDNF_COMMMON_SRC
-    "common/memory.c"
-    "common/strings.c"
-    "common/configreader.c"
-    "common/setopt.c"
-    "common/utils.c"
-)
-
-list(APPEND LIB_TDNF_SOLV_SRC
-    "solv/tdnfpool.c"
-    "solv/tdnfrepo.c"
-    "solv/tdnfquery.c"
-    "solv/tdnfpackage.c"
-)
-
-list(APPEND LIB_TDNF_CLIENT_SRC
-    "client/api.c"
-    "client/clean.c"
-    "client/client.c"
-    "client/config.c"
-    "client/eventdata.c"
-    "client/goal.c"
-    "client/gpgcheck.c"
-    "client/init.c"
-    "client/packageutils.c"
-    "client/plugins.c"
-    "client/repo.c"
-    "client/remoterepo.c"
-    "client/repolist.c"
-    "client/repoutils.c"
-    "client/resolve.c"
-    "client/rpmtrans.c"
-    "client/updateinfo.c"
-    "client/utils.c"
-    "client/validate.c"
-)
-
-add_library(${LIB_TDNF_CLIENT} SHARED
-    ${LIB_TDNF_CLIENT_SRC}
-    ${LIB_TDNF_SOLV_SRC}
-    ${LIB_TDNF_COMMMON_SRC}
-)
-
-set_target_properties(${LIB_TDNF_CLIENT} PROPERTIES
-    OUTPUT_NAME "tdnf"
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR}
-)
-
-install(TARGETS ${LIB_TDNF_CLIENT} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
-
-# configure and install pkgconfig file
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/client/tdnf.pc.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/client/tdnf.pc" @ONLY
-)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/client/tdnf.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-
-##
-## build libtdnfcli.so
-##
-
-set(LIB_TDNF_CLI tdnfcli)
-
-list(APPEND LIB_TDNF_CLI_SRC
-    "tools/cli/lib/api.c"
-    "tools/cli/lib/help.c"
-    "tools/cli/lib/installcmd.c"
-    "tools/cli/lib/options.c"
-    "tools/cli/lib/output.c"
-    "tools/cli/lib/parseargs.c"
-    "tools/cli/lib/parsecleanargs.c"
-    "tools/cli/lib/parselistargs.c"
-    "tools/cli/lib/parserepolistargs.c"
-    "tools/cli/lib/parseupdateinfo.c"
-    "tools/cli/lib/updateinfocmd.c"
-)
-
-add_library(${LIB_TDNF_CLI} SHARED ${LIB_TDNF_CLI_SRC})
-
-set_target_properties(${LIB_TDNF_CLI} PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR}
-)
-
-install(TARGETS ${LIB_TDNF_CLI} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
-
-# configure and install pkgconfig file
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/tools/cli/lib/tdnfcli.pc.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/tools/cli/lib/tdnfcli.pc" @ONLY
-)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tools/cli/lib/tdnfcli.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
-)
-
-##
-## libtdnf + libtdnfcli headers
-##
-
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/tdnf")
-
-##
-## tdnf binary
-##
-
-set(TDNF_BIN tdnf)
-
-list(APPEND TDNF_BIN_SRC
-    "tools/cli/main.c"
-)
-
-add_executable(${TDNF_BIN} ${TDNF_BIN_SRC})
-
-target_link_libraries(${TDNF_BIN} PUBLIC
-    ${LIB_TDNF_CLIENT}
-    ${LIB_TDNF_CLI}
-    ${RPM_LIBRARIES}
-    ${LibSolv_LIBRARIES}
-    ${CURL_LIBRARIES}
-)
-
-install(TARGETS ${TDNF_BIN} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary)
-
-##
-## Other static resources
-##
-
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf.conf"
-    DESTINATION "${CMAKE_INSTALL_FULL_SYSCONFDIR}/tdnf"
-    COMPONENT resources
-)
-
-install(DIRECTORY DESTINATION "share/bash-completion/completions")
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/tdnf-completion.bash"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/bash-completion/completions"
-    RENAME "tdnf"
-    COMPONENT resources
-)
 
 ##
 ## check target
@@ -224,33 +70,17 @@ add_custom_target(check
     COMMENT "Running tests.."
 )
 
-##
-## python modules
-##
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/tdnf")
 
-find_package(PythonInterp 3.7 REQUIRED)
-find_package(PythonLibs 3.7 REQUIRED)
+set(LIB_TDNF "tdnf")
+set(LIB_TDNF_SOLV "tdnfsolv")
+set(LIB_TDNF_COMMON "common")
+set(LIB_TDNF_CLI tdnfcli)
 
-set(PYTDNF_PACKAGE_NAME "${PROJECT_NAME}")
-set(PYTDNF_VERSION "${VERSION_STRING}")
-set(PYTDNF_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/python")
-set(PYTDNF_INC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(PYTDNF_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib")
-
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/python/setup.py"
-)
-
-add_custom_target(python
-    COMMAND cp -r "${CMAKE_CURRENT_SOURCE_DIR}/python/tdnf" .
-    COMMAND ${PYTHON_EXECUTABLE} setup.py build
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/python"
-)
-
-add_custom_target(package_pytdnf
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist --formats=rpm
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/python"
-)
-
+add_subdirectory("${PROJECT_SOURCE_DIR}/common")
+add_subdirectory("${PROJECT_SOURCE_DIR}/client")
 add_subdirectory("${PROJECT_SOURCE_DIR}/plugins")
+add_subdirectory("${PROJECT_SOURCE_DIR}/python")
+add_subdirectory("${PROJECT_SOURCE_DIR}/resources")
+add_subdirectory("${PROJECT_SOURCE_DIR}/solv")
+add_subdirectory("${PROJECT_SOURCE_DIR}/tools")

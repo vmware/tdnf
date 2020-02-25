@@ -6,4 +6,4 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-add_subdirectory("repogpgcheck")
+add_subdirectory("cli")
