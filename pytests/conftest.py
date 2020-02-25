@@ -40,7 +40,7 @@ class JsonWrapper(object):
 
 class TestUtils(object):
 
-    def __init__(self, cli_args):
+    def __init__(self, cli_args=None):
         cur_dir = os.path.dirname(os.path.realpath(__file__))
         config_file = os.path.join(cur_dir, 'config.json')
         self.config = JsonWrapper(config_file).read()
@@ -202,22 +202,7 @@ class TestUtils(object):
         ret['retval'] = retval
         return ret
 
-def pytest_addoption(parser):
-    group = parser.getgroup("tdnf", "tdnf specifc options")
-    group.addoption(
-        "--build-dir", action="store", default="",
-        help="directory containing tdnf binary to be tested"
-    )
-
 @pytest.fixture(scope='session')
-def tdnf_args(request):
-    arg = {}
-    build_dir = request.config.getoption("--build-dir")
-    if build_dir:
-        arg['build_dir'] = build_dir
-    return arg
-
-@pytest.fixture(scope='session')
-def utils(tdnf_args):
-    test_utils = TestUtils(tdnf_args)
+def utils():
+    test_utils = TestUtils()
     return test_utils
