@@ -33,7 +33,6 @@ TDNFGetErrorString(
     int nCount = 0;
     uint32_t dwActualError = 0;
 
-
     //Allow mapped error strings to override
     TDNF_ERROR_DESC arErrorDesc[] = TDNF_ERROR_TABLE;
 
@@ -48,7 +47,6 @@ TDNFGetErrorString(
             break;
         }
     }
-
 
     //Get system error
     if(!pszError && TDNFIsSystemError(dwErrorCode))

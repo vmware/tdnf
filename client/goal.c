@@ -312,7 +312,7 @@ TDNFGoal(
 
     int nFlags = 0;
     int i = 0;
-    Id  dwId = 0; 
+    Id  dwId = 0;
     int nProblems = 0;
     char** ppszExcludes = NULL;
     uint32_t dwCount = 0;
@@ -324,7 +324,7 @@ TDNFGoal(
     }
 
     queue_init(&queueJobs);
-    if(nAlterType == ALTER_UPGRADEALL)
+    if (nAlterType == ALTER_UPGRADEALL)
     {
         dwError = SolvAddUpgradeAllJob(&queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -336,7 +336,13 @@ TDNFGoal(
     }
     else
     {
-        for(i = 0; i < pQueuePkgList->count; i++)
+        if (pQueuePkgList->count == 0)
+        {
+            dwError = ERROR_TDNF_ALREADY_INSTALLED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        for (i = 0; i < pQueuePkgList->count; i++)
         {
             dwId = pQueuePkgList->elements[i];
             TDNFAddGoal(pTdnf, nAlterType, &queueJobs, dwId);

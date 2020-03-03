@@ -44,12 +44,7 @@ TDNFRpmExecTransaction(
                   1,
                   sizeof(TDNF_CACHED_RPM_LIST),
                   (void**)&ts.pCachedRpmsArray);
-
-    if(!ts.pCachedRpmsArray)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    BAIL_ON_TDNF_ERROR(dwError);
 
     rpmSetVerbosity(TDNFConfGetRpmVerbosity(pTdnf));
 

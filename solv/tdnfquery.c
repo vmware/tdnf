@@ -281,12 +281,9 @@ SolvApplyPackageFilter(
     }
 
     ppszTmpNames = ppszPackageNames;
-    while(*ppszTmpNames)
+    while (ppszTmpNames && *ppszTmpNames)
     {
-        if(!IsNullOrEmptyString(ppszTmpNames))
-        {
-            dwPkgs++;
-        }
+        dwPkgs++;
         ppszTmpNames++;
     }
 
