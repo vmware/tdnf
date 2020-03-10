@@ -56,20 +56,6 @@ find_package(LibSolv REQUIRED ext)
 ### External dependency: libcurl
 find_package(CURL REQUIRED)
 
-##
-## check target
-##
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/pytests/config.json.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pytests/config.json" @ONLY
-)
-
-add_custom_target(check
-    COMMAND pytest --build-dir=${CMAKE_CURRENT_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/pytests
-    COMMENT "Running tests.."
-)
-
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/tdnf")
 
 set(LIB_TDNF "tdnf")
@@ -84,3 +70,4 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/python")
 add_subdirectory("${PROJECT_SOURCE_DIR}/resources")
 add_subdirectory("${PROJECT_SOURCE_DIR}/solv")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tools")
+add_subdirectory("${PROJECT_SOURCE_DIR}/pytests")
