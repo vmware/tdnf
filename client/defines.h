@@ -139,7 +139,7 @@ typedef enum
 //Repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
-#define TDNF_DEFAULT_DISTROVERPKG         "photon-release"
+#define TDNF_DEFAULT_DISTROVERPKG         "system-release"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
