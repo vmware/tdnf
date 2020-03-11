@@ -2,3 +2,6 @@
 
 #define PACKAGE_NAME    "@PROJECT_NAME@"
 #define PACKAGE_VERSION "@PROJECT_VERSION@"
+
+/* Platform defines */
+#define SYSTEM_LIBDIR "@CMAKE_INSTALL_FULL_LIBDIR@"

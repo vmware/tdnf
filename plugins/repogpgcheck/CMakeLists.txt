@@ -32,4 +32,4 @@ target_link_libraries(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins/lib/${PROJECT_NAME})
-install(TARGETS ${PROJECT_NAME} DESTINATION lib/tdnf-plugins)
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/tdnf-plugins)

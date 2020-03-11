@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "config.h"
+
 typedef enum
 {
     DETAIL_LIST,
@@ -154,7 +156,7 @@ typedef enum
 #define TDNF_SETOPT_VALUE_DUMMY            "opt.dummy.value"
 /* plugin defines */
 #define TDNF_DEFAULT_PLUGINS_ENABLED      0
-#define TDNF_DEFAULT_PLUGIN_PATH          "/usr/lib/tdnf-plugins"
+#define TDNF_DEFAULT_PLUGIN_PATH          "SYSTEM_LIBDIR/tdnf-plugins"
 #define TDNF_DEFAULT_PLUGIN_CONF_PATH     "/etc/tdnf/pluginconf.d"
 #define TDNF_PLUGIN_CONF_EXT              ".conf"
 #define TDNF_PLUGIN_CONF_EXT_LEN          5
