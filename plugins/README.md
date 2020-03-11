@@ -14,7 +14,7 @@ To enable plugins, the config file should have
 ## plugin discovery
 tdnf will look in ```/etc/tdnf/pluginconf.d``` by default for plugin configurations.
 For all config files with ```enabled=1``` set, tdnf will look for a corresponding
-shared library in ```/usr/lib/tdnf-plugins/<plugin>/lib<plugin>.so```.
+shared library in ```<libdir>/tdnf-plugins/<plugin>/lib<plugin>.so```.
 ```pluginpath``` and ```pluginconfpath``` are config settings to change default paths.
 
 ## overriding plugin load
