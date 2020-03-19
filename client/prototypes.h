@@ -128,6 +128,12 @@ TDNFRepoRemoveCache(
     );
 
 uint32_t
+TDNFRemoveRpmCache(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    );
+
+uint32_t
 TDNFRemoveLastRefreshMarker(
     PTDNF pTdnf,
     const char* pszRepoId
