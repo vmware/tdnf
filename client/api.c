@@ -430,6 +430,12 @@ TDNFClean(
             dwError = TDNFRemoveSolvCache(pTdnf, *ppszReposUsed);
             BAIL_ON_TDNF_ERROR(dwError);
 
+            if (!pTdnf->pConf->nKeepCache)
+            {
+                dwError = TDNFRemoveRpmCache(pTdnf, *ppszReposUsed);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
             ++ppszReposUsed;
         }
     }
