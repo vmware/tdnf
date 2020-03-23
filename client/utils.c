@@ -340,7 +340,7 @@ TDNFRawGetPackageVersion(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pIter = rpmtsInitIterator(pTS, RPMTAG_NAME, pszPkg, 0);
+    pIter = rpmtsInitIterator(pTS, RPMTAG_PROVIDES, pszPkg, 0);
     if(!pIter)
     {
         dwError = ERROR_TDNF_NO_DISTROVERPKG;
