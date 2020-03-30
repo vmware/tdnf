@@ -478,6 +478,7 @@ SolvLoadRepomdUpdateinfo(
 
 uint32_t
 SolvReportProblems(
+    PSolvSack pSack,
     Solver* pSolv,
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     );
