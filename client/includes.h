@@ -24,6 +24,7 @@
 /* Use this to get rid of variable/parameter unused warning */
 #define UNUSED(var) ((void)(var))
 
+#include <fts.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -37,7 +38,7 @@
 #include <utime.h>
 #include <fnmatch.h>
 #include <libgen.h>
-//
+#include <sys/mount.h>
 #include <sys/utsname.h>
 
 #include <dirent.h>

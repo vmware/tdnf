@@ -20,6 +20,9 @@
 
 #include "includes.h"
 
+static char *get_kern_version(char *buf, int32_t bufsize);
+static int32_t bindmount(const char *src, const char *dst, unsigned long flags);
+
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
@@ -87,6 +90,20 @@ TDNFRpmExecTransaction(
 
     dwError = TDNFRunTransaction(&ts, pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    {
+        char kver[65] = {0};
+        char src[PATH_MAX] = {0};
+        char dst[PATH_MAX] = {0};
+
+        if (get_kern_version(kver, sizeof(kver)))
+        {
+            snprintf(src, sizeof(src), "/tmp/%s", kver);
+            snprintf(dst, sizeof(dst), "/lib/modules/%s", kver);
+            dwError = bindmount(src, dst, MS_BIND | MS_REC);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
 cleanup:
     if(ts.pTS)
@@ -646,6 +663,278 @@ error:
     goto cleanup;
 }
 
+static char *get_kern_version(char *buf, int32_t bufsize)
+{
+    struct utsname st;
+
+    if (!buf || bufsize < 16 || uname(&st)) {
+        fprintf(stderr, "Input args error\n");
+        return NULL;
+    }
+
+    snprintf(buf, bufsize, "%s", st.release);
+
+    return buf;
+}
+
+static int32_t bindmount(const char *src, const char *dst,
+                         unsigned long flags)
+{
+    int32_t result = -1;
+    const unsigned long mntflags = flags;
+
+    mkdir(dst, 0755);
+    result = mount(src, dst, "", mntflags, "");
+    printf("Mount %s at %s - %s\n", src, dst, !result ? "success" : "failed");
+    if (result)
+    {
+        fprintf(stderr, "Reason: %s\n", strerror(errno));
+    }
+
+    return result;
+}
+
+static int32_t fix_dst_path(char *src, char *dst, int32_t dstsize)
+{
+    char *s = NULL;
+    char buf[dstsize];
+
+    if (!src || !dst || dstsize <= 0)
+    {
+        return -1;
+    }
+
+    s = strrchr(src, '/');
+    if (s && *s)
+    {
+        memset(buf, 0, dstsize);
+        snprintf(buf, dstsize, "%s/%s", dst, ++s);
+        strcpy(dst, buf);
+        return 0;
+    }
+
+    return -1;
+}
+
+static int32_t removedir(const char *path)
+{
+    FTS *ftsp = NULL;
+    FTSENT *ent = NULL;
+    int32_t ret = -1;
+    char rpath[PATH_MAX] = {0};
+
+    if (!path)
+    {
+        return ret;
+    }
+
+    if (!realpath(path, rpath))
+    {
+        fprintf(stderr, "%s doesn't exist\n", path);
+        return ret;
+    }
+
+    char *paths[] = { rpath, NULL };
+
+    ftsp = fts_open(paths, FTS_PHYSICAL, NULL);
+    if (!ftsp)
+    {
+        fprintf(stderr, "fts_open failed in %s\n", __func__);
+        return ret;
+    }
+
+    errno = 0;
+    while ((ent = fts_read(ftsp)))
+    {
+        if (ent->fts_info & FTS_DP)
+        {
+            rmdir(ent->fts_path);
+        }
+        else if (ent->fts_info & FTS_F)
+        {
+            unlink(ent->fts_path);
+        }
+
+        if (errno)
+        {
+            fprintf(stderr, "Failed to delete: %s\n", ent->fts_path);
+            goto err;
+        }
+    }
+
+    ret = 0;
+
+err:
+    if (fts_close(ftsp))
+    {
+        ret = -1;
+        fprintf(stderr, "fts_close failed\n");
+    }
+
+    return ret;
+}
+
+static int32_t copy_file(const char *src, const char *dst)
+{
+    size_t  n = 0;
+    FILE *in = NULL;
+    FILE *out = NULL;
+    int32_t ret = -1;
+    char rbuf[BUFSIZ] = {0};
+
+    in = fopen(src, "rb");
+    out= fopen(dst, "wb" );
+    if (!in || !out)
+    {
+        goto err;
+    }
+
+    while ((n = fread(rbuf, 1, BUFSIZ, in)))
+    {
+        if (fwrite(rbuf, 1, n, out) != n)
+        {
+            goto err;
+        }
+    }
+
+    if (feof(in))
+    {
+        ret = 0;
+    }
+
+err:
+    if (in)
+    {
+        fclose(in);
+    }
+
+    if (out)
+    {
+        fclose(out);
+    }
+
+    return ret;
+}
+
+static int32_t mvdir(const char *src, const char *dst)
+{
+    FTS *ftsp = NULL;
+    FTSENT *ent = NULL;
+    int32_t ret = -1;
+    char srcpath[PATH_MAX] = {0};
+    char dstpath[PATH_MAX] = {0};
+
+    if (!realpath(src, srcpath))
+    {
+        fprintf(stderr, "%s: does not exist\n", src);
+        return ret;
+    }
+
+    char *paths[] = { srcpath, NULL };
+
+    ftsp = fts_open(paths, FTS_PHYSICAL, NULL);
+    if (!ftsp)
+    {
+        fprintf(stderr, "fts_open failed in %s\n", __func__);
+        return ret;
+    }
+
+    if (!realpath(dst, dstpath))
+    {
+        fprintf(stderr, "%s: does not exist\n", dst);
+        goto err;
+    }
+
+    while ((ent = fts_read(ftsp))) {
+        char *s = NULL;
+        char *cursrc = ent->fts_path;
+
+        if (ent->fts_info & FTS_D)
+        {
+            struct stat fstat;
+
+            if (fix_dst_path(cursrc, dstpath, sizeof(dstpath)))
+            {
+                goto err;
+            }
+
+            if (stat(srcpath, &fstat) || mkdir(dstpath, fstat.st_mode))
+            {
+                if (errno != EEXIST)
+                {
+                    fprintf(stderr, "stat || mkdir call failed\n");
+                    goto err;
+                }
+            }
+        }
+        else if (ent->fts_info & FTS_DP)
+        {
+            s = strrchr(dstpath, '/');
+            *s = '\0';
+        }
+        else if (ent->fts_info & FTS_F)
+        {
+            if (fix_dst_path(cursrc, dstpath, sizeof(dstpath)))
+            {
+                goto err;
+            }
+
+            if (copy_file(cursrc, dstpath))
+            {
+                fprintf(stderr, "Unable to copy file: %s to "
+                        "destination %s\n", cursrc, dstpath);
+                goto err;
+            }
+            sync();
+
+            s = strrchr(dstpath, '/');
+            *s = '\0';
+        }
+        else
+        {
+            printf("Other: %s\n", cursrc); // We shouldn't reach here
+        }
+    }
+
+    if (removedir(src))
+    {
+        fprintf(stderr, "Deletion of %s failed\n", src);
+        goto err;
+    }
+
+    ret = 0;
+
+err:
+    if (fts_close(ftsp))
+    {
+        ret = -1;
+        fprintf(stderr, "Unknown system error during fts_close\n");
+    }
+
+    printf("Move %s to %s - %s\n", srcpath, dstpath, !ret ? "success" : "failed");
+
+    return ret;
+}
+
+int32_t mv_running_kernel(char *pszNevra)
+{
+    char kver[65] = {0};
+    char src[PATH_MAX] = {0};
+
+    if (!get_kern_version(kver, sizeof(kver)))
+    {
+        return -1;
+    }
+
+    if (!strstr(pszNevra, kver))
+    {
+        return 0;
+    }
+
+    snprintf(src, sizeof(src), "/lib/modules/%s", kver);
+    return mvdir(src, "/tmp");
+}
+
 void*
 TDNFRpmCB(
      const void* pArg,
@@ -695,8 +984,14 @@ TDNFRpmCB(
                 printf("%s", "Removing: ");
             }
             {
-                char* pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
+                char *pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
                 printf("%s\n", pszNevra);
+
+                if (what != RPMCALLBACK_INST_START)
+                {
+                    mv_running_kernel(pszNevra);
+                }
+
                 free(pszNevra);
                 (void)fflush(stdout);
             }
