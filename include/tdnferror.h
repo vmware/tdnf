@@ -157,6 +157,8 @@ extern "C" {
 
 #define ERROR_TDNF_PLUGIN_BASE          2000
 
+#define ERROR_TDNF_BASEURL_DOES_NOT_EXISTS    2500
+
 #define CMD_INSTALL "install"
 
 #ifdef __cplusplus

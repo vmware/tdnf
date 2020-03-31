@@ -106,7 +106,12 @@ TDNFRepoGetBaseUrl(
     const char* pszRepo,
     char** ppszBaseUrl
     );
-
+uint32_t
+TDNFRepoSetBaseUrl(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    char* pszBaseUrl
+    );
 uint32_t
 TDNFRepoGetUserPass(
     PTDNF pTdnf,
@@ -159,12 +164,20 @@ TDNFRepoApplyProxySettings(
 
 //remoterepo.c
 uint32_t
+TDNFParseAndGetURLFromMetalink(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszFile
+    );
+
+uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
     const char *pszRepo,
     const char *pszFileUrl,
     const char *pszFile,
-    const char *pszProgressData
+    const char *pszProgressData,
+    int metalink
     );
 
 uint32_t
@@ -525,7 +538,7 @@ TDNFFreeRepoMetadata(
     );
 
 uint32_t
-TDNFReplaceRepoMDFile(
+TDNFReplaceFile(
     const char *pszSrcFile,
     const char *pszDstFile
     );

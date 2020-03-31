@@ -24,5 +24,6 @@ typedef struct _PY_TDNF_REPODATA
     PyObject *id;
     PyObject *name;
     PyObject *baseurl;
+    PyObject *metalink;
     int enabled;
 }PY_TDNF_REPODATA, *PPY_TDNF_REPODATA;

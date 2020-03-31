@@ -106,14 +106,108 @@ error:
     }
     return dwError;
 }
+uint32_t
+TDNFParseAndGetURLFromMetalink(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszFile
+    )
+{
+    metalink_error_t metalink_error;
+    metalink_t* metalink = NULL;
+    metalink_file_t **files;
+    metalink_parser_context_t *metalink_context = NULL;
+    metalink_resource_t** resources;
+    char buf[BUFSIZ] = {0};
+    int length = 0;
+    int fd = -1;
+    uint32_t dwError = 0;
 
+    if(!pTdnf ||
+       !pTdnf->pArgs ||
+       IsNullOrEmptyString(pszRepo) ||
+       IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    metalink_context = metalink_parser_context_new();
+    if(metalink_context == NULL)
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    fd = open(pszFile, O_RDONLY);
+    if(fd == -1)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
+    {
+        metalink_error = metalink_parse_update(metalink_context, buf, length);
+        memset(buf, 0, BUFSIZ);
+        if(metalink_error != 0)
+        {
+            if(metalink_context)
+            {
+                metalink_parser_context_delete(metalink_context);
+            }
+            fprintf(stderr, "Unable to parse metalink, ERROR: code=%d\n", metalink_error);
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    if(length == -1)
+    {
+        if(metalink_context)
+        {
+            metalink_parser_context_delete(metalink_context);
+        }
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    metalink_error = metalink_parse_final(metalink_context, NULL, 0, &metalink);
+    if((metalink_error != 0) || (metalink == NULL))
+    {
+        fprintf(stderr, "metalink_parse_final failed, ERROR: code=%d\n", metalink_error);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    for(files = metalink->files; files && *files; ++files)
+    {
+        resources = (*files)->resources;
+        if(!resources)
+        {
+            continue;
+        }
+        dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, (*resources)->url);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+cleanup:
+    if(fd != -1)
+    {
+        close(fd);
+    }
+    /* delete metalink_t */
+    if(metalink)
+    {
+        metalink_delete(metalink);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
 uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
     const char *pszRepo,
     const char *pszFileUrl,
     const char *pszFile,
-    const char *pszProgressData
+    const char *pszProgressData,
+    int is_metalink
     )
 {
     uint32_t dwError = 0;
@@ -126,7 +220,9 @@ TDNFDownloadFile(
     if(!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszFileUrl) ||
-       IsNullOrEmptyString(pszFile))
+       IsNullOrEmptyString(pszFile) ||
+       IsNullOrEmptyString(pszRepo) ||
+       IsNullOrEmptyString(pszProgressData))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -138,6 +234,7 @@ TDNFDownloadFile(
         dwError = ERROR_TDNF_CURL_INIT;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
     /* if callback present for extra curl options */
     dwError = _handle_curl_cb(pTdnf, pCurl, pszFileUrl);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -200,6 +297,19 @@ TDNFDownloadFile(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else
+    {
+        if(is_metalink)
+        {
+            if(fp)
+            {
+                fclose(fp);
+                fp = NULL;
+            }
+            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
     if(fp)
@@ -249,6 +359,7 @@ TDNFDownloadPackage(
     char *pszPackageUrl = NULL;
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
+    int metalink = 0;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -274,7 +385,7 @@ TDNFDownloadPackage(
 
     dwError = TDNFAllocateString(pszPackageLocation,
                                  &pszCopyOfPackageLocation);
-        BAIL_ON_TDNF_ERROR(dwError);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateStringPrintf(&pszPackageFile,
                                        "%s/%s",
@@ -286,7 +397,8 @@ TDNFDownloadPackage(
                                pszRepoName,
                                pszPackageUrl,
                                pszPackageFile,
-                               nSilent ? NULL : pszPkgName);
+                               nSilent ? NULL : pszPkgName,
+                               metalink);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(!nSilent)
