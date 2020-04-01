@@ -17,6 +17,7 @@ extern "C" {
 
 typedef struct _TDNF_PLUGIN_HANDLE_ *PTDNF_PLUGIN_HANDLE;
 typedef struct _TDNF_EVENT_DATA_    *PTDNF_EVENT_DATA;
+typedef struct _TDNF_PLUGIN_        *PTDNF_PLUGIN;
 
 /* function names */
 #define TDNF_FN_NAME_PLUGIN_GET_VERSION       "TDNFPluginGetVersion"
@@ -25,12 +26,13 @@ typedef struct _TDNF_EVENT_DATA_    *PTDNF_EVENT_DATA;
 
 typedef enum
 {
-    TDNF_PLUGIN_EVENT_TYPE_NONE    = 0x0,
-    TDNF_PLUGIN_EVENT_TYPE_INIT    = 0x1, /* init is not maskable */
-    TDNF_PLUGIN_EVENT_TYPE_REPO    = 0x2,
-    TDNF_PLUGIN_EVENT_TYPE_REPO_MD = 0x3,
-    TDNF_PLUGIN_EVENT_TYPE_ALL     = TDNF_PLUGIN_EVENT_TYPE_REPO
-}TDNF_PLUGIN_EVENT_TYPE;
+    TDNF_PLUGIN_EVENT_TYPE_NONE         = 0x0,
+    TDNF_PLUGIN_EVENT_TYPE_INIT         = 0x1, /* init is not maskable */
+    TDNF_PLUGIN_EVENT_TYPE_REPO         = 0x2,
+    TDNF_PLUGIN_EVENT_TYPE_REPO_MD      = 0x4,
+    TDNF_PLUGIN_EVENT_TYPE_KERN_INSTL   = 0x8,
+    TDNF_PLUGIN_EVENT_TYPE_ALL          = 0xFF
+} TDNF_PLUGIN_EVENT_TYPE;
 
 typedef enum
 {
@@ -41,14 +43,16 @@ typedef enum
     TDNF_PLUGIN_EVENT_STATE_PROCESS,
     TDNF_PLUGIN_EVENT_STATE_ACCESS,
     TDNF_PLUGIN_EVENT_STATE_CLOSE,
-}TDNF_PLUGIN_EVENT_STATE;
+    TDNF_PLUGIN_EVENT_STATE_MOVE,
+    TDNF_PLUGIN_EVENT_STATE_MOUNT
+} TDNF_PLUGIN_EVENT_STATE;
 
 typedef enum
 {
     TDNF_PLUGIN_EVENT_PHASE_NONE,
     TDNF_PLUGIN_EVENT_PHASE_START,
     TDNF_PLUGIN_EVENT_PHASE_END
-}TDNF_PLUGIN_EVENT_PHASE;
+} TDNF_PLUGIN_EVENT_PHASE;
 
 
 /* plugin event layout (32 bit)
@@ -60,10 +64,10 @@ typedef enum
 */
 typedef uint32_t TDNF_PLUGIN_EVENT;
 
-#define MAKE_PLUGIN_EVENT(type, state, phase) (type << 8 | state << 2 | phase)
-#define PLUGIN_EVENT_TYPE(event) (event >> 8)
-#define PLUGIN_EVENT_STATE(event) (event >> 2 & ((1 << 6) - 1))
-#define PLUGIN_EVENT_PHASE(event) (event & 0x3)
+#define PLUGIN_EVENT_TYPE(event)                ((event) >> 8)
+#define PLUGIN_EVENT_STATE(event)               (((event) >> 2) & 0x3F)
+#define PLUGIN_EVENT_PHASE(event)               ((event) & 0x3)
+#define MAKE_PLUGIN_EVENT(type, state, phase)   (((type) << 8) | ((state) << 2) | ((phase)))
 
 /*
  * pData is context sensitive.
@@ -72,7 +76,7 @@ typedef struct _TDNF_EVENT_CONTEXT_
 {
     TDNF_PLUGIN_EVENT nEvent;
     PTDNF_EVENT_DATA pData;
-}TDNF_EVENT_CONTEXT, *PTDNF_EVENT_CONTEXT;
+} TDNF_EVENT_CONTEXT, *PTDNF_EVENT_CONTEXT;
 
 /* version of the plugin interface */
 typedef const char *
@@ -147,7 +151,7 @@ typedef struct _TDNF_PLUGIN_INTERFACE_
     PFN_TDNF_PLUGIN_GET_ERROR_STRING    pFnGetErrorString;
     PFN_TDNF_PLUGIN_EVENT               pFnEvent;
     PFN_TDNF_PLUGIN_CLOSE_HANDLE        pFnCloseHandle;
-}TDNF_PLUGIN_INTERFACE, *PTDNF_PLUGIN_INTERFACE;
+} TDNF_PLUGIN_INTERFACE, *PTDNF_PLUGIN_INTERFACE;
 
 /*
  * Plugins should implement this function with
@@ -184,6 +188,7 @@ TDNFEventContextGetItemPtr(
 uint32_t
 TDNFGetPluginErrorString(
     PTDNF pTdnf,
+    PTDNF_PLUGIN pPlugin,
     uint32_t nErrorCode,
     char **ppszError
     );

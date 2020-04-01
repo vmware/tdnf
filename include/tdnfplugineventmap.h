@@ -24,11 +24,12 @@ const char *
 TDNFPluginGetEventMapVersion(
     );
 
-#define TDNF_EVENT_ITEM_TDNF_HANDLE  "tdnf.handle"
-#define TDNF_EVENT_ITEM_REPO_SECTION "repo.section"
-#define TDNF_EVENT_ITEM_REPO_ID      "repo.id"
-#define TDNF_EVENT_ITEM_REPO_MD_URL  "repomd.url"
-#define TDNF_EVENT_ITEM_REPO_MD_FILE "repomd.file"
+#define TDNF_EVENT_ITEM_TDNF_HANDLE     "tdnf.handle"
+#define TDNF_EVENT_ITEM_REPO_SECTION    "repo.section"
+#define TDNF_EVENT_ITEM_REPO_ID         "repo.id"
+#define TDNF_EVENT_ITEM_REPO_MD_URL     "repomd.url"
+#define TDNF_EVENT_ITEM_REPO_MD_FILE    "repomd.file"
+#define TDNF_EVENT_ITEM_KERN_UPDATE     "kern.up"
 
 typedef enum
 {

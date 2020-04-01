@@ -7,3 +7,4 @@
 #
 
 add_subdirectory("repogpgcheck")
+add_subdirectory("mvkernel")

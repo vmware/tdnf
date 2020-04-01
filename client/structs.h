@@ -25,10 +25,11 @@ typedef struct _TDNF_PLUGIN_
     char *pszName;
     int nEnabled;
     void *pModule;
+    TDNF_PLUGIN_EVENT RegisterdEvts;
     PTDNF_PLUGIN_HANDLE pHandle;
     TDNF_PLUGIN_INTERFACE stInterface;
     struct _TDNF_PLUGIN_ *pNext;
-}TDNF_PLUGIN, *PTDNF_PLUGIN;
+} TDNF_PLUGIN, *PTDNF_PLUGIN;
 
 typedef struct _TDNF_REPO_DATA_INTERNAL_
 {
@@ -77,6 +78,7 @@ typedef struct _TDNF_RPM_TS_
     rpmprobFilterFlags      nProbFilterFlags;
     FD_t                    pFD;
     PTDNF_CACHED_RPM_LIST   pCachedRpmsArray;
+    PTDNF                   pTdnf;
 }TDNFRPMTS, *PTDNFRPMTS;
 
 typedef struct _TDNF_ENV_

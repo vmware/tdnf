@@ -19,6 +19,14 @@
  */
 
 #include "includes.h"
+#include <sys/utsname.h>
+
+static char kernpkgver[256] = {0};
+
+static int32_t RaiseKernelUpdateEvt(PTDNF pTdnf,
+            TDNF_PLUGIN_EVENT_STATE state,
+            TDNF_PLUGIN_EVENT_PHASE phase
+        );
 
 uint32_t
 TDNFRpmExecTransaction(
@@ -37,6 +45,7 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    ts.pTdnf = pTdnf;
     ts.nQuiet = pTdnf->pArgs->nQuiet;
     nKeepCachedRpms = pTdnf->pConf->nKeepCache;
 
@@ -87,6 +96,14 @@ TDNFRpmExecTransaction(
 
     dwError = TDNFRunTransaction(&ts, pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if (kernpkgver[0])
+    {
+        dwError = RaiseKernelUpdateEvt(pTdnf, TDNF_PLUGIN_EVENT_STATE_MOUNT,
+                                        TDNF_PLUGIN_EVENT_PHASE_END);
+        memset(kernpkgver, 0, sizeof(kernpkgver));
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 cleanup:
     if(ts.pTS)
@@ -646,6 +663,44 @@ error:
     goto cleanup;
 }
 
+static int32_t RaiseKernelUpdateEvt(PTDNF pTdnf,
+            TDNF_PLUGIN_EVENT_STATE state,
+            TDNF_PLUGIN_EVENT_PHASE phase
+        )
+{
+    int32_t dwError = 0;
+    struct utsname st = {0};
+    TDNF_EVENT_CONTEXT stContext = {0};
+
+    if (!pTdnf || !kernpkgver[0])
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
+
+    dwError = uname(&st);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    BAIL_ON_TDNF_ERROR(!strstr(kernpkgver, st.release));
+
+    stContext.nEvent = MAKE_PLUGIN_EVENT(TDNF_PLUGIN_EVENT_TYPE_KERN_INSTL,
+                                        state, phase);
+
+    dwError = TDNFAddEventDataString(&stContext,
+                    TDNF_EVENT_ITEM_KERN_UPDATE, kernpkgver);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPluginRaiseEvent(pTdnf, &stContext);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNFFreeEventData(stContext.pData);
+    return dwError;
+
+error:
+    memset(kernpkgver, 0, sizeof(kernpkgver));
+    goto cleanup;
+}
+
 void*
 TDNFRpmCB(
      const void* pArg,
@@ -697,6 +752,14 @@ TDNFRpmCB(
             {
                 char* pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
                 printf("%s\n", pszNevra);
+
+                if ((what != RPMCALLBACK_INST_START) && strstr(pszNevra, "linux"))
+                {
+                    strcpy(kernpkgver, pszNevra);
+                    RaiseKernelUpdateEvt(pTS->pTdnf,TDNF_PLUGIN_EVENT_STATE_MOVE,
+                                        TDNF_PLUGIN_EVENT_PHASE_START);
+                }
+
                 free(pszNevra);
                 (void)fflush(stdout);
             }
