@@ -26,9 +26,10 @@ typedef struct _TDNF_PLUGIN_
     int nEnabled;
     void *pModule;
     PTDNF_PLUGIN_HANDLE pHandle;
+    TDNF_PLUGIN_EVENT RegisterdEvts;
     TDNF_PLUGIN_INTERFACE stInterface;
     struct _TDNF_PLUGIN_ *pNext;
-}TDNF_PLUGIN, *PTDNF_PLUGIN;
+} TDNF_PLUGIN, *PTDNF_PLUGIN;
 
 typedef struct _TDNF_REPO_DATA_INTERNAL_
 {
