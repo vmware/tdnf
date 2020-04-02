@@ -119,6 +119,10 @@ _TDNFInitPlugins(
 
         dwError = pPlugin->stInterface.pFnEvent(pPlugin->pHandle, &stContext);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = pPlugin->stInterface.pFnEventsNeeded(pPlugin->pHandle,
+                                                &pPlugin->RegisterdEvts);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
@@ -126,7 +130,7 @@ cleanup:
     return dwError;
 
 error:
-    TDNFShowPluginError(pTdnf, dwError);
+    TDNFShowPluginError(pTdnf, pPlugin, dwError);
     goto cleanup;
 }
 
@@ -645,7 +649,8 @@ TDNFPluginRaiseEvent(
 
     for(pPlugin = pTdnf->pPlugins; pPlugin; pPlugin = pPlugin->pNext)
     {
-        if (pPlugin->nEnabled == 0)
+        if (!pPlugin->nEnabled ||
+            !(pPlugin->RegisterdEvts & PLUGIN_EVENT_TYPE(pContext->nEvent)))
         {
             continue;
         }
@@ -657,23 +662,25 @@ TDNFPluginRaiseEvent(
 cleanup:
     return dwError;
 error:
-    TDNFShowPluginError(pTdnf, dwError);
+    TDNFShowPluginError(pTdnf, pPlugin, dwError);
     goto cleanup;
 }
 
 void
 TDNFShowPluginError(
     PTDNF pTdnf,
+    PTDNF_PLUGIN pPlugin,
     uint32_t nErrorCode
     )
 {
     char *pszError = NULL;
-    if (!pTdnf || nErrorCode == 0)
+
+    if (!pTdnf || !pPlugin || !nErrorCode)
     {
         goto cleanup;
     }
 
-    if (!TDNFGetPluginErrorString(pTdnf, nErrorCode, &pszError))
+    if (!TDNFGetPluginErrorString(pTdnf, pPlugin, nErrorCode, &pszError))
     {
         fprintf(stderr, "Plugin error: %s\n", pszError);
     }
@@ -686,44 +693,37 @@ cleanup:
 uint32_t
 TDNFGetPluginErrorString(
     PTDNF pTdnf,
+    PTDNF_PLUGIN pPlugin,
     uint32_t nErrorCode,
     char **ppszError
     )
 {
-    uint32_t dwError = 0;
     char *pszError = 0;
-    PTDNF_PLUGIN pPlugin = NULL;
+    uint32_t dwError = 0;
 
-    if (!pTdnf || nErrorCode == 0 || !ppszError)
+    if (!pTdnf || !pPlugin || !nErrorCode || !ppszError)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* run till an enabled plugin returns error or all plugins queried */
-    for(pPlugin = pTdnf->pPlugins; pPlugin && !pszError; pPlugin = pPlugin->pNext)
+    dwError = pPlugin->stInterface.pFnGetErrorString(
+                    pPlugin->pHandle,
+                    nErrorCode,
+                    &pszError);
+    if (dwError == ERROR_TDNF_NO_PLUGIN_ERROR)
     {
-        if (pPlugin->nEnabled == 0)
-        {
-            continue;
-        }
-
-        dwError = pPlugin->stInterface.pFnGetErrorString(
-                      pPlugin->pHandle,
-                      nErrorCode,
-                      &pszError);
-        if (dwError == ERROR_TDNF_NO_PLUGIN_ERROR)
-        {
-            dwError = 0;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = 0;
     }
+
+    BAIL_ON_TDNF_ERROR(dwError);
     if (IsNullOrEmptyString(pszError))
     {
         dwError = ERROR_TDNF_NO_PLUGIN_ERROR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppszError = pszError;
+
 cleanup:
     return dwError;
 

@@ -901,6 +901,7 @@ TDNFFreePlugins(
 void
 TDNFShowPluginError(
     PTDNF pTdnf,
+    PTDNF_PLUGIN pPlugin,
     uint32_t nErrorCode
     );
 /* eventdata.c */
