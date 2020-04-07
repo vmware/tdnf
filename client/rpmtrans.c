@@ -400,17 +400,6 @@ TDNFTransAddInstallPkg(
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
-    int nDownloadFile = 1;
-
-    //Check override, then repo config and launch
-    //gpg check if needed
-    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
-    BAIL_ON_TDNF_ERROR(dwError);
-    if(nGPGSigCheck)
-    {
-        dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -450,76 +439,53 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (!access(pszFilePath, F_OK))
+    if(access(pszFilePath, F_OK))
     {
-        fp = Fopen (pszFilePath, "r.ufdio");
-        if(!fp)
+        if(errno != ENOENT)
         {
-           dwError = errno;
-           BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
- 
-        dwError = rpmReadPackageFile(
-                     pTS->pTS,
-                     fp,
-                     pszFilePath,
-                     &rpmHeader);
-        //If not checking gpg sigs, ignore signature errors
-        if(!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
-        {
-            dwError = 0;
-        }
-        if (dwError)
-        {
-            //Issue with the existing downloaded file
-            unlink(pszFilePath);
-        }
-        else
-        {
-            nDownloadFile = 0;
-        }
+        dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
+            pszRepoName, pszDownloadCacheDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    //A download could have been triggered.
+    //So check access and bail if not available
+    if(access(pszFilePath, F_OK))
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    if (nDownloadFile)
+    //Check override, then repo config and launch
+    //gpg check if needed
+    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
+    BAIL_ON_TDNF_ERROR(dwError);
+    if(nGPGSigCheck)
     {
-        if(access(pszFilePath, F_OK))
-        {
-           if(errno != ENOENT)
-           {
-              dwError = errno;
-              BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-           }
-           dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
-                          pszRepoName, pszDownloadCacheDir);
-           BAIL_ON_TDNF_ERROR(dwError);
-        }
-        //A download could have been triggered.
-        //So check access and bail if not available
-        if(access(pszFilePath, F_OK))
-        {
-           dwError = errno;
-           BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-
-        fp = Fopen (pszFilePath, "r.ufdio");
-        if(!fp)
-        {
-           dwError = errno;
-           BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-
-        dwError = rpmReadPackageFile(
-                     pTS->pTS,
-                     fp,
-                     pszFilePath,
-                     &rpmHeader);
-        //If not checking gpg sigs, ignore signature errors
-        if(!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
-        {
-           dwError = 0;
-        }
-        BAIL_ON_TDNF_RPM_ERROR(dwError);
+        dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    fp = Fopen (pszFilePath, "r.ufdio");
+    if(!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    dwError = rpmReadPackageFile(
+                  pTS->pTS,
+                  fp,
+                  pszFilePath,
+                  &rpmHeader);
+    //If not checking gpg sigs, ignore signature errors
+    if(!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);
