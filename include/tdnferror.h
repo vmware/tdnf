@@ -133,6 +133,7 @@ extern "C" {
 #define ERROR_TDNF_OPT_NOT_FOUND             1520
 #define ERROR_TDNF_PLUGIN_NO_MORE_EVENTS     1521
 #define ERROR_TDNF_NO_PLUGIN_ERROR           1522
+#define ERROR_TDNF_NO_GPGKEY_CONF_ENTRY      1523
 
 //RPM Transaction
 #define ERROR_TDNF_TRANS_INCOMPLETE     1525
