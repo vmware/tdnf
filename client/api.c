@@ -30,6 +30,7 @@ TDNFInit(
     uint32_t dwError = 0;
     int nLocked = 0;
 
+
     pthread_mutex_lock (&gEnv.mutexInitialize);
     nLocked = 1;
     if(!gEnv.nInitialized)
@@ -59,6 +60,7 @@ TDNFIsInitialized(
     uint32_t dwError = 0;
     int nInitialized = 0;
     int nLocked = 0;
+
 
     if(!pnInitialized)
     {
@@ -198,39 +200,43 @@ TDNFGetSkipProblemOption(
 {
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pSetOpt = NULL;
-    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
 
-    if(!pTdnf || !pTdnf->pArgs || !pdwSkipProblem)
+    if (!pTdnf || !pTdnf->pArgs || !pdwSkipProblem)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (!strcasecmp(pTdnf->pArgs->ppszCmds[0], "check"))
-    {
-      pSetOpt = pTdnf->pArgs->pSetOpt;
+    *pdwSkipProblem = SKIPPROBLEM_NONE;
 
-      while(pSetOpt)
-      {
-          if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-            !strcasecmp(pSetOpt->pszOptName, "skipconflicts"))
-          {
-              dwSkipProblem |= SKIPPROBLEM_CONFLICTS;
-          }
-          if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-           !strcasecmp(pSetOpt->pszOptName, "skipobsoletes"))
-          {
-             dwSkipProblem |= SKIPPROBLEM_OBSOLETES;
-          }
-          pSetOpt = pSetOpt->pNext;
-      }
+    if (strcasecmp(pTdnf->pArgs->ppszCmds[0], "check"))
+    {
+        goto cleanup;
     }
-    *pdwSkipProblem = dwSkipProblem;
+
+    for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
+    {
+        if (pSetOpt->nType != CMDOPT_KEYVALUE)
+        {
+            continue;
+        }
+
+        if (!strcasecmp(pSetOpt->pszOptName, "skipconflicts"))
+        {
+            *pdwSkipProblem |= SKIPPROBLEM_CONFLICTS;
+        }
+
+        if (!strcasecmp(pSetOpt->pszOptName, "skipobsoletes"))
+        {
+            *pdwSkipProblem |= SKIPPROBLEM_OBSOLETES;
+        }
+    }
+
 cleanup:
     return dwError;
 
 error:
-    if(pdwSkipProblem)
+    if (pdwSkipProblem)
     {
        *pdwSkipProblem = SKIPPROBLEM_NONE;
     }
@@ -329,15 +335,13 @@ TDNFCheckLocalPackages(
     solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
 
-    if (solver_solve(pSolv, &queueJobs) != 0)
+    if (solver_solve(pSolv, &queueJobs))
     {
         dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
-        dwError = SolvReportProblems(pSolv, dwSkipProblem);
-        BAIL_ON_TDNF_ERROR(dwError);
 
-        //Fail the check
-        dwError = ERROR_TDNF_SOLV_FAILED;
+        dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:

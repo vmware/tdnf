@@ -395,9 +395,12 @@ TDNFGoal(
     solver_set_flag(pSolv, SOLVER_FLAG_INSTALL_ALSO_UPDATES, 1);
 
     nProblems = solver_solve(pSolv, &queueJobs);
-    if(nProblems > 0)
+    if (nProblems > 0)
     {
-        dwError = ERROR_TDNF_SOLV_FAILED;
+        dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -438,11 +441,6 @@ cleanup:
     return dwError;
 
 error:
-    if(nProblems > 0 && pSolv)
-    {
-       TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
-       SolvReportProblems(pSolv, dwSkipProblem);
-    }
     TDNF_SAFE_FREE_MEMORY(pInfoTemp);
     if(ppInfo)
     {

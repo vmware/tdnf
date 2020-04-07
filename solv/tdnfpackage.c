@@ -8,6 +8,20 @@
 
 #include "includes.h"
 
+static bool
+SkipBasedOnType(
+    SolverRuleinfo type,
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
+    );
+
+static uint32_t
+check_for_providers(
+    PSolvSack pSack,
+    SolverRuleinfo type,
+    const char *pszProblem,
+    char *prv_pkgname
+    );
+
 uint32_t
 SolvCreatePackageList(
     PSolvPackageList* ppSolvPackageList
@@ -1515,137 +1529,166 @@ error:
  *        SolverRuleinfo : Solver problem type
  *        TDNF_SKIPPROBLEM_TYPE: user specified problem type
  * Return:
- *      1 : if solver problem type and user specified problem matches
- *      0 : if not matches
+ *      true : if solver problem type and user specified problem matches
+ *      false : if not matches
  */
-static uint32_t
-__should_skip(
+static bool
+SkipBasedOnType(
     SolverRuleinfo type,
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
-    uint32_t dwResult = 0;
     if (dwSkipProblem == SKIPPROBLEM_CONFLICTS)
     {
-        switch(type)
-        {
-             case SOLVER_RULE_PKG_CONFLICTS:
-             case SOLVER_RULE_PKG_SELF_CONFLICT:
-                 dwResult = 1;
-                 break;
-             default:
-                 break;
-        }
+        return (type == SOLVER_RULE_PKG_CONFLICTS ||
+                type == SOLVER_RULE_PKG_SELF_CONFLICT);
     }
-    else if (dwSkipProblem == SKIPPROBLEM_OBSOLETES)
+
+    if (dwSkipProblem == SKIPPROBLEM_OBSOLETES)
     {
-        switch(type)
-        {
-             case SOLVER_RULE_PKG_OBSOLETES:
-             case SOLVER_RULE_PKG_IMPLICIT_OBSOLETES:
-             case SOLVER_RULE_PKG_INSTALLED_OBSOLETES:
-                 dwResult = 1;
-                 break;
-             default:
-                 break;
-        }
+        return (type == SOLVER_RULE_PKG_OBSOLETES ||
+                type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
+                type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES);
     }
-    else if (dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES))
+
+    if (dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES))
     {
-        switch(type)
+        return (type == SOLVER_RULE_PKG_CONFLICTS ||
+                type == SOLVER_RULE_PKG_SELF_CONFLICT ||
+                type == SOLVER_RULE_PKG_OBSOLETES ||
+                type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
+                type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES);
+    }
+
+    return false;
+}
+
+static uint32_t
+check_for_providers(
+    PSolvSack pSack,
+    SolverRuleinfo type,
+    const char *pszProblem,
+    char *prv_pkgname
+    )
+{
+    char *beg;
+    char *end;
+    uint32_t dwError = 0;
+    char pkgname[256] = {0};
+    PSolvPackageList pAvailabePkgList = NULL;
+
+    if (!pSack || !prv_pkgname)
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
+
+    if (type != SOLVER_RULE_PKG_REQUIRES)
+    {
+        return dwError;
+    }
+
+    beg = strstr(pszProblem, "requires ");
+    if (beg)
+    {
+        beg += strlen("requires ");
+        end = strchr(beg, ',');
+    }
+
+    if (!beg || !end)
+    {
+        fprintf(stderr, "Error while trying to resolve\n");
+        return ERROR_TDNF_SOLV_FAILED;
+    }
+
+    for (int32_t i = 0; end > beg; beg++)
+    {
+        if (*beg != ' ')
         {
-             case SOLVER_RULE_PKG_CONFLICTS:
-             case SOLVER_RULE_PKG_SELF_CONFLICT:
-             case SOLVER_RULE_PKG_OBSOLETES:
-             case SOLVER_RULE_PKG_IMPLICIT_OBSOLETES:
-             case SOLVER_RULE_PKG_INSTALLED_OBSOLETES:
-                 dwResult = 1;
-                 break;
-             default:
-                 break;
+            pkgname[i++] = *beg;
         }
     }
-    return dwResult;
+
+    if (!strcmp(pkgname, prv_pkgname))
+    {
+        return dwError;
+    }
+
+    strcpy(prv_pkgname, pkgname);
+    dwError = SolvFindAvailablePkgByName(pSack, pkgname, &pAvailabePkgList);
+    if (pAvailabePkgList)
+    {
+        SolvFreePackageList(pAvailabePkgList);
+    }
+
+    return dwError;
 }
 
 uint32_t
 SolvReportProblems(
+    PSolvSack pSack,
     Solver* pSolv,
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
-    uint32_t dwError = 0;
-    uint32_t dwSkipProbCount = 0;
-    int i = 0;
-    int j = 0;
     int nCount = 0;
-    Id dwProblemId = 0;
+    Id dwDep = 0;
     Id dwSource = 0;
     Id dwTarget = 0;
-    Id dwDep = 0;
-    const char* pszProblem = NULL;
-
+    Id dwProblemId = 0;
     SolverRuleinfo type;
+    uint32_t dwError = 0;
+    uint32_t total_prblms = 0;
+    char prv_pkgname[256] = {0};
 
-    if(!pSolv)
+    if (!pSolv)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+        return ERROR_TDNF_INVALID_PARAMETER;
     }
 
     nCount = solver_problem_count(pSolv);
-    /**
-     * Below condition check is added to count the number of skip problems
-     * */
-    if((nCount > 0) && (dwSkipProblem != SKIPPROBLEM_NONE))
+    for ( ; nCount > 0; nCount--)
     {
-        for( i = 1; i <= nCount; ++i)
+        const char *pszProblem = NULL;
+
+        dwProblemId = solver_findproblemrule(pSolv, nCount);
+
+        type = solver_ruleinfo(pSolv, dwProblemId,
+                               &dwSource, &dwTarget, &dwDep);
+
+        if (SkipBasedOnType(type, dwSkipProblem))
         {
-            dwProblemId = solver_findproblemrule(pSolv, i);
-            type = solver_ruleinfo(
-                       pSolv,
-                       dwProblemId,
-                       &dwSource,&dwTarget,
-                       &dwDep);
-            if (__should_skip(type, dwSkipProblem))
-            {
-                dwSkipProbCount++;
-            }
+            continue;
         }
-    }
 
-    if(nCount > 0)
-    {
-        fprintf(stderr, "Found %u problem(s) while resolving\n", nCount - dwSkipProbCount);
-        for( i = 1; i <= nCount; ++i)
+        pszProblem = solver_problemruleinfo2str(pSolv, type, dwSource,
+                                                dwTarget, dwDep);
+
+        if (type == SOLVER_RULE_PKG_REQUIRES)
         {
-            dwProblemId = solver_findproblemrule(pSolv, i);
-            type = solver_ruleinfo(
-                       pSolv,
-                       dwProblemId,
-                       &dwSource,&dwTarget,
-                       &dwDep);
-
-            if (__should_skip(type, dwSkipProblem))
+            if (!check_for_providers(pSack, type, pszProblem, prv_pkgname))
             {
                 continue;
             }
-            pszProblem = solver_problemruleinfo2str(
-                             pSolv,
-                             type,
-                             dwSource,
-                             dwTarget,
-                             dwDep);
-
-            fprintf(stderr, "%d. %s\n", ++j, pszProblem);
-            pszProblem = NULL;
+            else
+            {
+                dwError = ERROR_TDNF_SOLV_FAILED;
+            }
         }
-    }
-cleanup:
-    return dwError;
 
-error:
-    goto cleanup;
+        dwError = ERROR_TDNF_SOLV_FAILED;
+        fprintf(stderr, "%u. %s\n", ++total_prblms, pszProblem);
+    }
+
+    if (dwError)
+    {
+        fprintf(stderr, "Found %u problem(s) while resolving\n", total_prblms);
+    }
+    else
+    {
+        printf("No problems found while resolving\n");
+    }
+
+    return dwError;
 }
 
 uint32_t

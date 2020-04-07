@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdbool.h>
+
 // libsolv
 #include <solv/evr.h>
 #include <solv/pool.h>
