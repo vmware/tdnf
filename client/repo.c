@@ -340,6 +340,11 @@ TDNFGetGPGSignatureCheck(
             nGPGSigCheck = pRepo->nGPGCheck;
             if(nGPGSigCheck)
             {
+                if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
+                {
+                    dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
                 dwError = TDNFAllocateString(
                              pRepo->pszUrlGPGKey,
                              &pszUrlGPGKey);
