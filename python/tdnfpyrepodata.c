@@ -17,6 +17,7 @@ TDNFPyRepoDataFree(PY_TDNF_REPODATA *self)
     Py_XDECREF(self->id);
     Py_XDECREF(self->name);
     Py_XDECREF(self->baseurl);
+    Py_XDECREF(self->metalink);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -47,6 +48,11 @@ TDNFPyRepoDataNew(
             dwError = ERROR_TDNF_OUT_OF_MEMORY;
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        if(!(self->metalink = PyBytes_FromString("")))
+        {
+            dwError = ERROR_TDNF_OUT_OF_MEMORY;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
 cleanup:
@@ -69,12 +75,13 @@ TDNFPyRepoDataInit(
     PyObject *id = NULL;
     PyObject *name = NULL;
     PyObject *baseurl = NULL;
+    PyObject *metalink = NULL;
     PyObject *tmp = NULL;
 
-    static char *kwlist[] = {"id", "name", "baseurl", "enabled", NULL};
+    static char *kwlist[] = {"id", "name", "baseurl", "metalink", "enabled", NULL};
 
     if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSSI", kwlist,
-                                      &id, &name, &baseurl, &self->enabled))
+                                      &id, &name, &baseurl, &metalink, &self->enabled))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -99,6 +106,13 @@ TDNFPyRepoDataInit(
         tmp = self->baseurl;
         Py_INCREF(baseurl);
         self->baseurl = baseurl;
+        Py_XDECREF(tmp);
+    }
+    if (metalink)
+    {
+        tmp = self->metalink;
+        Py_INCREF(metalink);
+        self->metalink = metalink;
         Py_XDECREF(tmp);
     }
 
@@ -127,6 +141,7 @@ TDNFPyRepoDataRepr(
                   pRepoData->id ? PyBytes_AsString(pRepoData->id) : "",
                   pRepoData->name ? PyBytes_AsString(pRepoData->name) : "",
                   pRepoData->baseurl ? PyBytes_AsString(pRepoData->baseurl) : "",
+                  pRepoData->metalink ? PyBytes_AsString(pRepoData->metalink) : "",
                   pRepoData->enabled);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -178,6 +193,7 @@ TDNFPyMakeRepoData(
     pPyRepoData->id = PyBytes_FromString(pRepoData->pszId);
     pPyRepoData->name = PyBytes_FromString(pRepoData->pszName);
     pPyRepoData->baseurl = PyBytes_FromString(pRepoData->pszBaseUrl);
+    pPyRepoData->metalink = PyBytes_FromString(pRepoData->metalink);
     pPyRepoData->enabled = pRepoData->nEnabled;
 
     *ppPyRepoData = (PyObject *)pPyRepoData;
@@ -204,6 +220,8 @@ static PyMemberDef TDNFPyRepoDataMembers[] = {
      "repo name"},
     {"baseurl", T_OBJECT_EX, offsetof(PY_TDNF_REPODATA, baseurl), 0,
      "repo baseurl"},
+    {"metalink", T_OBJECT_EX, offsetof(PY_TDNF_REPODATA, metalink), 0,
+     "repo metalink"},
     {"enabled", T_INT, offsetof(PY_TDNF_REPODATA, enabled), 0,
      "repo enabled status"},
     {NULL}  /* Sentinel */

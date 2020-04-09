@@ -67,4 +67,7 @@
 #include "../common/prototypes.h"
 #include "prototypes.h"
 
+#include <metalink/metalink_parser.h>
+
+
 #endif /* __CLIENT_INCLUDES_H__ */
