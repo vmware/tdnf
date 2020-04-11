@@ -17,8 +17,117 @@
  *
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
-
 #include "includes.h"
+
+typedef union {
+    MD5_CTX md5_ctx;
+    SHA_CTX sha1_ctx;
+    SHA256_CTX sha256_ctx;
+} hash_ctx_t;
+
+//TDNF wrapper for calling SHA1_Init
+int
+TDNF_SHA1_Init(
+    hash_ctx_t *ctx
+    )
+{
+    return SHA1_Init(&ctx->sha1_ctx);
+}
+
+//TDNF wrapper for calling SHA256_Init
+int
+TDNF_SHA256_Init(
+    hash_ctx_t *ctx
+    )
+{
+    return SHA256_Init(&(ctx->sha256_ctx));
+}
+
+//TDNF wrapper for calling MD5_Init
+int
+TDNF_MD5_Init(
+    hash_ctx_t *ctx
+    )
+{
+    return MD5_Init(&(ctx->md5_ctx));
+}
+
+//TDNF wrapper for calling SHA1_Update
+int
+TDNF_SHA1_Update(
+    hash_ctx_t *ctx,
+    char *buf,
+    int length
+    )
+{
+    return SHA1_Update(&ctx->sha1_ctx, buf, length);
+}
+
+//TDNF wrapper for calling SHA256_Update
+int
+TDNF_SHA256_Update(
+    hash_ctx_t *ctx,
+    char *buf,
+    int length
+    )
+{
+    return SHA256_Update(&(ctx->sha256_ctx), buf, length);
+}
+
+//TDNF wrapper for calling MD5_Update
+int
+TDNF_MD5_Update(
+    hash_ctx_t *ctx,
+    char *buf,
+    int length
+    )
+{
+    return MD5_Update(&(ctx->md5_ctx), buf, length);
+}
+
+//TDNF wrapper for calling SHA1_Final
+int
+TDNF_SHA1_Final(
+    uint8_t *res,
+    hash_ctx_t *ctx
+    )
+{
+    return SHA1_Final(res, &ctx->sha1_ctx);
+}
+
+//TDNF wrapper for calling SHA256_Final
+int
+TDNF_SHA256_Final(
+    uint8_t *res,
+    hash_ctx_t *ctx
+    )
+{
+    return SHA256_Final(res, &(ctx->sha256_ctx));
+}
+
+//TDNF wrapper for calling MD5_Final
+int
+TDNF_MD5_Final(
+    uint8_t *res,
+    hash_ctx_t *ctx
+    )
+{
+    return MD5_Final(res, &(ctx->md5_ctx));
+}
+
+typedef struct _hash_op {
+    int (*init_fn)();
+    int (*update_fn)();
+    int (*final_fn)();
+    int length;
+} hash_op;
+
+static hash_op hash_ops[TDNF_HASH_SENTINEL] =
+    {
+       [TDNF_HASH_MD5]    = { &TDNF_MD5_Init, &TDNF_MD5_Update, &TDNF_MD5_Final, MD5_DIGEST_LENGTH },
+       [TDNF_HASH_SHA1]   = { &TDNF_SHA1_Init, &TDNF_SHA1_Update, &TDNF_SHA1_Final, SHA_DIGEST_LENGTH },
+       [TDNF_HASH_SHA256] = { &TDNF_SHA256_Init, &TDNF_SHA256_Update, &TDNF_SHA256_Final, SHA256_DIGEST_LENGTH }
+    };
 
 static int
 progress_cb(
@@ -106,11 +215,419 @@ error:
     }
     return dwError;
 }
+
+
+uint32_t
+TDNFCheckDigest(
+    const char *filename,
+    hash_op *hash,
+    uint8_t *digest
+    )
+{
+    uint32_t dwError = 0;
+    int fd = -1;
+    hash_ctx_t ctx;
+    char buf[BUFSIZ] = {0};
+    int length = 0;
+
+    if(IsNullOrEmptyString(filename) || !hash || !digest)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    memset(&ctx, 0, sizeof(hash_ctx_t));
+
+    fd = open(filename, O_RDONLY);
+    if(fd == -1)
+    {
+        fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    dwError = hash->init_fn(&ctx);
+
+    if(!dwError)
+    {
+        fprintf(stderr, "Hash Init Failed\n");
+        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
+    {
+        dwError = hash->update_fn(&ctx, buf, length);
+        if(!dwError)
+        {
+            fprintf(stderr, "Hash Update Failed\n");
+            dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        memset(buf, 0, BUFSIZ);
+    }
+    if(length == -1)
+    {
+        fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    dwError = hash->final_fn(digest, &ctx);
+    if(!dwError)
+    {
+        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = 0;
+cleanup:
+    if(fd != -1)
+    {
+        close(fd);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCheckHash(
+    const char *filename,
+    unsigned char *digest,
+    int type
+    )
+{
+
+    uint32_t dwError = 0;
+    uint8_t digest_from_file[MAX_DIGEST_LENGTH] = {0};
+    hash_op *hash = NULL;
+
+    if(IsNullOrEmptyString(filename) ||
+       !digest)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (type  < TDNF_HASH_MD5 || type >= TDNF_HASH_SENTINEL)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hash = hash_ops + type;
+
+    dwError = TDNFCheckDigest(filename, hash, digest_from_file);
+    BAIL_ON_TDNF_ERROR(dwError);
+    if(memcmp(digest_from_file, digest, hash->length))
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    printf("Validating metalink (%s) OK\n", filename);
+
+cleanup:
+    return dwError;
+error:
+    if(!IsNullOrEmptyString(filename))
+    {
+        fprintf(stderr, "Error: Validating metalink (%s) FAILED (digest mismatch)\n", filename);
+    }
+    goto cleanup;
+}
+
+
+uint32_t
+TDNFMetalinkCheckHash(
+    char *pszFile,
+    metalinkfile *ml_file
+    )
+{
+
+    uint32_t dwError = 0;
+    if(IsNullOrEmptyString(pszFile) ||
+       !ml_file)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    printf("Validating metalink (%s)...\n", pszFile);
+    if(ml_file->digest == NULL)
+    {
+        fprintf(stderr,
+                "Error: Validating metalink (%s) FAILED (digest missing)\n", pszFile);
+        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = TDNFCheckHash(pszFile, ml_file->digest, ml_file->type);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if(ml_file)
+    {
+        TDNF_SAFE_FREE_MEMORY(ml_file->filename);
+        TDNF_SAFE_FREE_MEMORY(ml_file);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/* Returns nonzero if hex_digest is properly formatted; that is each
+   letter is in [0-9A-Za-z] and the length of the string equals to the
+   result length of digest * 2. */
+uint32_t
+TDNFCheckHexDigest(
+    const char *hex_digest,
+    int digest_length
+    )
+{
+    int i = 0;
+    if(IsNullOrEmptyString(hex_digest) ||
+       (digest_length <= 0))
+    {
+        return 0;
+    }
+    for(i = 0; hex_digest[i]; ++i)
+    {
+        if(!isxdigit(hex_digest[i]))
+        {
+            return 0;
+        }
+    }
+    return digest_length * 2 == i;
+}
+
+uint32_t
+TDNFHexToUint(
+    const char *hex_digest,
+    unsigned char *uintValue
+    )
+{
+    uint32_t dwError = 0;
+    char buf[3] = {0};
+    unsigned long val = 0;
+
+    if(IsNullOrEmptyString(hex_digest) ||
+       !uintValue)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    buf[0] = hex_digest[0];
+    buf[1] = hex_digest[1];
+
+    errno = 0;
+    val = strtoul(buf, NULL, 16);
+    if(errno)
+    {
+        fprintf(stderr, "Error: strtoul call failed\n");
+
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    *uintValue = (unsigned char)(val&0xff);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFChecksumFromHexDigest(
+    const char *hex_digest,
+    unsigned char *ppdigest
+    )
+{
+    uint32_t dwError = 0;
+    unsigned char *pdigest = NULL;
+    size_t i = 0;
+    size_t len = 0;
+    unsigned char uintValue = 0;
+
+    if(IsNullOrEmptyString(hex_digest) ||
+       !ppdigest)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    len = strlen(hex_digest);
+
+    dwError = TDNFAllocateMemory(1, len/2, (void **)&pdigest);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(i = 0; i < len; i += 2)
+    {
+        dwError = TDNFHexToUint(hex_digest + i, &uintValue);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pdigest[i>>1] = uintValue;
+    }
+    memcpy( ppdigest, pdigest, len>>1 );
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pdigest);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+int
+TDNFGetResourceType(
+    const char *resource_type,
+    int *type
+    )
+{
+    uint32_t dwError = 0;
+
+    if(IsNullOrEmptyString(resource_type) ||
+       !type)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(!strcasecmp(resource_type, "sha256") ||
+       !strcasecmp(resource_type, "sha-256"))
+    {
+        *type = TDNF_HASH_SHA256;
+    }
+    else if(!strcasecmp(resource_type, "sha1") ||
+            !strcasecmp(resource_type, "sha-1"))
+    {
+        *type = TDNF_HASH_SHA1;
+    }
+    else if(!strcasecmp(resource_type, "md5"))
+    {
+        *type = TDNF_HASH_MD5;
+    }
+    else
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFNewMetalinkfile(
+    metalink_file_t *fileinfo,
+    metalinkfile **ml_file
+    )
+{
+    metalinkfile *metalink_file = NULL;
+    uint32_t dwError = 0;
+    int i = 0;
+    int offset = -1;
+    int type = 0;
+    char *resource_type [] = { "https", "http", "ftp", "ftps", "rsync", NULL };
+    metalink_checksum_t **metalink_checksum;
+    metalink_resource_t **metalink_resource;
+
+    if(!fileinfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(1, sizeof(metalinkfile), (void **)&metalink_file);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(fileinfo->name, &(metalink_file->filename));
+    BAIL_ON_TDNF_ERROR(dwError);
+    //set type to -1
+    metalink_file->type = -1;
+    //set digest to NULL
+    memset(metalink_file->digest, 0, MAX_DIGEST_LENGTH);
+    if(!fileinfo->checksums)
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    metalink_checksum = fileinfo->checksums;
+    for(i = 0; metalink_checksum[i] ; ++i)
+    {
+        dwError = TDNFGetResourceType(metalink_checksum[i]->type,
+                                         &type);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(metalink_file->type > type)
+        {
+            continue;
+        }
+        if(!TDNFCheckHexDigest(metalink_checksum[i]->hash, hash_ops[type].length))
+        {
+            continue;
+        }
+        offset = i;
+        metalink_file->type = type;
+    }
+
+    if(offset != -1)
+    {
+        dwError = TDNFChecksumFromHexDigest(metalink_checksum[offset]->hash,
+                                                metalink_file->digest);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(!fileinfo->resources)
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    metalink_resource = fileinfo->resources;
+    /* Filter by type if it is non-NULL. In Metalink v3, type
+       includes the type of the resource. In repo, we are only
+       interested in HTTP, HTTPS ,FTP and rsync.
+    */
+    if(!metalink_resource || (*metalink_resource == NULL))
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if((*metalink_resource)->url == NULL)
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    i = 0;
+    while(resource_type[i] != NULL)
+    {
+        if(!strcasecmp((*metalink_resource)->type, resource_type[i++]))
+        {
+            *ml_file = metalink_file;
+            break;
+        }
+    }
+    //In case we bailed out due to invalid type
+    if(*ml_file == NULL)
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    if(metalink_file)
+    {
+        TDNF_SAFE_FREE_MEMORY(metalink_file->filename);
+        TDNF_SAFE_FREE_MEMORY(metalink_file);
+    }
+    goto cleanup;  
+}
+
 uint32_t
 TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
     const char *pszRepo,
-    const char *pszFile
+    const char *pszFile,
+    metalinkfile **ml_file
     )
 {
     metalink_error_t metalink_error;
@@ -176,13 +693,27 @@ TDNFParseAndGetURLFromMetalink(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    if(metalink->files == NULL)
+    {
+        fprintf(stderr, "Metalink does not contain any valid file.\n");
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     for(files = metalink->files; files && *files; ++files)
     {
         resources = (*files)->resources;
-        if(!resources)
+        if(IsNullOrEmptyString(resources))
         {
-            continue;
+            fprintf(stderr, "File %s does not have any resource.\n", (*files)->name);
+            dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
+        if(ml_file)
+        {
+            dwError = TDNFNewMetalinkfile((*files), ml_file);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
         dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, (*resources)->url);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -200,6 +731,7 @@ cleanup:
 error:
     goto cleanup;
 }
+
 uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
@@ -207,7 +739,8 @@ TDNFDownloadFile(
     const char *pszFileUrl,
     const char *pszFile,
     const char *pszProgressData,
-    int is_metalink
+    int is_metalink,
+    metalinkfile **ml_file
     )
 {
     uint32_t dwError = 0;
@@ -306,7 +839,7 @@ TDNFDownloadFile(
                 fclose(fp);
                 fp = NULL;
             }
-            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile);
+            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile, ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
@@ -359,7 +892,6 @@ TDNFDownloadPackage(
     char *pszPackageUrl = NULL;
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
-    int metalink = 0;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -398,7 +930,8 @@ TDNFDownloadPackage(
                                pszPackageUrl,
                                pszPackageFile,
                                nSilent ? NULL : pszPkgName,
-                               metalink);
+                               0,
+                               NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(!nSilent)

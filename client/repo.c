@@ -488,6 +488,7 @@ TDNFGetRepoMD(
     int nNewRepoMDFile = 0;
     int nReplaceRepoMD = 0;
     int metalink = 0;
+    metalinkfile *ml_file = NULL;
 
     if(!pTdnf ||
        !pRepoData ||
@@ -645,7 +646,8 @@ TDNFGetRepoMD(
                           pszRepoMetalink,
                           pszTmpRepoMetalinkFile,
                           pRepoData->pszId,
-                          metalink);
+                          metalink,
+                          &ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
             dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -662,9 +664,15 @@ TDNFGetRepoMD(
                           pszRepoMDUrl,
                           pszTmpRepoMDFile,
                           pRepoData->pszId,
-                          0);
+                          0,
+                          NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        if(metalink && ml_file)
+        {
+            dwError = TDNFMetalinkCheckHash(pszTmpRepoMDFile , ml_file);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
         /* plugin event indicating a repomd download happened */
         dwError = TDNFEventRepoMDDownloadEnd(
                       pTdnf,
@@ -680,7 +688,7 @@ TDNFGetRepoMD(
         if(metalink && (pRepoData->pszBaseUrl == NULL))
         {
             //parse metalink and set BaseURL
-            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pRepoData->pszId, pszMetaLinkFile);
+            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pRepoData->pszId, pszMetaLinkFile, NULL);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
@@ -746,7 +754,6 @@ TDNFDownloadRepoMDPart(
 {
     uint32_t dwError = 0;
     char *pszTempUrl = NULL;
-    int metalink = 0;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszBaseUrl) ||
@@ -778,7 +785,8 @@ TDNFDownloadRepoMDPart(
                       pszTempUrl,
                       pszDestPath,
                       pszRepo,
-                      metalink);
+                      0,
+                      NULL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

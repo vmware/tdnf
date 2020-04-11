@@ -193,7 +193,7 @@ TDNFPyMakeRepoData(
     pPyRepoData->id = PyBytes_FromString(pRepoData->pszId);
     pPyRepoData->name = PyBytes_FromString(pRepoData->pszName);
     pPyRepoData->baseurl = PyBytes_FromString(pRepoData->pszBaseUrl);
-    pPyRepoData->metalink = PyBytes_FromString(pRepoData->metalink);
+    pPyRepoData->metalink = PyBytes_FromString(pRepoData->pszMetaLink);
     pPyRepoData->enabled = pRepoData->nEnabled;
 
     *ppPyRepoData = (PyObject *)pPyRepoData;

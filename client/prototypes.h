@@ -21,6 +21,17 @@
 #ifndef __CLIENT_PROTOTYPES_H__
 #define __CLIENT_PROTOTYPES_H__
 
+#include <openssl/sha.h>
+#include <openssl/md5.h>
+
+#define MAX_DIGEST_LENGTH 64
+typedef struct metalinkfile{
+    char *filename;
+    int   type;
+    /* raw digest value, not ascii hex digest */
+    unsigned char digest[MAX_DIGEST_LENGTH];
+} metalinkfile;
+
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
@@ -164,10 +175,17 @@ TDNFRepoApplyProxySettings(
 
 //remoterepo.c
 uint32_t
+TDNFMetalinkCheckHash(
+    char *pszFile,
+    metalinkfile *ml_file
+    );
+
+uint32_t
 TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
     const char *pszRepo,
-    const char *pszFile
+    const char *pszFile,
+    metalinkfile **ml_file
     );
 
 uint32_t
@@ -177,7 +195,8 @@ TDNFDownloadFile(
     const char *pszFileUrl,
     const char *pszFile,
     const char *pszProgressData,
-    int metalink
+    int metalink,
+    metalinkfile **ml_file
     );
 
 uint32_t
