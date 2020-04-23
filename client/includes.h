@@ -37,6 +37,7 @@
 #include <utime.h>
 #include <fnmatch.h>
 #include <libgen.h>
+#include <ctype.h>
 //
 #include <sys/utsname.h>
 
@@ -69,5 +70,12 @@
 
 #include <metalink/metalink_parser.h>
 
+// Enum in order of preference
+enum {
+    TDNF_HASH_MD5 = 0,
+    TDNF_HASH_SHA1,
+    TDNF_HASH_SHA256,
+    TDNF_HASH_SENTINEL
+};
 
 #endif /* __CLIENT_INCLUDES_H__ */

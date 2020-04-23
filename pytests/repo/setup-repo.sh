@@ -85,8 +85,10 @@ cat << EOF > ${PUBLISH_PATH}/repodata/photon.metalink
 <metalink version="3.0" xmlns="http://www.metalinker.org/" type="dynamic" pubdate="Wed, 05 Feb 2020 08:14:56 GMT">
  <files>
   <file name="repomd.xml">
+   <verification>
+   </verification>
    <resources maxconnections="1">
-    <url protocol="file" type="file" location="IN" preference="100">file://${PUBLISH_PATH}</url>
+    <url protocol="ftp" type="ftp" location="IN" preference="100">file://${PUBLISH_PATH}</url>
    </resources>
   </file>
  </files>
