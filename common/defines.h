@@ -40,11 +40,11 @@
         }                                                          \
     } while(0)
 
-
 #define TDNF_SAFE_FREE_MEMORY(pMemory) \
     do {                                                           \
         if (pMemory) {                                             \
             TDNFFreeMemory(pMemory);                               \
+            pMemory = NULL;                                        \
         }                                                          \
     } while(0)
 
@@ -52,6 +52,7 @@
     do {                                                           \
         if (ppArray) {                                             \
             TDNFFreeStringArray(ppArray);                          \
+            ppArray = NULL;                                        \
         }                                                          \
     } while(0)
 

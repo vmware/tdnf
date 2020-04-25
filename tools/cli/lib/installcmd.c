@@ -167,7 +167,6 @@ TDNFCliAlterCommand(
     )
 {
     uint32_t dwError = 0;
-    char chChoice = 'n';
     char** ppszPackageArgs = NULL;
     int nPackageCount = 0;
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
@@ -218,16 +217,20 @@ TDNFCliAlterCommand(
 
     if(pSolvedPkgInfo->nNeedAction)
     {
+        int32_t opt = 0;
+
         if(!pCmdArgs->nAssumeYes && !pCmdArgs->nAssumeNo)
         {
-            printf("Is this ok [y/N]:");
-            if (scanf("%c", &chChoice) != 1)
+            printf("Is this ok [y/N]: ");
+
+            opt = getchar();
+            if (tolower(opt) != 'y' && tolower(opt) != 'n')
             {
                 printf("Invalid input\n");
             }
         }
 
-        if(pCmdArgs->nAssumeYes || chChoice == 'y')
+        if(pCmdArgs->nAssumeYes || (tolower(opt) == 'y'))
         {
             if(!nSilent && pSolvedPkgInfo->nNeedDownload)
             {

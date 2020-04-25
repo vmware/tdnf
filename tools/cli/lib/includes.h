@@ -25,6 +25,8 @@
 /* Use this to get rid of variable/parameter unused warning */
 #define UNUSED(var) ((void)(var))
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -33,6 +35,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
+#include <stdbool.h>
 
 #include <tdnf.h>
 #include <tdnfcli.h>

@@ -34,7 +34,7 @@ SolvLoadRepomd(
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-cleanup: 
+cleanup:
     if(fp != NULL)
     {
         fclose(fp);
@@ -70,7 +70,7 @@ SolvLoadRepomdPrimary(
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-cleanup: 
+cleanup:
     if(fp != NULL)
     {
         fclose(fp);
@@ -106,7 +106,7 @@ SolvLoadRepomdFilelists(
         dwError = ERROR_TDNF_SOLV_FAILED;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-cleanup: 
+cleanup:
     if(fp != NULL)
         fclose(fp);
     return dwError;
@@ -139,7 +139,7 @@ SolvLoadRepomdUpdateinfo(
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-cleanup: 
+cleanup:
     if(fp != NULL)
     {
         fclose(fp);
@@ -188,7 +188,7 @@ SolvReadYumRepo(
     }
 
 
-cleanup: 
+cleanup:
 
     return dwError;
 
@@ -217,7 +217,7 @@ SolvCountPackages(
         dwCount++;
     }
     *pdwCount = dwCount;
-cleanup: 
+cleanup:
     return dwError;
 error:
     goto cleanup;
@@ -283,49 +283,49 @@ error:
 
 uint32_t
 SolvCalculateCookieForRepoMD(
-    char* pszRepoMD,
-    unsigned char* pszCookie
+    char *pszRepoMD,
+    unsigned char *pszCookie
     )
 {
-    uint32_t dwError = 0;
     FILE *fp = NULL;
+    int32_t nLen = 0;
+    uint32_t dwError = 0;
     Chksum *pChkSum = NULL;
-    int nLen = 0;
-    char buf[4096];
+    char buf[BUFSIZ] = {0};
 
     if (!pszRepoMD)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+        BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_INVALID_PARAMETER));
     }
 
     fp = fopen(pszRepoMD, "r");
-    if (fp == NULL)
+    if (!fp)
     {
-        dwError = ERROR_TDNF_SOLV_IO;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+        BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_IO));
     }
 
     pChkSum = solv_chksum_create(REPOKEY_TYPE_SHA256);
     if (!pChkSum)
     {
-        dwError = ERROR_TDNF_SOLV_CHKSUM;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+        BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_CHKSUM));
     }
     solv_chksum_add(pChkSum, SOLV_COOKIE_IDENT, strlen(SOLV_COOKIE_IDENT));
 
-    while ((nLen = fread(buf, 1, sizeof(buf), fp)) > 0)
+    while ((nLen = fread(buf, 1, sizeof(buf) - 1, fp)) > 0)
     {
           solv_chksum_add(pChkSum, buf, nLen);
+          memset(buf, 0, sizeof(buf));
     }
     solv_chksum_free(pChkSum, pszCookie);
 
 cleanup:
-    if (fp != NULL)
+    if (fp)
     {
         fclose(fp);
     }
+
     return dwError;
+
 error:
     goto cleanup;
 }

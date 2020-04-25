@@ -74,20 +74,6 @@ typedef enum
         }                                                          \
     } while(0)
 
-#define TDNF_SAFE_FREE_MEMORY(pMemory) \
-    do {                                                           \
-        if (pMemory) {                                             \
-            TDNFFreeMemory(pMemory);                               \
-        }                                                          \
-    } while(0)
-
-#define TDNF_SAFE_FREE_STRINGARRAY(ppArray) \
-    do {                                                           \
-        if (ppArray) {                                             \
-            TDNFFreeStringArray(ppArray);                          \
-        }                                                          \
-    } while(0)
-
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
 #define TDNF_NAME                         "tdnf"
