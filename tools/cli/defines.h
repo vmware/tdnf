@@ -21,9 +21,6 @@
 
 #pragma once
 
-#define ENABLEREPO        "enablerepo"
-#define DISABLEREPO       "disablerepo"
-
 #define IsNullOrEmptyString(str) (!(str) || !(*str))
 
 #define BAIL_ON_CLI_ERROR(unError) \
@@ -32,24 +29,23 @@
         {                                                          \
             goto error;                                            \
         }                                                          \
-    }                                                              \
-    while(0)
+    } while(0)
 
 #define TDNF_CLI_SAFE_FREE_MEMORY(pMemory) \
     do {                                                           \
         if (pMemory) {                                             \
             TDNFFreeMemory(pMemory);                               \
+            pMemory = NULL;                                        \
         }                                                          \
-    }                                                              \
-    while(0)
+    } while(0)
 
 #define TDNF_CLI_SAFE_FREE_STRINGARRAY(ppArray) \
     do {                                                           \
         if (ppArray) {                                             \
             TDNFFreeStringArray(ppArray);                          \
+            ppArray = NULL;                                        \
         }                                                          \
-    }                                                              \
-    while(0)
+    } while(0)
 
 #define TDNF_CLI_ERROR_TABLE \
 { \

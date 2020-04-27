@@ -21,6 +21,22 @@
 
 #include "includes.h"
 
+typedef struct _SetOptArgs
+{
+    TDNF_CMDOPT_TYPE Type;
+    const char *OptName;
+    const char *OptVal;
+} SetOptArgs;
+
+static SetOptArgs OptValTable[] = {
+    {CMDOPT_KEYVALUE, "sec-severity", NULL},
+    {CMDOPT_ENABLEREPO, "enablerepo", NULL},
+    {CMDOPT_DISABLEREPO, "disablerepo", NULL},
+    {CMDOPT_ENABLEPLUGIN, "enableplugin", NULL},
+    {CMDOPT_DISABLEPLUGIN, "disableplugin", NULL},
+    {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;noplugins;reboot-required;security", "1"}
+};
+
 static TDNF_CMD_ARGS _opt = {0};
 
 //options - incomplete
@@ -41,7 +57,7 @@ static struct option pstOptions[] =
     {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"quiet",         no_argument, &_opt.nQuiet, 1},       //--nogpgcheck
-    {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh 
+    {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh
     {"releasever",    required_argument, 0, 0},            //--releasever
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
     {"setopt",        required_argument, 0, 0},            //--set or override options
@@ -179,7 +195,7 @@ TDNFCliParseArgs(
     //Collect extra args
     if (optind < argc)
     {
-        pCmdArgs->nCmdCount = argc-optind;
+        pCmdArgs->nCmdCount = argc - optind;
         dwError = TDNFAllocateMemory(
                       pCmdArgs->nCmdCount,
                       sizeof(char*),
@@ -219,7 +235,8 @@ TDNFCopyOptions(
     )
 {
     uint32_t dwError = 0;
-    if(!pOptionArgs || !pArgs)
+
+    if (!pOptionArgs || !pArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
@@ -251,193 +268,100 @@ error:
 
 uint32_t
 ParseOption(
-    const char* pszName,
-    const char* pszArg,
+    const char *pszName,
+    const char *pszArg,
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
     uint32_t dwError = 0;
-    char* pszCopyArgs = NULL;
-    char* pszToken = NULL;
-    char *pszTokenSave = NULL;
+    char *pszCopyArgs = NULL;
 
-    if(!pszName || !pCmdArgs)
+    if (!pszName || !pCmdArgs)
     {
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
     }
+
     dwError = TDNFCliValidateOptions(pszName, pszArg, pstOptions);
     BAIL_ON_CLI_ERROR(dwError);
 
-    if(!strcasecmp(pszName, "config"))
+    if (!strcasecmp(pszName, "config"))
     {
-        dwError = TDNFAllocateString(
-                      optarg,
-                      &pCmdArgs->pszConfFile);
-        BAIL_ON_CLI_ERROR(dwError);
+        dwError = TDNFAllocateString(optarg, &pCmdArgs->pszConfFile);
     }
-    else if(!strcasecmp(pszName, "rpmverbosity"))
+    else if (!strcasecmp(pszName, "rpmverbosity"))
     {
-        dwError = ParseRpmVerbosity(
-                      pszArg,
-                      &pCmdArgs->nRpmVerbosity);
-        BAIL_ON_CLI_ERROR(dwError);
+        dwError = ParseRpmVerbosity(pszArg, &pCmdArgs->nRpmVerbosity);
     }
-    else if(!strcasecmp(pszName, "enablerepo"))
+    else if (!strcasecmp(pszName, "installroot"))
     {
-        dwError = AddSetOptWithValues(pCmdArgs,
-                                      CMDOPT_ENABLEREPO,
-                                      ENABLEREPO,
-                                      optarg);
-        BAIL_ON_CLI_ERROR(dwError);
+        dwError = TDNFAllocateString(optarg, &pCmdArgs->pszInstallRoot);
     }
-    else if(!strcasecmp(pszName, "disablerepo"))
+    else if (!strcasecmp(pszName, "releasever"))
     {
-        dwError = AddSetOptWithValues(pCmdArgs,
-                                      CMDOPT_DISABLEREPO,
-                                      DISABLEREPO,
-                                      optarg);
-        BAIL_ON_CLI_ERROR(dwError);
+        dwError = TDNFAllocateString(optarg, &pCmdArgs->pszReleaseVer);
     }
-    else if(!strcasecmp(pszName, "security"))
+    else if (!strcasecmp(pszName, "setopt"))
     {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "sec-severity"))
-    {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      optarg);
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "exclude"))
-    {
-        dwError = TDNFAllocateString(
-                      pszArg,
-                      &pszCopyArgs);
-        BAIL_ON_CLI_ERROR(dwError);
-        pszToken = strtok_r(pszCopyArgs,",:", &pszTokenSave);
-        while (pszToken != NULL)
+        if (!optarg)
         {
-            dwError = AddSetOptWithValues(
-                pCmdArgs,
-                CMDOPT_KEYVALUE,
-                pszName,
-                pszToken);
-            BAIL_ON_CLI_ERROR(dwError);
-            pszToken = strtok_r(NULL, ",:", &pszTokenSave);
+            BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED));
         }
-    }
-    else if(!strcasecmp(pszName, "reboot-required"))
-    {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "installroot"))
-    {
-        dwError = TDNFAllocateString(
-                      optarg,
-                      &pCmdArgs->pszInstallRoot);
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "releasever"))
-    {
-        dwError = TDNFAllocateString(
-                      optarg,
-                      &pCmdArgs->pszReleaseVer);
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "skipconflicts"))
-    {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "skipobsoletes"))
-    {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "skipsignature"))
-    {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "skipdigest"))
-    {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if(!strcasecmp(pszName, "setopt"))
-    {
-        if(!optarg)
-        {
-            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
+
         dwError = AddSetOpt(pCmdArgs, optarg);
         if (dwError == ERROR_TDNF_SETOPT_NO_EQUALS)
         {
             dwError = ERROR_TDNF_CLI_SETOPT_NO_EQUALS;
         }
-        BAIL_ON_CLI_ERROR(dwError);
     }
-    else if (!strcasecmp(pszName, "noplugins"))
+    else if (!strcasecmp(pszName, "exclude"))
     {
-        dwError = AddSetOptWithValues(
-                      pCmdArgs,
-                      CMDOPT_KEYVALUE,
-                      pszName,
-                      "1");
+        char *ToFree = NULL;
+        char *pszToken = NULL;
+
+        dwError = TDNFAllocateString(pszArg, &pszCopyArgs);
         BAIL_ON_CLI_ERROR(dwError);
+
+        ToFree = pszCopyArgs;
+
+        while ((pszToken = strsep(&pszCopyArgs, ",:")))
+        {
+            dwError = AddSetOptWithValues(pCmdArgs,
+                                CMDOPT_KEYVALUE,
+                                pszName,
+                                pszToken);
+            BAIL_ON_CLI_ERROR((dwError && (pszCopyArgs = ToFree)));
+        }
+
+        pszCopyArgs = ToFree;
     }
-    else if(!strcasecmp(pszName, "enableplugin"))
+    else
     {
-        dwError = AddSetOptWithValues(pCmdArgs,
-                                      CMDOPT_ENABLEPLUGIN,
-                                      pszName,
-                                      optarg);
-        BAIL_ON_CLI_ERROR(dwError);
+        uint32_t i = 0;
+
+        for (i = 0; i < ARRAY_SIZE(OptValTable); i++)
+        {
+            const char *OptVal = NULL;
+
+            if (!strstr(OptValTable[i].OptName, pszName))
+            {
+                continue;
+            }
+
+            OptVal = !OptValTable[i].OptVal ? optarg : OptValTable[i].OptVal;
+
+            dwError = AddSetOptWithValues(pCmdArgs,
+                                OptValTable[i].Type,
+                                pszName,
+                                OptVal);
+            break;
+        }
     }
-    else if(!strcasecmp(pszName, "disableplugin"))
-    {
-        dwError = AddSetOptWithValues(pCmdArgs,
-                                      CMDOPT_DISABLEPLUGIN,
-                                      pszName,
-                                      optarg);
-        BAIL_ON_CLI_ERROR(dwError);
-    }
+
+    BAIL_ON_CLI_ERROR(dwError);
+
 cleanup:
-    if(pszCopyArgs)
-    {
-        TDNFFreeMemory(pszCopyArgs);
-    }
+    TDNF_CLI_SAFE_FREE_MEMORY(pszCopyArgs);
     return dwError;
 
 error:
@@ -446,19 +370,24 @@ error:
 
 uint32_t
 ParseRpmVerbosity(
-    const char* pszRpmVerbosity,
-    int* pnRpmVerbosity
+    const char *pszRpmVerbosity,
+    int *pnRpmVerbosity
     )
 {
     uint32_t dwError = 0;
-    int nIndex = 0;
-    TDNF_RPMLOG nRpmVerbosity = TDNF_RPMLOG_ERR;
-    struct stTemp
+    uint32_t nIndex = 0;
+    typedef struct _stTemp
     {
-        char* pszTypeName;
+        char *pszTypeName;
         int nType;
-    };
-    struct stTemp  stTypes[] = 
+    } stTemp;
+
+    if (!pszRpmVerbosity || !pnRpmVerbosity)
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
+
+    stTemp stTypes[] =
     {
         {"emergency",  TDNF_RPMLOG_EMERG},
         {"alert",      TDNF_RPMLOG_ALERT},
@@ -469,17 +398,17 @@ ParseRpmVerbosity(
         {"info",       TDNF_RPMLOG_INFO},
         {"debug",      TDNF_RPMLOG_DEBUG},
     };
-    int nCount = sizeof(stTypes)/sizeof(stTypes[0]);
-    for(nIndex = 0; nIndex < nCount; ++nIndex)
+
+    for (nIndex = 0; nIndex < ARRAY_SIZE(stTypes); ++nIndex)
     {
-        if(!strcasecmp(stTypes[nIndex].pszTypeName, pszRpmVerbosity))
+        if (!strcasecmp(stTypes[nIndex].pszTypeName, pszRpmVerbosity))
         {
-            nRpmVerbosity = stTypes[nIndex].nType;
-            break;
+            *pnRpmVerbosity = stTypes[nIndex].nType;
+            return dwError;
         }
     }
 
-    *pnRpmVerbosity = nRpmVerbosity;
+    *pnRpmVerbosity = TDNF_RPMLOG_ERR;
 
     return dwError;
 }

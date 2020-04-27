@@ -282,7 +282,7 @@ typedef struct _TDNF_CLEAN_INFO
     int nRpmDbFilesRemoved;
     int nMetadataFilesRemoved;
     int nDbCacheFilesRemoved;
-    int nPackageFilesRemoved;    
+    int nPackageFilesRemoved;
 }TDNF_CLEAN_INFO, *PTDNF_CLEAN_INFO;
 
 typedef struct _TDNF_ERROR_DESC

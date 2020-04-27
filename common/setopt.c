@@ -68,8 +68,8 @@ uint32_t
 AddSetOptWithValues(
     PTDNF_CMD_ARGS pCmdArgs,
     int nType,
-    const char* pszOptArg,
-    const char* pszOptValue
+    const char *pszOptArg,
+    const char *pszOptValue
     )
 {
     uint32_t dwError = 0;
@@ -80,11 +80,10 @@ AddSetOptWithValues(
        IsNullOrEmptyString(pszOptArg) ||
        IsNullOrEmptyString(pszOptValue) || nType == CMDOPT_CURL_INIT_CB)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+        BAIL_ON_TDNF_ERROR((dwError = ERROR_TDNF_INVALID_PARAMETER));
     }
 
-    dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void**)&pCmdOpt);
+    dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void **)&pCmdOpt);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pCmdOpt->nType = nType;
@@ -96,24 +95,24 @@ AddSetOptWithValues(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSetOptTemp = pCmdArgs->pSetOpt;
-    if(!pSetOptTemp)
+    if (pSetOptTemp)
     {
-        pCmdArgs->pSetOpt = pCmdOpt;
-    }
-    else
-    {
-        while(pSetOptTemp->pNext)
+        while (pSetOptTemp->pNext)
         {
             pSetOptTemp = pSetOptTemp->pNext;
         }
         pSetOptTemp->pNext = pCmdOpt;
+    }
+    else
+    {
+        pCmdArgs->pSetOpt = pCmdOpt;
     }
 
 cleanup:
     return dwError;
 
 error:
-    if(pCmdOpt)
+    if (pCmdOpt)
     {
         TDNFFreeCmdOpt(pCmdOpt);
     }

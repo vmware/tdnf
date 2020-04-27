@@ -58,5 +58,6 @@ def test_check_providers(utils):
         cmd.pop(1)
         cmd.pop(1)
 
-    retval = 1 if isNotPhoton == 1 else 0
+    # retval may change, keeping it commented
+    #retval = 1 if isNotPhoton == 1 else 0
     run_cmd(utils, cmd, 0)
