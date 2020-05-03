@@ -287,19 +287,17 @@ SolvCalculateCookieForRepoMD(
     unsigned char *pszCookie
     )
 {
-    FILE *fp = NULL;
-    int32_t nLen = 0;
     uint32_t dwError = 0;
+    FileMapInfo fMap = {0};
     Chksum *pChkSum = NULL;
-    char buf[BUFSIZ] = {0};
 
     if (!pszRepoMD)
     {
         BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_INVALID_PARAMETER));
     }
 
-    fp = fopen(pszRepoMD, "r");
-    if (!fp)
+    dwError = TDNFMapFile(pszRepoMD, &fMap);
+    if (dwError)
     {
         BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_IO));
     }
@@ -309,21 +307,13 @@ SolvCalculateCookieForRepoMD(
     {
         BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_CHKSUM));
     }
-    solv_chksum_add(pChkSum, SOLV_COOKIE_IDENT, strlen(SOLV_COOKIE_IDENT));
 
-    while ((nLen = fread(buf, 1, sizeof(buf) - 1, fp)) > 0)
-    {
-          solv_chksum_add(pChkSum, buf, nLen);
-          memset(buf, 0, sizeof(buf));
-    }
+    solv_chksum_add(pChkSum, SOLV_COOKIE_IDENT, strlen(SOLV_COOKIE_IDENT));
+    solv_chksum_add(pChkSum, fMap.fData, fMap.fSize);
     solv_chksum_free(pChkSum, pszCookie);
 
 cleanup:
-    if (fp)
-    {
-        fclose(fp);
-    }
-
+    TDNFUnMapFile(&fMap);
     return dwError;
 
 error:
@@ -431,12 +421,12 @@ SolvUseMetaDataCache(
     int       *nUseMetaDataCache
     )
 {
-    uint32_t dwError = 0;
     FILE *fp = NULL;
     Repo *pRepo = NULL;
-    unsigned char *pszCookie = NULL;
-    unsigned char pszTempCookie[32];
+    uint32_t dwError = 0;
     char *pszCacheFilePath = NULL;
+    unsigned char *pszCookie = NULL;
+    unsigned char pszTempCookie[32] = {0};
 
     if (!pSack || !pSolvRepoInfo || !pSolvRepoInfo->pRepo)
     {
@@ -444,7 +434,7 @@ SolvUseMetaDataCache(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
     pRepo = pSolvRepoInfo->pRepo;
-    pszCookie = pSolvRepoInfo->nCookieSet ? pSolvRepoInfo->cookie : 0;
+    pszCookie = pSolvRepoInfo->nCookieSet ? pSolvRepoInfo->cookie : NULL;
 
     dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, pSack, &pszCacheFilePath);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);

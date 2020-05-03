@@ -216,7 +216,6 @@ error:
     return dwError;
 }
 
-
 uint32_t
 TDNFCheckDigest(
     const char *filename,
@@ -225,64 +224,50 @@ TDNFCheckDigest(
     )
 {
     uint32_t dwError = 0;
-    int fd = -1;
-    hash_ctx_t ctx;
-    char buf[BUFSIZ] = {0};
-    int length = 0;
+    hash_ctx_t ctx = {0};
+    FileMapInfo fMap = {0};
 
-    if(IsNullOrEmptyString(filename) || !hash || !digest)
+    if (IsNullOrEmptyString(filename) || !hash || !digest)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    memset(&ctx, 0, sizeof(hash_ctx_t));
-
-    fd = open(filename, O_RDONLY);
-    if(fd == -1)
+    dwError = TDNFMapFile(filename, &fMap);
+    if (dwError)
     {
         fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    dwError = hash->init_fn(&ctx);
 
-    if(!dwError)
+    dwError = hash->init_fn(&ctx);
+    if (!dwError)
     {
         fprintf(stderr, "Hash Init Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
+
+    dwError = hash->update_fn(&ctx, fMap.fData, fMap.fSize);
+    if (!dwError)
     {
-        dwError = hash->update_fn(&ctx, buf, length);
-        if(!dwError)
-        {
-            fprintf(stderr, "Hash Update Failed\n");
-            dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        memset(buf, 0, BUFSIZ);
+        fprintf(stderr, "Hash Update Failed\n");
+        BAIL_ON_TDNF_ERROR((dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED));
     }
-    if(length == -1)
-    {
-        fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
+
     dwError = hash->final_fn(digest, &ctx);
-    if(!dwError)
+    if (!dwError)
     {
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
     dwError = 0;
+
 cleanup:
-    if(fd != -1)
-    {
-        close(fd);
-    }
+    TDNFUnMapFile(&fMap);
     return dwError;
+
 error:
     goto cleanup;
 }
@@ -294,29 +279,27 @@ TDNFCheckHash(
     int type
     )
 {
-
+    hash_op *hash = NULL;
     uint32_t dwError = 0;
     uint8_t digest_from_file[MAX_DIGEST_LENGTH] = {0};
-    hash_op *hash = NULL;
 
-    if(IsNullOrEmptyString(filename) ||
-       !digest)
+    if (IsNullOrEmptyString(filename) || !digest)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (type  < TDNF_HASH_MD5 || type >= TDNF_HASH_SENTINEL)
+    if (type < TDNF_HASH_MD5 || type >= TDNF_HASH_SENTINEL)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
     hash = hash_ops + type;
-
     dwError = TDNFCheckDigest(filename, hash, digest_from_file);
     BAIL_ON_TDNF_ERROR(dwError);
-    if(memcmp(digest_from_file, digest, hash->length))
+
+    if (memcmp(digest_from_file, digest, hash->length))
     {
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -326,14 +309,15 @@ TDNFCheckHash(
 
 cleanup:
     return dwError;
+
 error:
-    if(!IsNullOrEmptyString(filename))
+    if (!IsNullOrEmptyString(filename))
     {
         fprintf(stderr, "Error: Validating metalink (%s) FAILED (digest mismatch)\n", filename);
     }
+
     goto cleanup;
 }
-
 
 uint32_t
 TDNFMetalinkCheckHash(
@@ -341,40 +325,43 @@ TDNFMetalinkCheckHash(
     metalinkfile *ml_file
     )
 {
-
     uint32_t dwError = 0;
-    if(IsNullOrEmptyString(pszFile) ||
-       !ml_file)
+
+    if (IsNullOrEmptyString(pszFile) || !ml_file)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
     printf("Validating metalink (%s)...\n", pszFile);
-    if(ml_file->digest == NULL)
+    if (!ml_file->digest)
     {
         fprintf(stderr,
                 "Error: Validating metalink (%s) FAILED (digest missing)\n", pszFile);
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
     dwError = TDNFCheckHash(pszFile, ml_file->digest, ml_file->type);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
-    if(ml_file)
+    if (ml_file)
     {
         TDNF_SAFE_FREE_MEMORY(ml_file->filename);
         TDNF_SAFE_FREE_MEMORY(ml_file);
     }
     return dwError;
+
 error:
     goto cleanup;
 }
 
-/* Returns nonzero if hex_digest is properly formatted; that is each
-   letter is in [0-9A-Za-z] and the length of the string equals to the
-   result length of digest * 2. */
+/*
+ * Returns nonzero if hex_digest is properly formatted; that is each
+ * letter is a valid hex value and the length of the string equals to the
+ * result length of digest * 2
+ */
 uint32_t
 TDNFCheckHexDigest(
     const char *hex_digest,
@@ -382,18 +369,20 @@ TDNFCheckHexDigest(
     )
 {
     int i = 0;
-    if(IsNullOrEmptyString(hex_digest) ||
-       (digest_length <= 0))
+
+    if (IsNullOrEmptyString(hex_digest) || (digest_length <= 0))
     {
         return 0;
     }
-    for(i = 0; hex_digest[i]; ++i)
+
+    for (i = 0; hex_digest[i]; ++i)
     {
-        if(!isxdigit(hex_digest[i]))
+        if (!isxdigit(hex_digest[i]))
         {
             return 0;
         }
     }
+
     return digest_length * 2 == i;
 }
 
@@ -446,8 +435,7 @@ TDNFChecksumFromHexDigest(
     size_t len = 0;
     unsigned char uintValue = 0;
 
-    if(IsNullOrEmptyString(hex_digest) ||
-       !ppdigest)
+    if (IsNullOrEmptyString(hex_digest) || !ppdigest)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -455,17 +443,17 @@ TDNFChecksumFromHexDigest(
 
     len = strlen(hex_digest);
 
-    dwError = TDNFAllocateMemory(1, len/2, (void **)&pdigest);
+    dwError = TDNFAllocateMemory(1, len >> 1, (void **)&pdigest);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(i = 0; i < len; i += 2)
+    for (i = 0; i < len; i += 2)
     {
         dwError = TDNFHexToUint(hex_digest + i, &uintValue);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        pdigest[i>>1] = uintValue;
+        pdigest[i >> 1] = uintValue;
     }
-    memcpy( ppdigest, pdigest, len>>1 );
+    memcpy( ppdigest, pdigest, len >> 1);
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pdigest);
@@ -619,7 +607,7 @@ error:
         TDNF_SAFE_FREE_MEMORY(metalink_file->filename);
         TDNF_SAFE_FREE_MEMORY(metalink_file);
     }
-    goto cleanup;  
+    goto cleanup;
 }
 
 uint32_t
@@ -630,15 +618,13 @@ TDNFParseAndGetURLFromMetalink(
     metalinkfile **ml_file
     )
 {
-    metalink_error_t metalink_error;
-    metalink_t* metalink = NULL;
-    metalink_file_t **files;
-    metalink_parser_context_t *metalink_context = NULL;
-    metalink_resource_t** resources;
-    char buf[BUFSIZ] = {0};
-    int length = 0;
-    int fd = -1;
     uint32_t dwError = 0;
+    FileMapInfo fMap = {0};
+    metalink_t *metalink = NULL;
+    metalink_file_t **files = NULL;
+    metalink_error_t metalink_error = 0;
+    metalink_resource_t **resources = NULL;
+    metalink_parser_context_t *metalink_context = NULL;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -649,57 +635,45 @@ TDNFParseAndGetURLFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFMapFile(pszFile, &fMap);
+    if (dwError)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
     metalink_context = metalink_parser_context_new();
-    if(metalink_context == NULL)
+    if (!metalink_context)
     {
         dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    fd = open(pszFile, O_RDONLY);
-    if(fd == -1)
+    metalink_error = metalink_parse_update(metalink_context, fMap.fData, fMap.fSize);
+    if (metalink_error)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        fprintf(stderr, "Unable to parse metalink, ERROR: code=%d\n", metalink_error);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-    while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
-    {
-        metalink_error = metalink_parse_update(metalink_context, buf, length);
-        memset(buf, 0, BUFSIZ);
-        if(metalink_error != 0)
-        {
-            if(metalink_context)
-            {
-                metalink_parser_context_delete(metalink_context);
-            }
-            fprintf(stderr, "Unable to parse metalink, ERROR: code=%d\n", metalink_error);
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-    if(length == -1)
-    {
-        if(metalink_context)
-        {
-            metalink_parser_context_delete(metalink_context);
-        }
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
+
     metalink_error = metalink_parse_final(metalink_context, NULL, 0, &metalink);
-    if((metalink_error != 0) || (metalink == NULL))
+    if (metalink_error || !metalink)
     {
         fprintf(stderr, "metalink_parse_final failed, ERROR: code=%d\n", metalink_error);
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(metalink->files == NULL)
+    metalink_context = NULL;
+
+    if (!metalink->files)
     {
         fprintf(stderr, "Metalink does not contain any valid file.\n");
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    for(files = metalink->files; files && *files; ++files)
+
+    for (files = metalink->files; files && *files; ++files)
     {
         resources = (*files)->resources;
         if(IsNullOrEmptyString(resources))
@@ -708,6 +682,7 @@ TDNFParseAndGetURLFromMetalink(
             dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
+
         if(ml_file)
         {
             dwError = TDNFNewMetalinkfile((*files), ml_file);
@@ -717,17 +692,22 @@ TDNFParseAndGetURLFromMetalink(
         dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, (*resources)->url);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
 cleanup:
-    if(fd != -1)
+    TDNFUnMapFile(&fMap);
+
+    if (metalink_context)
     {
-        close(fd);
+        metalink_parser_context_delete(metalink_context);
     }
+
     /* delete metalink_t */
-    if(metalink)
+    if (metalink)
     {
         metalink_delete(metalink);
     }
     return dwError;
+
 error:
     goto cleanup;
 }

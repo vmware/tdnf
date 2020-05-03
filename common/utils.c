@@ -8,59 +8,125 @@
 
 #include "includes.h"
 
+uint32_t TDNFMapFile(
+    const char *pszFileName,
+    PFileMapInfo pfMap
+    )
+{
+    int32_t fd = 0;
+    struct stat st = {0};
+    uint32_t dwError = 0;
+    char *fileData = NULL;
+
+    if (IsNullOrEmptyString(pszFileName) || !pfMap)
+    {
+        dwError = EINVAL;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    fd = open(pszFileName, O_RDONLY);
+    if (fd < 0)
+    {
+        dwError = ENOENT;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    dwError = stat(pszFileName, &st);
+    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+
+    fileData = (char *)mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (fileData == MAP_FAILED)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    pfMap->fData = fileData;
+    pfMap->fSize = st.st_size;
+    pfMap->fName = pszFileName;
+
+cleanup:
+    if (fd >= 0)
+    {
+        close(fd);
+    }
+    return dwError;
+
+error:
+    if (pfMap)
+    {
+        memset(pfMap, 0, sizeof(FileMapInfo));
+    }
+    goto cleanup;
+}
+
+void TDNFUnMapFile(
+    PFileMapInfo pfMap
+    )
+{
+    if (!pfMap || IsNullOrEmptyString(pfMap->fName) || !pfMap->fData)
+    {
+        fprintf(stderr, "ERROR: invalid arguement to %s\n", __func__);
+        return;
+    }
+
+    if (munmap(pfMap->fData, pfMap->fSize))
+    {
+        fprintf(stderr, "ERROR: munmap failed for file(%s) (%s)\n", pfMap->fName,
+                strerror(errno));
+    }
+}
+
 uint32_t
 TDNFFileReadAllText(
     const char *pszFileName,
     char **ppszText
     )
 {
-    uint32_t dwError = 0;
     FILE *fp = NULL;
+    uint32_t nLength = 0;
+    struct stat st = {0};
+    uint32_t dwError = 0;
     char *pszText = NULL;
-    int nLength = 0;
-    int nBytesRead = 0;
 
-    if(!pszFileName || !ppszText)
+    if (IsNullOrEmptyString(pszFileName) || !ppszText)
     {
         dwError = EINVAL;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    fp = fopen(pszFileName, "r");
-    if(!fp)
-    {
-        dwError = ENOENT;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-    fseek(fp, 0, SEEK_END);
-    nLength = ftell(fp);
+    dwError = stat(pszFileName, &st);
+    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+
+    nLength = st.st_size;
 
     dwError = TDNFAllocateMemory(1, nLength + 1, (void **)&pszText);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(fseek(fp, 0, SEEK_SET))
+    fp = fopen(pszFileName, "r");
+    if (!fp)
     {
-        dwError = errno;
+        dwError = ENOENT;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    nBytesRead = fread(pszText, 1, nLength, fp);
-    if(nBytesRead != nLength)
+    if (fread(pszText, 1, nLength, fp) != nLength)
     {
         dwError = EBADFD;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
     *ppszText = pszText;
+
 cleanup:
-    if(fp)
+    if (fp)
     {
         fclose(fp);
     }
     return dwError;
 
 error:
-    if(ppszText)
+    if (ppszText)
     {
         *ppszText = NULL;
     }

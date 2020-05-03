@@ -15,12 +15,4 @@
         }                                                          \
     } while(0)
 
-#define BAIL_ON_TDNF_ERROR(dwError) \
-    do {                                                           \
-        if (dwError)                                               \
-        {                                                          \
-            goto error;                                            \
-        }                                                          \
-    } while(0)
-
 #endif /* __SOLV_DEFINES_H__ */

@@ -142,6 +142,15 @@ TDNFFileReadAllText(
     char **ppszText
     );
 
+uint32_t TDNFMapFile(
+    const char *pszFileName,
+    PFileMapInfo pfMap
+    );
+
+void TDNFUnMapFile(
+    PFileMapInfo pfMap;
+    );
+
 const char *
 TDNFLeftTrim(
     const char *pszStr

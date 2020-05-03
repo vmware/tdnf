@@ -5,20 +5,27 @@ typedef struct _KEYVALUE_
     char *pszKey;
     char *pszValue;
     struct _KEYVALUE_ *pNext;
-}KEYVALUE, *PKEYVALUE;
+} KEYVALUE, *PKEYVALUE;
 
 typedef struct _CONF_SECTION_
 {
     char *pszName;
     PKEYVALUE pKeyValues;
     struct _CONF_SECTION_ *pNext;
-}CONF_SECTION, *PCONF_SECTION;
+} CONF_SECTION, *PCONF_SECTION;
 
 typedef struct _CONF_DATA_
 {
     char *pszConfFile;
     PCONF_SECTION pSections;
-}CONF_DATA, *PCONF_DATA;
+} CONF_DATA, *PCONF_DATA;
+
+typedef struct _FileMapInfo
+{
+    char *fData;
+    size_t fSize;
+    const char *fName;
+} FileMapInfo, *PFileMapInfo;
 
 typedef uint32_t
 (*PFN_CONF_SECTION_CB)(
