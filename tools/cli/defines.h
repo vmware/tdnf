@@ -21,6 +21,8 @@
 
 #pragma once
 
+#define TDNF_INSTANCE_LOCK_FILE     "/var/run/lock/.tdnf-instace-lockfile"
+
 #define BAIL_ON_CLI_ERROR(unError) \
     do {                                                           \
         if (unError)                                               \

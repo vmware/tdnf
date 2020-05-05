@@ -30,6 +30,11 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <sys/file.h>
+#include <fcntl.h>
 
 #include <tdnf.h>
 #include <tdnfcli.h>
