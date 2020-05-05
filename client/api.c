@@ -921,7 +921,6 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 

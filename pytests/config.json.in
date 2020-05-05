@@ -8,5 +8,6 @@
     "sglversion_pkgname": "tdnf-test-one",
     "mulversion_pkgname": "tdnf-test-multiversion",
     "mulversion_lower": "1.0.1-1",
+    "dummy_requires_pkgname": "tdnf-test-dummy-requires",
     "valgrind_minimum_version": "3.15.0"
 }
