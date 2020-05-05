@@ -227,7 +227,7 @@ TDNFRepoGPGCheckGetErrorString(
 
     if (nErrorCode > ERROR_TDNF_GPG_BASE_START && nErrorCode < ERROR_TDNF_GPGME_START)
     {
-        for(i = 0; i < sizeof(arErrorDesc)/sizeof(arErrorDesc[0]); ++i)
+        for(i = 0; i < ARRAY_SIZE(arErrorDesc); ++i)
         {
             if (nErrorCode == (uint32_t)arErrorDesc[i].nCode)
             {

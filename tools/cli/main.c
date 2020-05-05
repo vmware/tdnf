@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
         {"updateinfo",         TDNFCliUpdateInfoCommand},
     };
 
-    int nCommandCount = sizeof(arCmdMap)/sizeof(TDNF_CLI_CMD_MAP);
+    int nCommandCount = ARRAY_SIZE(arCmdMap);
     const char* pszCmd = NULL;
     PTDNF pTdnf = NULL;
     int nFound = 0;
@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
         if(!nFound)
         {
             TDNFCliShowNoSuchCommand(pszCmd);
+            BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_CLI_NO_SUCH_CMD));
         }
     }
     else
@@ -223,6 +224,7 @@ error:
 
 void
 TDNFCliShowVersion(
+    void
     )
 {
     printf("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());

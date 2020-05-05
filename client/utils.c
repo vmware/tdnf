@@ -36,7 +36,7 @@ TDNFGetErrorString(
     //Allow mapped error strings to override
     TDNF_ERROR_DESC arErrorDesc[] = TDNF_ERROR_TABLE;
 
-    nCount = sizeof(arErrorDesc)/sizeof(arErrorDesc[0]);
+    nCount = ARRAY_SIZE(arErrorDesc);
 
     for(i = 0; i < nCount; i++)
     {

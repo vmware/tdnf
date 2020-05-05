@@ -24,18 +24,25 @@ def setup_test(utils):
     teardown_test(utils)
 
 def teardown_test(utils):
+    spkg = utils.config['sglversion_pkgname']
     utils.run([ 'rm', '-rf', '/tmp/myrepo' ])
+    utils.run(['tdnf', 'erase', '-y', spkg])
 
 def test_config_invalid(utils):
-    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/test123.conf', 'list', 'tdnf-test-one' ])
+    spkg = utils.config['sglversion_pkgname']
+    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/test123.conf', 'list', spkg ])
     assert(ret['retval'] == 1602)
 
 def test_config_list(utils):
-    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
+    spkg = utils.config['sglversion_pkgname']
+    ret = utils.run(['tdnf', 'install', '-y', spkg])
+    assert(ret['retval'] == 0)
+    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', spkg ])
     assert(ret['retval'] == 0)
 
 def test_config_list_with_disable_repos(utils):
-    ret = utils.run([ 'tdnf', '--disablerepo=*', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
+    spkg = utils.config['sglversion_pkgname']
+    ret = utils.run([ 'tdnf', '--disablerepo=*', '--config', '/tmp/myrepo/mytdnf.conf', 'list', spkg ])
     assert(ret['retval'] == 0)
 
     for line in ret['stdout']:
@@ -44,6 +51,7 @@ def test_config_list_with_disable_repos(utils):
         assert (False) # force fail test
 
 def test_config_invaid_repodir(utils):
+    spkg = utils.config['sglversion_pkgname']
     utils.run([ 'sed', '-i', 's#repodir=/tmp/myrepo#repodir=/etc/invalid#g', '/tmp/myrepo/mytdnf.conf' ])
-    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', 'tdnf-test-one' ])
+    ret = utils.run([ 'tdnf', '--config', '/tmp/myrepo/mytdnf.conf', 'list', spkg ])
     assert(ret['retval'] == 1005)

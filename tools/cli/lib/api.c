@@ -29,7 +29,7 @@ TDNFCliGetErrorString(
 
     TDNF_ERROR_DESC arErrorDesc[] = TDNF_CLI_ERROR_TABLE;
 
-    nCount = sizeof(arErrorDesc)/sizeof(arErrorDesc[0]);
+    nCount = ARRAY_SIZE(arErrorDesc);
 
     for(i = 0; i < nCount; i++)
     {

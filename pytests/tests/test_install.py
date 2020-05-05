@@ -17,7 +17,8 @@ def setup_test(utils):
     teardown_test(utils)
 
 def teardown_test(utils):
-    pass
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.run(['tdnf', 'erase', '-y', pkgname])
 
 def test_install_no_arg(utils):
     ret = utils.run([ 'tdnf', 'install' ])

@@ -295,10 +295,12 @@ GetColumnWidths(
 
 void
 TDNFCliShowUsage(
+    void
     );
 
 void
 TDNFCliShowHelp(
+    void
     );
 
 void

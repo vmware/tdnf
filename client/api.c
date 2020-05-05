@@ -25,6 +25,7 @@ static TDNF_ENV gEnv = {0};
 
 uint32_t
 TDNFInit(
+    void
     )
 {
     uint32_t dwError = 0;
@@ -88,6 +89,7 @@ error:
 
 void
 TDNFUninit(
+    void
     )
 {
     pthread_mutex_lock (&gEnv.mutexInitialize);

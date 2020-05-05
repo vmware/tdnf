@@ -21,40 +21,6 @@
 #pragma once
 
 #define MAX_CONFIG_LINE_LENGTH      1024
-#define IsNullOrEmptyString(str)    (!(str) || !(*str))
-
-#define BAIL_ON_TDNF_ERROR(dwError) \
-    do {                                                           \
-        if (dwError)                                               \
-        {                                                          \
-            goto error;                                            \
-        }                                                          \
-    } while(0)
-
-#define BAIL_ON_TDNF_SYSTEM_ERROR(dwError) \
-    do {                                                           \
-        if (dwError)                                               \
-        {                                                          \
-            dwError = ERROR_TDNF_SYSTEM_BASE + dwError;            \
-            goto error;                                            \
-        }                                                          \
-    } while(0)
-
-#define TDNF_SAFE_FREE_MEMORY(pMemory) \
-    do {                                                           \
-        if (pMemory) {                                             \
-            TDNFFreeMemory(pMemory);                               \
-            pMemory = NULL;                                        \
-        }                                                          \
-    } while(0)
-
-#define TDNF_SAFE_FREE_STRINGARRAY(ppArray) \
-    do {                                                           \
-        if (ppArray) {                                             \
-            TDNFFreeStringArray(ppArray);                          \
-            ppArray = NULL;                                        \
-        }                                                          \
-    } while(0)
 
 #define TDNF_SAFE_FREE_PKGINFO(pPkgInfo) \
     do {                                                           \

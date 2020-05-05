@@ -20,6 +20,7 @@
 #include <tdnf.h>
 #include <tdnfplugin.h>
 #include <tdnfplugineventmap.h>
+#include <tdnf-common-defines.h>
 
 //libcurl
 #include <curl/curl.h>

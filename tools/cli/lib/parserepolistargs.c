@@ -71,13 +71,13 @@ TDNFCliParseFilter(
         char* pszTypeName;
         int nType;
     };
-    struct stTemp  stFilterTypes[] = 
+    struct stTemp  stFilterTypes[] =
     {
         {"all",      REPOLISTFILTER_ALL},
         {"enabled",  REPOLISTFILTER_ENABLED},
         {"disabled", REPOLISTFILTER_DISABLED}
     };
-    int nCount = sizeof(stFilterTypes)/sizeof(stFilterTypes[0]);
+    int nCount = ARRAY_SIZE(stFilterTypes);
     for(nIndex = 0; nIndex < nCount; ++nIndex)
     {
         if(!strcasecmp(stFilterTypes[nIndex].pszTypeName, pszFilter))

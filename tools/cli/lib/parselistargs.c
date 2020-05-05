@@ -134,7 +134,7 @@ TDNFCliParseListArgs(
                       &pListArgs->ppszPackageNameSpecs[nIndex]);
         BAIL_ON_CLI_ERROR(dwError);
     }
-    
+
     *ppListArgs = pListArgs;
 
 cleanup:
@@ -166,7 +166,7 @@ TDNFCliParseScope(
         char* pszTypeName;
         int nType;
     };
-    struct stTemp  stScopes[] = 
+    struct stTemp  stScopes[] =
     {
         {"all",       SCOPE_ALL},
         {"installed", SCOPE_INSTALLED},
@@ -178,7 +178,7 @@ TDNFCliParseScope(
         {"updates",   SCOPE_UPGRADES},
         {"downgrades",SCOPE_DOWNGRADES}
     };
-    int nCount = sizeof(stScopes)/sizeof(stScopes[0]);
+    int nCount = ARRAY_SIZE(stScopes);
     for(nIndex = 0; nIndex < nCount; ++nIndex)
     {
         if(!strcasecmp(stScopes[nIndex].pszTypeName, pszScope))

@@ -15,7 +15,9 @@ def setup_test(utils):
     teardown_test(utils)
 
 def teardown_test(utils):
-    pass
+    mpkg = utils.config["mulversion_pkgname"]
+    spkg = utils.config["sglversion_pkgname"]
+    utils.run(['tdnf', 'erase', '-y', mpkg, spkg])
 
 def helper_test_list_sub_cmd(utils, sub_cmd):
     ret = utils.run([ 'tdnf', 'list', sub_cmd ])
@@ -34,6 +36,10 @@ def test_list_top(utils):
     assert(ret['retval'] == 1011)
 
 def test_list_sub_cmd(utils):
+    spkg = utils.config["sglversion_pkgname"]
+    ret = utils.run([ 'tdnf', 'install', '-y', spkg])
+    assert(ret['retval'] == 0)
+
     helper_test_list_sub_cmd(utils, 'all')
     helper_test_list_sub_cmd(utils, 'installed')
     helper_test_list_sub_cmd(utils, 'available')

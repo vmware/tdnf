@@ -415,24 +415,30 @@ ParseRpmVerbosity(
 
 uint32_t
 HandleOptionsError(
-    const char* pszName,
-    const char* pszArg,
-    struct option* pstOptions
+    const char *pszName,
+    const char *pszArg,
+    struct option *pstOptions
     )
 {
     uint32_t dwError = 0;
+
+    if (IsNullOrEmptyString(pszName) || !pstOptions)
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
 
     dwError = TDNFCliValidateOptions(
                   pszName,
                   pszArg,
                   pstOptions);
-    if(dwError == ERROR_TDNF_CLI_OPTION_NAME_INVALID)
+    if (dwError == ERROR_TDNF_CLI_OPTION_NAME_INVALID)
     {
        TDNFCliShowNoSuchOption(pszName);
     }
-    else if(dwError == ERROR_TDNF_CLI_OPTION_ARG_REQUIRED)
+    else if (dwError == ERROR_TDNF_CLI_OPTION_ARG_REQUIRED)
     {
        fprintf(stderr, "Option %s requires an argument\n", pszName);
     }
+
     return dwError;
 }
