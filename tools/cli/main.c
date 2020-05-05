@@ -21,8 +21,14 @@
 
 #include "includes.h"
 
-TDNF_CLI_CONTEXT _context = {0};
 int nQuiet = 0;
+TDNF_CLI_CONTEXT _context = {0};
+
+/* glockfd used in exit handler nad inst*/
+static int32_t glockfd = 0;
+
+static void TdnfExitHandler(void);
+static bool IsTdnfAlreadyRunning(void);
 
 int main(int argc, char* argv[])
 {
@@ -63,13 +69,27 @@ int main(int argc, char* argv[])
     PTDNF pTdnf = NULL;
     int nFound = 0;
 
-    //granular permissions for non root users are pending.
-    //blocking all operations for non root and show the
-    //right error to avoid confusion.
-    if(geteuid() != 0)
+    /*
+     * granular permissions for non root users are pending.
+     * blocking all operations for non root and show the
+     * right error to avoid confusion
+     */
+    if (geteuid())
     {
         dwError = ERROR_TDNF_PERM;
         BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    if (IsTdnfAlreadyRunning())
+    {
+        fprintf(stderr, "An instance of tdnf is already running, wait for it to finish\n");
+        BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_ACCESS_DENIED));
+    }
+
+    /* exit handler for normal exit */
+    if (atexit(TdnfExitHandler))
+    {
+        BAIL_ON_CLI_ERROR((dwError = errno));
     }
 
     _context.pFnCheck = TDNFCliInvokeCheck;
@@ -81,8 +101,11 @@ int main(int argc, char* argv[])
     _context.pFnList = TDNFCliInvokeList;
     _context.pFnProvides = TDNFCliInvokeProvides;
     _context.pFnRepoList = TDNFCliInvokeRepoList;
-    //Alter and resolve will address commands like
-    //install, upgrade, erase, downgrade, distrosync
+
+    /*
+     * Alter and resolve will address commands like
+     * install, upgrade, erase, downgrade, distrosync
+     */
     _context.pFnAlter = TDNFCliInvokeAlter;
     _context.pFnResolve = TDNFCliInvokeResolve;
     _context.pFnSearch = TDNFCliInvokeSearch;
@@ -171,6 +194,53 @@ error:
     }
 
     goto cleanup;
+}
+
+static void TdnfExitHandler(void)
+{
+    if (glockfd < 0)
+    {
+        return;
+    }
+
+    if (flock(glockfd, LOCK_UN))
+    {
+        fprintf(stderr, "ERROR: Failed to unlock lock file\n");
+    }
+
+    close(glockfd);
+
+    if (remove(TDNF_INSTANCE_LOCK_FILE))
+    {
+        fprintf(stderr, "ERROR: Unable to remove lockfile(%s) "
+                "Try removing it manually and run tdnf again\n",
+                TDNF_INSTANCE_LOCK_FILE);
+    }
+}
+
+static bool IsTdnfAlreadyRunning(void)
+{
+    bool ret = false;
+
+    glockfd = open(TDNF_INSTANCE_LOCK_FILE, O_CREAT);
+    if (glockfd < 0)
+    {
+        fprintf(stderr, "ERROR: failed to create instance lock file\n");
+        goto end;
+    }
+
+    if (flock(glockfd, LOCK_EX | LOCK_NB))
+    {
+        if (errno == EAGAIN)
+        {
+            ret = true;
+            fprintf(stderr, "ERROR: failed to acquire lock on: %s\n", TDNF_INSTANCE_LOCK_FILE);
+        }
+    }
+
+end:
+    /* glockfd is closed in exit handler */
+    return ret;
 }
 
 uint32_t
