@@ -482,22 +482,49 @@ error:
 
 uint32_t
 TDNFRemoveTmpRepodata(
-    const char* pszTmpRepodataDir,
-    const char* pszTmpRepoMDFile
+    const char* pszTmpRepodataDir
     )
 {
     uint32_t dwError = 0;
+    char* pszFilePath = NULL;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
 
-    if (IsNullOrEmptyString(pszTmpRepodataDir) || IsNullOrEmptyString(pszTmpRepoMDFile))
+    if (IsNullOrEmptyString(pszTmpRepodataDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    if (unlink(pszTmpRepoMDFile))
+    pDir = opendir(pszTmpRepodataDir);
+    if(pDir == NULL)
     {
-        if (errno != ENOENT)
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    while ((pEnt = readdir (pDir)) != NULL )
+    {
+        if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
         {
-            dwError = errno;
+            continue;
+        }
+        dwError = TDNFAllocateStringPrintf(
+                    &pszFilePath,
+                    "%s/%s",
+                    pszTmpRepodataDir,
+                    pEnt->d_name);
+        if(pszFilePath)
+        {
+            if(unlink(pszFilePath))
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            TDNF_SAFE_FREE_MEMORY(pszFilePath);
+            pszFilePath = NULL;
+        }
+        else
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }

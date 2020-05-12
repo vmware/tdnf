@@ -615,10 +615,10 @@ TDNFGetRepoMD(
         /* always download to tmp */
         dwError = TDNFAllocateStringPrintf(
                       &pszTmpRepoDataDir,
-                      "%s/tmp",
-                      pszRepoDataDir);
+                      "%s/%s/tmp",
+                      pTdnf->pConf->pszCacheDir,
+                      pRepoData->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
-
         dwError = TDNFUtilsMakeDirs(pszTmpRepoDataDir);
         if(dwError == ERROR_TDNF_ALREADY_EXISTS)
         {
@@ -648,8 +648,6 @@ TDNFGetRepoMD(
                           pRepoData->pszId,
                           metalink,
                           &ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         // as BaseURL might have been reset
@@ -710,9 +708,22 @@ TDNFGetRepoMD(
 
         if (nReplaceRepoMD)
         {
+            /* Remove the old repodata, solvcache and lastRefreshMarker before replacing the new repomd file and metalink files. */
+            TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
+            TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
+            TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
+            dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
+            BAIL_ON_TDNF_ERROR(dwError);
             dwError = TDNFReplaceFile(pszTmpRepoMDFile, pszRepoMDFile);
             BAIL_ON_TDNF_ERROR(dwError);
+            if (metalink)
+            {
+                dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
         }
+        dwError = TDNFRemoveTmpRepodata(pszTmpRepoDataDir);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
     dwError = TDNFParseRepoMD(pRepoMDRel);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -727,7 +738,6 @@ TDNFGetRepoMD(
 
 cleanup:
     TDNFFreeRepoMetadata(pRepoMDRel);
-    TDNFRemoveTmpRepodata(pszTmpRepoDataDir, pszTmpRepoMDFile);
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoMDFile);
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoDataDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDFile);
@@ -1047,7 +1057,7 @@ TDNFReplaceFile(
 {
     uint32_t dwError = 0;
 
-    if (IsNullOrEmptyString(pszSrcFile) || IsNullOrEmptyString(pszDstFile))
+    if (IsNullOrEmptyString(pszSrcFile) || IsNullOrEmptyString(pszDstFile) || access(pszSrcFile, F_OK))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

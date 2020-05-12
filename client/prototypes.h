@@ -157,8 +157,7 @@ TDNFRemoveLastRefreshMarker(
 
 uint32_t
 TDNFRemoveTmpRepodata(
-    const char* pszTmpRepodataDir,
-    const char* pszTmpRepoMDFile
+    const char* pszTmpRepodataDir
     );
 
 uint32_t
