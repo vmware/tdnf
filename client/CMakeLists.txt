@@ -10,6 +10,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 find_package(Metalink REQUIRED)
 
+find_package(OpenSSL REQUIRED)
+
 #make config.h with
 #PACKAGE_NAME and PACKAGE_VERSION defined
 configure_file(
@@ -52,6 +54,7 @@ target_link_libraries(${LIB_TDNF}
     ${LibSolv_LIBRARIES}
     ${CURL_LIBRARIES}
     ${METALINK_LIBRARIES}
+    ${OPENSSL_LIBRARIES}
 )
 
 set_target_properties(${LIB_TDNF} PROPERTIES
