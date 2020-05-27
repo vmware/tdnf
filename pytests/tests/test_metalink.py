@@ -10,6 +10,9 @@
 import os
 import pytest
 
+metalink_file_path = 'photon-test/metalink'
+repomd_file_path = 'photon-test/repodata/repomd.xml'
+
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
     yield
@@ -38,9 +41,9 @@ def set_metalink(utils, enabled):
         utils.run([ 'sed', '-e', '/metalink/ s/^#*/#/g', '-i', tdnf_repo ])
 
 def set_md5(utils, enabled):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     if enabled:
-        repomd_file = os.path.join(utils.config['repo_path'], 'photon-test/repodata/repomd.xml')
+        repomd_file = os.path.join(utils.config['repo_path'], repomd_file_path)
         ret = utils.run([ 'md5sum', repomd_file])
         md5sum = ret['stdout'][0].split()[0]
         utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="md5">' + md5sum + '</hash>', photon_metalink ])
@@ -49,9 +52,9 @@ def set_md5(utils, enabled):
 
 
 def set_sha1(utils, enabled):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     if enabled:
-        repomd_file = os.path.join(utils.config['repo_path'], 'photon-test/repodata/repomd.xml')
+        repomd_file = os.path.join(utils.config['repo_path'], repomd_file_path)
         ret = utils.run([ 'sha1sum', repomd_file])
         sha1sum = ret['stdout'][0].split()[0]
         utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="sha1">' + sha1sum + '</hash>', photon_metalink ])
@@ -59,9 +62,9 @@ def set_sha1(utils, enabled):
         utils.run([ 'sed', '-i', '-e', '/type="sha1"/d', photon_metalink])
 
 def set_sha256(utils, enabled):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     if enabled:
-        repomd_file = os.path.join(utils.config['repo_path'], 'photon-test/repodata/repomd.xml')
+        repomd_file = os.path.join(utils.config['repo_path'], repomd_file_path)
         ret = utils.run([ 'sha256sum', repomd_file])
         sha256sum = ret['stdout'][0].split()[0]
         utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="sha256">' + sha256sum + '</hash>', photon_metalink ])
@@ -69,27 +72,27 @@ def set_sha256(utils, enabled):
         utils.run([ 'sed', '-i', '-e', '/type="sha256"/d', photon_metalink])
 
 def set_invalid_md5(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     md5sum = 'f894a23a50e757b8aae25596ceb04777'
     utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="md5">' + md5sum + '</hash>', photon_metalink ])
 
 def set_invalid_sha1(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     sha1sum = 'ac0a11d67d46f7c629e22714167b8fc3dc2f8e53'
     utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="sha1">' + sha1sum + '</hash>', photon_metalink ])
 
 def set_invalid_sha256(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     sha256sum = '33853d3329a70ef3e6aab37e31cd03312e66ddc7db20a5f82f06b51ea445dc63'
     utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="sha256">' + sha256sum + '</hash>', photon_metalink ])
 
 def set_invalid_sha256_length(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     sha256sum = 'ac0a11d67d46f7c629e22714167b8fc3dc2f8e53'
     utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="sha256">' + sha256sum + '</hash>', photon_metalink ])
 
 def set_invalid_sha1_length(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], 'photon-test/repodata/photon.metalink')
+    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     sha1sum = 'f894a23a50e757b8aae25596ceb04777'
     utils.run([ 'sed', '-i', '-e' ,'/<verification>/a \    <hash type="sha1">' + sha1sum + '</hash>', photon_metalink ])
 

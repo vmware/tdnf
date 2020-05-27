@@ -65,7 +65,7 @@ cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test.repo
 [photon-test]
 name=basic
 baseurl=file://${PUBLISH_PATH}
-#metalink=file://${PUBLISH_PATH}
+#metalink=file://${PUBLISH_PATH}/metalink
 gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
 gpgcheck=0
 enabled=1
@@ -80,7 +80,7 @@ repodir=${TEST_REPO_DIR}/yum.repos.d
 cachedir=${TEST_REPO_DIR}/cache/tdnf
 EOF
 
-cat << EOF > ${PUBLISH_PATH}/repodata/photon.metalink
+cat << EOF > ${PUBLISH_PATH}/metalink
 <?xml version="1.0" encoding="utf-8"?>
 <metalink version="3.0" xmlns="http://www.metalinker.org/" type="dynamic" pubdate="Wed, 05 Feb 2020 08:14:56 GMT">
  <files>
@@ -88,7 +88,7 @@ cat << EOF > ${PUBLISH_PATH}/repodata/photon.metalink
    <verification>
    </verification>
    <resources maxconnections="1">
-    <url protocol="ftp" type="ftp" location="IN" preference="100">file://${PUBLISH_PATH}</url>
+    <url protocol="file" type="file" location="IN" preference="100">file://${PUBLISH_PATH}/repodata/repomd.xml</url>
    </resources>
   </file>
  </files>
