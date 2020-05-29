@@ -780,12 +780,13 @@ TDNFDownloadFile(
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
 
+    //If TDNF install is invoked with quiet argument,
+    //pszProgressData will be NULL
     if(!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszFileUrl) ||
        IsNullOrEmptyString(pszFile) ||
-       IsNullOrEmptyString(pszRepo) ||
-       IsNullOrEmptyString(pszProgressData))
+       IsNullOrEmptyString(pszRepo))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
