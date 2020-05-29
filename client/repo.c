@@ -667,7 +667,7 @@ TDNFGetRepoMD(
 
         if(metalink && ml_file)
         {
-            dwError = TDNFMetalinkCheckHash(pszTmpRepoMDFile , ml_file);
+            dwError = TDNFMetalinkCheckHash(pszTmpRepoMDFile , ml_file, pTdnf->pArgs->nQuiet);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         /* plugin event indicating a repomd download happened */

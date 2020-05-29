@@ -176,7 +176,8 @@ TDNFRepoApplyProxySettings(
 uint32_t
 TDNFMetalinkCheckHash(
     char *pszFile,
-    metalinkfile *ml_file
+    metalinkfile *ml_file,
+    int nTDNFQuietEnabled
     );
 
 uint32_t

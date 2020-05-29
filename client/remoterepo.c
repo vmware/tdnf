@@ -291,7 +291,8 @@ uint32_t
 TDNFCheckHash(
     const char *filename,
     unsigned char *digest,
-    int type
+    int type,
+    int nTDNFQuietEnabled
     )
 {
 
@@ -322,7 +323,10 @@ TDNFCheckHash(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    printf("Validating metalink (%s) OK\n", filename);
+    if(!nTDNFQuietEnabled)
+    {
+        printf("Validating metalink (%s) OK\n", filename);
+    }
 
 cleanup:
     return dwError;
@@ -338,7 +342,8 @@ error:
 uint32_t
 TDNFMetalinkCheckHash(
     char *pszFile,
-    metalinkfile *ml_file
+    metalinkfile *ml_file,
+    int nTDNFQuietEnabled
     )
 {
 
@@ -350,7 +355,10 @@ TDNFMetalinkCheckHash(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    printf("Validating metalink (%s)...\n", pszFile);
+    if(!nTDNFQuietEnabled)
+    {
+        printf("Validating metalink (%s)...\n", pszFile);
+    }
     if(ml_file->digest == NULL)
     {
         fprintf(stderr,
@@ -358,7 +366,7 @@ TDNFMetalinkCheckHash(
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = TDNFCheckHash(pszFile, ml_file->digest, ml_file->type);
+    dwError = TDNFCheckHash(pszFile, ml_file->digest, ml_file->type, nTDNFQuietEnabled);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
