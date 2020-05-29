@@ -293,3 +293,41 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszTempReplace);
     goto cleanup;
 }
+
+uint32_t
+TDNFTrimSuffix(
+    char* pszSource,
+    const char* pszSuffix
+    )
+{
+    uint32_t dwError = 0;
+    int nSourceStrLen = 0, nSuffixStrLen = 0;
+
+    if(!pszSource || !pszSuffix)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nSourceStrLen = strlen(pszSource);
+    nSuffixStrLen = strlen(pszSuffix);
+
+    if(nSuffixStrLen > nSourceStrLen)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    while(nSuffixStrLen > 0 &&
+          (pszSource[nSourceStrLen - 1] == pszSuffix[nSuffixStrLen - 1]))
+    {
+        nSourceStrLen--;
+        nSuffixStrLen--;
+    }
+
+    pszSource[nSourceStrLen] = '\0';
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}

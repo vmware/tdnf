@@ -75,6 +75,12 @@ TDNFReplaceString(
     char** ppszDst
     );
 
+uint32_t
+TDNFTrimSuffix(
+    char* pszSource,
+    const char* pszSuffix
+    );
+
 void
 TDNFFreeStringArray(
     char** ppszArray

@@ -598,9 +598,8 @@ TDNFGetRepoMD(
     if(metalink)
     {
         dwError = TDNFAllocateStringPrintf(&pszRepoMetalink,
-                                          "%s/%s",
-                                          pRepoData->pszMetaLink,
-                                          TDNF_REPO_METALINK_FILE_PATH);
+                                          "%s",
+                                          pRepoData->pszMetaLink);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

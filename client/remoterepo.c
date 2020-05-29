@@ -506,8 +506,11 @@ TDNFGetResourceType(
     }
     else
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+        //In case metalink file have resource type which we
+        //do not support yet, we should not report error.
+        //We should instead skip and verify the hash for the
+        //supported resource type.
+        *type = -1;
     }
 cleanup:
     return dwError;
@@ -526,7 +529,6 @@ TDNFNewMetalinkfile(
     int i = 0;
     int offset = -1;
     int type = 0;
-    char *resource_type [] = { "https", "http", "ftp", "ftps", "rsync", NULL };
     metalink_checksum_t **metalink_checksum;
     metalink_resource_t **metalink_resource;
 
@@ -595,21 +597,7 @@ TDNFNewMetalinkfile(
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    i = 0;
-    while(resource_type[i] != NULL)
-    {
-        if(!strcasecmp((*metalink_resource)->type, resource_type[i++]))
-        {
-            *ml_file = metalink_file;
-            break;
-        }
-    }
-    //In case we bailed out due to invalid type
-    if(*ml_file == NULL)
-    {
-        dwError = ERROR_TDNF_INVALID_REPO_FILE;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    *ml_file = metalink_file;
 
 cleanup:
     return dwError;
@@ -637,8 +625,10 @@ TDNFParseAndGetURLFromMetalink(
     metalink_resource_t** resources;
     char buf[BUFSIZ] = {0};
     int length = 0;
-    int fd = -1;
+    int fd = -1, i = 0;
     uint32_t dwError = 0;
+    char pszBaseURLFromMetalink[256] = {0};
+    char *resource_type [] = { "https", "http", "ftp", "ftps", "file", NULL };
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -708,13 +698,53 @@ TDNFParseAndGetURLFromMetalink(
             dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        while(*resources)
+        {
+            i = 0;
+            while(resource_type[i] != NULL)
+            {
+                if(!strcasecmp((*resources)->type, resource_type[i]))
+                {
+                    break;
+                }
+                i++;
+            }
+            if(resource_type[i] != NULL)
+            {
+                break;
+            }
+            ++resources;
+        }
+
+        if(IsNullOrEmptyString(resources))
+        {
+            fprintf(stderr, "File %s does not have any resource.\n", (*files)->name);
+            dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if((*resources)->url == NULL)
+        {
+            dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
         if(ml_file)
         {
             dwError = TDNFNewMetalinkfile((*files), ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, (*resources)->url);
+        if (strstr((*resources)->url, TDNF_REPO_METADATA_FILE_PATH) == NULL)
+        {
+            dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        strncpy(pszBaseURLFromMetalink, (*resources)->url, strlen((*resources)->url));
+        dwError = TDNFTrimSuffix(pszBaseURLFromMetalink, TDNF_REPO_METADATA_FILE_PATH);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, pszBaseURLFromMetalink);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:

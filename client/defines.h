@@ -122,9 +122,8 @@ typedef enum
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
 #define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
-#define TDNF_REPO_METALINK_FILE_PATH      "repodata/photon.metalink"
 #define TDNF_REPO_METADATA_FILE_NAME      "repomd.xml"
-#define TDNF_REPO_METALINK_FILE_NAME      "photon.metalink"
+#define TDNF_REPO_METALINK_FILE_NAME      "metalink"
 
 //Repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
