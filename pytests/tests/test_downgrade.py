@@ -22,15 +22,8 @@ def teardown_test(utils):
 
 
 def test_downgrade_no_arg(utils):
-    ret = utils.run(['tdnf', '--config', '/etc/tdnf/tdnf.conf', '--enablerepo=photon-debuginfo', '--assumeno', 'downgrade'])
-    try:
-        if os.environ['DIST'] != 'photon':
-            assert(ret['retval'] == 1602)
-        else:
-            assert(ret['retval'] == 8)
-    except Exception as e:
-        # Default to Photon
-        assert(ret['retval'] == 8)
+    ret = utils.run(['tdnf', 'downgrade'])
+    assert(ret['retval'] == 1011)
 
 
 def test_downgrade_install(utils):

@@ -21,6 +21,31 @@ import distutils.spawn
 from pprint import pprint
 from urllib.parse import urlparse
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+import socketserver
+import threading
+
+class TestRepoServer(threading.Thread):
+
+    def __init__(self, root, port=8080, interface=""):
+        super().__init__()
+        self.daemon = True
+        self.port = port
+        self.root = root
+        self.addr = (interface, port)
+
+    def run(self):
+        os.chdir(self.root)
+        try:
+            self.httpd = HTTPServer(self.addr, SimpleHTTPRequestHandler)
+            self.httpd.serve_forever()
+        finally:
+            self.httpd.server_close()
+
+    def join(self):
+        self.httpd.shutdown()
+        super().join()
+
 
 class JsonWrapper(object):
 
@@ -46,6 +71,7 @@ class TestUtils(object):
         self.config = JsonWrapper(config_file).read()
         if cli_args:
             self.config.update(cli_args)
+        self.config['distribution'] = os.environ.get('DIST', 'photon')
         script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
         self.run([ 'sh', script, self.config['repo_path'] ])
         self.tdnf_config = configparser.ConfigParser()
@@ -53,6 +79,8 @@ class TestUtils(object):
         self.config['valgrind_enabled'] = False
         #check execution environment and enable valgrind if suitable
         self.check_valgrind()
+        self.server = TestRepoServer(self.config['repo_path'])
+        self.server.start()
 
     def _version_number(self, version):
         version_parts = version.split('.')
@@ -201,6 +229,7 @@ class TestUtils(object):
             ret['stderr'] = []
         ret['retval'] = retval
         return ret
+
 
 @pytest.fixture(scope='session')
 def utils():
