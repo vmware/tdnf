@@ -19,6 +19,7 @@
 
 #include <tdnftypes.h>
 #include <tdnferror.h>
+#include <tdnf-common-defines.h>
 
 #include "defines.h"
 #include "structs.h"

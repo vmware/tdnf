@@ -15,7 +15,9 @@ def setup_test(utils):
     teardown_test(utils)
 
 def teardown_test(utils):
-    pass
+    mpkg = utils.config["mulversion_pkgname"]
+    spkg = utils.config["sglversion_pkgname"]
+    utils.run(['tdnf', 'erase', '-y', spkg, mpkg])
 
 def test_update_invalid_arg(utils):
     ret = utils.run([ 'tdnf', 'update', '-y', 'invalid_package' ])

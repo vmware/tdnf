@@ -23,6 +23,7 @@
 
 void
 ShowConsoleProps(
+    void
     )
 {
     struct winsize w;

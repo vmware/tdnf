@@ -7,57 +7,33 @@
 #
 #   Author: Shreenidhi Shedi <sshedi@vmware.com>
 
-import os
-import tempfile
 import pytest
-import shutil
-import subprocess
 
-isNotPhoton = -1
-try:
-    isNotPhoton = subprocess.check_call("uname -a | grep -i photon > /dev/null", shell = True)
-except Exception as e:
-    isNotPhoton = 1
 
-def run_cmd(utils, cmd, retval):
+def run_cmd(utils, opt, retval):
+    cmd = ['tdnf', 'check']
+    cmd.extend(opt)
     ret = utils.run(cmd)
-    if retval == 0:
-        assert(ret['retval'] == 0)
-    else:
-        assert(ret['retval'] != 0)
+    assert(ret['retval'] == 0)
 
-@pytest.fixture(scope='module', autouse=True)
+
+@pytest.fixture(scope='module', autouse = True)
 def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
     pass
 
-def test_check_skipconflicts(utils):
-    cmd = [ 'tdnf', '--config', '/etc/tdnf/tdnf.conf', 'check', '--skipconflicts']
-    if isNotPhoton == 1:
-        cmd.pop(1)
-        cmd.pop(1)
 
-    retval = 0 if isNotPhoton == 1 else 1
-    run_cmd(utils, cmd, retval)
+def test_check_skipconflicts(utils):
+    run_cmd(utils, ['--skipconflicts'], 0)
+
 
 def test_check_skipobsoletes(utils):
-    cmd = [ 'tdnf', '--config', '/etc/tdnf/tdnf.conf', 'check', '--skipobsoletes']
-    if isNotPhoton == 1:
-        cmd.pop(1)
-        cmd.pop(1)
+    run_cmd(utils, ['--skipobsoletes'], 0)
 
-    retval = 0 if isNotPhoton == 1 else 1
-    run_cmd(utils, cmd, retval)
 
 def test_check_providers(utils):
-    cmd = [ 'tdnf', '--config', '/etc/tdnf/tdnf.conf', 'check', '--skipconflicts', '--skipobsoletes']
-    if isNotPhoton == 1:
-        cmd.pop(1)
-        cmd.pop(1)
-
-    # retval may change, keeping it commented
-    #retval = 1 if isNotPhoton == 1 else 0
-    run_cmd(utils, cmd, 0)
+    run_cmd(utils, ['--skipconflicts', '--skipobsoletes'], 0)

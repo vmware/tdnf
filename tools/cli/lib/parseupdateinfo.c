@@ -125,13 +125,12 @@ TDNFCliParseMode(
         char* pszModeName;
         int nMode;
     };
-    struct stTemp  stModes[] = 
+    struct stTemp  stModes[] =
     {
         {"summary",   OUTPUT_SUMMARY},
         {"list",      OUTPUT_LIST},
         {"info",      OUTPUT_INFO}
     };
-    int nCount = sizeof(stModes)/sizeof(stModes[0]);
 
     if(IsNullOrEmptyString(pszMode) || !pnMode)
     {
@@ -139,6 +138,7 @@ TDNFCliParseMode(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    int nCount = ARRAY_SIZE(stModes);
     for(nIndex = 0; nIndex < nCount; ++nIndex)
     {
         if(!strcasecmp(stModes[nIndex].pszModeName, pszMode))

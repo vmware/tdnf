@@ -21,6 +21,7 @@ extern "C" {
 //global init.
 uint32_t
 TDNFInit(
+    void
     );
 
 //Open a handle using initial args
@@ -239,6 +240,7 @@ TDNFFreeCmdOpt(
 //free global resources.
 void
 TDNFUninit(
+    void
     );
 
 

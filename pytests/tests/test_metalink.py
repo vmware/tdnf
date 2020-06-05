@@ -25,6 +25,8 @@ def teardown_test(utils):
     set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.run(['tdnf', 'erase', '-y', pkgname])
 
 def set_baseurl(utils, enabled):
     tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')

@@ -75,7 +75,7 @@ TDNFCliParseCleanType(
         char* pszTypeName;
         int nType;
     };
-    struct stTemp  stCleanTypes[] = 
+    struct stTemp  stCleanTypes[] =
     {
         {"packages",      CLEANTYPE_PACKAGES},
         {"metadata",      CLEANTYPE_METADATA},
@@ -84,7 +84,7 @@ TDNFCliParseCleanType(
         {"expire-cache",  CLEANTYPE_EXPIRE_CACHE},
         {"all",           CLEANTYPE_ALL},
     };
-    int nCount = sizeof(stCleanTypes)/sizeof(stCleanTypes[0]);
+    int nCount = ARRAY_SIZE(stCleanTypes);
     for(nIndex = 0; nIndex < nCount; ++nIndex)
     {
         if(!strcasecmp(stCleanTypes[nIndex].pszTypeName, pszCleanType))

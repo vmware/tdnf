@@ -15,7 +15,9 @@ def setup_test(utils):
     teardown_test(utils)
 
 def teardown_test(utils):
-    pass
+    spkg = utils.config["sglversion_pkgname"]
+    mpkg = utils.config["mulversion_pkgname"]
+    utils.run(['tdnf', 'erase', '-y', spkg, mpkg])
 
 def test_check_update_no_arg(utils):
     ret = utils.run([ 'tdnf', 'check-update' ])

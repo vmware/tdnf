@@ -114,10 +114,12 @@ TDNFCliUpdateInfoInfo(
 //help.c
 void
 TDNFCliShowUsage(
+    void
     );
 
 void
 TDNFCliShowHelp(
+    void
     );
 
 void
@@ -165,6 +167,7 @@ TDNFCliInvokeUpdateInfoSummary(
 //main.c
 void
 TDNFCliShowVersion(
+    void
     );
 
 uint32_t
@@ -203,6 +206,7 @@ TDNFCliValidateOptions(
 //output.c
 void
 ShowConsoleProps(
+    void
     );
 
 uint32_t

@@ -21,8 +21,6 @@
 
 #pragma once
 
-#define IsNullOrEmptyString(str) (!(str) || !(*str))
-
 #define BAIL_ON_CLI_ERROR(unError) \
     do {                                                           \
         if (unError)                                               \
@@ -61,4 +59,5 @@
     {ERROR_TDNF_CLI_CHECKLOCAL_EXPECT_DIR,   "ERROR_TDNF_CLI_CHECKLOCAL_EXPECT_DIR",  "check-local requires path to rpm directory as a parameter"}, \
     {ERROR_TDNF_CLI_PROVIDES_EXPECT_ARG,     "ERROR_TDNF_CLI_PROVIDES_EXPECT_ARG",    "Need an item to match."}, \
     {ERROR_TDNF_CLI_SETOPT_NO_EQUALS,        "ERROR_TDNF_CLI_SETOPT_NO_EQUALS",       "Missing equal sign in setopt argument. setopt requires an argument of the form key=value."}, \
+    {ERROR_TDNF_CLI_NO_SUCH_CMD,             "ERROR_TDNF_CLI_NO_SUCH_CMD",            "Please check your command"}, \
 };

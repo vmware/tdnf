@@ -21,9 +21,6 @@
 #ifndef __CLIENT_INCLUDES_H__
 #define __CLIENT_INCLUDES_H__
 
-/* Use this to get rid of variable/parameter unused warning */
-#define UNUSED(var) ((void)(var))
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -61,6 +58,7 @@
 #include <tdnf.h>
 #include <tdnfplugin.h>
 #include <tdnfplugineventmap.h>
+#include <tdnf-common-defines.h>
 
 #include "defines.h"
 #include "structs.h"

@@ -28,34 +28,6 @@ typedef enum
     DETAIL_INFO
 }TDNF_PKG_DETAIL;
 
-#define IsNullOrEmptyString(str)    (!(str) || !(*str))
-
-#define BAIL_ON_TDNF_ERROR(dwError) \
-    do {                                                           \
-        if (dwError)                                               \
-        {                                                          \
-            goto error;                                            \
-        }                                                          \
-    } while(0)
-
-#define BAIL_ON_TDNF_SYSTEM_ERROR(dwError) \
-    do {                                                           \
-        if (dwError)                                               \
-        {                                                          \
-            dwError = ERROR_TDNF_SYSTEM_BASE + dwError;            \
-            goto error;                                            \
-        }                                                          \
-    } while(0)
-
-#define BAIL_ON_TDNF_SOLV_ERROR(dwError) \
-    do {                                                           \
-        if (dwError)                                               \
-        {                                                          \
-            dwError = ERROR_TDNF_SOLV_BASE + dwError;            \
-            goto error;                                            \
-        }                                                          \
-    } while(0)
-
 #define BAIL_ON_TDNF_RPM_ERROR(dwError) \
     do {                                                           \
         if (dwError)                                               \

@@ -11,6 +11,8 @@
 #include <Python.h>
 #include <structmember.h>
 #include <tdnf.h>
+#include <tdnf-common-defines.h>
+
 #include "../common/defines.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"

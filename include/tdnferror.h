@@ -160,6 +160,7 @@ extern "C" {
 #define ERROR_TDNF_BASEURL_DOES_NOT_EXISTS             2500
 #define ERROR_TDNF_CHECKSUM_VALIDATION_FAILED          2501
 #define ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED 2502
+
 #define CMD_INSTALL "install"
 
 #ifdef __cplusplus

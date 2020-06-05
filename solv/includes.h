@@ -30,6 +30,8 @@
 #include <solv/chksum.h>
 
 #include <tdnf.h>
+#include <tdnf-common-defines.h>
+
 #include "defines.h"
 #include "tdnferror.h"
 #include "../common/defines.h"

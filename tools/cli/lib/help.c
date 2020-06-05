@@ -23,6 +23,7 @@
 
 void
 TDNFCliShowUsage(
+    void
     )
 {
     printf("You need to give some command\n");
@@ -31,6 +32,7 @@ TDNFCliShowUsage(
 
 void
 TDNFCliShowHelp(
+    void
     )
 {
     printf("usage: tdnf [options] COMMAND\n");
@@ -82,18 +84,20 @@ TDNFCliShowHelp(
 
 void
 TDNFCliShowNoSuchCommand(
-    const char* pszCmd
+    const char *pszCmd
     )
 {
-    printf("No such command: %s. Please use /usr/bin/tdnf --help\n", pszCmd);
+    printf("No such command: %s. Please use /usr/bin/tdnf --help\n",
+            pszCmd ? pszCmd : "");
 }
 
 void
 TDNFCliShowNoSuchOption(
-    const char* pszOption
+    const char *pszOption
     )
 {
-    printf("No such option: %s. Please use /usr/bin/tdnf --help\n", pszOption);
+    printf("No such option: %s. Please use /usr/bin/tdnf --help\n",
+            pszOption ? pszOption : "");
 }
 
 uint32_t
@@ -102,8 +106,11 @@ TDNFCliHelpCommand(
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
-    UNUSED(pContext);
-    UNUSED(pCmdArgs);
+    if (!pCmdArgs || !pContext)
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
+
     TDNFCliShowHelp();
 
     return 0;
