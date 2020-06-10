@@ -21,6 +21,31 @@ import distutils.spawn
 from pprint import pprint
 from urllib.parse import urlparse
 from OpenSSL.crypto import load_certificate, FILETYPE_PEM
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+import socketserver
+import threading
+
+class TestRepoServer(threading.Thread):
+
+    def __init__(self, root, port=8080, interface=""):
+        super().__init__()
+        self.daemon = True
+        self.port = port
+        self.root = root
+        self.addr = (interface, port)
+
+    def run(self):
+        os.chdir(self.root)
+        try:
+            self.httpd = HTTPServer(self.addr, SimpleHTTPRequestHandler)
+            self.httpd.serve_forever()
+        finally:
+            self.httpd.server_close()
+
+    def join(self):
+        self.httpd.shutdown()
+        super().join()
+
 
 class JsonWrapper(object):
 
@@ -46,37 +71,51 @@ class TestUtils(object):
         self.config = JsonWrapper(config_file).read()
         if cli_args:
             self.config.update(cli_args)
+        self.config['distribution'] = os.environ.get('DIST', 'photon')
         script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
         self.run([ 'sh', script, self.config['repo_path'] ])
         self.tdnf_config = configparser.ConfigParser()
         self.tdnf_config.read(os.path.join(self.config['repo_path'], 'tdnf.conf'))
-        self.config['valgrind_enabled'] = False
-        #check execution environment and enable valgrind if suitable
+
+        # check execution environment and enable valgrind if suitable
         self.check_valgrind()
 
-    def _version_number(self, version):
+        self.server = TestRepoServer(self.config['repo_path'])
+        self.server.start()
+
+    def version_str_to_int(self, version):
         version_parts = version.split('.')
         return version_parts[0] * 1000 + version_parts[1] * 100 + version_parts[2]
 
-    #valgrind versions less than minimum required might not
-    #support all the options specified or might have known
-    #errors
     def check_valgrind(self):
+        self.config['valgrind_enabled'] = False
         valgrind = distutils.spawn.find_executable('valgrind')
         if not valgrind:
             self.config['valgrind_disabled_reason'] = 'valgrind not found'
-        else:
-            stream = os.popen(valgrind + ' --version') #nosec
-            valgrind_version = stream.read()
-            if valgrind_version:
-                valgrind_version = valgrind_version.replace('valgrind-', '')
-                valgrind_minimum_version = self.config['valgrind_minimum_version']
-                if self._version_number(valgrind_version) >= \
-                   self._version_number(valgrind_minimum_version):
-                    self.config['valgrind_enabled'] = True
-                else:
-                    self.config['valgrind_disabled_reason'] = \
-                    'valgrind minimum version required: ' + valgrind_minimum_version
+            return
+
+        # TODO: fix $DIST specific inconsistencies in valgrind checks.
+        if self.config['distribution'] == 'fedora':
+            self.config['valgrind_disabled_reason'] = 'Valgrind disabled on fedora to fix $DIST inconsistencies'
+            return
+
+        stream = os.popen(valgrind + ' --version') #nosec
+        valgrind_version = stream.read()
+        if not valgrind_version:
+            self.config['valgrind_disabled_reason'] = 'Unable to ascertain valgrind version'
+            return
+
+        # valgrind versions less than minimum required might not support
+        # all the options specified or might have known errors.
+        current_version = self.version_str_to_int(valgrind_version.replace('valgrind-', ''))
+        minimum_version = self.version_str_to_int(self.config['valgrind_minimum_version'])
+        if current_version < minimum_version:
+            self.config['valgrind_disabled_reason'] = 'valgrind minimum version constraint not met'
+            return
+
+        # All okay. Enable valgrind checks
+        self.config['valgrind_disabled_reason'] = None
+        self.config['valgrind_enabled'] = True
 
     def assert_file_exists(self, file_path):
         if not os.path.isfile(file_path):
@@ -157,7 +196,7 @@ class TestUtils(object):
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
 
     def _skip_if_valgrind_disabled(self):
-        if  not self.config['valgrind_enabled']:
+        if not self.config['valgrind_enabled']:
             pytest.skip(self.config['valgrind_disabled_reason'])
 
     def run_memcheck(self, cmd):
@@ -201,6 +240,7 @@ class TestUtils(object):
             ret['stderr'] = []
         ret['retval'] = retval
         return ret
+
 
 @pytest.fixture(scope='session')
 def utils():

@@ -64,8 +64,8 @@ echo ${GPG_PASS} | gpg --batch --passphrase-fd 0 \
 cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test.repo
 [photon-test]
 name=basic
-baseurl=file://${PUBLISH_PATH}
-#metalink=file://${PUBLISH_PATH}/metalink
+baseurl=http://localhost:8080/photon-test
+#metalink=http://localhost:8080/photon-test/metalink
 gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
 gpgcheck=0
 enabled=1
@@ -88,7 +88,7 @@ cat << EOF > ${PUBLISH_PATH}/metalink
    <verification>
    </verification>
    <resources maxconnections="1">
-    <url protocol="file" type="file" location="IN" preference="100">file://${PUBLISH_PATH}/repodata/repomd.xml</url>
+    <url protocol="http" type="file" location="IN" preference="100">http://localhost:8080/photon-test/repodata/repomd.xml</url>
    </resources>
   </file>
  </files>
