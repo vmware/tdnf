@@ -84,4 +84,4 @@ __pycache__/
 *.pc
 
 # build directory
-build/
+build*/
