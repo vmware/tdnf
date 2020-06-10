@@ -5,7 +5,8 @@
 In order to compile, from the checkout directory, run the following
 
 ```sh
-cmake .
+mkdir build && cd build
+cmake ..
 make
 ```
 
@@ -30,7 +31,7 @@ cachedir=/var/cache/tdnf
 Now configure repo files under `/etc/yum.repos.d` or your repodir following
 `.repo` format of dnf/yum.
 
-You should now have a client executable named tdnf under `bin/cli`. To test
+You should now have a client executable named tdnf under `bin/`. To test
 run:
 
 ```sh
