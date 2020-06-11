@@ -9,4 +9,4 @@ env:
 
 script:
   - docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
-  - docker run --rm -it -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
+  - docker run --security-opt seccomp:unconfined --rm -it -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
