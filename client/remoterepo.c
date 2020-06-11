@@ -635,7 +635,6 @@ TDNFParseAndGetURLFromMetalink(
     int length = 0;
     int fd = -1, i = 0;
     uint32_t dwError = 0;
-    char pszBaseURLFromMetalink[256] = {0};
     char *resource_type [] = { "https", "http", "ftp", "ftps", "file", NULL };
 
     if(!pTdnf ||
@@ -748,11 +747,13 @@ TDNFParseAndGetURLFromMetalink(
             dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        strncpy(pszBaseURLFromMetalink, (*resources)->url, strlen((*resources)->url));
-        dwError = TDNFTrimSuffix(pszBaseURLFromMetalink, TDNF_REPO_METADATA_FILE_PATH);
+
+        strncpy(buf, (*resources)->url, BUFSIZ-1);
+        buf[BUFSIZ-1] = '\0'; // force terminate
+        dwError = TDNFTrimSuffix(buf, TDNF_REPO_METADATA_FILE_PATH);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, pszBaseURLFromMetalink);
+        dwError = TDNFRepoSetBaseUrl(pTdnf, pszRepo, buf);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
