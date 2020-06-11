@@ -5,7 +5,8 @@
 In order to compile, from the checkout directory, run the following
 
 ```sh
-cmake
+mkdir build && cd build
+cmake ..
 make
 ```
 
@@ -13,10 +14,10 @@ You could also build tdnf using docker using the following commands:
 
 ```sh
 docker build -t photon/tdnf-build -f ci/Dockerfile.photon .
-docker run --rm -it -v$(pwd):/build -w/build photon/tdnf-build
+docker run --rm -it -v $(pwd):/build -w /build photon/tdnf-build
 ```
 
-create a conf file named tdnf.conf under \etc\tdnf with the following content
+create a conf file named `tdnf.conf` under `/etc/tdnf/` with the following content
 
 ```text
 [main]
@@ -30,11 +31,11 @@ cachedir=/var/cache/tdnf
 Now configure repo files under `/etc/yum.repos.d` or your repodir following
 `.repo` format of dnf/yum.
 
-You should now have a client executable named tdnf under `tools/cli`. To test
+You should now have a client executable named tdnf under `bin/`. To test
 run:
 
 ```sh
-./tools/cli/tdnf list installed
+./bin/tdnf list installed
 ```
 
 You should see a list of installed packages and their related info
