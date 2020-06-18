@@ -94,11 +94,6 @@ class TestUtils(object):
             self.config['valgrind_disabled_reason'] = 'valgrind not found'
             return
 
-        # TODO: fix $DIST specific inconsistencies in valgrind checks.
-        if self.config['distribution'] == 'fedora':
-            self.config['valgrind_disabled_reason'] = 'Valgrind disabled on fedora to fix $DIST inconsistencies'
-            return
-
         stream = os.popen(valgrind + ' --version') #nosec
         valgrind_version = stream.read()
         if not valgrind_version:
