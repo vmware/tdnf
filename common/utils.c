@@ -447,3 +447,106 @@ error:
     return dwError;
 }
 
+uint32_t TDNFUriIsRemote(
+    const char* pszKeyUrl,
+    int *pnRemote
+)
+{
+    uint32_t dwError = 0;
+    const char *szRemotes[] = {"http://", "https://", "ftp://",
+                               "ftps://", NULL};
+    int i = 0;
+
+    if(!pnRemote || IsNullOrEmptyString(pszKeyUrl))
+    {
+      dwError = ERROR_TDNF_INVALID_PARAMETER;
+      BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *pnRemote = 0;
+    for(i = 0; szRemotes[i]; i++) {
+        if (strncasecmp(pszKeyUrl, szRemotes[i], strlen(szRemotes[i])) == 0) {
+            *pnRemote = 1;
+            break;
+        }
+    }
+    if (szRemotes[i] == NULL && strncasecmp(pszKeyUrl, "file://", 7) != 0) {
+       dwError = ERROR_TDNF_URL_INVALID;
+       BAIL_ON_TDNF_ERROR(dwError);
+    }
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t TDNFFileNameFromUri(
+    const char* pszKeyUrl,
+    char** ppszFile)
+{
+    uint32_t dwError = 0;
+    const char* pszPath = NULL;
+    char *pszFile = NULL;
+    size_t nOffset;
+    const char *szProtocols[] = {"http://", "https://", "ftp://",
+                                "ftps://", "file://", NULL};
+    int i = 0;
+
+    if(IsNullOrEmptyString(pszKeyUrl) || !ppszFile)
+    {
+      dwError = ERROR_TDNF_INVALID_PARAMETER;
+      BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(i = 0; szProtocols[i]; i++) {
+        if (strncasecmp(pszKeyUrl, szProtocols[i], strlen(szProtocols[i])) == 0) {
+            nOffset = strlen(szProtocols[i]);
+            break;
+        }
+    }
+    if (szProtocols[i] == NULL) {
+       dwError = ERROR_TDNF_URL_INVALID;
+       BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszPath = pszKeyUrl + nOffset;
+
+    if(!pszPath || *pszPath == '\0')
+    {
+        dwError = ERROR_TDNF_URL_INVALID;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (strchr (pszPath, '#') != NULL)
+    {
+        dwError = ERROR_TDNF_URL_INVALID;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(*pszPath != '/')
+    {
+        //skip hostname in the uri.
+        pszPath = strchr (pszPath, '/');
+        if(pszPath == NULL)
+        {
+            dwError = ERROR_TDNF_URL_INVALID;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    dwError = TDNFAllocateString(pszPath, &pszFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+    *ppszFile = pszFile;
+
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszFile);
+    if(ppszFile)
+    {
+        *ppszFile = NULL;
+    }
+    goto cleanup;
+}
+

@@ -495,8 +495,7 @@ uint32_t
 TDNFGetGPGCheck(
     PTDNF pTdnf,
     const char* pszRepo,
-    int* pnGPGCheck,
-    char** ppszUrlGPGKey
+    int* pnGPGCheck
     );
 
 uint32_t

@@ -174,16 +174,14 @@ uint32_t
 TDNFGetGPGCheck(
     PTDNF pTdnf,
     const char* pszRepo,
-    int* pnGPGCheck,
-    char** ppszUrlGPGKey
+    int* pnGPGCheck
     )
 {
     uint32_t dwError = 0;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
     int nGPGCheck = 0;
-    char* pszUrlGPGKey = NULL;
 
-    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo) || !pnGPGCheck)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pnGPGCheck)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -199,28 +197,15 @@ TDNFGetGPGCheck(
         if(pRepo)
         {
             nGPGCheck = pRepo->nGPGCheck;
-            if(nGPGCheck)
-            {
-                dwError = TDNFAllocateString(
-                             pRepo->pszUrlGPGKey,
-                             &pszUrlGPGKey);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
         }
     }
 
     *pnGPGCheck = nGPGCheck;
-    *ppszUrlGPGKey = pszUrlGPGKey;
 
 cleanup:
     return dwError;
 
 error:
-    if(ppszUrlGPGKey)
-    {
-        *ppszUrlGPGKey = NULL;
-    }
-    TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
     goto cleanup;
 }
 
