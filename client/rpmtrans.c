@@ -466,6 +466,9 @@ TDNFTransAddInstallPkg(
     {
         dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = rpmtsSetKeyring (pTS->pTS, pTS->pKeyring);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     fp = Fopen (pszFilePath, "r.ufdio");
