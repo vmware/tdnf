@@ -400,6 +400,8 @@ TDNFTransAddInstallPkg(
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
+    rpmKeyring pSavedKeyring = NULL;
+    int nRestoreKey = 0;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -458,19 +460,6 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    //Check override, then repo config and launch
-    //gpg check if needed
-    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
-    BAIL_ON_TDNF_ERROR(dwError);
-    if(nGPGSigCheck)
-    {
-        dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = rpmtsSetKeyring (pTS->pTS, pTS->pKeyring);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
     fp = Fopen (pszFilePath, "r.ufdio");
     if(!fp)
     {
@@ -483,9 +472,44 @@ TDNFTransAddInstallPkg(
                   fp,
                   pszFilePath,
                   &rpmHeader);
-    //If not checking gpg sigs, ignore signature errors
-    if(!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
+
+    Fclose(fp);
+    fp = NULL;
+
+    if(nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
     {
+        dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if(nGPGSigCheck)
+        {
+            dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            pSavedKeyring = rpmtsGetKeyring(pTS->pTS, 0);
+            nRestoreKey = 1;
+
+            dwError = rpmtsSetKeyring (pTS->pTS, pTS->pKeyring);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            fp = Fopen (pszFilePath, "r.ufdio");
+            if(!fp)
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+
+            dwError = rpmReadPackageFile(
+                          pTS->pTS,
+                          fp,
+                          pszFilePath,
+                          &rpmHeader);
+
+            BAIL_ON_TDNF_RPM_ERROR(dwError);
+
+            Fclose(fp);
+            fp = NULL;
+        }
+    } else if (!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY)) {
         dwError = 0;
     }
     BAIL_ON_TDNF_RPM_ERROR(dwError);
@@ -518,6 +542,9 @@ TDNFTransAddInstallPkg(
         pTS->pCachedRpmsArray->pHead = pRpmCache;
     }
 cleanup:
+    if (nRestoreKey) {
+        rpmtsSetKeyring (pTS->pTS, pSavedKeyring);
+    }
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
     TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
