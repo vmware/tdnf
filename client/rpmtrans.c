@@ -61,12 +61,6 @@ TDNFRpmExecTransaction(
         dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    ts.pKeyring = rpmKeyringNew();
-    if(!ts.pKeyring)
-    {
-        dwError = ERROR_TDNF_RPMTS_KEYRING_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     ts.nTransFlags = rpmtsSetFlags (ts.pTS, RPMTRANS_FLAG_NONE);
 
@@ -93,10 +87,6 @@ cleanup:
     {
         rpmtsCloseDB(ts.pTS);
         rpmtsFree(ts.pTS);
-    }
-    if(ts.pKeyring)
-    {
-        rpmKeyringFree(ts.pKeyring);
     }
     if(ts.pCachedRpmsArray)
     {
@@ -402,6 +392,7 @@ TDNFTransAddInstallPkg(
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
     rpmKeyring pSavedKeyring = NULL;
     int nRestoreKey = 0;
+    rpmKeyring pKeyring = NULL;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -482,13 +473,20 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_ERROR(dwError);
         if(nGPGSigCheck)
         {
-            dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
+            pKeyring = rpmKeyringNew();
+            if(!pKeyring)
+            {
+                dwError = ERROR_TDNF_RPMTS_KEYRING_FAILED;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFGPGCheck(pKeyring, pszUrlGPGKey, pszFilePath);
             BAIL_ON_TDNF_ERROR(dwError);
 
             pSavedKeyring = rpmtsGetKeyring(pTS->pTS, 0);
             nRestoreKey = 1;
 
-            dwError = rpmtsSetKeyring (pTS->pTS, pTS->pKeyring);
+            dwError = rpmtsSetKeyring (pTS->pTS, pKeyring);
             BAIL_ON_TDNF_ERROR(dwError);
 
             fp = Fopen (pszFilePath, "r.ufdio");
@@ -544,6 +542,10 @@ TDNFTransAddInstallPkg(
 cleanup:
     if (nRestoreKey) {
         rpmtsSetKeyring (pTS->pTS, pSavedKeyring);
+    }
+    if(pKeyring)
+    {
+        rpmKeyringFree(pKeyring);
     }
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);

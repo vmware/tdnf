@@ -73,7 +73,6 @@ typedef struct _TDNF_RPM_TS_
 {
     int                     nQuiet;
     rpmts                   pTS;
-    rpmKeyring              pKeyring;
     rpmtransFlags           nTransFlags;
     rpmprobFilterFlags      nProbFilterFlags;
     FD_t                    pFD;
