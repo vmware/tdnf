@@ -16,18 +16,18 @@ _TDNFVerifyResult(
     )
 {
     uint32_t dwError = 0;
-    gpgme_verify_result_t pResult = NULL;
     gpgme_signature_t pSig = NULL;
+    gpgme_verify_result_t pResult = NULL;
 
     /* pContext release will free pResult. do not free otherwise */
     pResult = gpgme_op_verify_result(pContext);
-    if (!pResult)
+    if (!pResult || !pResult->signatures)
     {
         dwError = ERROR_TDNF_GPG_VERIFY_RESULT;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for(pSig = pResult->signatures; pSig; pSig = pSig->next)
+    for (pSig = pResult->signatures; pSig; pSig = pSig->next)
     {
         if (pSig->status)
         {
