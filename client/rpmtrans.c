@@ -311,7 +311,7 @@ TDNFRunTransaction(
     }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
-    BAIL_ON_TDNF_ERROR(dwError);
+    BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     //TODO do callbacks for output
     if(!nSilent)
@@ -320,7 +320,7 @@ TDNFRunTransaction(
     }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_NONE);
     dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
-    BAIL_ON_TDNF_ERROR(dwError);
+    BAIL_ON_TDNF_RPM_ERROR(dwError);
 
 cleanup:
     return dwError;
