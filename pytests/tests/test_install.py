@@ -16,17 +16,21 @@ def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.run(['tdnf', 'erase', '-y', pkgname])
+
 
 def test_install_no_arg(utils):
     ret = utils.run([ 'tdnf', 'install' ])
     assert(ret['retval'] == 1001)
 
+
 def test_install_invalid_arg(utils):
     ret = utils.run([ 'tdnf', 'install', 'invalid_package' ])
     assert(ret['retval'] == 1011)
+
 
 def test_install_package_with_version_suffix(utils):
     pkgname = utils.config["mulversion_pkgname"]
@@ -36,9 +40,16 @@ def test_install_package_with_version_suffix(utils):
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion ])
     assert(utils.check_package(pkgname) == True)
 
+
 def test_install_package_without_version_suffix(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname ])
     assert(utils.check_package(pkgname) == True)
+
+
+def test_dummy_requires(utils):
+    pkg = utils.config["dummy_requires_pkgname"]
+    ret = utils.run(['tdnf', 'install', '-y', pkg])
+    assert ' nothing provides ' in ret['stderr'][0]

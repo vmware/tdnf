@@ -1230,7 +1230,7 @@ SolvFindHighestAvailable(
     int dwEvrCompare = 0;
     Id  dwAvailableId = 0;
     Id  dwHighestAvailable = 0;
-    PSolvPackageList pAvailabePkgList = NULL;
+    PSolvPackageList pAvailablePkgList = NULL;
     uint32_t dwCount = 0;
 
     if(!pSack || IsNullOrEmptyString(pszPkgName) || !pdwId)
@@ -1242,19 +1242,19 @@ SolvFindHighestAvailable(
     dwError = SolvFindAvailablePkgByName(
                   pSack,
                   pszPkgName,
-                  &pAvailabePkgList);
+                  &pAvailablePkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetPackageId(pAvailabePkgList, 0, &dwHighestAvailable);
+    dwError = SolvGetPackageId(pAvailablePkgList, 0, &dwHighestAvailable);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetPackageListSize(pAvailabePkgList, &dwCount);
+    dwError = SolvGetPackageListSize(pAvailablePkgList, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
     for(dwPkgIndex = 1; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
     {
         dwError = SolvGetPackageId(
-                      pAvailabePkgList,
+                      pAvailablePkgList,
                       dwPkgIndex,
                       &dwAvailableId);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -1272,9 +1272,9 @@ SolvFindHighestAvailable(
 
     *pdwId = dwHighestAvailable;
 cleanup:
-    if(pAvailabePkgList)
+    if(pAvailablePkgList)
     {
-        SolvFreePackageList(pAvailabePkgList);
+        SolvFreePackageList(pAvailablePkgList);
     }
     return dwError;
 error:
@@ -1538,6 +1538,11 @@ SkipBasedOnType(
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
+    if (dwSkipProblem == SKIPPROBLEM_NONE)
+    {
+        return false;
+    }
+
     if (dwSkipProblem == SKIPPROBLEM_CONFLICTS)
     {
         return (type == SOLVER_RULE_PKG_CONFLICTS ||
@@ -1575,9 +1580,9 @@ check_for_providers(
     char *end;
     uint32_t dwError = 0;
     char pkgname[256] = {0};
-    PSolvPackageList pAvailabePkgList = NULL;
+    PSolvPackageList pAvailablePkgList = NULL;
 
-    if (!pSack || !prv_pkgname)
+    if (!pSack || !prv_pkgname || !pszProblem)
     {
         return ERROR_TDNF_INVALID_PARAMETER;
     }
@@ -1587,10 +1592,10 @@ check_for_providers(
         return dwError;
     }
 
-    beg = strstr(pszProblem, "requires ");
+    beg = strstr(pszProblem, " requires ");
     if (beg)
     {
-        beg += strlen("requires ");
+        beg += strlen(" requires ");
         end = strchr(beg, ',');
     }
 
@@ -1613,12 +1618,12 @@ check_for_providers(
         return dwError;
     }
 
-    strcpy(prv_pkgname, pkgname);
-    dwError = SolvFindAvailablePkgByName(pSack, pkgname, &pAvailabePkgList);
-    if (pAvailabePkgList)
+    dwError = SolvFindAvailablePkgByName(pSack, pkgname, &pAvailablePkgList);
+    if (pAvailablePkgList)
     {
-        SolvFreePackageList(pAvailabePkgList);
+        SolvFreePackageList(pAvailablePkgList);
     }
+    strcpy(prv_pkgname, pkgname);
 
     return dwError;
 }
@@ -1655,7 +1660,8 @@ SolvReportProblems(
         type = solver_ruleinfo(pSolv, dwProblemId,
                                &dwSource, &dwTarget, &dwDep);
 
-        if (SkipBasedOnType(type, dwSkipProblem))
+        if ((dwSkipProblem != SKIPPROBLEM_NONE) &&
+            SkipBasedOnType(type, dwSkipProblem))
         {
             continue;
         }
@@ -1663,15 +1669,12 @@ SolvReportProblems(
         pszProblem = solver_problemruleinfo2str(pSolv, type, dwSource,
                                                 dwTarget, dwDep);
 
-        if (type == SOLVER_RULE_PKG_REQUIRES)
+        if (dwSkipProblem != SKIPPROBLEM_NONE &&
+            type == SOLVER_RULE_PKG_REQUIRES)
         {
             if (!check_for_providers(pSack, type, pszProblem, prv_pkgname))
             {
                 continue;
-            }
-            else
-            {
-                dwError = ERROR_TDNF_SOLV_FAILED;
             }
         }
 
@@ -1682,10 +1685,6 @@ SolvReportProblems(
     if (dwError)
     {
         fprintf(stderr, "Found %u problem(s) while resolving\n", total_prblms);
-    }
-    else
-    {
-        printf("No problems found while resolving\n");
     }
 
     return dwError;
