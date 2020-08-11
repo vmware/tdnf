@@ -464,7 +464,6 @@ TDNFAddGoal(
     char** ppszPackagesTemp = NULL;
     char* pszName = NULL;
     uint32_t dwCount = 0;
-    Queue queueJob = {0};
 
     if(!pQueueJobs || dwId == 0 || !pTdnf->pSack || !pTdnf->pSack->pPool)
     {
@@ -472,7 +471,6 @@ TDNFAddGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    queue_init(&queueJob);
     if (nAlterType == ALTER_UPGRADE)
     {
         dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
@@ -500,6 +498,7 @@ TDNFAddGoal(
             }
         }
     }
+
     switch(nAlterType)
     {
         case ALTER_DOWNGRADEALL:
@@ -529,7 +528,6 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPkg);
     TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
     TDNF_SAFE_FREE_MEMORY(pszName);
-    queue_free(&queueJob);
     return dwError;
 
 error:
@@ -620,4 +618,3 @@ error:
     }
     goto cleanup;
 }
-
