@@ -79,6 +79,7 @@ typedef enum
 #define TDNF_CONF_KEY_PLUGIN_PATH         "pluginpath"
 #define TDNF_CONF_KEY_PLUGIN_CONF_PATH    "pluginconfpath"
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
+#define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"

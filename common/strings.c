@@ -88,6 +88,97 @@ error:
     goto cleanup;
 }
 
+size_t
+TDNFStringSepCount(
+    char *pszBuf,
+    char *pszSep
+    )
+{
+    size_t nCount = 0;
+    const char *pszTemp;
+
+    if (IsNullOrEmptyString(pszBuf))
+    {
+        BAIL_ON_TDNF_ERROR(1);
+    }
+    if (IsNullOrEmptyString(pszSep))
+    {
+        nCount = 1;
+        BAIL_ON_TDNF_ERROR(1);
+    }
+
+    pszTemp = pszBuf;
+    while (*pszTemp)
+    {
+        while (*pszTemp && strchr(pszSep, *pszTemp))
+        {
+            pszTemp++;
+        }
+        if (*pszTemp == '\0')
+        {
+            break;
+        }
+        nCount++;
+        while(*pszTemp && !strchr(pszSep, *pszTemp))
+        {
+            pszTemp++;
+        }
+    }
+
+error:
+    return nCount;
+}
+
+uint32_t
+TDNFSplitStringToArray(
+    char *pszBuf,
+    char *pszSep,
+    char ***pppszTokens
+    )
+{
+    uint32_t dwError = 0;
+    char *pszTok = NULL;
+    char *pszState = NULL;
+    char **ppszToks = NULL;
+    size_t nCount = 0;
+    size_t nIndex = 0;
+
+    if (IsNullOrEmptyString(pszBuf) || IsNullOrEmptyString(pszSep))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nCount = TDNFStringSepCount(pszBuf, pszSep);
+    if (nCount == 0)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszToks);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszTok = strtok_r(pszBuf, pszSep, &pszState);
+    while (nIndex < nCount && pszTok != NULL)
+    {
+        dwError = TDNFAllocateString(pszTok, &ppszToks[nIndex]);
+        BAIL_ON_TDNF_ERROR(dwError);
+        nIndex += 1;
+        pszTok = strtok_r(NULL, pszSep, &pszState);
+    }
+    ppszToks[nIndex] = NULL;
+    *pppszTokens = ppszToks;
+
+cleanup:
+    return dwError;
+
+error:
+    TDNFFreeStringArrayWithCount(ppszToks, nCount);
+    *pppszTokens = NULL;
+    goto cleanup;
+}
+
 uint32_t
 TDNFAllocateStringPrintf(
     char** ppszDst,

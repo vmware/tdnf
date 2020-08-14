@@ -594,6 +594,47 @@ error:
 }
 
 uint32_t
+TDNFReadKeyValueStringArray(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    char*** pppszValueList
+    )
+{
+    uint32_t dwError = 0;
+    char** ppszValList = NULL;
+    PKEYVALUE pKeyValues = NULL;
+
+    if (!pSection || !pszKeyName || !pppszValueList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pKeyValues = pSection->pKeyValues;
+    for (; pKeyValues; pKeyValues = pKeyValues->pNext)
+    {
+        if (strcmp(pszKeyName, pKeyValues->pszKey) == 0)
+        {
+            dwError = TDNFSplitStringToArray(pKeyValues->pszValue,
+                                             " ", &ppszValList);
+            BAIL_ON_TDNF_ERROR(dwError);
+            *pppszValueList = ppszValList;
+            break;
+        }
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    if(pppszValueList)
+    {
+        *pppszValueList = NULL;
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFReadKeyValue(
     PCONF_SECTION pSection,
     const char* pszKeyName,
@@ -653,4 +694,3 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszValue);
     goto cleanup;
 }
-

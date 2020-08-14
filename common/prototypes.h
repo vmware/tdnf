@@ -53,6 +53,19 @@ TDNFSafeAllocateString(
     char** ppszDst
     );
 
+size_t
+TDNFStringSepCount(
+    char *pszBuf,
+    char *pszSep
+    );
+
+uint32_t
+TDNFSplitStringToArray(
+    char *pszBuf,
+    char *pszSep,
+    char ***pppszTokens
+    );
+
 uint32_t
 TDNFAllocateStringPrintf(
     char** ppszDst,
@@ -134,6 +147,13 @@ TDNFReadKeyValueInt(
     const char* pszKeyName,
     int nDefault,
     int* pnValue
+    );
+
+uint32_t
+TDNFReadKeyValueStringArray(
+    PCONF_SECTION pSection,
+    const char* pszKeyName,
+    char*** pppszValueList
     );
 
 void
