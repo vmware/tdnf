@@ -451,6 +451,9 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
+    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     fp = Fopen (pszFilePath, "r.ufdio");
     if(!fp)
     {

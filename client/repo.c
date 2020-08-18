@@ -318,7 +318,7 @@ TDNFGetGPGSignatureCheck(
     uint32_t dwSkipSignature = 0;
     char* pszUrlGPGKey = NULL;
 
-    if(!pTdnf || !ppszUrlGPGKey || IsNullOrEmptyString(pszRepo) || !pnGPGSigCheck)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pnGPGSigCheck)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -340,21 +340,25 @@ TDNFGetGPGSignatureCheck(
             nGPGSigCheck = pRepo->nGPGCheck;
             if(nGPGSigCheck)
             {
-                if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
-                {
-                    dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
+                if (ppszUrlGPGKey != NULL) {
+                    if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
+                    {
+                        dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
+                    dwError = TDNFAllocateString(
+                                 pRepo->pszUrlGPGKey,
+                                 &pszUrlGPGKey);
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
-                dwError = TDNFAllocateString(
-                             pRepo->pszUrlGPGKey,
-                             &pszUrlGPGKey);
-                BAIL_ON_TDNF_ERROR(dwError);
             }
         }
     }
 
     *pnGPGSigCheck = nGPGSigCheck;
-    *ppszUrlGPGKey = pszUrlGPGKey;
+    if (ppszUrlGPGKey) {
+        *ppszUrlGPGKey = pszUrlGPGKey;
+    }
 
 cleanup:
     return dwError;
