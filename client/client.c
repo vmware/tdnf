@@ -77,7 +77,7 @@ TDNFPkgsToExclude(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (pTdnf->pConf->ppszExcludes)
+    if (!pTdnf->pArgs->nDisableExcludes && pTdnf->pConf->ppszExcludes)
     {
         if (!pTdnf->pArgs->nQuiet)
         {
@@ -115,7 +115,7 @@ TDNFPkgsToExclude(
         BAIL_ON_TDNF_ERROR(dwError);
 
         nIndex = 0;
-        if (pTdnf->pConf->ppszExcludes)
+        if (!pTdnf->pArgs->nDisableExcludes && pTdnf->pConf->ppszExcludes)
         {
             while (pTdnf->pConf->ppszExcludes[nIndex])
             {

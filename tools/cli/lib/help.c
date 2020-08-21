@@ -57,6 +57,7 @@ TDNFCliShowHelp(
     printf("           [--reboot-required]\n");
     printf("           [--skipsignature]\n");
     printf("           [--skipdigest]\n");
+    printf("           [--disableexcludes]\n");
 
     printf("List of Main Commands\n");
     printf("\n");
