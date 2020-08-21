@@ -323,6 +323,13 @@ TDNFGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (nAlterType == ALTER_UPGRADEALL ||
+        nAlterType == ALTER_UPGRADE)
+    {
+        dwError = TDNFPkgsToExclude(pTdnf, &dwExcludeCount, &ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     queue_init(&queueJobs);
     if (nAlterType == ALTER_UPGRADEALL)
     {
@@ -345,7 +352,8 @@ TDNFGoal(
         for (i = 0; i < pQueuePkgList->count; i++)
         {
             dwId = pQueuePkgList->elements[i];
-            TDNFAddGoal(pTdnf, nAlterType, &queueJobs, dwId);
+            TDNFAddGoal(pTdnf, nAlterType, &queueJobs, dwId,
+                        dwExcludeCount, ppszExcludes);
         }
     }
 
@@ -359,9 +367,6 @@ TDNFGoal(
     if (nAlterType == ALTER_UPGRADEALL ||
         nAlterType == ALTER_UPGRADE)
     {
-        dwError = TDNFPkgsToExclude(pTdnf, &dwExcludeCount, &ppszExcludes);
-        BAIL_ON_TDNF_ERROR(dwError);
-
         if (dwExcludeCount != 0 && ppszExcludes)
         {
             if (!pTdnf->pSack || !pTdnf->pSack->pPool)
@@ -462,15 +467,15 @@ TDNFAddGoal(
     PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,
     Queue* pQueueJobs,
-    Id dwId
+    Id dwId,
+    uint32_t dwCount,
+    char** ppszExcludes
     )
 {
     uint32_t dwError = 0;
     char* pszPkg = NULL;
-    char** ppszExcludes = NULL;
     char** ppszPackagesTemp = NULL;
     char* pszName = NULL;
-    uint32_t dwCount = 0;
 
     if(!pQueueJobs || dwId == 0 || !pTdnf->pSack || !pTdnf->pSack->pPool)
     {
@@ -480,8 +485,6 @@ TDNFAddGoal(
 
     if (nAlterType == ALTER_UPGRADE)
     {
-        dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
-        BAIL_ON_TDNF_ERROR(dwError);
         if (dwCount != 0 && ppszExcludes)
         {
             dwError = SolvGetPkgNameFromId(
@@ -533,7 +536,6 @@ TDNFAddGoal(
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPkg);
-    TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
     TDNF_SAFE_FREE_MEMORY(pszName);
     return dwError;
 
