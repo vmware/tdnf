@@ -1,0 +1,15 @@
+[Unit]
+Description=tdnf-automatic-install timer
+# On systems managed by either rpm-ostree/ostree, tdnf is read-only;
+# while someone might theoretically want the cache updated, in practice
+# anyone who wants that could override this via a file in /etc.
+ConditionPathExists=!/run/ostree-booted
+Wants=network-online.target
+
+[Timer]
+OnCalendar=*-*-* 6:00
+RandomizedDelaySec=60m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

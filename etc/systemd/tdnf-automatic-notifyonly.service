@@ -1,0 +1,15 @@
+[Unit]
+Description=tdnf automatic notification of updates
+# On systems managed by either rpm-ostree/ostree, tdnf is read-only;
+# while someone might theoretically want the cache updated, in practice
+# anyone who wants that could override this via a file in /etc.
+ConditionPathExists=!/run/ostree-booted
+After=network-online.target
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=2
+IOSchedulingPriority=7
+Environment="ABRT_IGNORE_PYTHON=1"
+ExecStart=/usr/bin/tdnf-automatic -c /etc/tdnf/automatic.conf --timer --notify

@@ -28,7 +28,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Ensure that we don't accidentally install into /usr/etc
-set(CMAKE_INSTALL_FULL_SYSCONDIR "/etc")
+set(SYSCONFDIR /etc)
+
+set(MOTGEN_DIR /etc/motgen.d)
+set(SYSTEMD_DIR /usr/lib/systemd/system)
 
 ##
 ## C Flags
@@ -67,7 +70,8 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/common")
 add_subdirectory("${PROJECT_SOURCE_DIR}/client")
 add_subdirectory("${PROJECT_SOURCE_DIR}/plugins")
 add_subdirectory("${PROJECT_SOURCE_DIR}/python")
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources")
+add_subdirectory("${PROJECT_SOURCE_DIR}/etc")
+add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
 add_subdirectory("${PROJECT_SOURCE_DIR}/solv")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tools")
 add_subdirectory("${PROJECT_SOURCE_DIR}/pytests")
