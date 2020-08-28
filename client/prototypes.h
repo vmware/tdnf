@@ -903,13 +903,6 @@ TDNFGetCmdOpt(
     PTDNF_CMD_OPT *ppOpt
     );
 
-uint32_t
-TDNFYesOrNo(
-    PTDNF_CMD_ARGS pArgs,
-    const char *pszQuestion,
-    int *pAnswer
-    );
-
 //validate.c
 uint32_t
 TDNFValidateCmdArgs(

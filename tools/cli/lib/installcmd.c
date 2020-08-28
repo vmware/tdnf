@@ -217,20 +217,12 @@ TDNFCliAlterCommand(
 
     if(pSolvedPkgInfo->nNeedAction)
     {
-        int32_t opt = 0;
+        int nAnswer = 0;
 
-        if(!pCmdArgs->nAssumeYes && !pCmdArgs->nAssumeNo)
-        {
-            printf("Is this ok [y/N]: ");
+        dwError = TDNFYesOrNo(pCmdArgs, "Is this ok [y/N]", &nAnswer);
+        BAIL_ON_CLI_ERROR(dwError);
 
-            opt = getchar();
-            if (tolower(opt) != 'y' && tolower(opt) != 'n')
-            {
-                printf("Invalid input\n");
-            }
-        }
-
-        if(pCmdArgs->nAssumeYes || (tolower(opt) == 'y'))
+        if(nAnswer)
         {
             if(!nSilent && pSolvedPkgInfo->nNeedDownload)
             {

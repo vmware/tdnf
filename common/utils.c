@@ -377,3 +377,37 @@ TDNFFreeCleanInfo(
         TDNFFreeMemory(pCleanInfo);
     }
 }
+
+uint32_t
+TDNFYesOrNo(
+    PTDNF_CMD_ARGS pArgs,
+    const char *pszQuestion,
+    int *pAnswer
+    )
+{
+    uint32_t dwError = 0;
+    int32_t opt = 0;
+
+    *pAnswer = 0;
+
+    if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
+    {
+        printf("%s ", pszQuestion);
+        while ((opt = getchar()) == '\n' || opt == '\r'));
+        opt = tolower(opt);
+        if (opt != 'y' && opt != 'n')
+        {
+            printf("Invalid input\n");
+            dwError = ERROR_TDNF_INVALID_INPUT;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(pArgs->nAssumeYes || opt == 'y')
+    {
+        *pAnswer = 1;
+    }
+error:
+    return dwError;
+}
+
