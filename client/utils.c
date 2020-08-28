@@ -649,3 +649,36 @@ TDNFGetCmdOpt(
 error:
     return dwError;
 }
+
+uint32_t
+TDNFYesOrNo(
+    PTDNF_CMD_ARGS pArgs,
+    const char *pszQuestion,
+    int *pAnswer
+    )
+{
+    uint32_t dwError = 0;
+    int nAnswer = 0;
+    int32_t opt = 0;
+
+    if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
+    {
+        printf("%s ", pszQuestion);
+        while ((getchar()) != '\n');
+        opt = getchar();
+        if (tolower(opt) != 'y' && tolower(opt) != 'n')
+        {
+            printf("Invalid input\n");
+            dwError = ERROR_TDNF_INVALID_INPUT;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(pArgs->nAssumeYes || (tolower(opt) == 'y'))
+    {
+        nAnswer = 1;
+    }
+    *pAnswer = nAnswer;
+error:
+    return dwError;
+}

@@ -390,9 +390,8 @@ TDNFTransAddInstallPkg(
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
-    rpmKeyring pSavedKeyring = NULL;
-    int nRestoreKey = 0;
     rpmKeyring pKeyring = NULL;
+    int nAnswer = 0;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -474,22 +473,19 @@ TDNFTransAddInstallPkg(
     {
         dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
         BAIL_ON_TDNF_ERROR(dwError);
-        if(nGPGSigCheck)
-        {
-            pKeyring = rpmKeyringNew();
-            if(!pKeyring)
-            {
-                dwError = ERROR_TDNF_RPMTS_KEYRING_FAILED;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
 
-            dwError = TDNFGPGCheck(pKeyring, pszUrlGPGKey, pszFilePath);
+        printf("importing key from %s\n", pszUrlGPGKey);
+        dwError = TDNFYesOrNo(pTdnf->pArgs, "Is this ok [y/N]: ", &nAnswer);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if(nAnswer)
+        {
+            pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
+
+            dwError = TDNFImportGPGKey(pTS->pTS, pszUrlGPGKey);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            pSavedKeyring = rpmtsGetKeyring(pTS->pTS, 0);
-            nRestoreKey = 1;
-
-            dwError = rpmtsSetKeyring (pTS->pTS, pKeyring);
+            dwError = TDNFGPGCheck(pKeyring, pszUrlGPGKey, pszFilePath);
             BAIL_ON_TDNF_ERROR(dwError);
 
             fp = Fopen (pszFilePath, "r.ufdio");
@@ -509,7 +505,10 @@ TDNFTransAddInstallPkg(
 
             Fclose(fp);
             fp = NULL;
-        }
+        } else {
+            dwError = ERROR_TDNF_OPERATION_ABORTED;
+            BAIL_ON_TDNF_ERROR(dwError);
+	}
     } else if (!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY)) {
         dwError = 0;
     }
@@ -543,9 +542,6 @@ TDNFTransAddInstallPkg(
         pTS->pCachedRpmsArray->pHead = pRpmCache;
     }
 cleanup:
-    if (nRestoreKey) {
-        rpmtsSetKeyring (pTS->pTS, pSavedKeyring);
-    }
     if(pKeyring)
     {
         rpmKeyringFree(pKeyring);
