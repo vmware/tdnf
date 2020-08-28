@@ -1,0 +1,609 @@
+#!/usr/bin/env bash
+
+#
+# Copyright (C) 2020 VMware, Inc. All Rights Reserved.
+#
+# Licensed under the GNU General Public License v2 (the "License");
+# you may not use this file except in compliance with the License. The terms
+# of the License are located in the COPYING file of this distribution.
+#
+
+# File:       tdnf-automatic
+# Author:     Shreenidhi Shedi <sshedi@vmware.com>
+# Brief:      Automates system updates
+
+#set -x
+
+EchoDbg()
+{
+  [ "$DEBUG_TDNF_AUTOMATIC" = "1" ] && EchoErr "$@" || :
+}
+
+EchoErr()
+{
+  echo -e "$@" 1>&2
+}
+
+ShowVersion()
+{
+  echo "tdnf-automatic - version: @PROJECT_VERSION@"
+}
+
+ShowHelp()
+{
+  local ret="$1"
+  local msg="\ntdnf-automatic help:"
+  msg+="\ntdnf-automatic [{-c|--conf config-file}(optional)] "
+  msg+="[{-i|--install}] [{-n|--notify}] [{-h|--help}] [{-v|--version}]\n\n"
+
+  msg+="-c, --conf\ttdnf-automatic configuration file (Optional argument)\n"
+  msg+="-i, --install\tOverride automatic.conf apply_updates and install updates\n"
+  msg+="-n, --notify\tShow available updates\n"
+  msg+="-h, --help\tShow this help message\n"
+  msg+="-v, --version\tShow tdnf-automatic version information\n"
+
+  [ "${ret}" = "0" ] && echo -e "${msg}" || EchoErr "${msg}"
+
+  exit "${ret}"
+}
+
+# function returns '1' or '0' based on boolean input
+StrToBool()
+{
+  if [ -z "$1" ]; then
+    echo "0"
+    return 0
+  fi
+
+  local v="$(echo "${1,,}")"
+
+  if [ "${v}" = "yes" -o "${v}" = "1" -o "${v}" = "true" -o \
+    "${v}" = "y" -o "${v}" = "on" -o "${v}" = "t" ]; then
+    echo "1"
+  elif [ "${v}" = "no" -o "${v}" = "0" -o "${v}" = "false" -o \
+    "${v}" = "n" -o "${v}" = "off" -o "${v}" = "f" ]; then
+    echo "0"
+  else
+    EchoErr "Invalid input(${v}) to ${FUNCNAME}..."
+    exit 22
+  fi
+
+  return 0
+}
+
+# remove spaces from beginning & end of a given string
+Trim()
+{
+  local var="$*"
+  # remove leading whitespace characters
+  var="${var#"${var%%[![:space:]]*}"}"
+  # remove trailing whitespace characters
+  var="${var%"${var##*[![:space:]]}"}"
+
+  echo -n "${var}"
+}
+
+ParseINI()
+{
+  local line=
+  local CfgFile="$1"
+
+  if [ ! -s "${CfgFile}" ]; then
+    EchoErr "File '${CfgFile}' doesn't exist..."
+    exit 77
+  fi
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+
+  while IFS= read -r line; do
+    line="$(Trim "${line}")"
+    EchoDbg "[${FUNCNAME}:${LINENO}] Parsing line: '${line}'"
+
+    # skip empty lines
+    if [[ -z "${line}" ]]; then
+        continue
+    fi
+
+    # skip comments
+    if [[ "${line}" == '#'* || "${line}" == ';'* ]] ; then
+      continue
+    fi
+
+    # store data in the form of CfgData[section|key]=val
+    if [[ "${line}" =~ \[(.+)\] ]]; then
+      section="$(echo "${line}" | cut -d'[' -f2 | cut -d']' -f1)"
+      section="$(Trim "${section}")"
+    else
+      local key="$(echo "${section}|${line}" | cut -d'=' -f1)"
+      key="$(Trim "${key}")"
+      local val="$(echo "${line}" | cut -d'=' -f2)"
+      val="$(Trim "${val}")"
+
+      EchoDbg "[${FUNCNAME}:${LINENO}] Storing '${key}=${val}' into dictionary..."
+      CfgData["${key}"]="${val}"
+    fi
+  done < "${CfgFile}"
+}
+
+# function to add/modify key, values
+CfgDataPut()
+{
+  local k=
+  local key="$1"
+  local val="$2"
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+  EchoDbg "[${FUNCNAME}:${LINENO}] Trying store '${key}'='${val}' into dictionary..."
+
+  if [ -z "${key}" ]; then
+    EchoErr "Empty key to ${FUNCNAME}..."
+    return 22
+  fi
+
+  for k in "${!CfgData[@]}"; do
+    if [ "${key}" = "${k}" ]; then
+      CfgData["${key}"]="${val}"
+      return 0
+    fi
+  done
+
+  # New section
+  CfgData["${key}"]="${val}"
+
+  # validate after adding new section
+  ValidateCfgData
+}
+
+# function to get value from key
+CfgDataGet()
+{
+  local e=
+  local key="$1"
+
+  if [ -z "${key}" ]; then
+    EchoErr "Empty key to ${FUNCNAME}..."
+    return 1
+  fi
+
+  for e in "${!CfgData[@]}"; do
+    if [ "${key}" = "${e}" ]; then
+      echo "${CfgData[${e}]}"
+      return 0
+    fi
+  done
+
+  EchoDbg "[${FUNCNAME}:${LINENO}] '${key}' not found in dictionary..."
+
+  return 22
+}
+
+# display CfgData
+EchoCfgData()
+{
+  local e=
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+
+  for e in "${!CfgData[@]}"; do
+    EchoDbg -e "Key: ${e}\tValue: $(CfgDataGet "${e}")"
+  done
+}
+
+# validate CfgData dictionary
+ValidateCfgData()
+{
+  local e=
+  local key=
+  local val=
+  local err=
+  local errmsg=
+  local section=
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+
+  for e in "${!CfgData[@]}"; do
+    EchoDbg "[${FUNCNAME}:${LINENO}] Validating '${e}'..."
+    val="$(CfgDataGet "${e}")"
+    key="$(echo "${e}" | cut -d'|' -f2)"
+    section="$(echo "${e}" | cut -d'|' -f1)"
+    err=0
+
+    if [ "${section}" = "commands" ]; then
+
+      if [ "${key}" = "upgrade_type" ]; then
+        if [ "${val}" != "all" -a "${val}" != "security" ]; then
+          err=1
+        fi
+      elif [ "${key}" = "random_sleep" -o "${key}" = "network_online_timeout" ]; then
+        if [ "${val}" -lt 0 ]; then
+          err=1
+        fi
+      elif [ "${key}" = "show_updates" -o "${key}" = "apply_updates" ]; then
+        val="$(StrToBool "${val}")"
+        if [ "${val}" != "1" -a "${val}" != "0" ]; then
+          err=1
+        fi
+      else
+        err=1
+      fi
+
+    elif [ "${section}" = "base" ]; then
+
+      if [ "${key}" != "tdnf_conf" -o -z "${val}" ]; then
+        err=1
+      fi
+
+    elif [ "${section}" = "emitter" ]; then
+
+      if [ "${key}" = "emit_to_stdio" ]; then
+        val="$(StrToBool "${val}")"
+        if [ "${val}" != "1" -a "${val}" != "0" ]; then
+          err=1
+        fi
+      elif [ "${key}" = "emit_to_file" -o "${key}" = "system_name" ];then
+        if [ -z "${val}" ]; then
+          err=1
+        fi
+      else
+        err=1
+      fi
+
+    else
+      err=1
+    fi
+
+    if [ "${err}" = "1" ]; then
+      errmsg+="\nInvalid entry '${section}'|'${key}'='${val}'"
+    fi
+
+  done
+
+  if [ -n "${errmsg}" ]; then
+    EchoErr "${errmsg}"
+    exit 22
+  fi
+}
+
+RandomSleep()
+{
+  local timer="$1"
+
+  if [ "${timer}" -ne 1 ]; then
+    return 0
+  fi
+
+  local rand_sleep="$(CfgDataGet "commands|random_sleep")"
+
+  if [ "${rand_sleep}" -gt 0 ]; then
+    local sec="$((RANDOM % rand_sleep))"
+    echo "Sleep for ${sec} second(s)..."
+    sleep "${sec}"
+  fi
+}
+
+RefreshCache()
+{
+  local ret
+  local retstr
+
+  while true; do
+    retstr="$(tdnf -q -c "${TdnfConf}" --refresh makecache 2>&1)"
+    ret="$?"
+    if echo "${retstr}" | grep -qiw "ERROR: failed to acquire lock on"; then
+      EchoErr "Another instance of tdnf running, retrying..."
+      sleep 30
+    elif echo "${retstr}" | grep -qiw "Couldn't resolve host name"; then
+      EchoErr "Couldn't resolve repo server..."
+      return 121
+    fi
+
+    if [ "${ret}" != "0" ]; then
+      EchoErr "Failed to refresh repo cache.."
+      return 121
+    else
+      echo "${FUNCNAME} success..."
+      return 0
+    fi
+  done
+}
+
+# function to check network connectivity with update servers
+WaitForNetwork()
+{
+  local TdnfConf="$1"
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+
+  local Timeout="$(CfgDataGet "commands|network_online_timeout")"
+  if [ "${Timeout}" -le 0 ]; then
+    return 0
+  fi
+
+  if [ ! -s "${TdnfConf}" ]; then
+    EchoErr "Invalid tdnf config '${TdnfConf}'..."
+    exit 77
+  fi
+
+  if ! RefreshCache; then
+    EchoErr "Failed to refresh cache..."
+    return 121
+  fi
+
+  # get current time in epoch & add timeout seconds to it
+  local CurTime="$(date +%s)"
+  local EndTime="$((CurTime + Timeout))"
+
+  # try to connect till timeout
+  while [ "${CurTime}" -le "${EndTime}" ]; do
+    # get list of all enabled repos
+    local enabled_repos=($(tdnf -c "${TdnfConf}" --refresh repolist enabled 2> /dev/null | \
+      grep -vE "repo id|Refreshing metadata for" | cut -d' ' -f1; exit ${PIPESTATUS[0]}))
+    if [ "$?" != "0" ]; then
+      EchoErr "Failed to get enabled repos, retrying..."
+    elif [ "${#enabled_repos[@]}" = "0" ]; then
+      EchoErr "No tdnf repo is enabled, retrying..."
+    else
+      EchoDbg "[${FUNCNAME}:${LINENO}] Enabled repos: '${enabled_repos[@]}'"
+      return 0
+    fi
+    sleep 3
+    CurTime="$((CurTime + 3))"
+  done
+
+  EchoErr "Max timeout reached, not able to connect to any server..."
+  return 62
+}
+
+HandleEmitter()
+{
+  local msg="$1"
+  local emit_file="$2"
+  local emit_to_stdio="$3"
+
+  if [ -z "${msg}" ]; then
+    return 0
+  fi
+
+  if [ "${emit_to_stdio}" = "1" ]; then
+    echo -e "${msg}"
+  fi
+
+  if [ -n "${emit_file}" ] ;then
+    # if target file exists already, take a backup
+    if [ -s "${emit_file}" ]; then
+      mv "${emit_file}" "${emit_file}.tdnf-automatic-$(date '+%F-%H.%M.%S').bak"
+    fi
+    echo -e "${msg}" > "${emit_file}"
+  fi
+}
+
+ShowOrApplyUpdates()
+{
+  local notify="$1"
+  local install="$2"
+  local TdnfConf="$3"
+  local available_updates=
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+
+  if [ ! -s "${TdnfConf}" ]; then
+    EchoErr "Invalid tdnf config ${TdnfConf}..."
+    exit 77
+  fi
+
+  if ! RefreshCache; then
+    EchoErr "Failed to refresh cache..."
+    return 121
+  fi
+
+  # notify takes precedence over install
+  if [ "${notify}" = 1 -a "${install}" = 1 ]; then
+    install=0
+  elif [ "${notify}" = 0 -a "${install}" = 0 ]; then
+    notify=1
+    if [ "$(StrToBool "$(CfgDataGet "commands|show_updates")")" = "0" -a \
+      "$(StrToBool "$(CfgDataGet "commands|apply_updates")")" = "1" ]; then
+      notify=0
+      install=1
+    fi
+  fi
+
+  EchoDbg "[${FUNCNAME}:${LINENO}] notify: '${notify}' install: '${install}'"
+
+  local update_type="$(CfgDataGet "commands|upgrade_type")"
+  if [ "${update_type}" != "all" -a "${update_type}" != "security" ]; then
+    EchoErr "Unknown update type: ${update_type}"
+    return 22
+  fi
+
+  local emitter=0
+  local emit_file="$(CfgDataGet "emitter|emit_to_file")"
+  local emit_to_stdio="$(StrToBool "$(CfgDataGet "emitter|emit_to_stdio")")"
+
+  EchoDbg "[${FUNCNAME}:${LINENO}] Update type: '${update_type}' emit_to_stdio: '${emit_to_stdio}' emit_file: '${emit_file}'"
+
+  if [ "${emit_to_stdio}" = "1" -o -n "${emit_file}" ]; then
+    emitter=1
+    local sys_name="$(CfgDataGet "emitter|system_name")"
+    if [ -z "${sys_name}" ]; then
+      sys_name="$(hostname)"
+    fi
+
+    local msg="$(tdnf -c "${TdnfConf}" check-update)"
+    if [ "$?" != "0" ]; then
+      EchoErr "tdnf check-update failed..."
+      return 121
+    fi
+
+    if [ -z "${msg}" ]; then
+      msg="\nNo updates available on ${sys_name}. System upto date...\n"
+      HandleEmitter "${msg}" "${emit_file}" "${emit_to_stdio}"
+      return 0
+    fi
+
+    if [ "${update_type}" = "all" ]; then
+      local f="$(mktemp)"
+      $(tdnf -c "${TdnfConf}" upgrade --assumeno 2>&1 | grep -Ev "Total|aborted|Upgrading" > "${f}"; \
+        exit ${PIPESTATUS[0]})
+      if [ "$?" != "8" ]; then
+        rm -f "${f}"
+        EchoErr "Unexpected error while checking for updates..."
+        return 121
+      fi
+
+      local pkg=
+      local ver=
+      local tmp=
+      while IFS=' ' read pkg tmp ver tmp tmp tmp; do
+        if [ -n "${pkg}" -a -n "${ver}" ]; then
+          available_updates+="${pkg}-${ver}\n"
+        fi
+      done < "${f}"
+      rm -f "${f}"
+    else
+      available_updates="$(tdnf -c "${TdnfConf}" updateinfo info)"
+      if [ "$?" != "0" ]; then
+        EchoErr "tdnf updateinfo info failed..."
+        return 121
+      fi
+    fi
+  fi
+
+  if [ "${install}" = 1 ]; then
+    [ "${update_type}" = "all" ] && tdnf -c "${TdnfConf}" upgrade -y || tdnf -c "${TdnfConf}" --security update -y
+    if [ "$?" != "0" ]; then
+      EchoErr "tdnf upgrade | tdnf --security update failed..."
+      return 121
+    fi
+    if [ "${emitter}" = "1" ]; then
+      msg="\nThe following updates are applied on - ${sys_name}:\n${available_updates}\n"
+      msg+="\n--- Updates completed at $(date) ---\n"
+    fi
+  elif [ "${notify}" = 1 -a "${emitter}" = "1" ]; then
+    msg="\nThe following updates are available on - ${sys_name}:\n${available_updates}\n"
+  fi
+
+  if [ "${emitter}" = "1" ]; then
+    HandleEmitter "${msg}" "${emit_file}" "${emit_to_stdio}"
+  fi
+
+  return 0
+}
+
+ExitHandler()
+{
+  local exit_status="$?"
+  local msg=
+
+  msg="\ntdnf-automatic - completed with exit status ${exit_status} at $(date)...\n"
+  [ "${exit_status}" = "0" ] && echo -e "${msg}" || EchoErr "${msg}"
+
+  exit "${exit_status}"
+}
+
+Main()
+{
+  local timer=0
+  local notify=0
+  local install=0
+  local auto_conf=
+
+  EchoDbg "\n*** ${FUNCNAME} ***\n"
+
+  EchoDbg "[${FUNCNAME}:${LINENO}] Parsing arg(s): '$@'"
+  # Parse arguements
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case ${key} in
+      -c|--conf)
+        auto_conf="$2"
+        if [ -z "${auto_conf}" ]; then
+          ShowHelp 1
+        fi
+
+        shift
+        shift;;
+      -n|--notify)
+        notify=1
+        shift;;
+      -i|--install)
+        install=1
+        shift;;
+      -t|--timer)
+        timer=1
+        shift;;
+      -v|--version)
+        ShowVersion && exit 0;;
+      -h|--help)
+        ShowHelp 0;;
+      *)
+        ShowHelp 22;;
+    esac
+  done
+
+  # If no config file given, use default
+  if [ -z "${auto_conf}" ]; then
+    auto_conf="/etc/tdnf/automatic.conf"
+  fi
+
+  if [ ! -s "${auto_conf}" ]; then
+    EchoErr "Configuration file: '${auto_conf}' does not exist"
+    exit 2
+  fi
+
+  # Parse the config file
+  ParseINI "${auto_conf}"
+  ValidateCfgData
+  EchoCfgData
+
+  local TdnfConf="$(CfgDataGet "base|tdnf_conf")"
+  if [ -z "${TdnfConf}" ]; then
+    TdnfConf="/etc/tdnf/tdnf.conf"
+  fi
+
+  EchoDbg "[${FUNCNAME}:${LINENO}] Automatic conf: '${auto_conf}' tdnf conf: '${TdnfConf}'\n"
+
+  if [ ! -s "${auto_conf}" -o ! -s "${TdnfConf}" ]; then
+    EchoErr "Automatic conf:'${auto_conf}' || tdnf conf '${TdnfConf}' does not exist..."
+    exit 2
+  fi
+
+  RandomSleep "${timer}"
+
+  if ! WaitForNetwork "${TdnfConf}"; then
+    EchoErr "System is off-line..."
+    exit 64
+  fi
+
+  if ! ShowOrApplyUpdates "${notify}" "${install}" "${TdnfConf}"; then
+    EchoErr "Failed to Show/Apply updates..."
+    exit 121
+  fi
+
+  exit 0
+}
+
+if [ ${EUID} -ne 0 ]; then
+  EchoErr "tdnf-automatic - this script must be run as root..."
+  exit 13
+fi
+
+if ! which tdnf &> /dev/null; then
+  EchoErr "tdnf command not found..."
+  exit 65
+fi
+
+if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
+  EchoErr "Need bash verion >=4 to use this script..."
+  exit 125
+fi
+
+echo -e "\ntdnf-automatic - started at $(date)...\n"
+
+trap ExitHandler EXIT
+
+# array to hold config data
+declare -A CfgData
+
+Main "$@"

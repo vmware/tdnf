@@ -5,6 +5,8 @@
     "test_path": "@CMAKE_SOURCE_DIR@/pytests",
     "build_dir": "@CMAKE_BINARY_DIR@",
     "plugin_path": "@CMAKE_BINARY_DIR@/plugins/lib",
+    "automatic_script": "@CMAKE_SOURCE_DIR@/bin/tdnf-automatic",
+    "automatic_conf": "@CMAKE_SOURCE_DIR@/etc/tdnf/automatic.conf",
     "sglversion_pkgname": "tdnf-test-one",
     "mulversion_pkgname": "tdnf-test-multiversion",
     "mulversion_lower": "1.0.1-1",

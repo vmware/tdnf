@@ -85,7 +85,7 @@ __pycache__/
 
 # build directory
 build*/
-bin/
+bin/tdnf
 
 # cmake files
 *.cmake
