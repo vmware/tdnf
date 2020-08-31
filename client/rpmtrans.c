@@ -469,7 +469,11 @@ TDNFTransAddInstallPkg(
     Fclose(fp);
     fp = NULL;
 
-    if(nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
+    if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
+    {
+        BAIL_ON_TDNF_RPM_ERROR(dwError);
+    }
+    else if(nGPGSigCheck)
     {
         dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -478,8 +482,13 @@ TDNFTransAddInstallPkg(
         dwError = TDNFYesOrNo(pTdnf->pArgs, "Is this ok [y/N]: ", &nAnswer);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if(nAnswer)
+        if(!nAnswer)
         {
+            dwError = ERROR_TDNF_OPERATION_ABORTED;
+            BAIL_ON_TDNF_ERROR(dwError);
+	}
+	else
+	{
             pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
 
             dwError = TDNFImportGPGKey(pTS->pTS, pszUrlGPGKey);
@@ -505,14 +514,8 @@ TDNFTransAddInstallPkg(
 
             Fclose(fp);
             fp = NULL;
-        } else {
-            dwError = ERROR_TDNF_OPERATION_ABORTED;
-            BAIL_ON_TDNF_ERROR(dwError);
 	}
-    } else if (!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY)) {
-        dwError = 0;
     }
-    BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);

@@ -65,6 +65,7 @@ extern "C" {
 #define ERROR_TDNF_ERASE_NEEDS_INSTALL      1031
 #define ERROR_TDNF_OPERATION_ABORTED        1032
 
+// for invalid input on interactive questions
 #define ERROR_TDNF_INVALID_INPUT            1033
 
 //curl errors

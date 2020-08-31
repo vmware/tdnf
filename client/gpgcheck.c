@@ -388,6 +388,12 @@ TDNFImportGPGKey(
     size_t nPktLen = 0;
     char* pszKeyData = NULL;
 
+    if(pTS == NULL || IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = ReadGPGKey(pszFile, &pszKeyData);
     BAIL_ON_TDNF_ERROR(dwError);
 

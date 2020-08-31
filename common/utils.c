@@ -388,12 +388,17 @@ TDNFYesOrNo(
     uint32_t dwError = 0;
     int32_t opt = 0;
 
+    if(!pArgs || !pszQuestion || !pAnswer)
+    {
+      dwError = ERROR_TDNF_INVALID_PARAMETER;
+      BAIL_ON_TDNF_ERROR(dwError);
+    }
     *pAnswer = 0;
 
     if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
     {
         printf("%s ", pszQuestion);
-        while ((opt = getchar()) == '\n' || opt == '\r'));
+        while ((opt = getchar()) == '\n' || opt == '\r');
         opt = tolower(opt);
         if (opt != 'y' && opt != 'n')
         {

@@ -335,28 +335,27 @@ TDNFGetGPGSignatureCheck(
             dwError = 0;
         }
         BAIL_ON_TDNF_ERROR(dwError);
-        if(pRepo)
+        if(pRepo && pRepo->nGPGCheck)
         {
-            nGPGSigCheck = pRepo->nGPGCheck;
-            if(nGPGSigCheck)
+            nGPGSigCheck = 1;
+            if (ppszUrlGPGKey != NULL)
             {
-                if (ppszUrlGPGKey != NULL) {
-                    if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
-                    {
-                        dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
-                        BAIL_ON_TDNF_ERROR(dwError);
-                    }
-                    dwError = TDNFAllocateString(
-                                 pRepo->pszUrlGPGKey,
-                                 &pszUrlGPGKey);
+                if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
+                {
+                    dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
+                dwError = TDNFAllocateString(
+                             pRepo->pszUrlGPGKey,
+                             &pszUrlGPGKey);
+                BAIL_ON_TDNF_ERROR(dwError);
             }
         }
     }
 
     *pnGPGSigCheck = nGPGSigCheck;
-    if (ppszUrlGPGKey) {
+    if (ppszUrlGPGKey)
+    {
         *ppszUrlGPGKey = pszUrlGPGKey;
     }
 
