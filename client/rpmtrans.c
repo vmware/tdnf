@@ -211,6 +211,103 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFDetectPreTransFailure(
+    rpmts pTS,
+    char *pszError
+    )
+{
+    uint32_t dwError = 0;
+    rpmtsi pi = NULL;
+    rpmte pte = NULL;
+    char *pszToken;
+    int i = 0;
+    char *pszErrorStr = NULL;
+    char *pszPkgName = NULL;
+    char *pszSymbol = NULL;
+    char *pszVersion = NULL;
+    char *pszEVR = NULL;
+    char *pszCachePkgName = NULL;
+    char *pszCachePkgEVR = NULL;
+
+    if (!pTS || IsNullOrEmptyString(pszError))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    // Error Str has the format: <Pkg-Name> <Symbol> <version-release>
+    dwError = TDNFAllocateString(pszError, &pszErrorStr);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszToken = strtok(pszErrorStr, " ");
+    while (pszToken != NULL)
+    {
+        switch(i)
+        {
+            case 0:
+                pszPkgName = pszToken;
+                break;
+            case 1:
+                pszSymbol = pszToken;
+                break;
+            case 2:
+                pszVersion = pszToken;
+                break;
+            default:
+                fprintf(stderr, "RPM problem string format unsupported\n");
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+        }
+        i++;
+        pszToken = strtok(NULL, " ");
+    }
+
+    if (IsNullOrEmptyString(pszPkgName) || IsNullOrEmptyString(pszSymbol) || IsNullOrEmptyString(pszVersion))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pi = rpmtsiInit(pTS);
+    while ((pte = rpmtsiNext(pi, 0)) != NULL)
+    {
+        dwError = TDNFAllocateString(rpmteN(pte), &pszCachePkgName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateString(rpmteEVR(pte), &pszCachePkgEVR);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pszEVR = strtok(pszCachePkgEVR, "ph");
+        if (IsNullOrEmptyString(pszEVR))
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (strcmp(pszCachePkgName, pszPkgName) == 0)
+        {
+            if ((strchr(pszSymbol, '>') && (rpmvercmp(pszEVR, pszVersion) > 0)) ||
+                (strchr(pszSymbol, '<') && (rpmvercmp(pszEVR, pszVersion) < 0)) ||
+                (strchr(pszSymbol, '=') && (rpmvercmp(pszEVR, pszVersion) == 0)))
+            {
+                fprintf(stderr, "Detected rpm pre-transaction dependency errors. "
+                        "Install %s %s %s first to resolve this failure.\n",
+                        pszPkgName, pszSymbol, pszVersion);
+                break;
+            }
+        }
+    }
+
+cleanup:
+    rpmtsiFree(pi);
+    TDNF_SAFE_FREE_MEMORY(pszErrorStr);
+    TDNF_SAFE_FREE_MEMORY(pszCachePkgName);
+    TDNF_SAFE_FREE_MEMORY(pszCachePkgEVR);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 int
 doCheck(PTDNFRPMTS pTS)
 {
@@ -218,6 +315,8 @@ doCheck(PTDNFRPMTS pTS)
     rpmpsi psi = NULL;
     rpmProblem prob = NULL;
     nResult = rpmtsCheck(pTS->pTS);
+    char *pErrorStr = NULL;
+    uint32_t dwError = 0;
 
     rpmps ps = rpmtsProblems(pTS->pTS);
     if(ps)
@@ -239,6 +338,14 @@ doCheck(PTDNFRPMTS pTS)
                 else
                 {
                     printf("%s\n", msg);
+                    if (rpmProblemGetType(prob) == RPMPROB_REQUIRES)
+                    {
+                        dwError = TDNFAllocateString(rpmProblemGetStr(prob), &pErrorStr);
+                        BAIL_ON_TDNF_ERROR(dwError);
+
+                        dwError = TDNFDetectPreTransFailure(pTS->pTS, pErrorStr);
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
                 }
                 rpmProblemFree(prob);
             }
@@ -246,7 +353,11 @@ doCheck(PTDNFRPMTS pTS)
             nResult = ERROR_TDNF_RPM_CHECK;
         }
     }
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pErrorStr);
     return nResult;
+error:
+    goto cleanup;
 }
 
 uint32_t
@@ -326,7 +437,7 @@ cleanup:
     return dwError;
 
 error:
-    if(pTS)
+    if(pTS && dwError != ERROR_TDNF_RPM_CHECK)
     {
         doCheck(pTS);
     }
