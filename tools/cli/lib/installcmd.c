@@ -219,7 +219,7 @@ TDNFCliAlterCommand(
     {
         int nAnswer = 0;
 
-        dwError = TDNFYesOrNo(pCmdArgs, "Is this ok [y/N]", &nAnswer);
+        dwError = TDNFYesOrNo(pCmdArgs, "Is this ok [y/N]: ", &nAnswer);
         BAIL_ON_CLI_ERROR(dwError);
 
         if(nAnswer)

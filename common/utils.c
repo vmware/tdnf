@@ -397,7 +397,7 @@ TDNFYesOrNo(
 
     if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
     {
-        printf("%s ", pszQuestion);
+        printf("%s", pszQuestion);
         while ((opt = getchar()) == '\n' || opt == '\r');
         opt = tolower(opt);
         if (opt != 'y' && opt != 'n')

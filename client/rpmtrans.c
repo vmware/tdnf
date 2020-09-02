@@ -473,7 +473,8 @@ TDNFTransAddInstallPkg(
     {
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
-    else if(nGPGSigCheck)
+
+    if(nGPGSigCheck)
     {
         dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -486,35 +487,33 @@ TDNFTransAddInstallPkg(
         {
             dwError = ERROR_TDNF_OPERATION_ABORTED;
             BAIL_ON_TDNF_ERROR(dwError);
-	}
-	else
-	{
-            pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
+        }
 
-            dwError = TDNFImportGPGKey(pTS->pTS, pszUrlGPGKey);
-            BAIL_ON_TDNF_ERROR(dwError);
+        pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
 
-            dwError = TDNFGPGCheck(pKeyring, pszUrlGPGKey, pszFilePath);
-            BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFImportGPGKey(pTS->pTS, pszUrlGPGKey);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-            fp = Fopen (pszFilePath, "r.ufdio");
-            if(!fp)
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
+        dwError = TDNFGPGCheck(pKeyring, pszUrlGPGKey, pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = rpmReadPackageFile(
-                          pTS->pTS,
-                          fp,
-                          pszFilePath,
-                          &rpmHeader);
+        fp = Fopen (pszFilePath, "r.ufdio");
+        if(!fp)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
 
-            BAIL_ON_TDNF_RPM_ERROR(dwError);
+        dwError = rpmReadPackageFile(
+                      pTS->pTS,
+                      fp,
+                      pszFilePath,
+                      &rpmHeader);
 
-            Fclose(fp);
-            fp = NULL;
-	}
+        BAIL_ON_TDNF_RPM_ERROR(dwError);
+
+        Fclose(fp);
+        fp = NULL;
     }
 
     dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
