@@ -85,3 +85,15 @@ __pycache__/
 
 # build directory
 build*/
+bin/
+
+# cmake files
+*.cmake
+CMakeFiles/
+CMakeCache.txt
+
+# cores
+core*
+
+# vi backup
+*.swp
