@@ -90,6 +90,37 @@ TDNFRightTrim(
 }
 
 uint32_t
+TDNFCreateAndWriteToFile(
+    const char *pszFile,
+    const char *data
+    )
+{
+    uint32_t dwError = 0;
+    FILE *fp = NULL;
+
+    if (IsNullOrEmptyString(pszFile) || IsNullOrEmptyString(data))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    fp = fopen(pszFile, "w");
+    if (!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    fputs(data, fp);
+    fclose(fp);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFUtilsFormatSize(
     uint64_t unSize,
     char** ppszFormattedSize

@@ -69,9 +69,12 @@ extern "C" {
 #define ERROR_TDNF_INVALID_INPUT            1033
 
 //curl errors
-#define ERROR_TDNF_CURL_INIT                1200
-#define ERROR_TDNF_CURL_BASE                1201
-#define ERROR_TDNF_CURL_END                 1299
+#define ERROR_TDNF_CURL_INIT                  1200
+#define ERROR_TDNF_CURL_BASE                  1201
+#define ERROR_TDNF_CURLE_UNSUPPORTED_PROTOCOL 1202
+#define ERROR_TDNF_CURLE_FAILED_INIT          1203
+#define ERROR_TDNF_CURLE_URL_MALFORMAT        1204
+#define ERROR_TDNF_CURL_END                   1299
 
 #define ERROR_TDNF_SOLV_BASE                1300
 // general runtime error

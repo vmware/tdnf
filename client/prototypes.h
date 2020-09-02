@@ -24,12 +24,19 @@
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/evp.h>
-typedef struct metalinkfile{
+
+typedef struct _TDNF_METALINK_URLS_ {
+    char *url;
+    struct _TDNF_METALINK_URLS_ *next;
+} TDNF_METALINK_URLS;
+
+typedef struct _TDNF_METALINK_FILE_{
     char *filename;
     int   type;
     /* raw digest value, not ascii hex digest */
     unsigned char digest[EVP_MAX_MD_SIZE];
-} metalinkfile;
+    TDNF_METALINK_URLS *urls;
+} TDNF_METALINK_FILE;
 
 //clean.c
 uint32_t
@@ -122,12 +129,14 @@ TDNFRepoGetBaseUrl(
     const char* pszRepo,
     char** ppszBaseUrl
     );
+
 uint32_t
 TDNFRepoSetBaseUrl(
     PTDNF pTdnf,
-    const char* pszRepo,
-    char* pszBaseUrl
+    PTDNF_REPO_DATA_INTERNAL pszRepo,
+    const char *pszBaseUrlFile
     );
+
 uint32_t
 TDNFRepoGetUserPass(
     PTDNF pTdnf,
@@ -179,10 +188,9 @@ TDNFRepoApplyProxySettings(
 
 //remoterepo.c
 uint32_t
-TDNFMetalinkCheckHash(
+TDNFCheckRepoMDFileHashFromMetalink(
     char *pszFile,
-    metalinkfile *ml_file,
-    int nTDNFQuietEnabled
+    TDNF_METALINK_FILE *ml_file
     );
 
 uint32_t
@@ -190,7 +198,7 @@ TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
     const char *pszRepo,
     const char *pszFile,
-    metalinkfile **ml_file
+    TDNF_METALINK_FILE **ml_file
     );
 
 uint32_t
@@ -201,7 +209,7 @@ TDNFDownloadFile(
     const char *pszFile,
     const char *pszProgressData,
     int metalink,
-    metalinkfile **ml_file
+    TDNF_METALINK_FILE **ml_file
     );
 
 uint32_t
@@ -462,6 +470,11 @@ TDNFConfigReplaceVars(
     );
 
 //repo.c
+void
+TDNFFreeMetalinkUrlsList(
+    TDNF_METALINK_URLS *metalink_urls
+    );
+
 uint32_t
 TDNFInitRepoFromMetadata(
     Repo *pRepo,
@@ -845,11 +858,6 @@ TDNFGetKernelArch(
     );
 
 uint32_t
-TDNFUpdateMetadataMarkerFile(
-    const char* pszRepoDataFolder
-    );
-
-uint32_t
 TDNFParseMetadataExpire(
     const char* pszMetadataExpire,
     long* plMetadataExpire
@@ -862,31 +870,6 @@ TDNFShouldSyncMetadata(
     int* pnShouldSync
     );
 
-
-uint32_t
-TDNFAppendPath(
-    const char *pszBase,
-    const char *pszPart,
-    char **ppszPath
-    );
-
-uint32_t
-TDNFUpdateMetadataMarkerFile(
-    const char* pszRepoDataFolder
-    );
-
-uint32_t
-TDNFParseMetadataExpire(
-    const char* pszMetadataExpire,
-    long* plMetadataExpire
-    );
-
-uint32_t
-TDNFShouldSyncMetadata(
-    const char* pszRepoDataFolder,
-    long lMetadataExpire,
-    int* pnShouldSync
-    );
 
 uint32_t
 TDNFAppendPath(

@@ -96,7 +96,7 @@ typedef enum
 #define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
 #define TDNF_REPO_METADATA_FILE_NAME      "repomd.xml"
 #define TDNF_REPO_METALINK_FILE_NAME      "metalink"
-
+#define TDNF_REPO_BASEURL_FILE_NAME       "baseurl"
 //Repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
@@ -189,4 +189,7 @@ typedef enum
     {ERROR_TDNF_CHECKSUM_VALIDATION_FAILED,          "ERROR_TDNF_CHECKSUM_VALIDATION_FAILED",          "Checksum Validation failed for the file downloaded using URL from metalink"},\
     {ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED, "ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED", "No Resource present in metalink file for file download"},\
     {ERROR_TDNF_FIPS_MODE_FORBIDDEN,                 "ERROR_TDNF_FIPS_MODE_FORBIDDEN",                 "API call to digest API forbidden in FIPS mode!"},\
+    {ERROR_TDNF_CURLE_UNSUPPORTED_PROTOCOL,          "ERROR_TDNF_CURLE_UNSUPPORTED_PROTOCOL",          "Curl doesn't Support this protocol"},\
+    {ERROR_TDNF_CURLE_FAILED_INIT,                   "ERROR_TDNF_CURLE_FAILED_INIT",                   "Curl Init Failed"},\
+    {ERROR_TDNF_CURLE_URL_MALFORMAT,                 "ERROR_TDNF_CURLE_URL_MALFORMAT",                 "URL seems to be corrupted. Please clean all and makecache"},\
 };
