@@ -216,7 +216,6 @@ TDNFDetectPreTransFailure(
     char *pszPkgName = NULL;
     char *pszSymbol = NULL;
     char *pszVersion = NULL;
-    char *pszEVR = NULL;
     char *pszCachePkgName = NULL;
     char *pszCachePkgEVR = NULL;
 
@@ -267,18 +266,11 @@ TDNFDetectPreTransFailure(
         dwError = TDNFAllocateString(rpmteEVR(pte), &pszCachePkgEVR);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        pszEVR = strtok(pszCachePkgEVR, "ph");
-        if (IsNullOrEmptyString(pszEVR))
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-
         if (strcmp(pszCachePkgName, pszPkgName) == 0)
         {
-            if ((strchr(pszSymbol, '>') && (rpmvercmp(pszEVR, pszVersion) > 0)) ||
-                (strchr(pszSymbol, '<') && (rpmvercmp(pszEVR, pszVersion) < 0)) ||
-                (strchr(pszSymbol, '=') && (rpmvercmp(pszEVR, pszVersion) == 0)))
+            if ((strchr(pszSymbol, '>') && (rpmvercmp(pszCachePkgEVR, pszVersion) > 0)) ||
+                (strchr(pszSymbol, '<') && (rpmvercmp(pszCachePkgEVR, pszVersion) < 0)) ||
+                (strchr(pszSymbol, '=') && (rpmvercmp(pszCachePkgEVR, pszVersion) == 0)))
             {
                 fprintf(stderr, "Detected rpm pre-transaction dependency errors. "
                         "Install %s %s %s first to resolve this failure.\n",
