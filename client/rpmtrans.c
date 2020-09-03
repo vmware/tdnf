@@ -576,8 +576,7 @@ TDNFTransAddInstallPkg(
     {
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
-
-    if(nGPGSigCheck)
+    else if(nGPGSigCheck)
     {
         dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
         BAIL_ON_TDNF_ERROR(dwError);
