@@ -264,7 +264,6 @@ AddKeyToKeyRing(
         }
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszKeyData);
     return dwError;
@@ -376,3 +375,42 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFImportGPGKey(
+    rpmts pTS,
+    const char* pszFile
+    )
+{
+    uint32_t dwError = 0;
+    pgpArmor nArmor = PGPARMOR_NONE;
+    uint8_t* pPkt = NULL;
+    size_t nPktLen = 0;
+    char* pszKeyData = NULL;
+
+    if(pTS == NULL || IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = ReadGPGKey(pszFile, &pszKeyData);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    nArmor = pgpParsePkts(pszKeyData, &pPkt, &nPktLen);
+    if(nArmor != PGPARMOR_PUBKEY)
+    {
+        dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = rpmtsImportPubkey(pTS, pPkt, nPktLen);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszKeyData);
+    return dwError;
+error:
+    goto cleanup;
+}
+

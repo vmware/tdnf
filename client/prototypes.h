@@ -72,6 +72,12 @@ TDNFGPGCheck(
     const char* pszPackage
     );
 
+uint32_t
+TDNFImportGPGKey(
+    rpmts pTS,
+    const char* pszFile
+    );
+
 //init.c
 uint32_t
 TDNFCloneCmdArgs(

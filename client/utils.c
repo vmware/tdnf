@@ -649,3 +649,4 @@ TDNFGetCmdOpt(
 error:
     return dwError;
 }
+

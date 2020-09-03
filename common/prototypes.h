@@ -175,6 +175,13 @@ TDNFUtilsMakeDirs(
     const char* pszPath
     );
 
+uint32_t
+TDNFYesOrNo(
+    PTDNF_CMD_ARGS pArgs,
+    const char *pszQuestion,
+    int *pAnswer
+    );
+
 //setopt.c
 uint32_t
 AddSetOpt(

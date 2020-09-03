@@ -61,12 +61,6 @@ TDNFRpmExecTransaction(
         dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    ts.pKeyring = rpmKeyringNew();
-    if(!ts.pKeyring)
-    {
-        dwError = ERROR_TDNF_RPMTS_KEYRING_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     ts.nTransFlags = rpmtsSetFlags (ts.pTS, RPMTRANS_FLAG_NONE);
 
@@ -93,10 +87,6 @@ cleanup:
     {
         rpmtsCloseDB(ts.pTS);
         rpmtsFree(ts.pTS);
-    }
-    if(ts.pKeyring)
-    {
-        rpmKeyringFree(ts.pKeyring);
     }
     if(ts.pCachedRpmsArray)
     {
@@ -511,6 +501,8 @@ TDNFTransAddInstallPkg(
     char* pszDownloadCacheDir = NULL;
     char* pszUrlGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
+    rpmKeyring pKeyring = NULL;
+    int nAnswer = 0;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -569,15 +561,8 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    //Check override, then repo config and launch
-    //gpg check if needed
-    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
+    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
-    if(nGPGSigCheck)
-    {
-        dwError = TDNFGPGCheck(pTS->pKeyring, pszUrlGPGKey, pszFilePath);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     fp = Fopen (pszFilePath, "r.ufdio");
     if(!fp)
@@ -591,12 +576,56 @@ TDNFTransAddInstallPkg(
                   fp,
                   pszFilePath,
                   &rpmHeader);
-    //If not checking gpg sigs, ignore signature errors
-    if(!nGPGSigCheck && (dwError == RPMRC_NOTTRUSTED || dwError == RPMRC_NOKEY))
+
+    Fclose(fp);
+    fp = NULL;
+
+    if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
     {
-        dwError = 0;
+        BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
-    BAIL_ON_TDNF_RPM_ERROR(dwError);
+
+    if(nGPGSigCheck)
+    {
+        dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        printf("importing key from %s\n", pszUrlGPGKey);
+        dwError = TDNFYesOrNo(pTdnf->pArgs, "Is this ok [y/N]: ", &nAnswer);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if(!nAnswer)
+        {
+            dwError = ERROR_TDNF_OPERATION_ABORTED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
+
+        dwError = TDNFImportGPGKey(pTS->pTS, pszUrlGPGKey);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFGPGCheck(pKeyring, pszUrlGPGKey, pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        fp = Fopen (pszFilePath, "r.ufdio");
+        if(!fp)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = rpmReadPackageFile(
+                      pTS->pTS,
+                      fp,
+                      pszFilePath,
+                      &rpmHeader);
+
+        BAIL_ON_TDNF_RPM_ERROR(dwError);
+
+        Fclose(fp);
+        fp = NULL;
+    }
 
     dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck, &pszUrlGPGKey);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -626,6 +655,10 @@ TDNFTransAddInstallPkg(
         pTS->pCachedRpmsArray->pHead = pRpmCache;
     }
 cleanup:
+    if(pKeyring)
+    {
+        rpmKeyringFree(pKeyring);
+    }
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
     TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
