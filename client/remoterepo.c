@@ -19,114 +19,16 @@
  */
 #include "includes.h"
 
-typedef union {
-    MD5_CTX md5_ctx;
-    SHA_CTX sha1_ctx;
-    SHA256_CTX sha256_ctx;
-} hash_ctx_t;
-
-//TDNF wrapper for calling SHA1_Init
-int
-TDNF_SHA1_Init(
-    hash_ctx_t *ctx
-    )
-{
-    return SHA1_Init(&ctx->sha1_ctx);
-}
-
-//TDNF wrapper for calling SHA256_Init
-int
-TDNF_SHA256_Init(
-    hash_ctx_t *ctx
-    )
-{
-    return SHA256_Init(&(ctx->sha256_ctx));
-}
-
-//TDNF wrapper for calling MD5_Init
-int
-TDNF_MD5_Init(
-    hash_ctx_t *ctx
-    )
-{
-    return MD5_Init(&(ctx->md5_ctx));
-}
-
-//TDNF wrapper for calling SHA1_Update
-int
-TDNF_SHA1_Update(
-    hash_ctx_t *ctx,
-    char *buf,
-    int length
-    )
-{
-    return SHA1_Update(&ctx->sha1_ctx, buf, length);
-}
-
-//TDNF wrapper for calling SHA256_Update
-int
-TDNF_SHA256_Update(
-    hash_ctx_t *ctx,
-    char *buf,
-    int length
-    )
-{
-    return SHA256_Update(&(ctx->sha256_ctx), buf, length);
-}
-
-//TDNF wrapper for calling MD5_Update
-int
-TDNF_MD5_Update(
-    hash_ctx_t *ctx,
-    char *buf,
-    int length
-    )
-{
-    return MD5_Update(&(ctx->md5_ctx), buf, length);
-}
-
-//TDNF wrapper for calling SHA1_Final
-int
-TDNF_SHA1_Final(
-    uint8_t *res,
-    hash_ctx_t *ctx
-    )
-{
-    return SHA1_Final(res, &ctx->sha1_ctx);
-}
-
-//TDNF wrapper for calling SHA256_Final
-int
-TDNF_SHA256_Final(
-    uint8_t *res,
-    hash_ctx_t *ctx
-    )
-{
-    return SHA256_Final(res, &(ctx->sha256_ctx));
-}
-
-//TDNF wrapper for calling MD5_Final
-int
-TDNF_MD5_Final(
-    uint8_t *res,
-    hash_ctx_t *ctx
-    )
-{
-    return MD5_Final(res, &(ctx->md5_ctx));
-}
-
 typedef struct _hash_op {
-    int (*init_fn)();
-    int (*update_fn)();
-    int (*final_fn)();
-    int length;
+    char *hash_type;
+    unsigned int length;
 } hash_op;
 
 static hash_op hash_ops[TDNF_HASH_SENTINEL] =
     {
-       [TDNF_HASH_MD5]    = { &TDNF_MD5_Init, &TDNF_MD5_Update, &TDNF_MD5_Final, MD5_DIGEST_LENGTH },
-       [TDNF_HASH_SHA1]   = { &TDNF_SHA1_Init, &TDNF_SHA1_Update, &TDNF_SHA1_Final, SHA_DIGEST_LENGTH },
-       [TDNF_HASH_SHA256] = { &TDNF_SHA256_Init, &TDNF_SHA256_Update, &TDNF_SHA256_Final, SHA256_DIGEST_LENGTH }
+       [TDNF_HASH_MD5]    = {"md5", MD5_DIGEST_LENGTH},
+       [TDNF_HASH_SHA1]   = {"sha1", SHA_DIGEST_LENGTH},
+       [TDNF_HASH_SHA256] = {"sha256", SHA256_DIGEST_LENGTH},
     };
 
 static int
@@ -216,9 +118,8 @@ error:
     return dwError;
 }
 
-
 uint32_t
-TDNFCheckDigest(
+TDNFGetDigestForFile(
     const char *filename,
     hash_op *hash,
     uint8_t *digest
@@ -226,61 +127,87 @@ TDNFCheckDigest(
 {
     uint32_t dwError = 0;
     int fd = -1;
-    hash_ctx_t ctx;
     char buf[BUFSIZ] = {0};
     int length = 0;
+    EVP_MD_CTX *ctx = NULL;
+    const EVP_MD *digest_type = NULL;
+    unsigned int digest_length = 0;
 
-    if(IsNullOrEmptyString(filename) || !hash || !digest)
+    if (IsNullOrEmptyString(filename) || !hash || !digest)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    memset(&ctx, 0, sizeof(hash_ctx_t));
-
     fd = open(filename, O_RDONLY);
-    if(fd == -1)
+    if (fd == -1)
     {
         fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    dwError = hash->init_fn(&ctx);
 
-    if(!dwError)
+    digest_type = EVP_get_digestbyname(hash->hash_type);
+
+    if (!digest_type)
     {
-        fprintf(stderr, "Hash Init Failed\n");
+        fprintf(stderr, "Unknown message digest %s\n", hash->hash_type);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ctx = EVP_MD_CTX_create();
+    if (!ctx)
+    {
+        fprintf(stderr, "Context Create Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
+
+    dwError = EVP_DigestInit_ex(ctx, digest_type, NULL);
+    if (!dwError)
     {
-        dwError = hash->update_fn(&ctx, buf, length);
-        if(!dwError)
+        fprintf(stderr, "Digest Init Failed\n");
+        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    while ((length = read(fd, buf, (sizeof(buf)-1))) > 0)
+    {
+        dwError = EVP_DigestUpdate(ctx, buf, length);
+        if (!dwError)
         {
-            fprintf(stderr, "Hash Update Failed\n");
+            fprintf(stderr, "Digest Update Failed\n");
             dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
         memset(buf, 0, BUFSIZ);
     }
-    if(length == -1)
+
+    if (length == -1)
     {
         fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    dwError = hash->final_fn(digest, &ctx);
-    if(!dwError)
+
+    dwError = EVP_DigestFinal_ex(ctx, digest, &digest_length);
+    if (!dwError)
     {
+        fprintf(stderr, "Digest Final Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
     dwError = 0;
+
 cleanup:
-    if(fd != -1)
+    if (fd != -1)
     {
         close(fd);
+    }
+    if (ctx)
+    {
+        EVP_MD_CTX_destroy(ctx);
     }
     return dwError;
 error:
@@ -297,10 +224,10 @@ TDNFCheckHash(
 {
 
     uint32_t dwError = 0;
-    uint8_t digest_from_file[MAX_DIGEST_LENGTH] = {0};
+    uint8_t digest_from_file[EVP_MAX_MD_SIZE] = {0};
     hash_op *hash = NULL;
 
-    if(IsNullOrEmptyString(filename) ||
+    if (IsNullOrEmptyString(filename) ||
        !digest)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -315,15 +242,16 @@ TDNFCheckHash(
 
     hash = hash_ops + type;
 
-    dwError = TDNFCheckDigest(filename, hash, digest_from_file);
+    dwError = TDNFGetDigestForFile(filename, hash, digest_from_file);
     BAIL_ON_TDNF_ERROR(dwError);
-    if(memcmp(digest_from_file, digest, hash->length))
+
+    if (memcmp(digest_from_file, digest, hash->length))
     {
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    if(!nTDNFQuietEnabled)
+    if (!nTDNFQuietEnabled)
     {
         printf("Validating metalink (%s) OK\n", filename);
     }
@@ -331,7 +259,7 @@ TDNFCheckHash(
 cleanup:
     return dwError;
 error:
-    if(!IsNullOrEmptyString(filename))
+    if (!IsNullOrEmptyString(filename))
     {
         fprintf(stderr, "Error: Validating metalink (%s) FAILED (digest mismatch)\n", filename);
     }
@@ -430,7 +358,6 @@ TDNFHexToUint(
     if(errno)
     {
         fprintf(stderr, "Error: strtoul call failed\n");
-
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
@@ -554,7 +481,7 @@ TDNFNewMetalinkfile(
     //set type to -1
     metalink_file->type = -1;
     //set digest to NULL
-    memset(metalink_file->digest, 0, MAX_DIGEST_LENGTH);
+    memset(metalink_file->digest, 0, EVP_MAX_MD_SIZE);
     if(!fileinfo->checksums)
     {
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
