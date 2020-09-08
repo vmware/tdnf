@@ -927,6 +927,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoMetalinkFile);
     TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
+    TDNF_SAFE_FREE_MEMORY(pszError);
     if (ml_file)
     {
         TDNF_SAFE_FREE_MEMORY(ml_file->filename);
@@ -936,7 +937,11 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error: %s %u\n", __FUNCTION__, dwError);
+    TDNFGetErrorString(dwError, &pszError);
+    if (!IsNullOrEmptyString(pszError))
+    {
+        fprintf(stderr, "Error(%u) : %s\n", dwError, pszError);
+    }
     TDNFFreeRepoMetadata(pRepoMD);
     goto cleanup;
 }

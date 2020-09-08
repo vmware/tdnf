@@ -253,8 +253,8 @@ TDNFCheckHash(
 
     if (memcmp(digest_from_file, digest, hash->length))
     {
-        dwError = ERROR_TDNF_INVALID_REPO_FILE;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
