@@ -188,4 +188,5 @@ typedef enum
     {ERROR_TDNF_BASEURL_DOES_NOT_EXISTS,             "ERROR_TDNF_BASEURL_DOES_NOT_EXISTS",             "Base URL and Metalink URL not found in the repo file"},\
     {ERROR_TDNF_CHECKSUM_VALIDATION_FAILED,          "ERROR_TDNF_CHECKSUM_VALIDATION_FAILED",          "Checksum Validation failed for the file downloaded using URL from metalink"},\
     {ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED, "ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED", "No Resource present in metalink file for file download"},\
+    {ERROR_TDNF_FIPS_MODE_FORBIDDEN,                 "ERROR_TDNF_FIPS_MODE_FORBIDDEN",                 "API call to digest API forbidden in FIPS mode!"},\
 };

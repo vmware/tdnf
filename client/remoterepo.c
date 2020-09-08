@@ -169,6 +169,12 @@ TDNFGetDigestForFile(
     {
         fprintf(stderr, "Digest Init Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
+        /*MD5 is not approved in FIPS mode. So, overrriding
+          the dwError to show the right error to the user */
+        if (FIPS_mode() && !strcasecmp(hash->hash_type, "md5"))
+        {
+            dwError = ERROR_TDNF_FIPS_MODE_FORBIDDEN;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
