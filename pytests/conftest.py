@@ -220,7 +220,7 @@ class TestUtils(object):
         stdout = out.decode().strip()
         stderr = err.decode().strip()
         retval = process.returncode
-        capture = re.match(r'^Error\((\d+)\) :', stderr)
+        capture = re.search(r'^Error\((\d+)\) :', stderr, re.MULTILINE)
         if capture:
             retval = int(capture.groups()[0])
 
