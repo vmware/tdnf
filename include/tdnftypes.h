@@ -141,7 +141,7 @@ typedef enum
     CMDOPT_DISABLEPLUGIN,
 }TDNF_CMDOPT_TYPE;
 
-// skip problem type
+// skip problem type mask
 typedef enum
 {
     SKIPPROBLEM_NONE = 0,

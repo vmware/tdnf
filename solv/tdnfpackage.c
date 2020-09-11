@@ -1538,34 +1538,22 @@ SkipBasedOnType(
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
-    if (dwSkipProblem == SKIPPROBLEM_NONE)
+    bool result = false;
+
+    if (dwSkipProblem & SKIPPROBLEM_CONFLICTS)
     {
-        return false;
+        result = type == SOLVER_RULE_PKG_CONFLICTS ||
+                 type == SOLVER_RULE_PKG_SELF_CONFLICT;
     }
 
-    if (dwSkipProblem == SKIPPROBLEM_CONFLICTS)
+    if (dwSkipProblem & SKIPPROBLEM_OBSOLETES)
     {
-        return (type == SOLVER_RULE_PKG_CONFLICTS ||
-                type == SOLVER_RULE_PKG_SELF_CONFLICT);
+        result = type == SOLVER_RULE_PKG_OBSOLETES ||
+                 type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
+                 type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES;
     }
 
-    if (dwSkipProblem == SKIPPROBLEM_OBSOLETES)
-    {
-        return (type == SOLVER_RULE_PKG_OBSOLETES ||
-                type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
-                type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES);
-    }
-
-    if (dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES))
-    {
-        return (type == SOLVER_RULE_PKG_CONFLICTS ||
-                type == SOLVER_RULE_PKG_SELF_CONFLICT ||
-                type == SOLVER_RULE_PKG_OBSOLETES ||
-                type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
-                type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES);
-    }
-
-    return false;
+    return result;
 }
 
 static uint32_t
