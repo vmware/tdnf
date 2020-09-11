@@ -28,27 +28,16 @@ mkdir -p ${BUILD_PATH}/BUILD \
 	 ${PUBLISH_PATH} \
 	 ${TEST_REPO_DIR}/yum.repos.d
 
-rpmbuild  --define "_topdir ${BUILD_PATH}" \
-	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec > /dev/null 2>&1
-
-cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
-
-createrepo ${PUBLISH_PATH} > /dev/null 2>&1
-
-modifyrepo ${REPO_SRC_DIR}/updateinfo-1.xml ${PUBLISH_PATH}/repodata
-modifyrepo ${REPO_SRC_DIR}/updateinfo-2.xml ${PUBLISH_PATH}/repodata
-
 #gpgkey data for unattended key generation
-GPG_PASS=`openssl rand -base64 8`
 cat << EOF > ${TEST_REPO_DIR}/gpgkeydata
      %echo Generating a key for repogpgcheck signatures
+     %no-protection
      Key-Type: default
      Subkey-Type: default
      Name-Real: tdnf test
      Name-Comment: tdnf test key
      Name-Email: tdnftest@tdnf.test
      Expire-Date: 0
-     Passphrase: ${GPG_PASS}
      %commit
      %echo done
 EOF
@@ -56,8 +45,30 @@ EOF
 #generate a key non interactively. this is used in testing
 #repogpgcheck plugin
 gpg --batch --generate-key ${TEST_REPO_DIR}/gpgkeydata
+
+cat << EOF > ~/.rpmmacros
+%_gpg_name tdnftest@tdnf.test
+%__gpg /usr/bin/gpg
+EOF
+
+echo building packages
+rpmbuild  --define "_topdir ${BUILD_PATH}" \
+	  --define "__gpg_sign_cmd %%{__gpg} gpg --batch" \
+	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec --sign
+
+cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
+
+# save key to later be imported:
+mkdir -p ${PUBLISH_PATH}/keys
+gpg --armor --export tdnftest@tdnf.test > ${PUBLISH_PATH}/keys/pubkey.asc
+
+createrepo ${PUBLISH_PATH} > /dev/null 2>&1
+
+modifyrepo ${REPO_SRC_DIR}/updateinfo-1.xml ${PUBLISH_PATH}/repodata
+modifyrepo ${REPO_SRC_DIR}/updateinfo-2.xml ${PUBLISH_PATH}/repodata
+
 #gpg sign repomd.xml
-echo ${GPG_PASS} | gpg --batch --passphrase-fd 0 \
+gpg --batch --passphrase-fd 0 \
 --pinentry-mode loopback \
 --detach-sign --armor ${PUBLISH_PATH}/repodata/repomd.xml
 
