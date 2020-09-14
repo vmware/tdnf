@@ -88,23 +88,21 @@ error:
     goto cleanup;
 }
 
-size_t
+uint32_t
 TDNFStringSepCount(
     char *pszBuf,
-    char *pszSep
+    char *pszSep,
+    size_t *nSepCount
     )
 {
     size_t nCount = 0;
-    const char *pszTemp;
+    uint32_t dwError = 0;
+    const char *pszTemp = NULL;
 
-    if (IsNullOrEmptyString(pszBuf))
+    if (IsNullOrEmptyString(pszBuf) || IsNullOrEmptyString(pszSep))
     {
-        BAIL_ON_TDNF_ERROR(1);
-    }
-    if (IsNullOrEmptyString(pszSep))
-    {
-        nCount = 1;
-        BAIL_ON_TDNF_ERROR(1);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pszTemp = pszBuf;
@@ -125,8 +123,10 @@ TDNFStringSepCount(
         }
     }
 
+    *nSepCount = nCount;
+
 error:
-    return nCount;
+    return dwError;
 }
 
 uint32_t
@@ -149,12 +149,8 @@ TDNFSplitStringToArray(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    nCount = TDNFStringSepCount(pszBuf, pszSep);
-    if (nCount == 0)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFStringSepCount(pszBuf, pszSep, &nCount);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszToks);
     BAIL_ON_TDNF_ERROR(dwError);

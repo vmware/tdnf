@@ -53,10 +53,11 @@ TDNFSafeAllocateString(
     char** ppszDst
     );
 
-size_t
+uint32_t
 TDNFStringSepCount(
     char *pszBuf,
-    char *pszSep
+    char *pszSep,
+    size_t *nSepCount
     );
 
 uint32_t

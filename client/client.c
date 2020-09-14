@@ -71,6 +71,7 @@ TDNFPkgsToExclude(
     uint32_t dwCount = 0;
     char**   ppszExcludes = NULL;
     int nIndex = 0;
+
     if(!pTdnf || !pTdnf->pArgs || !pdwCount || !pppszExcludes)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
