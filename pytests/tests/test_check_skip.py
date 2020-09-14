@@ -28,15 +28,15 @@ def teardown_test(utils):
 
 
 def test_check_skipconflicts(utils):
-    run_cmd(utils, ['--skipconflicts'], 21)
+    run_cmd(utils, ['--skipconflicts'], 1301)
 
 
 def test_check_skipobsoletes(utils):
-    run_cmd(utils, ['--skipobsoletes'], 21)
+    run_cmd(utils, ['--skipobsoletes'], 1301)
 
 
 def test_check_providers(utils):
-    run_cmd(utils, ['--skipconflicts', '--skipobsoletes'], 21)
+    run_cmd(utils, ['--skipconflicts', '--skipobsoletes'], 1301)
 
 
 def test_dummy_conflicts(utils):
