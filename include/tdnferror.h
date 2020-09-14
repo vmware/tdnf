@@ -164,6 +164,9 @@ extern "C" {
 #define ERROR_TDNF_CHECKSUM_VALIDATION_FAILED          2501
 #define ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED 2502
 
+//FIPS error
+#define ERROR_TDNF_FIPS_MODE_FORBIDDEN       2600
+
 #define CMD_INSTALL "install"
 
 #ifdef __cplusplus

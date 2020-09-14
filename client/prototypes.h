@@ -23,13 +23,12 @@
 
 #include <openssl/sha.h>
 #include <openssl/md5.h>
-
-#define MAX_DIGEST_LENGTH 64
+#include <openssl/evp.h>
 typedef struct metalinkfile{
     char *filename;
     int   type;
     /* raw digest value, not ascii hex digest */
-    unsigned char digest[MAX_DIGEST_LENGTH];
+    unsigned char digest[EVP_MAX_MD_SIZE];
 } metalinkfile;
 
 //clean.c
