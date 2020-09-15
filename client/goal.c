@@ -315,7 +315,7 @@ TDNFGoal(
     Id  dwId = 0;
     int nProblems = 0;
     char** ppszExcludes = NULL;
-    uint32_t dwCount = 0;
+    uint32_t dwExcludeCount = 0;
 
     if(!pTdnf || !ppInfo || !pQueuePkgList)
     {
@@ -356,12 +356,13 @@ TDNFGoal(
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (nAlterType == ALTER_UPGRADEALL)
+    if (nAlterType == ALTER_UPGRADEALL ||
+        nAlterType == ALTER_UPGRADE)
     {
-        dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
+        dwError = TDNFPkgsToExclude(pTdnf, &dwExcludeCount, &ppszExcludes);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if (dwCount != 0 && ppszExcludes)
+        if (dwExcludeCount != 0 && ppszExcludes)
         {
             if (!pTdnf->pSack || !pTdnf->pSack->pPool)
             {
@@ -399,6 +400,12 @@ TDNFGoal(
     {
         dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        if (nAlterType == ALTER_UPGRADE && dwExcludeCount != 0 && ppszExcludes)
+        {
+            /* if we had packages to exclude, then we'd have diabled ones too */
+            dwSkipProblem |= SKIPPROBLEM_DISABLED;
+        }
 
         dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -464,7 +471,6 @@ TDNFAddGoal(
     char** ppszPackagesTemp = NULL;
     char* pszName = NULL;
     uint32_t dwCount = 0;
-    Queue queueJob = {0};
 
     if(!pQueueJobs || dwId == 0 || !pTdnf->pSack || !pTdnf->pSack->pPool)
     {
@@ -472,7 +478,6 @@ TDNFAddGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    queue_init(&queueJob);
     if (nAlterType == ALTER_UPGRADE)
     {
         dwError = TDNFPkgsToExclude(pTdnf, &dwCount, &ppszExcludes);
@@ -500,6 +505,7 @@ TDNFAddGoal(
             }
         }
     }
+
     switch(nAlterType)
     {
         case ALTER_DOWNGRADEALL:
@@ -529,7 +535,6 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPkg);
     TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
     TDNF_SAFE_FREE_MEMORY(pszName);
-    queue_free(&queueJob);
     return dwError;
 
 error:
@@ -620,4 +625,3 @@ error:
     }
     goto cleanup;
 }
-

@@ -8,20 +8,6 @@
 
 #include "includes.h"
 
-static bool
-SkipBasedOnType(
-    SolverRuleinfo type,
-    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
-    );
-
-static uint32_t
-check_for_providers(
-    PSolvSack pSack,
-    SolverRuleinfo type,
-    const char *pszProblem,
-    char *prv_pkgname
-    );
-
 uint32_t
 SolvCreatePackageList(
     PSolvPackageList* ppSolvPackageList
@@ -1534,38 +1520,45 @@ error:
  */
 static bool
 SkipBasedOnType(
+    Solver* pSolv,
     SolverRuleinfo type,
+    Id dwSource,
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
-    if (dwSkipProblem == SKIPPROBLEM_NONE)
+    bool result = false;
+    Solvable *s;
+
+    if (dwSkipProblem & SKIPPROBLEM_CONFLICTS)
     {
-        return false;
+        result = result || type == SOLVER_RULE_PKG_CONFLICTS ||
+                 type == SOLVER_RULE_PKG_SELF_CONFLICT;
     }
 
-    if (dwSkipProblem == SKIPPROBLEM_CONFLICTS)
+    if (dwSkipProblem & SKIPPROBLEM_OBSOLETES)
     {
-        return (type == SOLVER_RULE_PKG_CONFLICTS ||
-                type == SOLVER_RULE_PKG_SELF_CONFLICT);
+        result = result || type == SOLVER_RULE_PKG_OBSOLETES ||
+                 type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
+                 type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES;
     }
 
-    if (dwSkipProblem == SKIPPROBLEM_OBSOLETES)
+    if (dwSkipProblem & SKIPPROBLEM_DISABLED)
     {
-        return (type == SOLVER_RULE_PKG_OBSOLETES ||
-                type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
-                type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES);
+        /**
+         * If a package was marked not installable and it was disabled,
+         * then we can skip this error as the package was excluded
+         * conciously.
+         */
+        if (type == SOLVER_RULE_PKG_NOT_INSTALLABLE)
+        {
+            s = pSolv->pool->solvables + dwSource;
+            if (pool_disabled_solvable(pSolv->pool, s)) {
+                result = true;
+            }
+        }
     }
 
-    if (dwSkipProblem == (SKIPPROBLEM_CONFLICTS | SKIPPROBLEM_OBSOLETES))
-    {
-        return (type == SOLVER_RULE_PKG_CONFLICTS ||
-                type == SOLVER_RULE_PKG_SELF_CONFLICT ||
-                type == SOLVER_RULE_PKG_OBSOLETES ||
-                type == SOLVER_RULE_PKG_IMPLICIT_OBSOLETES ||
-                type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES);
-    }
-
-    return false;
+    return result;
 }
 
 static uint32_t
@@ -1660,8 +1653,7 @@ SolvReportProblems(
         type = solver_ruleinfo(pSolv, dwProblemId,
                                &dwSource, &dwTarget, &dwDep);
 
-        if ((dwSkipProblem != SKIPPROBLEM_NONE) &&
-            SkipBasedOnType(type, dwSkipProblem))
+        if (SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
         {
             continue;
         }
