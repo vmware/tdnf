@@ -327,7 +327,9 @@ TDNFAddGoal(
     PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,
     Queue* pQueueJobs,
-    Id dwId
+    Id dwId,
+    uint32_t dwCount,
+    char** ppszExcludes
     );
 
 uint32_t

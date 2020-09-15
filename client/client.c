@@ -71,10 +71,29 @@ TDNFPkgsToExclude(
     uint32_t dwCount = 0;
     char**   ppszExcludes = NULL;
     int nIndex = 0;
+
     if(!pTdnf || !pTdnf->pArgs || !pdwCount || !pppszExcludes)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (!pTdnf->pArgs->nDisableExcludes && pTdnf->pConf->ppszExcludes)
+    {
+        if (!pTdnf->pArgs->nQuiet)
+        {
+            printf("Warning: The following packages are excluded "
+                   "from tdnf.conf:\n");
+        }
+        while (pTdnf->pConf->ppszExcludes[nIndex])
+        {
+            if (!pTdnf->pArgs->nQuiet)
+            {
+                printf("  %s\n", pTdnf->pConf->ppszExcludes[nIndex]);
+            }
+            dwCount++;
+            nIndex++;
+        }
     }
 
     pSetOpt = pTdnf->pArgs->pSetOpt;
@@ -95,6 +114,20 @@ TDNFPkgsToExclude(
                       sizeof(char*),
                       (void**)&ppszExcludes);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        nIndex = 0;
+        if (!pTdnf->pArgs->nDisableExcludes && pTdnf->pConf->ppszExcludes)
+        {
+            while (pTdnf->pConf->ppszExcludes[nIndex])
+            {
+                dwError = TDNFAllocateString(pTdnf->pConf->ppszExcludes[nIndex],
+                                             &ppszExcludes[nIndex]);
+                BAIL_ON_TDNF_ERROR(dwError);
+                dwCount++;
+                nIndex++;
+            }
+        }
+
         pSetOpt = pTdnf->pArgs->pSetOpt;
         while(pSetOpt)
         {
@@ -105,7 +138,6 @@ TDNFPkgsToExclude(
                       pSetOpt->pszOptValue,
                       &ppszExcludes[nIndex++]);
                 BAIL_ON_TDNF_ERROR(dwError);
-
             }
             pSetOpt = pSetOpt->pNext;
         }

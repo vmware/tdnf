@@ -235,6 +235,7 @@ typedef struct _TDNF_CMD_ARGS
     int nVerbose;          //print debug info
     int nIPv4;             //resolve to IPv4 addresses only
     int nIPv6;             //resolve to IPv6 addresses only
+    int nDisableExcludes;  //disable excludes from tdnf.conf
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location
     char* pszReleaseVer;   //Release version
@@ -259,6 +260,7 @@ typedef struct _TDNF_CONF
     char* pszBaseArch;
     char* pszVarReleaseVer;
     char* pszVarBaseArch;
+    char** ppszExcludes;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_DATA

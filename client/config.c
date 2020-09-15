@@ -121,6 +121,12 @@ TDNFReadConfig(
                   &pConf->pszDistroVerPkg);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFReadKeyValueStringArray(
+                  pSection,
+                  TDNF_CONF_KEY_EXCLUDE,
+                  &pConf->ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFConfigReadProxySettings(
                   pSection,
                   pConf);
