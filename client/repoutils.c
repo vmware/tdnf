@@ -42,43 +42,24 @@ error:
 uint32_t
 TDNFRepoSetBaseUrl(
     PTDNF pTdnf,
-    const char* pszRepo,
-    char* pszBaseUrl
+    PTDNF_REPO_DATA_INTERNAL pszRepo,
+    const char *pszBaseUrlFile
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    char *pszBaseUrl = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pszBaseUrl)
+    if (!pTdnf || !pszRepo || IsNullOrEmptyString(pszBaseUrlFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(!pTdnf->pRepos)
-    {
-        dwError = ERROR_TDNF_NO_REPOS;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pRepos = pTdnf->pRepos;
 
-    while(pRepos)
-    {
-        if(!strcmp(pszRepo, pRepos->pszId))
-        {
-            break;
-        }
-        pRepos = pRepos->pNext;
-    }
-
-    if(!pRepos)
-    {
-        dwError = ERROR_TDNF_REPO_NOT_FOUND;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    TDNF_SAFE_FREE_MEMORY(pRepos->pszBaseUrl);
-    dwError = TDNFAllocateString(pszBaseUrl, &pRepos->pszBaseUrl);
+    TDNF_SAFE_FREE_MEMORY(pszRepo->pszBaseUrl);
+    dwError = TDNFFileReadAllText(pszBaseUrlFile, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    pszRepo->pszBaseUrl = pszBaseUrl;
 
 cleanup:
     return dwError;

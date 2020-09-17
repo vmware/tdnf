@@ -95,6 +95,12 @@ TDNFTrimSuffix(
     const char* pszSuffix
     );
 
+uint32_t
+TDNFStringEndsWith(
+    char* pszSource,
+    const char* pszSuffix
+    );
+
 void
 TDNFFreeStringArray(
     char** ppszArray
@@ -163,6 +169,12 @@ TDNFFreeConfigData(
     );
 
 //utils.c
+uint32_t
+TDNFCreateAndWriteToFile(
+    const char *pszFile,
+    const char *data
+    );
+
 uint32_t
 TDNFFileReadAllText(
     const char *pszFileName,

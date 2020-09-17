@@ -390,7 +390,7 @@ TDNFTrimSuffix(
     uint32_t dwError = 0;
     int nSourceStrLen = 0, nSuffixStrLen = 0;
 
-    if(!pszSource || !pszSuffix)
+    if (IsNullOrEmptyString(pszSource) || IsNullOrEmptyString(pszSuffix))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -399,13 +399,13 @@ TDNFTrimSuffix(
     nSourceStrLen = strlen(pszSource);
     nSuffixStrLen = strlen(pszSuffix);
 
-    if(nSuffixStrLen > nSourceStrLen)
+    if (nSuffixStrLen > nSourceStrLen)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while(nSuffixStrLen > 0 &&
+    while (nSuffixStrLen > 0 &&
           (pszSource[nSourceStrLen - 1] == pszSuffix[nSuffixStrLen - 1]))
     {
         nSourceStrLen--;
@@ -415,6 +415,46 @@ TDNFTrimSuffix(
     pszSource[nSourceStrLen] = '\0';
 cleanup:
     return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFStringEndsWith(
+    char* pszSource,
+    const char* pszSuffix
+    )
+{
+    int nSourceStrLen = 0, nSuffixStrLen = 0;
+    uint32_t dwError = 0;
+    int ret = 0;
+
+    if (IsNullOrEmptyString(pszSource) || IsNullOrEmptyString(pszSuffix))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nSourceStrLen = strlen(pszSource);
+    nSuffixStrLen = strlen(pszSuffix);
+
+    if (nSuffixStrLen > nSourceStrLen)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ret = strncmp(pszSource + nSourceStrLen - nSuffixStrLen, pszSuffix, nSuffixStrLen);
+
+    if (ret)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
 error:
     goto cleanup;
 }

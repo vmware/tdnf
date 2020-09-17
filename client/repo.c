@@ -468,6 +468,146 @@ error:
 }
 
 uint32_t
+TDNFStoreBaseURLFromMetalink(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszRepoMDURL
+    )
+{
+    uint32_t dwError = 0;
+    char *pszBaseUrlFile = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+
+    if (!pTdnf ||
+        !pTdnf->pConf ||
+        IsNullOrEmptyString(pszRepo) ||
+        IsNullOrEmptyString(pszRepoMDURL))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pRepos = pTdnf->pRepos;
+    if (!pRepos)
+    {
+        dwError = ERROR_TDNF_NO_REPOS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for ( ; strcmp(pszRepo, pRepos->pszId) != 0; pRepos = pRepos->pNext);
+
+    if (!pRepos)
+    {
+        dwError = ERROR_TDNF_NO_REPOS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(&pszBaseUrlFile,
+                                       "%s/%s/tmp/%s",
+                                       pTdnf->pConf->pszCacheDir,
+                                       pRepos->pszId,
+                                       TDNF_REPO_BASEURL_FILE_NAME);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFCreateAndWriteToFile(pszBaseUrlFile, pszRepoMDURL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadUsingMetalinkResources(
+    PTDNF pTdnf,
+    const char *pszRepo,
+    const char *pszFile,
+    const char *pszProgressData,
+    char **ppszRepoMDUrl,
+    TDNF_METALINK_FILE *ml_file
+    )
+{
+    uint32_t dwError = 0;
+    TDNF_METALINK_URLS *urls = NULL;
+    char *pszRepoMDUrl = NULL;
+    char buf[BUFSIZ] = {0};
+
+    if (!pTdnf ||
+        !pTdnf->pArgs ||
+        IsNullOrEmptyString(pszFile) ||
+        IsNullOrEmptyString(pszRepo))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    urls = ml_file->urls;
+
+    while (urls)
+    {
+        dwError = TDNFStringEndsWith(urls->url, TDNF_REPO_METADATA_FILE_PATH);
+        if (dwError)
+        {
+            dwError = ERROR_TDNF_INVALID_REPO_FILE;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        dwError = TDNFDownloadFile(pTdnf, pszRepo, urls->url, pszFile,
+                                   pszProgressData, 0, NULL);
+        if (dwError)
+        {
+            urls = urls->next;
+            if (urls)
+            {
+                continue;
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        strncpy(buf, urls->url, BUFSIZ-1);
+        buf[BUFSIZ-1] = '\0'; // force terminate
+        dwError = TDNFTrimSuffix(buf, TDNF_REPO_METADATA_FILE_PATH);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFStoreBaseURLFromMetalink(pTdnf, pszRepo, buf);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
+                                           "%s/%s",
+                                           buf,
+                                           TDNF_REPO_METADATA_FILE_PATH);
+        BAIL_ON_TDNF_ERROR(dwError);
+        *ppszRepoMDUrl = pszRepoMDUrl;
+        break;
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+void
+TDNFFreeMetalinkUrlsList(
+    TDNF_METALINK_URLS *metalink_urls
+    )
+{
+    TDNF_METALINK_URLS *metalink_urls_temp = NULL;
+    TDNF_METALINK_URLS *metalink_urls_temp_next = NULL;
+
+    if (!metalink_urls)
+    {
+        metalink_urls_temp = metalink_urls;
+        while (metalink_urls_temp)
+        {
+            metalink_urls_temp_next = metalink_urls_temp->next;
+            TDNF_SAFE_FREE_MEMORY(metalink_urls_temp->url);
+            TDNF_SAFE_FREE_MEMORY(metalink_urls_temp);
+            metalink_urls_temp = metalink_urls_temp_next;
+        }
+    }
+    return;
+}
+
+uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
     PTDNF_REPO_DATA_INTERNAL pRepoData,
@@ -481,6 +621,8 @@ TDNFGetRepoMD(
     char *pszTmpRepoDataDir = NULL;
     char *pszTmpRepoMDFile = NULL;
     char *pszMetaLinkFile = NULL;
+    char *pszBaseUrlFile = NULL;
+    char *pszTempBaseUrlFile = NULL;
     char *pszRepoMetalink = NULL;
     char *pszTmpRepoMetalinkFile = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
@@ -490,8 +632,10 @@ TDNFGetRepoMD(
     int nNeedDownload = 0;
     int nNewRepoMDFile = 0;
     int nReplaceRepoMD = 0;
+    int nStrictlyReplace = 0;
     int metalink = 0;
-    metalinkfile *ml_file = NULL;
+    TDNF_METALINK_FILE *ml_file = NULL;
+    char *pszError = NULL;
 
     if(!pTdnf ||
        !pRepoData ||
@@ -545,21 +689,54 @@ TDNFGetRepoMD(
     dwError = TDNFAllocateString(pRepoData->pszId, &pRepoMDRel->pszRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFAllocateStringPrintf(&pszBaseUrlFile,
+                                       "%s/%s",
+                                       pszRepoDataDir,
+                                       TDNF_REPO_BASEURL_FILE_NAME);
+    BAIL_ON_TDNF_ERROR(dwError);
     if(metalink)
     {
-        /* if photon.metalink file is not present, set flag to download */
-        if (access(pszMetaLinkFile, F_OK))
+        /* if metalink OR baseurl file is not present, set flag to download */
+        if (access(pszMetaLinkFile, F_OK) || access(pszBaseUrlFile, F_OK))
         {
             if(errno != ENOENT)
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
             }
+            nStrictlyReplace = 1;
             nNeedDownload = 1;
         }
     }
     else
     {
+        /*If metalink is not set but if metalink and baseurl file is present
+          this applies, metalink was set before but now we are
+          using Base URL instead of Metalink so we need to refresh*/
+
+        if (!access(pszBaseUrlFile, F_OK))
+        {
+            //we should remove the baseurl file now
+            if(remove(pszBaseUrlFile))
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+
+        if (!access(pszMetaLinkFile, F_OK))
+        {
+            //we should remove the metalink file now
+            if(remove(pszMetaLinkFile))
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            /*setting need download true and base url might point to another mirror
+             than the mirror metalink was pointing to */
+            nNeedDownload = 1;
+            nStrictlyReplace = 1;
+        }
         /* if repomd.xml file is not present, set flag to download */
         if (access(pszRepoMDFile, F_OK))
         {
@@ -570,26 +747,9 @@ TDNFGetRepoMD(
             }
             nNeedDownload = 1;
         }
-        else
-        {
-            /*If repomd file is present*/
-            /*If metalink is not set but if metalink file is present
-              this applies, metalink was set before but now we are
-              using Base URL instead of Metalink so we need to refresh*/
-            if (!access(pszMetaLinkFile, F_OK))
-            {
-                //we should remove the metalink file now
-                if(remove(pszMetaLinkFile))
-                {
-                    dwError = errno;
-                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-                }
-                nNeedDownload = 1;
-            }
-        }
     }
     /* if refresh flag is set, get shasum of existing repomd file */
-    if (pTdnf->pArgs->nRefresh)
+    if (!nStrictlyReplace && pTdnf->pArgs->nRefresh)
     {
         if(!access(pszRepoMDFile, F_OK))
         {
@@ -598,11 +758,10 @@ TDNFGetRepoMD(
             nNeedDownload = 1;
         }
     }
+
     if(metalink)
     {
-        dwError = TDNFAllocateStringPrintf(&pszRepoMetalink,
-                                          "%s",
-                                          pRepoData->pszMetaLink);
+        dwError = TDNFAllocateString(pRepoData->pszMetaLink, &pszRepoMetalink);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -636,41 +795,53 @@ TDNFGetRepoMD(
         BAIL_ON_TDNF_ERROR(dwError);
         if(metalink)
         {
-            dwError = TDNFAllocateStringPrintf(
-                          &pszTmpRepoMetalinkFile,
-                          "%s/%s",
-                          pszTmpRepoDataDir,
-                          TDNF_REPO_METALINK_FILE_NAME);
+            dwError = TDNFAllocateStringPrintf(&pszTmpRepoMetalinkFile,
+                                               "%s/%s",
+                                               pszTmpRepoDataDir,
+                                               TDNF_REPO_METALINK_FILE_NAME);
             BAIL_ON_TDNF_ERROR(dwError);
-            dwError = TDNFDownloadFile(
+            dwError = TDNFAllocateStringPrintf(&pszTempBaseUrlFile,
+                                               "%s/%s",
+                                               pszTmpRepoDataDir,
+                                               TDNF_REPO_BASEURL_FILE_NAME);
+            BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFDownloadFile(pTdnf, pRepoData->pszId, pszRepoMetalink,
+                                       pszTmpRepoMetalinkFile, pRepoData->pszId,
+                                       metalink, &ml_file);
+            BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFDownloadUsingMetalinkResources(
                           pTdnf,
                           pRepoData->pszId,
-                          pszRepoMetalink,
-                          pszTmpRepoMetalinkFile,
-                          pRepoData->pszId,
-                          metalink,
-                          &ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        // as BaseURL might have been reset
-        dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
-                                          "%s/%s",
-                                          pRepoData->pszBaseUrl,
-                                          TDNF_REPO_METADATA_FILE_PATH);
-        BAIL_ON_TDNF_ERROR(dwError);
-        dwError = TDNFDownloadFile(
-                          pTdnf,
-                          pRepoData->pszId,
-                          pszRepoMDUrl,
                           pszTmpRepoMDFile,
                           pRepoData->pszId,
-                          0,
-                          NULL);
-        BAIL_ON_TDNF_ERROR(dwError);
+                          &pszRepoMDUrl,
+                          ml_file);
+            BAIL_ON_TDNF_ERROR(dwError);
 
-        if(metalink && ml_file)
+            //check if the repomd file downloaded using metalink have the same checksum
+            //as mentioned in the metalink file.
+            dwError = TDNFCheckRepoMDFileHashFromMetalink(pszTmpRepoMDFile , ml_file);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszTempBaseUrlFile);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else
         {
-            dwError = TDNFMetalinkCheckHash(pszTmpRepoMDFile , ml_file, pTdnf->pArgs->nQuiet);
+            // as BaseURL might have been reset
+            dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
+                                              "%s/%s",
+                                              pRepoData->pszBaseUrl,
+                                              TDNF_REPO_METADATA_FILE_PATH);
+            BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFDownloadFile(
+                              pTdnf,
+                              pRepoData->pszId,
+                              pszRepoMDUrl,
+                              pszTmpRepoMDFile,
+                              pRepoData->pszId,
+                              0,
+                              NULL);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         /* plugin event indicating a repomd download happened */
@@ -682,13 +853,15 @@ TDNFGetRepoMD(
         BAIL_ON_TDNF_ERROR(dwError);
 
         nNewRepoMDFile = 1;
+
     }
     else
     {
-        if(metalink && (pRepoData->pszBaseUrl == NULL))
+        /* if metalink url is present, then, we will need to
+           set the base url to the url which is used to download the repomd */
+        if(metalink)
         {
-            //parse metalink and set BaseURL
-            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pRepoData->pszId, pszMetaLinkFile, NULL);
+            dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszBaseUrlFile);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
@@ -696,8 +869,11 @@ TDNFGetRepoMD(
     if (nNewRepoMDFile)
     {
         nReplaceRepoMD = 1;
+        /*We need to be strict here, if user has switched from metalink to baseurl or vice versa
+          the hash for the repomd.xml might be same, but we should still sync all the repodata
+          from the mirror which we are going to use for all tdnf operations */
         /* compare shasum if applicable */
-        if (pszCookie[0])
+        if (!nStrictlyReplace && pszCookie[0])
         {
             dwError = SolvCalculateCookieForRepoMD(pszTmpRepoMDFile, pszTmpCookie);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -721,6 +897,8 @@ TDNFGetRepoMD(
             if (metalink)
             {
                 dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
+                BAIL_ON_TDNF_ERROR(dwError);
+                dwError = TDNFReplaceFile(pszTempBaseUrlFile, pszBaseUrlFile);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
@@ -747,10 +925,23 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszMetaLinkFile);
     TDNF_SAFE_FREE_MEMORY(pszRepoMetalink);
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoMetalinkFile);
+    TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
+    TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
+    TDNF_SAFE_FREE_MEMORY(pszError);
+    if (ml_file)
+    {
+        TDNF_SAFE_FREE_MEMORY(ml_file->filename);
+        TDNFFreeMetalinkUrlsList(ml_file->urls);
+        TDNF_SAFE_FREE_MEMORY(ml_file);
+    }
     return dwError;
 
 error:
-    fprintf(stderr, "Error: %s %u\n", __FUNCTION__, dwError);
+    TDNFGetErrorString(dwError, &pszError);
+    if (!IsNullOrEmptyString(pszError))
+    {
+        fprintf(stderr, "Error(%u) : %s\n", dwError, pszError);
+    }
     TDNFFreeRepoMetadata(pRepoMD);
     goto cleanup;
 }
