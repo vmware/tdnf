@@ -242,9 +242,9 @@ uint32_t TDNFUriIsRemote(
     int *nRemote
 );
 
-uint32_t TDNFFileNameFromUri(
+uint32_t TDNFPathFromUri(
     const char* pszKeyUrl,
-    char** ppszFile);
+    char** ppszPath);
 
 //free global resources.
 void

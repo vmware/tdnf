@@ -481,19 +481,19 @@ error:
     goto cleanup;
 }
 
-uint32_t TDNFFileNameFromUri(
+uint32_t TDNFPathFromUri(
     const char* pszKeyUrl,
-    char** ppszFile)
+    char** ppszPath)
 {
     uint32_t dwError = 0;
     const char* pszPath = NULL;
-    char *pszFile = NULL;
+    char *pszPathTmp = NULL;
     size_t nOffset;
     const char *szProtocols[] = {"http://", "https://", "ftp://",
                                 "ftps://", "file://", NULL};
     int i = 0;
 
-    if(IsNullOrEmptyString(pszKeyUrl) || !ppszFile)
+    if(IsNullOrEmptyString(pszKeyUrl) || !ppszPath)
     {
       dwError = ERROR_TDNF_INVALID_PARAMETER;
       BAIL_ON_TDNF_ERROR(dwError);
@@ -534,18 +534,18 @@ uint32_t TDNFFileNameFromUri(
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
-    dwError = TDNFAllocateString(pszPath, &pszFile);
+    dwError = TDNFAllocateString(pszPath, &pszPathTmp);
     BAIL_ON_TDNF_ERROR(dwError);
-    *ppszFile = pszFile;
+    *ppszPath = pszPathTmp;
 
 cleanup:
     return dwError;
 
 error:
-    TDNF_SAFE_FREE_MEMORY(pszFile);
-    if(ppszFile)
+    TDNF_SAFE_FREE_MEMORY(pszPathTmp);
+    if(ppszPath)
     {
-        *ppszFile = NULL;
+        *ppszPath = NULL;
     }
     goto cleanup;
 }

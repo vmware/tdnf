@@ -492,7 +492,7 @@ TDNFFetchRemoteGPGKey(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFFileNameFromUri(pszUrlGPGKey, &pszKeyLocation);
+    dwError = TDNFPathFromUri(pszUrlGPGKey, &pszKeyLocation);
     if (dwError == ERROR_TDNF_URL_INVALID)
     {
         dwError = ERROR_TDNF_KEYURL_INVALID;
@@ -683,7 +683,7 @@ TDNFTransAddInstallPkg(
         }
         else
         {
-            dwError = TDNFFileNameFromUri(pszUrlGPGKey, &pszLocalGPGKey);
+            dwError = TDNFPathFromUri(pszUrlGPGKey, &pszLocalGPGKey);
             if (dwError == ERROR_TDNF_URL_INVALID)
             {
                 dwError = ERROR_TDNF_KEYURL_INVALID;
