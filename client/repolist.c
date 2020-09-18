@@ -461,7 +461,6 @@ TDNFCloneRepo(
 {
     uint32_t dwError = 0;
     PTDNF_REPO_DATA pRepo = NULL;
-    int i, n = 0;
 
     if(!pRepoIn || !ppRepo)
     {
@@ -488,17 +487,10 @@ TDNFCloneRepo(
                   &pRepo->pszMetaLink);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for (i = 0; pRepoIn->ppszUrlGPGKeys[i]; i++) {
-        n++;
-    }
-    dwError = TDNFAllocateMemory(n + 1, sizeof(char *), (void**)&pRepo->ppszUrlGPGKeys);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for (i = 0; i < n; i++) {
-        dwError = TDNFSafeAllocateString(
-                      pRepoIn->ppszUrlGPGKeys[i],
-                      &pRepo->ppszUrlGPGKeys[i]);
-        BAIL_ON_TDNF_ERROR(dwError);
+    if (pRepoIn->ppszUrlGPGKeys) {
+        dwError = TDNFAllocateStringArray(
+                      pRepoIn->ppszUrlGPGKeys,
+                      &pRepo->ppszUrlGPGKeys);
     }
 
     *ppRepo = pRepo;
