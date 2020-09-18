@@ -41,7 +41,7 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     char* pszName;
     char* pszBaseUrl;
     char* pszMetaLink;
-    char* pszUrlGPGKey;
+    char** ppszUrlGPGKeys;
     char* pszUser;
     char* pszPass;
 

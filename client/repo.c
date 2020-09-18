@@ -325,13 +325,13 @@ TDNFGetGPGSignatureCheck(
             nGPGSigCheck = 1;
             if (ppszUrlGPGKey != NULL)
             {
-                if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
+                if (IsNullOrEmptyString(pRepo->ppszUrlGPGKeys[0]))
                 {
                     dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
                 dwError = TDNFAllocateString(
-                             pRepo->pszUrlGPGKey,
+                             pRepo->ppszUrlGPGKeys[0],
                              &pszUrlGPGKey);
                 BAIL_ON_TDNF_ERROR(dwError);
             }

@@ -273,7 +273,7 @@ typedef struct _TDNF_REPO_DATA
     char* pszName;
     char* pszBaseUrl;
     char* pszMetaLink;
-    char* pszUrlGPGKey;
+    char** ppszUrlGPGKeys;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;
