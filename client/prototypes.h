@@ -826,6 +826,12 @@ TDNFGetSystemError(
     );
 
 uint32_t
+TDNFIsFileOrSymlink(
+    const char* pszPath,
+    int* pnPathIsFile
+    );
+
+uint32_t
 TDNFIsDir(
     const char* pszPath,
     int* pnPathIsDir
