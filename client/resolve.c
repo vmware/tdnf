@@ -62,6 +62,8 @@ TDNFPrepareAllPackages(
     PTDNF_CMD_ARGS pCmdArgs = NULL;
     int nCmdIndex = 0;
     int nPkgIndex = 0;
+    int nIsFile = 0;
+    int nDummy = 0;
     char* pszPkgName = NULL;
     char* pszName = NULL;
     Queue queueLocal = {0};
@@ -129,6 +131,7 @@ TDNFPrepareAllPackages(
        for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
        {
            pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+
            if(TDNFIsGlob(pszPkgName))
            {
                queue_empty(&queueLocal);
@@ -167,6 +170,27 @@ TDNFPrepareAllPackages(
            }
            else
            {
+               dwError = TDNFIsFileOrSymlink(pszPkgName, &nIsFile);
+               BAIL_ON_TDNF_ERROR(dwError);
+
+               if (nIsFile)
+               {
+                   continue;
+               }
+
+               dwError = TDNFUriIsRemote(pszPkgName, &nDummy);
+               if (dwError == 0)
+               {
+                 /* URL => cmd line pkg, already handled */
+                 dwError = 0;
+                 continue;
+               }
+               else if (dwError == ERROR_TDNF_URL_INVALID)
+               {
+                   dwError = 0;
+               }
+               BAIL_ON_TDNF_ERROR(dwError);
+
                dwError = TDNFPrepareAndAddPkg(
                              pTdnf,
                              pszPkgName,

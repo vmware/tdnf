@@ -106,8 +106,10 @@ TDNFRepoGetBaseUrl(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateString(pRepos->pszBaseUrl, &pszBaseUrl);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pRepos->pszBaseUrl) {
+        dwError = TDNFAllocateString(pRepos->pszBaseUrl, &pszBaseUrl);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     *ppszBaseUrl = pszBaseUrl;
 

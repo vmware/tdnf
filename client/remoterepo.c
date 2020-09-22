@@ -888,12 +888,18 @@ TDNFDownloadPackage(
     dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepoName, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(&pszPackageUrl,
-                                       "%s/%s",
-                                       pszBaseUrl,
-                                       pszPackageLocation);
-
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pszBaseUrl) {
+        dwError = TDNFAllocateStringPrintf(&pszPackageUrl,
+                                           "%s/%s",
+                                           pszBaseUrl,
+                                           pszPackageLocation);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFAllocateString(pszPackageLocation, &pszPackageUrl);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFAllocateString(pszPackageLocation,
                                  &pszCopyOfPackageLocation);
@@ -928,4 +934,120 @@ cleanup:
 
 error:
     goto cleanup;
+}
+
+uint32_t
+TDNFDownloadPackageToCache(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszRpmCacheDir = NULL;
+    char* pszNormalRpmCacheDir = NULL;
+    char* pszFilePath = NULL;
+    char* pszNormalPath = NULL;
+    char* pszFilePathCopy = NULL;
+    char* pszDownloadCacheDir = NULL;
+    char* pszRemotePath = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName) ||
+       !ppszFilePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszRpmCacheDir,
+                  "%s/%s/%s",
+                  pTdnf->pConf->pszCacheDir,
+                  pszRepoName,
+                  "rpms");
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFNormalizePath(pszRpmCacheDir,
+                                &pszNormalRpmCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPathFromUri(pszPackageLocation, &pszRemotePath);
+    if (dwError == ERROR_TDNF_URL_INVALID)
+    {
+        dwError = TDNFAllocateString(pszPackageLocation, &pszRemotePath);
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszFilePath,
+                  "%s/%s",
+                  pszRpmCacheDir,
+                  pszRemotePath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFNormalizePath(
+                  pszFilePath,
+                  &pszNormalPath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (strncmp(pszNormalRpmCacheDir, pszNormalPath,
+                strlen(pszNormalRpmCacheDir)))
+    {
+        dwError = ERROR_TDNF_URL_INVALID;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    // dirname() may modify the contents of path, so it may be desirable to
+    // pass a copy when calling this function.
+    dwError = TDNFAllocateString(pszNormalPath, &pszFilePathCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+    pszDownloadCacheDir = dirname(pszFilePathCopy);
+    if(!pszDownloadCacheDir)
+    {
+        dwError = ENOENT;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    if(access(pszDownloadCacheDir, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+        }
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+
+        dwError = TDNFUtilsMakeDirs(pszDownloadCacheDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(access(pszNormalPath, F_OK))
+    {
+        if(errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
+            pszRepoName, pszDownloadCacheDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppszFilePath = pszNormalPath;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
+    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszNormalRpmCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszRemotePath);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+    goto cleanup;
+
 }
