@@ -237,6 +237,15 @@ TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
     );
 
+uint32_t TDNFUriIsRemote(
+    const char* pszKeyUrl,
+    int *nRemote
+);
+
+uint32_t TDNFPathFromUri(
+    const char* pszKeyUrl,
+    char** ppszPath);
+
 //free global resources.
 void
 TDNFUninit(
