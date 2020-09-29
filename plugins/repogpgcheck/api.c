@@ -127,7 +127,7 @@ TDNFRepoGPGCheckEventsNeeded(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    *pnEvents = TDNF_PLUGIN_EVENT_TYPE_REPO;
+    *pnEvents = TDNF_PLUGIN_EVENT_TYPE_REPO | TDNF_PLUGIN_EVENT_TYPE_REPO_MD;
 
 cleanup:
     return dwError;
