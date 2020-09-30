@@ -268,12 +268,16 @@ typedef struct _TDNF_REPO_DATA
     int nEnabled;
     int nSkipIfUnavailable;
     int nGPGCheck;
+    int nSSLVerify;
     long lMetadataExpire;
     char* pszId;
     char* pszName;
     char* pszBaseUrl;
     char* pszMetaLink;
     char* pszUrlGPGKey;
+    char* pszSSLCaCert;
+    char* pszSSLClientCert;
+    char* pszSSLClientKey;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;

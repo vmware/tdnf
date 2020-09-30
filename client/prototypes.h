@@ -186,6 +186,13 @@ TDNFRepoApplyProxySettings(
     CURL *pCurl
     );
 
+uint32_t
+TDNFRepoApplySSLSettings(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    CURL *pCurl
+    );
+
 //remoterepo.c
 uint32_t
 TDNFCheckRepoMDFileHashFromMetalink(

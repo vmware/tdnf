@@ -91,6 +91,10 @@ typedef enum
 #define TDNF_REPO_KEY_USERNAME            "username"
 #define TDNF_REPO_KEY_PASSWORD            "password"
 #define TDNF_REPO_KEY_METADATA_EXPIRE     "metadata_expire"
+#define TDNF_REPO_KEY_SSL_VERIFY          "sslverify"
+#define TDNF_REPO_KEY_SSL_CA_CERT         "sslcacert"
+#define TDNF_REPO_KEY_SSL_CLI_CERT        "sslclientcert"
+#define TDNF_REPO_KEY_SSL_CLI_KEY         "sslclientkey"
 
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
@@ -159,6 +163,7 @@ typedef enum
     {ERROR_TDNF_SOLV_CACHE_NOT_CREATED, "ERROR_TDNF_SOLV_CACHE_NOT_CREATED", "Solv - Solv cache not found"}, \
     {ERROR_TDNF_ADD_SOLV,            "ERROR_TDNF_ADD_SOLV",            "Solv - Failed to add solv"}, \
     {ERROR_TDNF_REPO_BASE,           "ERROR_TDNF_REPO_BASE",           "Repo error base"}, \
+    {ERROR_TDNF_SET_SSL_SETTINGS,    "ERROR_TDNF_SET_SSL_SETTINGS",    "There was an error while setting SSL settings for the repo."}, \
     {ERROR_TDNF_REPO_PERFORM,        "ERROR_TDNF_REPO_PERFORM",        "Error during repo handle execution"}, \
     {ERROR_TDNF_REPO_GETINFO,        "ERROR_TDNF_REPO_GETINFO",        "Repo during repo result getinfo"}, \
     {ERROR_TDNF_TRANS_INCOMPLETE,    "ERROR_TDNF_TRANS_INCOMPLETE",    "Incomplete rpm transaction"}, \
