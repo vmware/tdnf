@@ -574,6 +574,7 @@ TDNFTransAddInstallPkg(
     int nAnswer = 0;
     int nRemote = 0;
     int i;
+    int nMatched = 0;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -693,13 +694,20 @@ TDNFTransAddInstallPkg(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
 
-            pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
-
             dwError = TDNFImportGPGKey(pTS->pTS, pszLocalGPGKey);
             BAIL_ON_TDNF_ERROR(dwError);
 
-//            dwError = TDNFGPGCheck(pKeyring, pszLocalGPGKey, pszFilePath);
-//            BAIL_ON_TDNF_ERROR(dwError);
+            pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
+            dwError = TDNFGPGCheck(pKeyring, pszLocalGPGKey, pszFilePath);
+            if (dwError == 0)
+            {
+                nMatched++;
+            }
+	    else if (dwError == ERROR_TDNF_RPM_GPG_NO_MATCH)
+            {
+                dwError = 0;
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
 
             if (nRemote)
             {
@@ -709,6 +717,12 @@ TDNFTransAddInstallPkg(
                     BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
                 }
             }
+        }
+
+        if (nMatched == 0)
+        {
+            dwError = ERROR_TDNF_RPM_GPG_NO_MATCH;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
 
         fp = Fopen (pszFilePath, "r.ufdio");
@@ -758,10 +772,6 @@ TDNFTransAddInstallPkg(
         pTS->pCachedRpmsArray->pHead = pRpmCache;
     }
 cleanup:
-    if(pKeyring)
-    {
-        rpmKeyringFree(pKeyring);
-    }
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_STRINGARRAY(ppszUrlGPGKeys);
     TDNF_SAFE_FREE_MEMORY(pszLocalGPGKey);
