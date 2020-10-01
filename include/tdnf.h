@@ -80,12 +80,6 @@ TDNFRepoList(
     PTDNF_REPO_DATA* ppRepoData
     );
 
-//refresh cache
-uint32_t
-TDNFMakeCache(
-    PTDNF pTdnf
-    );
-
 //check all packages in all enables repositories
 uint32_t
 TDNFCheckPackages(
