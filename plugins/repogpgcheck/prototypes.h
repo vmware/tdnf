@@ -79,13 +79,4 @@ TDNFRepoGPGCheckReadConfig(
     PTDNF_EVENT_CONTEXT pContext
     );
 
-uint32_t
-TDNFDownloadFile(
-    PTDNF pTdnf,
-    const char *pszRepo,
-    const char *pszFileUrl,
-    const char *pszFile,
-    const char *pszProgressData
-    );
-
 #endif /* __PLUGINS_REPOGPGCHECK_PROTOTYPES_H__ */

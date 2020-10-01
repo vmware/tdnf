@@ -67,11 +67,4 @@ def test_tdnfrepogpgcheck_plugin_validatesignature(utils):
     ret = utils.run([ 'tdnf', 'repolist', '--refresh'])
     #we should load the plugin
     assert(ret['stdout'][0].startswith('Loaded plugin: tdnfrepogpgcheck')) #nosec
-    dist = os.environ.get('DIST')
-    if dist == 'photon':
-        assert(ret['retval'] == 0)
-    elif dist == 'fedora':
-        # TODO:
-        # 'tdnf repolist --refresh' fails with "Unable to parse metalink, ERROR: code=201"
-        # needs to be investigated
-        assert(ret['retval'] == 86)
+    assert(ret['retval'] == 0)
