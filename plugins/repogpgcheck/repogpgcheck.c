@@ -197,12 +197,13 @@ TDNFVerifySignature(
                   TDNF_REPO_METADATA_SIG_EXT);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFDownloadFile(
-                  pHandle->pTdnf,
-                  pcszRepoId,
-                  pszRepoMDSigUrl,
-                  pszRepoMDSigFile,
-                  pcszRepoId);
+    dwError = TDNFDownloadFile(pHandle->pTdnf,
+                               pcszRepoId,
+                               pszRepoMDSigUrl,
+                               pszRepoMDSigFile,
+                               pcszRepoId,
+                               0,
+                               NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFVerifyRepoMDSignature(pHandle, pcszRepoMDFile, pszRepoMDSigFile);

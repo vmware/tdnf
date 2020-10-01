@@ -28,6 +28,7 @@
 #include "../../common/defines.h"
 #include "../../common/structs.h"
 #include "../../common/prototypes.h"
+#include "../../client/includes.h"
 #include "defines.h"
 #include "structs.h"
 #include "prototypes.h"
