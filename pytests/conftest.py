@@ -183,10 +183,10 @@ class TestUtils(object):
         return True, None
 
     def _decorate_tdnf_cmd_for_test(self, cmd):
-        if cmd[0] is 'tdnf':
+        if cmd[0] == 'tdnf':
             if 'build_dir' in self.config:
                 cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
-            if cmd[1] is not '--config':
+            if cmd[1] != '--config':
                 cmd.insert(1, '-c')
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
 
