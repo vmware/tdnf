@@ -447,7 +447,8 @@ error:
     return dwError;
 }
 
-uint32_t TDNFUriIsRemote(
+uint32_t
+TDNFUriIsRemote(
     const char* pszKeyUrl,
     int *pnRemote
 )
@@ -495,8 +496,8 @@ uint32_t TDNFPathFromUri(
 
     if(IsNullOrEmptyString(pszKeyUrl) || !ppszPath)
     {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     for(i = 0; szProtocols[i]; i++) {
@@ -546,6 +547,90 @@ error:
     if(ppszPath)
     {
         *ppszPath = NULL;
+    }
+    goto cleanup;
+}
+
+
+uint32_t
+TDNFNormalizePath(
+    const char* pszPath,
+    char** ppszNormalPath)
+{
+    uint32_t dwError = 0;
+    char* pszNormalPath = NULL;
+    const char* p = pszPath;
+    char* q;
+
+    if(IsNullOrEmptyString(pszPath) || !ppszNormalPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(1, strlen(pszPath) + 1, (void **)&pszNormalPath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    q = pszNormalPath;
+
+    while(*p)
+    {
+        /* double slashes */
+        if (*p == '/' && (p > pszPath && p[-1] == '/'))
+        {
+            p++;
+        }
+        /* single dots */
+        else if (*p == '.' &&
+                 (p[1] == '/' || p[1] == 0) &&
+                 (p == pszPath || p[-1] == '/'))
+        {
+            p++;
+            if (*p) p++;
+        }
+        /* double dots */
+        else if (*p == '.' && p[1] == '.' &&
+                 (p[2] == '/' || p[2] == 0) &&
+                 (p == pszPath || p[-1] == '/'))
+        {
+            /* breaking out of a relative path */
+            if (q == pszNormalPath)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            p += 2;
+            if (*p) p++;
+            /* erase last directory */
+            q--;
+            while (q > pszNormalPath && q[-1] != '/')
+            {
+                q--;
+            }
+            /* breaking out of an absolute path */
+            if (q == pszNormalPath && *q == '/')
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        else
+        {
+            *q++ = *p++;
+        }
+    }
+    *q = 0;
+
+    *ppszNormalPath = pszNormalPath;
+
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+    if(ppszNormalPath)
+    {
+        *ppszNormalPath = NULL;
     }
     goto cleanup;
 }
