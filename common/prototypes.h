@@ -75,6 +75,12 @@ TDNFAllocateStringPrintf(
     );
 
 uint32_t
+TDNFAllocateStringArray(
+    char** ppszSrc,
+    char*** pppszDst
+    );
+
+uint32_t
 TDNFAllocateStringN(
     const char* pszSrc,
     uint32_t dwNumElements,

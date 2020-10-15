@@ -390,7 +390,7 @@ TDNFFreeRepos(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
+        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
 
         pRepos = pRepo->pNext;
         TDNF_SAFE_FREE_MEMORY(pRepo);

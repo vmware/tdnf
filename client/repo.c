@@ -294,14 +294,14 @@ TDNFGetGPGSignatureCheck(
     PTDNF pTdnf,
     const char* pszRepo,
     int* pnGPGSigCheck,
-    char** ppszUrlGPGKey
+    char*** pppszUrlGPGKeys
     )
 {
     uint32_t dwError = 0;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
     int nGPGSigCheck = 0;
     uint32_t dwSkipSignature = 0;
-    char* pszUrlGPGKey = NULL;
+    char** ppszUrlGPGKeys = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pnGPGSigCheck)
     {
@@ -323,36 +323,36 @@ TDNFGetGPGSignatureCheck(
         if(pRepo && pRepo->nGPGCheck)
         {
             nGPGSigCheck = 1;
-            if (ppszUrlGPGKey != NULL)
+            if (pppszUrlGPGKeys != NULL)
             {
-                if (IsNullOrEmptyString(pRepo->pszUrlGPGKey))
+                if (IsNullOrEmptyString(pRepo->ppszUrlGPGKeys[0]))
                 {
                     dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
-                dwError = TDNFAllocateString(
-                             pRepo->pszUrlGPGKey,
-                             &pszUrlGPGKey);
+		dwError = TDNFAllocateStringArray(
+                             pRepo->ppszUrlGPGKeys,
+			     &ppszUrlGPGKeys);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
     }
 
     *pnGPGSigCheck = nGPGSigCheck;
-    if (ppszUrlGPGKey)
+    if (pppszUrlGPGKeys)
     {
-        *ppszUrlGPGKey = pszUrlGPGKey;
+        *pppszUrlGPGKeys = ppszUrlGPGKeys;
     }
 
 cleanup:
     return dwError;
 
 error:
-    if(ppszUrlGPGKey)
+    if(pppszUrlGPGKeys)
     {
-        *ppszUrlGPGKey = NULL;
+        *pppszUrlGPGKeys = NULL;
     }
-    TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszUrlGPGKeys);
     goto cleanup;
 }
 

@@ -270,11 +270,10 @@ TDNFLoadReposFromFile(
                       &pRepo->nGPGCheck);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFReadKeyValue(
+        dwError = TDNFReadKeyValueStringArray(
                       pSections,
                       TDNF_REPO_KEY_GPGKEY,
-                      NULL,
-                      &pRepo->pszUrlGPGKey);
+                      &pRepo->ppszUrlGPGKeys);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValue(
@@ -488,10 +487,11 @@ TDNFCloneRepo(
                   &pRepo->pszMetaLink);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSafeAllocateString(
-                  pRepoIn->pszUrlGPGKey,
-                  &pRepo->pszUrlGPGKey);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pRepoIn->ppszUrlGPGKeys) {
+        dwError = TDNFAllocateStringArray(
+                      pRepoIn->ppszUrlGPGKeys,
+                      &pRepo->ppszUrlGPGKeys);
+    }
 
     *ppRepo = pRepo;
 
@@ -523,7 +523,7 @@ TDNFFreeReposInternal(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
+        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
         pRepos = pRepo->pNext;
