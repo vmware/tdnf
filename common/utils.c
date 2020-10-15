@@ -559,6 +559,7 @@ TDNFNormalizePath(
 {
     uint32_t dwError = 0;
     char* pszNormalPath = NULL;
+    char* pszRealPath = NULL;
     const char* p = pszPath;
     char* q;
 
@@ -617,9 +618,52 @@ TDNFNormalizePath(
         else
         {
             *q++ = *p++;
+            if (*p == '/')
+            {
+                *q = 0;
+                /* use realpath() to resolve symlinks */
+                pszRealPath = realpath(pszNormalPath, NULL);
+                if (pszRealPath != NULL)
+                {
+                    /* if real path is different, copy it, making
+                     * sure we still have enough space, and reposition dest pointer */
+                    if (strcmp(pszRealPath, pszNormalPath))
+                    {
+                        int rlen = strlen(pszRealPath);
+                        TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+
+                        dwError = TDNFAllocateMemory(1, rlen + strlen(p) + 1,
+                                                     (void **)&pszNormalPath);
+                        BAIL_ON_TDNF_ERROR(dwError);
+
+                        strcpy(pszNormalPath, pszRealPath);
+                        q = pszNormalPath + rlen;
+                    }
+                    TDNF_SAFE_FREE_MEMORY(pszRealPath);
+                }
+                /* it's okay if path doesn't exist, bail on other errors */
+                else if (errno != ENOENT)
+                {
+                    dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
         }
     }
     *q = 0;
+
+    /* check real path for leaf node, which wasn't checked above */
+    pszRealPath = realpath(pszNormalPath, NULL);
+    if (pszRealPath != NULL)
+    {
+        TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+        pszNormalPath = pszRealPath;
+    }
+    else if (errno != ENOENT)
+    {
+        dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     *ppszNormalPath = pszNormalPath;
 
@@ -628,6 +672,7 @@ cleanup:
 
 error:
     TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+    TDNF_SAFE_FREE_MEMORY(pszRealPath);
     if(ppszNormalPath)
     {
         *ppszNormalPath = NULL;
