@@ -485,6 +485,7 @@ TDNFFetchRemoteGPGKey(
     char* pszNormalPath = NULL;
     char* pszFilePathCopy = NULL;
     char* pszTopKeyCacheDir = NULL;
+    char* pszRealTopKeyCacheDir = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszKeyLocation = NULL;
 
@@ -508,10 +509,14 @@ TDNFFetchRemoteGPGKey(
                   pszRepoName);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFNormalizePath(pszTopKeyCacheDir,
+                                &pszRealTopKeyCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFAllocateStringPrintf(
                   &pszFilePath,
                   "%s/%s",
-                  pszTopKeyCacheDir,
+                  pszRealTopKeyCacheDir,
                   pszKeyLocation);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -520,7 +525,7 @@ TDNFFetchRemoteGPGKey(
                   &pszNormalPath);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (strncmp(pszTopKeyCacheDir, pszNormalPath, strlen(pszTopKeyCacheDir)))
+    if (strncmp(pszRealTopKeyCacheDir, pszNormalPath, strlen(pszRealTopKeyCacheDir)))
     {
         dwError = ERROR_TDNF_KEYURL_INVALID;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -556,6 +561,7 @@ TDNFFetchRemoteGPGKey(
     *ppszKeyLocation = pszFilePath;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRealTopKeyCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszTopKeyCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszKeyLocation);
