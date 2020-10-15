@@ -558,9 +558,10 @@ TDNFFetchRemoteGPGKey(
                                NULL, 0, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    *ppszKeyLocation = pszFilePath;
+    *ppszKeyLocation = pszNormalPath;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszRealTopKeyCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszTopKeyCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
@@ -569,7 +570,7 @@ cleanup:
 
 error:
     fprintf(stderr, "Error processing key: %s\n", pszUrlGPGKey);
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
     *ppszKeyLocation = NULL;
     goto cleanup;
 }
