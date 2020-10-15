@@ -11,10 +11,10 @@ import tempfile
 import pytest
 
 DIST = os.environ.get('DIST')
-if DIST == 'photon':
-    DEFAULT_KEY='file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY'
-elif DIST == 'fedora':
+if DIST == 'fedora':
     DEFAULT_KEY='file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-34-primary'
+else:
+    DEFAULT_KEY='file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY'
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test_function(utils):
