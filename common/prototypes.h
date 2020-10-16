@@ -221,6 +221,11 @@ TDNFYesOrNo(
     int *pAnswer
     );
 
+uint32_t
+TDNFNormalizePath(
+    const char* pszPath,
+    char** ppszNormalPath);
+
 //setopt.c
 uint32_t
 AddSetOpt(

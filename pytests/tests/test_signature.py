@@ -91,3 +91,19 @@ def test_install_remote_key(utils):
     assert(ret['retval']  == 0)
     assert(utils.check_package(pkgname))
 
+# import remote key with url containing a directory traversal, expect fail
+def test_install_remote_key_no_traversal(utils):
+    set_gpgcheck(utils, True)
+    set_repo_key(utils, 'http://localhost:8080/../photon-test/keys/pubkey.asc')
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run([ 'tdnf', 'install', '-y', pkgname])
+    assert(ret['retval'] != 0)
+
+# import remote key with url containing a directory traversal, expect fail
+def test_install_remote_key_no_traversal2(utils):
+    set_gpgcheck(utils, True)
+    set_repo_key(utils, 'http://localhost:8080/photon-test/keys/../../../pubkey.asc')
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run([ 'tdnf', 'install', '-y', pkgname])
+    assert(ret['retval']  != 0)
+
