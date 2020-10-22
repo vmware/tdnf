@@ -657,30 +657,6 @@ error:
     goto cleanup;
 }
 
-uint32_t
-TDNFMakeCache(
-    PTDNF pTdnf
-    )
-{
-    uint32_t dwError = 0;
-
-    if(!pTdnf)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    //Pass in clean metadata as 1
-    dwError = TDNFRefreshSack(pTdnf, NULL, 1);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
 //initialize tdnf and return an opaque handle
 //to be used in subsequent calls.
 uint32_t

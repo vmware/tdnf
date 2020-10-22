@@ -58,7 +58,7 @@ def test_list_upgrades(utils):
     if ret['retval'] == 1011 or ret['retval'] == 0:
         result = True
     else:
-        result = Flase
+        result = False
     assert(result)
 
     utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', mpkg + '-' + mpkg_version ])

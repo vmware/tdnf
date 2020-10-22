@@ -390,7 +390,7 @@ TDNFFreeRepos(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszUrlGPGKey);
+        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
 
         pRepos = pRepo->pNext;
         TDNF_SAFE_FREE_MEMORY(pRepo);
@@ -447,7 +447,8 @@ error:
     return dwError;
 }
 
-uint32_t TDNFUriIsRemote(
+uint32_t
+TDNFUriIsRemote(
     const char* pszKeyUrl,
     int *pnRemote
 )
@@ -495,8 +496,8 @@ uint32_t TDNFPathFromUri(
 
     if(IsNullOrEmptyString(pszKeyUrl) || !ppszPath)
     {
-      dwError = ERROR_TDNF_INVALID_PARAMETER;
-      BAIL_ON_TDNF_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     for(i = 0; szProtocols[i]; i++) {
@@ -546,6 +547,145 @@ error:
     if(ppszPath)
     {
         *ppszPath = NULL;
+    }
+    goto cleanup;
+}
+
+
+uint32_t
+TDNFNormalizePath(
+    const char* pszPath,
+    char** ppszNormalPath)
+{
+    uint32_t dwError = 0;
+    char* pszNormalPath = NULL;
+    char* pszRealPath = NULL;
+    const char* p = pszPath;
+    char* q;
+
+    if (IsNullOrEmptyString(pszPath) || !ppszNormalPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* ensure an absolute path */
+    if (pszPath[0] != '/')
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(1, strlen(pszPath) + 1, (void **)&pszNormalPath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    q = pszNormalPath;
+
+    while(*p)
+    {
+        /* double slashes */
+        if (*p == '/' && p[1] == '/')
+        {
+            p++;
+            continue;
+        }
+        /* single dots */
+        if (*p == '/' && p[1] == '.' &&
+            (p[2] == '/' || p[2] == 0))
+        {
+            p += 2;
+            continue;
+        }
+        /* double dots */
+        if (*p == '/' && p[1] == '.' && p[2] == '.' &&
+            (p[3] == '/' || p[3] == 0))
+        {
+            /* breaking out */
+            if (q == pszNormalPath)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            p += 3;
+            /* erase last directory */
+            while (q > pszNormalPath && *q != '/')
+            {
+                q--;
+            }
+            continue;
+        }
+        if (*p == '/')
+        {
+            *q = 0;
+            /* use realpath() to resolve symlinks */
+            pszRealPath = realpath(pszNormalPath, NULL);
+            if (pszRealPath != NULL)
+            {
+                /* if real path is different, copy it, making
+                 * sure we still have enough space, and reposition dest pointer */
+                if (strcmp(pszRealPath, pszNormalPath))
+                {
+                    int rlen = strlen(pszRealPath);
+                    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+
+                    dwError = TDNFAllocateMemory(1, rlen + strlen(p) + 1,
+                                                 (void **)&pszNormalPath);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    strcpy(pszNormalPath, pszRealPath);
+                    q = pszNormalPath + rlen;
+                }
+                TDNF_SAFE_FREE_MEMORY(pszRealPath);
+            }
+            /* it's okay if path doesn't exist, bail on other errors */
+            else if (errno != ENOENT)
+            {
+                dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            /* skip over last slash in path */
+            if (p[1] == 0)
+            {
+                p++;
+                continue;
+            }
+        }
+        *q++ = *p++;
+    }
+    *q = 0;
+
+    /* an empty path should evaluate to a slash
+     * like realpath() does */
+    if (pszNormalPath[0] == 0)
+    {
+        TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+        pszNormalPath = strdup("/");
+    }
+
+    /* check real path for leaf node, which wasn't checked above */
+    pszRealPath = realpath(pszNormalPath, NULL);
+    if (pszRealPath != NULL)
+    {
+        TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+        pszNormalPath = pszRealPath;
+    }
+    else if (errno != ENOENT)
+    {
+        dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppszNormalPath = pszNormalPath;
+
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+    TDNF_SAFE_FREE_MEMORY(pszRealPath);
+    if(ppszNormalPath)
+    {
+        *ppszNormalPath = NULL;
     }
     goto cleanup;
 }

@@ -482,7 +482,10 @@ TDNFFetchRemoteGPGKey(
 {
     uint32_t dwError = 0;
     char* pszFilePath = NULL;
+    char* pszNormalPath = NULL;
     char* pszFilePathCopy = NULL;
+    char* pszTopKeyCacheDir = NULL;
+    char* pszRealTopKeyCacheDir = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszKeyLocation = NULL;
 
@@ -500,16 +503,37 @@ TDNFFetchRemoteGPGKey(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateStringPrintf(
-                  &pszFilePath,
-                  "%s/%s/keys/%s",
+                  &pszTopKeyCacheDir,
+                  "%s/%s/keys",
                   pTdnf->pConf->pszCacheDir,
-                  pszRepoName,
+                  pszRepoName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFNormalizePath(pszTopKeyCacheDir,
+                                &pszRealTopKeyCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszFilePath,
+                  "%s/%s",
+                  pszRealTopKeyCacheDir,
                   pszKeyLocation);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFNormalizePath(
+                  pszFilePath,
+                  &pszNormalPath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (strncmp(pszRealTopKeyCacheDir, pszNormalPath, strlen(pszRealTopKeyCacheDir)))
+    {
+        dwError = ERROR_TDNF_KEYURL_INVALID;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     // dirname() may modify the contents of path, so it may be desirable to
     // pass a copy when calling this function.
-    dwError = TDNFAllocateString(pszFilePath, &pszFilePathCopy);
+    dwError = TDNFAllocateString(pszNormalPath, &pszFilePathCopy);
     BAIL_ON_TDNF_ERROR(dwError);
     pszDownloadCacheDir = dirname(pszFilePathCopy);
     if(!pszDownloadCacheDir)
@@ -534,16 +558,19 @@ TDNFFetchRemoteGPGKey(
                                NULL, 0, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    *ppszKeyLocation = pszFilePath;
+    *ppszKeyLocation = pszNormalPath;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszRealTopKeyCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszTopKeyCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_MEMORY(pszKeyLocation);
     return dwError;
 
 error:
     fprintf(stderr, "Error processing key: %s\n", pszUrlGPGKey);
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
     *ppszKeyLocation = NULL;
     goto cleanup;
 }
@@ -567,12 +594,14 @@ TDNFTransAddInstallPkg(
     Header rpmHeader = NULL;
     FD_t fp = NULL;
     char* pszDownloadCacheDir = NULL;
-    char* pszUrlGPGKey = NULL;
+    char** ppszUrlGPGKeys = NULL;
     char* pszLocalGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
     rpmKeyring pKeyring = NULL;
     int nAnswer = 0;
     int nRemote = 0;
+    int i;
+    int nMatched = 0;
 
     dwError = TDNFAllocateStringPrintf(
                   &pszRpmCacheDir,
@@ -656,56 +685,71 @@ TDNFTransAddInstallPkg(
     }
     else if(nGPGSigCheck)
     {
-        dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &pszUrlGPGKey);
+        dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &ppszUrlGPGKeys);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        printf("importing key from %s\n", pszUrlGPGKey);
-        dwError = TDNFYesOrNo(pTdnf->pArgs, "Is this ok [y/N]: ", &nAnswer);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        if(!nAnswer)
-        {
-            dwError = ERROR_TDNF_OPERATION_ABORTED;
+        for (i = 0; ppszUrlGPGKeys[i]; i++) {
+            printf("importing key from %s\n", ppszUrlGPGKeys[i]);
+            dwError = TDNFYesOrNo(pTdnf->pArgs, "Is this ok [y/N]: ", &nAnswer);
             BAIL_ON_TDNF_ERROR(dwError);
-        }
 
-        dwError = TDNFUriIsRemote(pszUrlGPGKey, &nRemote);
-        if (dwError == ERROR_TDNF_URL_INVALID)
-        {
-            dwError = ERROR_TDNF_KEYURL_INVALID;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
+            if(!nAnswer)
+            {
+                dwError = ERROR_TDNF_OPERATION_ABORTED;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
 
-        if (nRemote)
-        {
-            dwError = TDNFFetchRemoteGPGKey(pTdnf, pszRepoName, pszUrlGPGKey, &pszLocalGPGKey);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        else
-        {
-            dwError = TDNFPathFromUri(pszUrlGPGKey, &pszLocalGPGKey);
+            dwError = TDNFUriIsRemote(ppszUrlGPGKeys[i], &nRemote);
             if (dwError == ERROR_TDNF_URL_INVALID)
             {
                 dwError = ERROR_TDNF_KEYURL_INVALID;
             }
             BAIL_ON_TDNF_ERROR(dwError);
+
+            if (nRemote)
+            {
+                dwError = TDNFFetchRemoteGPGKey(pTdnf, pszRepoName, ppszUrlGPGKeys[i], &pszLocalGPGKey);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                dwError = TDNFPathFromUri(ppszUrlGPGKeys[i], &pszLocalGPGKey);
+                if (dwError == ERROR_TDNF_URL_INVALID)
+                {
+                    dwError = ERROR_TDNF_KEYURL_INVALID;
+                }
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFImportGPGKey(pTS->pTS, pszLocalGPGKey);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
+            dwError = TDNFGPGCheck(pKeyring, pszLocalGPGKey, pszFilePath);
+            if (dwError == 0)
+            {
+                nMatched++;
+            }
+	    else if (dwError == ERROR_TDNF_RPM_GPG_NO_MATCH)
+            {
+                dwError = 0;
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if (nRemote)
+            {
+                if (unlink(pszLocalGPGKey))
+                {
+                    dwError = errno;
+                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                }
+            }
         }
 
-        pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
-
-        dwError = TDNFImportGPGKey(pTS->pTS, pszLocalGPGKey);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFGPGCheck(pKeyring, pszLocalGPGKey, pszFilePath);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        if (nRemote)
+        if (nMatched == 0)
         {
-            if (unlink(pszLocalGPGKey))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
+            dwError = ERROR_TDNF_RPM_GPG_NO_MATCH;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
 
         fp = Fopen (pszFilePath, "r.ufdio");
@@ -755,12 +799,8 @@ TDNFTransAddInstallPkg(
         pTS->pCachedRpmsArray->pHead = pRpmCache;
     }
 cleanup:
-    if(pKeyring)
-    {
-        rpmKeyringFree(pKeyring);
-    }
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
-    TDNF_SAFE_FREE_MEMORY(pszUrlGPGKey);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszUrlGPGKeys);
     TDNF_SAFE_FREE_MEMORY(pszLocalGPGKey);
     TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
     if(fp)

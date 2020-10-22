@@ -237,6 +237,47 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFAllocateStringArray(
+    char** ppszSrc,
+    char*** pppszDst
+    )
+{
+    uint32_t dwError = 0;
+    char** ppszDst;
+    int i, n = 0;
+
+    if(!ppszSrc || !pppszDst)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (i = 0; ppszSrc[i]; i++) {
+        n++;
+    }
+    dwError = TDNFAllocateMemory(n + 1, sizeof(char *), (void **)&ppszDst);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; i < n; i++) {
+        dwError = TDNFSafeAllocateString(
+                      ppszSrc[i],
+                      &ppszDst[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    *pppszDst = ppszDst;
+
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszDst);
+    if(pppszDst) {
+        *pppszDst = NULL;
+    }
+    goto cleanup;
+}
+
 void
 TDNFFreeStringArray(
     char** ppszArray

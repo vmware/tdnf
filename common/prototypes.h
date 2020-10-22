@@ -75,6 +75,12 @@ TDNFAllocateStringPrintf(
     );
 
 uint32_t
+TDNFAllocateStringArray(
+    char** ppszSrc,
+    char*** pppszDst
+    );
+
+uint32_t
 TDNFAllocateStringN(
     const char* pszSrc,
     uint32_t dwNumElements,
@@ -214,6 +220,11 @@ TDNFYesOrNo(
     const char *pszQuestion,
     int *pAnswer
     );
+
+uint32_t
+TDNFNormalizePath(
+    const char* pszPath,
+    char** ppszNormalPath);
 
 //setopt.c
 uint32_t

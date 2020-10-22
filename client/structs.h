@@ -46,6 +46,7 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     char* pszSSLCaCert;
     char* pszSSLClientCert;
     char* pszSSLClientKey;
+    char** ppszUrlGPGKeys;
     char* pszUser;
     char* pszPass;
 

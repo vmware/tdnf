@@ -510,7 +510,7 @@ TDNFGetGPGSignatureCheck(
     PTDNF pTdnf,
     const char* pszRepo,
     int* pnGPGSigCheck,
-    char** ppszUrlGPGKey
+    char*** ppszUrlGPGKeys
     );
 
 uint32_t

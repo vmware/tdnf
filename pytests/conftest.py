@@ -20,24 +20,61 @@ import configparser
 import distutils.spawn
 from pprint import pprint
 from urllib.parse import urlparse
-from OpenSSL.crypto import load_certificate, FILETYPE_PEM
+from OpenSSL import crypto, SSL
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import socketserver
 import threading
+import ssl
 
 class TestRepoServer(threading.Thread):
 
-    def __init__(self, root, port=8080, interface=""):
+    def __init__(self, root, port=8080, interface="", enable_https=False):
         super().__init__()
         self.daemon = True
         self.port = port
         self.root = root
         self.addr = (interface, port)
+        self.enable_https = enable_https
+
+    def make_cert(self):
+        if os.path.exists("cert.pem") and os.path.exists("key.pem"):
+            self.keyfile = os.path.join(os.getcwd(), 'key.pem')
+            self.certfile = os.path.join(os.getcwd(), 'cert.pem')
+            return
+        k = crypto.PKey()
+        k.generate_key(crypto.TYPE_RSA, 2048)
+        cert = crypto.X509()
+        cert.get_subject().C = "IN"
+        cert.get_subject().ST = "Karnataka"
+        cert.get_subject().L = "Bangalore"
+        cert.get_subject().O = "VMware"
+        cert.get_subject().OU = "Photon OS"
+        cert.get_subject().CN = "pytest.tdnf.vmware.github.io"
+        cert.get_subject().emailAddress = "tdnf-devel@vmware.com"
+        cert.set_serial_number(0)
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(365*24*60*60)
+        cert.set_issuer(cert.get_subject())
+        cert.set_pubkey(k)
+        cert.sign(k, "sha512")
+        with open("cert.pem", "wt") as f:
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
+        with open("key.pem", "wt") as f:
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
+        self.keyfile = os.path.join(os.getcwd(), 'key.pem')
+        self.certfile = os.path.join(os.getcwd(), 'cert.pem')
 
     def run(self):
+        if self.enable_https:
+            self.make_cert()
         os.chdir(self.root)
         try:
             self.httpd = HTTPServer(self.addr, SimpleHTTPRequestHandler)
+            if self.enable_https:
+                self.httpd.socket = ssl.wrap_socket(self.httpd.socket,
+                                                    keyfile = self.keyfile,
+                                                    certfile = self.certfile,
+                                                    server_side = True)
             self.httpd.serve_forever()
         finally:
             self.httpd.server_close()
@@ -183,10 +220,10 @@ class TestUtils(object):
         return True, None
 
     def _decorate_tdnf_cmd_for_test(self, cmd):
-        if cmd[0] is 'tdnf':
+        if cmd[0] == 'tdnf':
             if 'build_dir' in self.config:
                 cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
-            if cmd[1] is not '--config':
+            if cmd[1] != '--config':
                 cmd.insert(1, '-c')
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
 
@@ -209,6 +246,7 @@ class TestUtils(object):
 
     def _run(self, cmd, retvalonly=False):
         use_shell = not isinstance(cmd, list)
+        print(cmd)
         process = subprocess.Popen(cmd, shell=use_shell, #nosec
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
