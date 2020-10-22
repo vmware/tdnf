@@ -54,6 +54,8 @@ typedef struct _TDNF_
     PTDNF_CMD_ARGS pArgs;
     PTDNF_CONF pConf;
     PTDNF_REPO_DATA_INTERNAL pRepos;
+    Repo *pSolvCmdLineRepo;
+    Queue queueCmdLinePkgs;
     PTDNF_PLUGIN pPlugins;
 }TDNF;
 

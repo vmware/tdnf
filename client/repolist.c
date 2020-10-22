@@ -46,6 +46,9 @@ TDNFLoadRepoData(
     }
     pConf = pTdnf->pConf;
 
+    dwError = TDNFCreateCmdLineRepo(&pReposAll);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pDir = opendir(pConf->pszRepoDir);
     if(pDir == NULL)
     {
@@ -118,6 +121,47 @@ error:
     if(pReposAll)
     {
         TDNFFreeReposInternal(pReposAll);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFCreateCmdLineRepo(
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    )
+{
+    uint32_t dwError;
+    PTDNF_REPO_DATA_INTERNAL pRepo;
+
+    if(!ppRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_REPO_DATA_INTERNAL),
+                  (void**)&pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString("@cmdline", &pRepo->pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString("@cmdline", &pRepo->pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppRepo = pRepo;
+cleanup:
+    return dwError;
+error:
+    if(ppRepo)
+    {
+        *ppRepo = NULL;
+    }
+    if(pRepo)
+    {
+        TDNFFreeReposInternal(pRepo);
     }
     goto cleanup;
 }

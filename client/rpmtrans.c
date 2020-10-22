@@ -588,12 +588,9 @@ TDNFTransAddInstallPkg(
     uint32_t dwError = 0;
     int nGPGCheck = 0;
     int nGPGSigCheck = 0;
-    char* pszRpmCacheDir = NULL;
     char* pszFilePath = NULL;
-    char* pszFilePathCopy = NULL;
     Header rpmHeader = NULL;
     FD_t fp = NULL;
-    char* pszDownloadCacheDir = NULL;
     char** ppszUrlGPGKeys = NULL;
     char* pszLocalGPGKey = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
@@ -603,55 +600,26 @@ TDNFTransAddInstallPkg(
     int i;
     int nMatched = 0;
 
-    dwError = TDNFAllocateStringPrintf(
-                  &pszRpmCacheDir,
-                  "%s/%s/%s",
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoName,
-                  "rpms");
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFAllocateStringPrintf(
-                  &pszFilePath,
-                  "%s/%s",
-                  pszRpmCacheDir,
-                  pszPackageLocation);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    // dirname() may modify the contents of path, so it may be desirable to
-    // pass a copy when calling this function.
-    dwError = TDNFAllocateString(pszFilePath, &pszFilePathCopy);
-    BAIL_ON_TDNF_ERROR(dwError);
-    pszDownloadCacheDir = dirname(pszFilePathCopy);
-    if(!pszDownloadCacheDir)
+    if (pszPackageLocation[0] == '/')
     {
-        dwError = ENOENT;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        dwError = TDNFAllocateString(
+                      pszPackageLocation,
+                      &pszFilePath
+                  );
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    if(access(pszDownloadCacheDir, F_OK))
+    else
     {
-        if(errno != ENOENT)
-        {
-            dwError = errno;
-        }
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-
-        dwError = TDNFUtilsMakeDirs(pszDownloadCacheDir);
+        dwError = TDNFDownloadPackageToCache(
+                      pTdnf,
+                      pszPackageLocation,
+                      pszPkgName,
+                      pszRepoName,
+                      &pszFilePath
+        );
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(access(pszFilePath, F_OK))
-    {
-        if(errno != ENOENT)
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-        dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
-            pszRepoName, pszDownloadCacheDir);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
     //A download could have been triggered.
     //So check access and bail if not available
     if(access(pszFilePath, F_OK))
@@ -787,7 +755,10 @@ TDNFTransAddInstallPkg(
                   NULL);
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 
-    if(pTS->pCachedRpmsArray)
+    /* add to cached array only when file is actully in cache dir */
+    if(pTS->pCachedRpmsArray &&
+        !strncmp(pszFilePath, pTdnf->pConf->pszCacheDir,
+            strlen(pTdnf->pConf->pszCacheDir)))
     {
         dwError = TDNFAllocateMemory(
                       1,
@@ -799,10 +770,8 @@ TDNFTransAddInstallPkg(
         pTS->pCachedRpmsArray->pHead = pRpmCache;
     }
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
     TDNF_SAFE_FREE_STRINGARRAY(ppszUrlGPGKeys);
     TDNF_SAFE_FREE_MEMORY(pszLocalGPGKey);
-    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
     if(fp)
     {
         Fclose(fp);

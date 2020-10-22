@@ -244,7 +244,7 @@ TDNFAllocateStringArray(
     )
 {
     uint32_t dwError = 0;
-    char** ppszDst;
+    char** ppszDst = NULL;
     int i, n = 0;
 
     if(!ppszSrc || !pppszDst)

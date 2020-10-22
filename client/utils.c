@@ -220,6 +220,51 @@ error:
 }
 
 uint32_t
+TDNFIsFileOrSymlink(
+    const char* pszPath,
+    int* pnPathIsFile
+    )
+{
+    uint32_t dwError = 0;
+    int nPathIsFile = 0;
+    struct stat stStat = {0};
+
+    if(!pnPathIsFile || IsNullOrEmptyString(pszPath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(stat(pszPath, &stStat))
+    {
+        if (errno == ENOENT)
+	{
+            nPathIsFile = 0;
+        }
+        else
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+    }
+    else
+    {
+        nPathIsFile = S_ISREG(stStat.st_mode) | S_ISLNK(stStat.st_mode);
+    }
+
+    *pnPathIsFile = nPathIsFile;
+cleanup:
+    return dwError;
+
+error:
+    if(pnPathIsFile)
+    {
+        *pnPathIsFile = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFIsDir(
     const char* pszPath,
     int* pnPathIsDir

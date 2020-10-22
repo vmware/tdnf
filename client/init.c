@@ -205,10 +205,14 @@ TDNFRefreshSack(
         pTdnf->pArgs->nRefresh = 1;
     }
 
-    //If there is an empty repo directory, do nothing
-    if(pTdnf->pRepos)
+    dwError = TDNFInitCmdLineRepo(pTdnf, pSack);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* First repo is the "@cmdline" repo, which always exists.
+     * skip over it - options do not apply, and it is initialized. */
+    if(pTdnf->pRepos->pNext)
     {
-        PTDNF_REPO_DATA_INTERNAL pTempRepo = pTdnf->pRepos;
+        PTDNF_REPO_DATA_INTERNAL pTempRepo = pTdnf->pRepos->pNext;
         while(pTempRepo)
         {
             nMetadataExpired = 0;

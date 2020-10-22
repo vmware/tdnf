@@ -35,7 +35,7 @@ TDNFInitRepo(
     PTDNF_REPO_METADATA pRepoMD = NULL;
     PTDNF_CONF pConf = NULL;
     Repo* pRepo = NULL;
-    Pool* pPool = NULL;;
+    Pool* pPool = NULL;
     int nUseMetaDataCache = 0;
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo = NULL;
 
@@ -141,6 +141,7 @@ error:
     }
     goto cleanup;
 }
+
 uint32_t
 TDNFInitRepoFromMetadata(
     Repo *pRepo,
@@ -168,6 +169,56 @@ cleanup:
 error:
     goto cleanup;
     return dwError;
+}
+
+uint32_t
+TDNFInitCmdLineRepo(
+    PTDNF pTdnf,
+    PSolvSack pSack
+    )
+{
+    uint32_t dwError = 0;
+    Repo* pRepo = NULL;
+    Pool* pPool = NULL;
+    PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo = NULL;
+
+    if(!pTdnf || !pTdnf->pConf || !pSack || !pSack->pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pPool = pSack->pPool;
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(SOLV_REPO_INFO_INTERNAL),
+                  (void**)&pSolvRepoInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pRepo = repo_create(pPool, "@cmdline");
+
+    if (!pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pSolvRepoInfo->pRepo = pRepo;
+    pRepo->appdata = pSolvRepoInfo;
+
+    pTdnf->pSolvCmdLineRepo = pRepo;
+
+    pool_createwhatprovides(pPool);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pSolvRepoInfo);
+    return dwError;
+error:
+    if(pRepo)
+    {
+        repo_free(pRepo, 1);
+    }
+    goto cleanup;
 }
 
 uint32_t

@@ -221,6 +221,15 @@ TDNFDownloadPackage(
     const char* pszRpmCacheDir
     );
 
+uint32_t
+TDNFDownloadPackageToCache(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    char** ppszFilePath
+    );
+
 //packageutils.c
 uint32_t
 TDNFMatchForReinstall(
@@ -492,6 +501,12 @@ TDNFInitRepo(
     );
 
 uint32_t
+TDNFInitCmdLineRepo(
+    PTDNF pTdnf,
+    PSolvSack pSack
+    );
+
+uint32_t
 TDNFGetGPGCheck(
     PTDNF pTdnf,
     const char* pszRepo,
@@ -587,6 +602,11 @@ TDNFLoadReposFromFile(
     PTDNF pTdnf,
     char* pszRepoFile,
     PTDNF_REPO_DATA_INTERNAL* ppRepos
+    );
+
+uint32_t
+TDNFCreateCmdLineRepo(
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
     );
 
 uint32_t
@@ -823,6 +843,12 @@ TDNFIsCurlError(
 uint32_t
 TDNFGetSystemError(
     uint32_t dwError
+    );
+
+uint32_t
+TDNFIsFileOrSymlink(
+    const char* pszPath,
+    int* pnPathIsFile
     );
 
 uint32_t

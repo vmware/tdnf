@@ -6,6 +6,7 @@
     "build_dir": "@CMAKE_BINARY_DIR@",
     "plugin_path": "@CMAKE_BINARY_DIR@/plugins/lib",
     "sglversion_pkgname": "tdnf-test-one",
+    "sglversion2_pkgname": "tdnf-test-two",
     "mulversion_pkgname": "tdnf-test-multiversion",
     "mulversion_lower": "1.0.1-1",
     "dummy_requires_pkgname": "tdnf-test-dummy-requires",

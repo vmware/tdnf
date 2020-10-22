@@ -31,7 +31,6 @@ TDNFInit(
     uint32_t dwError = 0;
     int nLocked = 0;
 
-
     pthread_mutex_lock (&gEnv.mutexInitialize);
     nLocked = 1;
     if(!gEnv.nInitialized)
@@ -712,6 +711,12 @@ TDNFOpenHandle(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pSack = pSack;
+    pSack = NULL;
+    dwError = TDNFAddCmdLinePackages(
+                  pTdnf
+                  );
+    BAIL_ON_TDNF_ERROR(dwError);
+
     *ppTdnf = pTdnf;
 
 cleanup:
@@ -730,6 +735,103 @@ error:
     {
         SolvFreeSack(pSack);
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFAddCmdLinePackages(
+    PTDNF pTdnf
+)
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_ARGS pCmdArgs = NULL;
+    PSolvSack pSack;
+    int nIsFile;
+    int nIsRemote;
+    int nCmdIndex;
+    char *pszPkgName;
+    char *pszCopyOfPkgName = NULL;
+    char* pszRPMPath = NULL;
+    Id id;
+
+    if(!pTdnf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    queue_init(&pTdnf->queueCmdLinePkgs);
+
+    pCmdArgs = pTdnf->pArgs;
+    pSack = pTdnf->pSack;
+
+    for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+    {
+        pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
+
+        dwError = TDNFIsFileOrSymlink(pszPkgName, &nIsFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (nIsFile)
+        {
+            pszRPMPath = realpath(pszPkgName, NULL);
+            if (pszRPMPath == NULL)
+            {
+                dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        else
+        {
+             dwError = TDNFUriIsRemote(pszPkgName, &nIsRemote);
+             if (dwError == ERROR_TDNF_URL_INVALID)
+             {
+                 /* not a URL => normal pkg name, nothing to do here */
+                 dwError = 0;
+                 continue;
+             }
+             BAIL_ON_TDNF_ERROR(dwError);
+             if (!nIsRemote)
+             {
+                 dwError = TDNFPathFromUri(pszPkgName, &pszRPMPath);
+                 BAIL_ON_TDNF_ERROR(dwError);
+             }
+             else
+             {
+                 dwError = TDNFAllocateString(pszPkgName,
+                                              &pszCopyOfPkgName);
+                 BAIL_ON_TDNF_ERROR(dwError);
+
+                 dwError = TDNFDownloadPackageToCache(
+                               pTdnf,
+                               pszPkgName,
+                               basename(pszCopyOfPkgName),
+                               "@cmdline",
+                               &pszRPMPath
+                           );
+                 BAIL_ON_TDNF_ERROR(dwError);
+
+                 TDNF_SAFE_FREE_MEMORY(pszCopyOfPkgName);
+             }
+        }
+        id = repo_add_rpm(pTdnf->pSolvCmdLineRepo, pszRPMPath,
+            REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE|RPM_ADD_WITH_HDRID|RPM_ADD_WITH_SHA256SUM);
+        if (!id)
+        {
+            /* TODO: get more detailed error */
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        queue_push(&pTdnf->queueCmdLinePkgs, id);
+    }
+    pool_createwhatprovides(pSack->pPool);
+    repo_internalize(pTdnf->pSolvCmdLineRepo);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRPMPath);
+    return dwError;
+
+error:
     goto cleanup;
 }
 
@@ -889,7 +991,14 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    queue_init(&queueGoal);
+    if(nAlterType == ALTER_INSTALL)
+    {
+        queue_init_clone(&queueGoal, &pTdnf->queueCmdLinePkgs);
+    }
+    else
+    {
+        queue_init(&queueGoal);
+    }
 
     if(nAlterType == ALTER_AUTOERASE)
     {
