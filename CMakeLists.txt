@@ -9,7 +9,8 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(tdnf VERSION 2.1.2 LANGUAGES C)
+project(tdnf VERSION 3.0.0 LANGUAGES C)
+set(VERSION ${PROJECT_VERSION}-beta)
 set(PROJECT_YEAR 2019)
 
 # Ensure correct directory paths are used for installation
