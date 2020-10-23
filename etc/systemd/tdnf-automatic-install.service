@@ -1,0 +1,11 @@
+[Unit]
+Description=tdnf automatic install updates
+ConditionPathExists=!/run/ostree-booted
+After=network-online.target
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=2
+IOSchedulingPriority=7
+ExecStart=/usr/bin/tdnf-automatic -c /etc/tdnf/automatic.conf --timer --install

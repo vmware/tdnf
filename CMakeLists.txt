@@ -29,6 +29,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Ensure that we don't accidentally install into /usr/etc
 set(CMAKE_INSTALL_FULL_SYSCONDIR "/etc")
+set(SYSCONFDIR /etc)
+
+set(MOTGEN_DIR /etc/motdgen.d)
+set(SYSTEMD_DIR /lib/systemd/system)
 
 ##
 ## C Flags
@@ -67,7 +71,11 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/common")
 add_subdirectory("${PROJECT_SOURCE_DIR}/client")
 add_subdirectory("${PROJECT_SOURCE_DIR}/plugins")
 add_subdirectory("${PROJECT_SOURCE_DIR}/python")
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources")
+add_subdirectory("${PROJECT_SOURCE_DIR}/etc")
+add_subdirectory("${PROJECT_SOURCE_DIR}/bin")
 add_subdirectory("${PROJECT_SOURCE_DIR}/solv")
 add_subdirectory("${PROJECT_SOURCE_DIR}/tools")
 add_subdirectory("${PROJECT_SOURCE_DIR}/pytests")
+
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/bin/tdnf-automatic.in ${PROJECT_SOURCE_DIR}/bin/tdnf-automatic @ONLY)
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/bin/tdnf-cache-updateinfo.in ${PROJECT_SOURCE_DIR}/bin/tdnf-cache-updateinfo @ONLY)
