@@ -109,6 +109,7 @@ extern "C" {
 #define ERROR_TDNF_ADD_SOLV            (ERROR_TDNF_SOLV_BASE + 15)
 //Repo errors 1400 to 1469
 #define ERROR_TDNF_REPO_BASE                 1400
+#define ERROR_TDNF_SET_SSL_SETTINGS          1401
 
 //RPM Errors 1470 to 1599
 #define ERROR_TDNF_RPM_BASE                  1470

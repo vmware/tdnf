@@ -682,3 +682,101 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFRepoApplySSLSettings(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    CURL *pCurl
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+
+    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pCurl)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(!pTdnf->pRepos)
+    {
+        dwError = ERROR_TDNF_NO_REPOS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pRepos = pTdnf->pRepos;
+
+    while(pRepos)
+    {
+        if(!strcmp(pszRepo, pRepos->pszId))
+        {
+            break;
+        }
+        pRepos = pRepos->pNext;
+    }
+
+    if(!pRepos)
+    {
+        dwError = ERROR_TDNF_REPO_NOT_FOUND;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(curl_easy_setopt(
+            pCurl,
+            CURLOPT_SSL_VERIFYPEER,
+            ((pRepos->nSSLVerify) ? 1 : 0)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(curl_easy_setopt(
+            pCurl,
+            CURLOPT_SSL_VERIFYHOST,
+            ((pRepos->nSSLVerify) ? 2 : 0)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+
+    if(!IsNullOrEmptyString(pRepos->pszSSLCaCert))
+    {
+        if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_CAINFO,
+                pRepos->pszSSLCaCert) != CURLE_OK)
+        {
+            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(!IsNullOrEmptyString(pRepos->pszSSLClientCert))
+    {
+        if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_SSLCERT,
+                pRepos->pszSSLClientCert) != CURLE_OK)
+        {
+            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(!IsNullOrEmptyString(pRepos->pszSSLClientKey))
+    {
+        if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_SSLKEY,
+                pRepos->pszSSLClientKey) != CURLE_OK)
+        {
+            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}

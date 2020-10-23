@@ -767,6 +767,9 @@ TDNFDownloadFile(
     dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFRepoApplySSLSettings(pTdnf, pszRepo, pCurl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = curl_easy_setopt(pCurl, CURLOPT_URL, pszFileUrl);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 

@@ -36,11 +36,15 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     int nEnabled;
     int nSkipIfUnavailable;
     int nGPGCheck;
+    int nSSLVerify;
     long lMetadataExpire;
     char* pszId;
     char* pszName;
     char* pszBaseUrl;
     char* pszMetaLink;
+    char* pszSSLCaCert;
+    char* pszSSLClientCert;
+    char* pszSSLClientKey;
     char** ppszUrlGPGKeys;
     char* pszUser;
     char* pszPass;
