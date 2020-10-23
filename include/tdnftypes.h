@@ -274,7 +274,6 @@ typedef struct _TDNF_REPO_DATA
     char* pszName;
     char* pszBaseUrl;
     char* pszMetaLink;
-    char* pszUrlGPGKey;
     char* pszSSLCaCert;
     char* pszSSLClientCert;
     char* pszSSLClientKey;
