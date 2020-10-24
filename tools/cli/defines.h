@@ -25,7 +25,7 @@
  * creating this under /var/run because /var/run/lock doesn't exist
  * in fedora docker images and as a result ci fails
  */
-#define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instace-lockfile"
+#define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"
 
 #define BAIL_ON_CLI_ERROR(unError) \
     do {                                                           \
