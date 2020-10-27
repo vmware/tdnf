@@ -1,6 +1,6 @@
 {
     "project_name": "@PROJECT_NAME@",
-    "project_version": "@PROJECT_VERSION@",
+    "project_version": "@VERSION@",
     "repo_path": "@CMAKE_CURRENT_BINARY_DIR@/repo",
     "test_path": "@CMAKE_SOURCE_DIR@/pytests",
     "build_dir": "@CMAKE_BINARY_DIR@",
