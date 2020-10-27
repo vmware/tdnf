@@ -529,7 +529,14 @@ TDNFStoreBaseURLFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for ( ; strcmp(pszRepo, pRepos->pszId) != 0; pRepos = pRepos->pNext);
+    while(pRepos)
+    {
+        if(!strcmp(pszRepo, pRepos->pszId))
+        {
+            break;
+        }
+        pRepos = pRepos->pNext;
+    }
 
     if (!pRepos)
     {
@@ -629,7 +636,7 @@ TDNFFreeMetalinkUrlsList(
     TDNF_METALINK_URLS *metalink_urls_temp = NULL;
     TDNF_METALINK_URLS *metalink_urls_temp_next = NULL;
 
-    if (!metalink_urls)
+    if (metalink_urls)
     {
         metalink_urls_temp = metalink_urls;
         while (metalink_urls_temp)

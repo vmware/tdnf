@@ -119,6 +119,7 @@ TDNFCliParseMode(
 {
     uint32_t dwError = 0;
     int nIndex = 0;
+    int nCount = 0;
     TDNF_UPDATEINFO_OUTPUT nMode = OUTPUT_SUMMARY;
     struct stTemp
     {
@@ -138,7 +139,7 @@ TDNFCliParseMode(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    int nCount = ARRAY_SIZE(stModes);
+    nCount = ARRAY_SIZE(stModes);
     for(nIndex = 0; nIndex < nCount; ++nIndex)
     {
         if(!strcasecmp(stModes[nIndex].pszModeName, pszMode))
