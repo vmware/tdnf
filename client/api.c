@@ -540,12 +540,13 @@ TDNFInfo(
                   DETAIL_INFO,
                   &pPkgInfo,
                   &dwCount);
-    BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
+    if (dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
     {
         dwError = 0;
     }
+
+    BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
     *pdwCount = dwCount;
@@ -620,12 +621,13 @@ TDNFList(
                   DETAIL_LIST,
                   &pPkgInfo,
                   &dwCount);
-    BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
+    if (dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
     {
         dwError = 0;
     }
+
+    BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
     *pdwCount = dwCount;
