@@ -131,7 +131,7 @@ TDNFCreateCmdLineRepo(
     )
 {
     uint32_t dwError;
-    PTDNF_REPO_DATA_INTERNAL pRepo;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
 
     if(!ppRepo)
     {
