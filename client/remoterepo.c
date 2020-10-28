@@ -546,14 +546,13 @@ TDNFAllocateResourceURL(
     )
 {
     uint32_t dwError = 0;
+    TDNF_METALINK_URLS *new_metalink_url = NULL;
 
     if (IsNullOrEmptyString(url) || !metalink_url)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    TDNF_METALINK_URLS *new_metalink_url = NULL;
 
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_METALINK_URLS), (void **)&new_metalink_url);
     BAIL_ON_TDNF_ERROR(dwError);
