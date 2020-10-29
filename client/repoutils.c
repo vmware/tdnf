@@ -385,6 +385,9 @@ TDNFRemoveRpmCache(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
+        closedir(pDir);
+        pDir = NULL;
+
         if(rmdir(pszRpmCacheArchDir))
         {
             dwError = errno;
@@ -438,6 +441,9 @@ TDNFRemoveRpmCache(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
+        closedir(pDir);
+        pDir = NULL;
+
         if(rmdir(pszRpmCacheNoarchDir))
         {
             dwError = errno;
@@ -517,6 +523,9 @@ TDNFRemoveTmpRepodata(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 cleanup:
+    if (pDir) {
+        closedir(pDir);
+    }
     return dwError;
 error:
     goto cleanup;

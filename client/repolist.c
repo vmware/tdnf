@@ -563,6 +563,7 @@ TDNFCloneRepo(
         dwError = TDNFAllocateStringArray(
                       pRepoIn->ppszUrlGPGKeys,
                       &pRepo->ppszUrlGPGKeys);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     *ppRepo = pRepo;
