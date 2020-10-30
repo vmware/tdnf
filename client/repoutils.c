@@ -523,9 +523,11 @@ TDNFRemoveTmpRepodata(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 cleanup:
-    if (pDir) {
+    if (pDir)
+    {
         closedir(pDir);
     }
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     return dwError;
 error:
     goto cleanup;
