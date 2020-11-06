@@ -282,8 +282,8 @@ error:
 }
 
 uint32_t
-SolvCalculateCookieForRepoMD(
-    char *pszRepoMD,
+SolvCalculateCookieForFile(
+    char *pszFilePath,
     unsigned char *pszCookie
     )
 {
@@ -293,12 +293,12 @@ SolvCalculateCookieForRepoMD(
     Chksum *pChkSum = NULL;
     char buf[BUFSIZ] = {0};
 
-    if (!pszRepoMD)
+    if (!pszFilePath)
     {
         BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_INVALID_PARAMETER));
     }
 
-    fp = fopen(pszRepoMD, "r");
+    fp = fopen(pszFilePath, "r");
     if (!fp)
     {
         BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_IO));
