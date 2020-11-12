@@ -323,12 +323,8 @@ TDNFGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (nAlterType == ALTER_UPGRADEALL ||
-        nAlterType == ALTER_UPGRADE)
-    {
-        dwError = TDNFPkgsToExclude(pTdnf, &dwExcludeCount, &ppszExcludes);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFPkgsToExclude(pTdnf, &dwExcludeCount, &ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     queue_init(&queueJobs);
     if (nAlterType == ALTER_UPGRADEALL)
@@ -364,19 +360,15 @@ TDNFGoal(
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (nAlterType == ALTER_UPGRADEALL ||
-        nAlterType == ALTER_UPGRADE)
+    if (dwExcludeCount != 0 && ppszExcludes)
     {
-        if (dwExcludeCount != 0 && ppszExcludes)
+        if (!pTdnf->pSack || !pTdnf->pSack->pPool)
         {
-            if (!pTdnf->pSack || !pTdnf->pSack->pPool)
-            {
-                dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pSolv = solver_create(pTdnf->pSack->pPool);
@@ -483,29 +475,29 @@ TDNFAddGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (nAlterType == ALTER_UPGRADE)
+    if (dwCount != 0 && ppszExcludes)
     {
-        if (dwCount != 0 && ppszExcludes)
+        dwError = SolvGetPkgNameFromId(
+                      pTdnf->pSack,
+                      dwId,
+                      &pszName);
+        BAIL_ON_TDNF_ERROR(dwError);
+        ppszPackagesTemp = ppszExcludes;
+
+        while(ppszPackagesTemp && *ppszPackagesTemp)
         {
-            dwError = SolvGetPkgNameFromId(
-                          pTdnf->pSack,
-                          dwId,
-                          &pszName);
-            BAIL_ON_TDNF_ERROR(dwError);
-            ppszPackagesTemp = ppszExcludes;
-            while(ppszPackagesTemp && *ppszPackagesTemp)
+            if (SolvIsGlob(*ppszPackagesTemp))
             {
-               if (SolvIsGlob(*ppszPackagesTemp))
-               {
-                   if (!fnmatch(*ppszPackagesTemp, pszName, 0))
-                      goto cleanup;
-               }
-               else if (!strcmp(pszName, *ppszPackagesTemp))
-               {
-                   goto cleanup;
-               }
-               ++ppszPackagesTemp;
+                if (!fnmatch(*ppszPackagesTemp, pszName, 0))
+                {
+                    goto cleanup;
+                }
             }
+            else if (!strcmp(pszName, *ppszPackagesTemp))
+            {
+                goto cleanup;
+            }
+            ++ppszPackagesTemp;
         }
     }
 
