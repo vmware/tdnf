@@ -153,12 +153,13 @@ class TestUtils(object):
         if not os.path.isfile(file_path):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
 
-    def check_package(self, package):
+    def check_package(self, package, version=None):
         """ Check if a package exists """
         ret = self.run([ 'tdnf', 'list', package ])
         for line in ret['stdout']:
             if package in line and '@System' in line:
-                return True
+                if version == None or version in line:
+                    return True
         return False
 
     def erase_package(self, pkgname, pkgversion=None):
