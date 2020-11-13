@@ -725,6 +725,7 @@ TDNFDownloadFile(
     CURL *pCurl = NULL;
     FILE *fp = NULL;
     char *pszUserPass = NULL;
+    char *pszFileTmp = NULL;
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
 
@@ -785,7 +786,12 @@ TDNFDownloadFile(
         }
     }
 
-    fp = fopen(pszFile, "wb");
+    dwError = TDNFAllocateStringPrintf(&pszFileTmp,
+                                       "%s.tmp",
+                                       pszFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    fp = fopen(pszFileTmp, "wb");
     if(!fp)
     {
         dwError = errno;
@@ -814,6 +820,9 @@ TDNFDownloadFile(
     }
     else
     {
+        dwError = rename(pszFileTmp, pszFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         if(is_metalink)
         {
             if(fp)
@@ -827,6 +836,7 @@ TDNFDownloadFile(
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
+    TDNF_SAFE_FREE_MEMORY(pszFileTmp);
     if(fp)
     {
         fclose(fp);
@@ -843,9 +853,9 @@ error:
         fclose(fp);
         fp = NULL;
     }
-    if(!IsNullOrEmptyString(pszFile))
+    if(!IsNullOrEmptyString(pszFileTmp))
     {
-        unlink(pszFile);
+        unlink(pszFileTmp);
     }
 
     if(pCurl && TDNFIsCurlError(dwError))
