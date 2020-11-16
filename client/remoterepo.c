@@ -728,6 +728,8 @@ TDNFDownloadFile(
     char *pszFileTmp = NULL;
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
+    PTDNF_REPO_DATA_INTERNAL pRepo;
+    int i;
 
     //If TDNF install is invoked with quiet argument,
     //pszProgressData will be NULL
@@ -764,10 +766,16 @@ TDNFDownloadFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFFindRepoById(pTdnf, pszRepo, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFRepoApplySSLSettings(pTdnf, pszRepo, pCurl);
+    dwError = TDNFRepoApplyDownloadSettings(pRepo, pCurl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRepoApplySSLSettings(pRepo, pCurl);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = curl_easy_setopt(pCurl, CURLOPT_URL, pszFileUrl);
@@ -791,18 +799,36 @@ TDNFDownloadFile(
                                        pszFile);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    fp = fopen(pszFileTmp, "wb");
-    if(!fp)
+    for(i = 0; i <= pRepo->nRetries; i++)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        fp = fopen(pszFileTmp, "wb");
+        if(!fp)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fp);
+        BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+        if (i > 0)
+        {
+            printf("\nretrying %d/%d\n", i, pRepo->nRetries);
+        }
+        dwError = curl_easy_perform(pCurl);
+        if (dwError == CURLE_OK)
+        {
+            fclose(fp);
+            fp = NULL;
+            break;
+        }
+        if (i == pRepo->nRetries || TDNFCurlErrorIsFatal(dwError))
+        {
+            BAIL_ON_TDNF_CURL_ERROR(dwError);
+        }
+        fclose(fp);
+        fp = NULL;
     }
-
-    dwError = curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fp);
-    BAIL_ON_TDNF_CURL_ERROR(dwError);
-
-    dwError = curl_easy_perform(pCurl);
-    BAIL_ON_TDNF_CURL_ERROR(dwError);
 
     dwError = curl_easy_getinfo(pCurl,
                                 CURLINFO_RESPONSE_CODE,

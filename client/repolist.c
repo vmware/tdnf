@@ -334,6 +334,34 @@ TDNFLoadReposFromFile(
                       &pRepo->pszPass);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        dwError = TDNFReadKeyValueInt(
+                      pSections,
+                      TDNF_REPO_KEY_TIMEOUT,
+                      0,
+                      &pRepo->nTimeout);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadKeyValueInt(
+                      pSections,
+                      TDNF_REPO_KEY_RETRIES,
+                      10,
+                      &pRepo->nRetries);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadKeyValueInt(
+                      pSections,
+                      TDNF_REPO_KEY_MINRATE,
+                      0,
+                      &pRepo->nMinrate);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadKeyValueInt(
+                      pSections,
+                      TDNF_REPO_KEY_THROTTLE,
+                      0,
+                      &pRepo->nThrottle);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFReadKeyValueBoolean(
                       pSections,
                       TDNF_REPO_KEY_SSL_VERIFY,

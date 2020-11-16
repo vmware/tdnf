@@ -181,6 +181,12 @@ TDNFRemoveSolvCache(
     );
 
 uint32_t
+TDNFRepoApplyDownloadSettings(
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    CURL *pCurl
+    );
+
+uint32_t
 TDNFRepoApplyProxySettings(
     PTDNF_CONF pConf,
     CURL *pCurl
@@ -188,8 +194,7 @@ TDNFRepoApplyProxySettings(
 
 uint32_t
 TDNFRepoApplySSLSettings(
-    PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
     CURL *pCurl
     );
 
