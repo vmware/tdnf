@@ -791,3 +791,77 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFFindRepoById(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+
+    if(!pTdnf || IsNullOrEmptyString(pszRepo))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if(!pTdnf->pRepos)
+    {
+        dwError = ERROR_TDNF_NO_REPOS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pRepos = pTdnf->pRepos;
+
+    while(pRepos)
+    {
+        if(!strcmp(pszRepo, pRepos->pszId))
+        {
+            break;
+        }
+        pRepos = pRepos->pNext;
+    }
+    *ppRepo = pRepos;
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCurlErrorIsFatal(
+    CURLcode curlError
+)
+{
+    uint32_t dwError = 0;
+
+    switch(curlError) {
+    case CURLE_UNSUPPORTED_PROTOCOL:
+    case CURLE_FAILED_INIT:
+    case CURLE_URL_MALFORMAT:
+    case CURLE_FILE_COULDNT_READ_FILE:
+    case CURLE_FUNCTION_NOT_FOUND:
+    case CURLE_UNKNOWN_OPTION:
+    case CURLE_SSL_ENGINE_NOTFOUND:
+    case CURLE_RECURSIVE_API_CALL:
+
+    case CURLE_ABORTED_BY_CALLBACK:
+    case CURLE_BAD_FUNCTION_ARGUMENT:
+    case CURLE_CONV_REQD:
+    case CURLE_COULDNT_RESOLVE_PROXY:
+    case CURLE_FILESIZE_EXCEEDED:
+    case CURLE_INTERFACE_FAILED:
+    case CURLE_NOT_BUILT_IN:
+    case CURLE_OUT_OF_MEMORY:
+    case CURLE_SSL_CACERT_BADFILE:
+    case CURLE_SSL_CRL_BADFILE:
+    case CURLE_WRITE_ERROR:
+        dwError = curlError;
+        break;
+    default:
+        break;
+    }
+    return dwError;
+}

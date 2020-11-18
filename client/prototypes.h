@@ -193,6 +193,18 @@ TDNFRepoApplySSLSettings(
     CURL *pCurl
     );
 
+uint32_t
+TDNFFindRepoById(
+    PTDNF pTdnf,
+    const char* pszRepo,
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    );
+
+uint32_t
+TDNFCurlErrorIsFatal(
+    CURLcode curlError
+);
+
 //remoterepo.c
 uint32_t
 TDNFCheckRepoMDFileHashFromMetalink(
