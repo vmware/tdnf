@@ -54,15 +54,23 @@ TDNFApplyScopeFilter(
 
 //gpgcheck.c
 uint32_t
-ReadGPGKey(
-   const char* pszFile,
-   char** ppszKeyData
+ReadGPGKeyFile(
+    const char* pszFile,
+    char** ppszKeyData,
+    int* pnSize
    );
 
 uint32_t
-AddKeyToKeyRing(
+AddKeyFileToKeyring(
     const char* pszFile,
     rpmKeyring pKeyring
+    );
+
+uint32_t
+AddKeyPktToKeyring(
+    rpmKeyring pKeyring,
+    uint8_t* pPkt,
+    size_t nPktLen
     );
 
 uint32_t
@@ -79,7 +87,7 @@ TDNFGPGCheck(
     );
 
 uint32_t
-TDNFImportGPGKey(
+TDNFImportGPGKeyFile(
     rpmts pTS,
     const char* pszFile
     );

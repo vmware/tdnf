@@ -689,7 +689,7 @@ TDNFTransAddInstallPkg(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
 
-            dwError = TDNFImportGPGKey(pTS->pTS, pszLocalGPGKey);
+            dwError = TDNFImportGPGKeyFile(pTS->pTS, pszLocalGPGKey);
             BAIL_ON_TDNF_ERROR(dwError);
 
             pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
@@ -698,7 +698,7 @@ TDNFTransAddInstallPkg(
             {
                 nMatched++;
             }
-	    else if (dwError == ERROR_TDNF_RPM_GPG_NO_MATCH)
+            else if (dwError == ERROR_TDNF_RPM_GPG_NO_MATCH)
             {
                 dwError = 0;
             }
