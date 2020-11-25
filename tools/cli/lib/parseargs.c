@@ -78,6 +78,7 @@ static struct option pstOptions[] =
     {"disableplugin", required_argument, 0, 0},            //--disableplugin
     {"enableplugin",  required_argument, 0, 0},            //--enableplugin
     {"disableexcludes", no_argument, &_opt.nDisableExcludes, 1}, //--disableexcludes
+    {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--download-only
     {0, 0, 0, 0}
 };
 
@@ -260,6 +261,7 @@ TDNFCopyOptions(
     pArgs->nIPv4          = pOptionArgs->nIPv4;
     pArgs->nIPv6          = pOptionArgs->nIPv6;
     pArgs->nDisableExcludes = pOptionArgs->nDisableExcludes;
+    pArgs->nDownloadOnly  = pOptionArgs->nDownloadOnly;
 
 cleanup:
     return dwError;
