@@ -243,7 +243,7 @@ TDNFDetectPreTransFailure(
                 pszVersion = pszToken;
                 break;
             default:
-                fprintf(stderr, "RPM problem string format unsupported\n");
+                pr_err("RPM problem string format unsupported\n");
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
                 BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -272,7 +272,7 @@ TDNFDetectPreTransFailure(
                 (strchr(pszSymbol, '<') && (rpmvercmp(pszCachePkgEVR, pszVersion) < 0)) ||
                 (strchr(pszSymbol, '=') && (rpmvercmp(pszCachePkgEVR, pszVersion) == 0)))
             {
-                fprintf(stderr, "Detected rpm pre-transaction dependency errors. "
+                pr_err("Detected rpm pre-transaction dependency errors. "
                         "Install %s %s %s first to resolve this failure.\n",
                         pszPkgName, pszSymbol, pszVersion);
                 break;
@@ -306,7 +306,7 @@ doCheck(PTDNFRPMTS pTS)
         int nProbs = rpmpsNumProblems(ps);
         if(nProbs > 0)
         {
-            printf("Found %d problems\n", nProbs);
+            pr_info("Found %d problems\n", nProbs);
 
             psi = rpmpsInitIterator(ps);
             while(rpmpsNextIterator(psi) >= 0)
@@ -315,11 +315,11 @@ doCheck(PTDNFRPMTS pTS)
                 char *msg = rpmProblemString(prob);
                 if (strstr(msg, "no digest") != NULL)
                 {
-                    printf("%s. Use --skipdigest to ignore\n", msg);
+                    pr_info("%s. Use --skipdigest to ignore\n", msg);
                 }
                 else
                 {
-                    printf("%s\n", msg);
+                    pr_info("%s\n", msg);
                     if (rpmProblemGetType(prob) == RPMPROB_REQUIRES)
                     {
                         dwError = TDNFAllocateString(rpmProblemGetStr(prob), &pErrorStr);
@@ -349,7 +349,6 @@ TDNFRunTransaction(
     )
 {
     uint32_t dwError = 0;
-    int nSilent = 0;
     int rpmVfyLevelMask = 0;
     uint32_t dwSkipSignature = 0;
     uint32_t dwSkipDigest = 0;
@@ -360,8 +359,6 @@ TDNFRunTransaction(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    nSilent = pTdnf->pArgs->nNoOutput;
 
     dwError = rpmtsOrder(pTS->pTS);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -378,10 +375,7 @@ TDNFRunTransaction(
     BAIL_ON_TDNF_ERROR(dwError);
 
     //TODO do callbacks for output
-    if(!nSilent)
-    {
-        printf("Testing transaction\n");
-    }
+    pr_info("Testing transaction\n");
 
     if (pTdnf->pArgs->nNoGPGCheck)
     {
@@ -412,10 +406,8 @@ TDNFRunTransaction(
     }
 
     //TODO do callbacks for output
-    if(!nSilent)
-    {
-        printf("Running transaction\n");
-    }
+    pr_info("Running transaction\n");
+
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_NONE);
     rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
     if (rc != 0)
@@ -578,7 +570,7 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error processing key: %s\n", pszUrlGPGKey);
+    pr_err("Error processing key: %s\n", pszUrlGPGKey);
     TDNF_SAFE_FREE_MEMORY(pszNormalPath);
     *ppszKeyLocation = NULL;
     goto cleanup;
@@ -666,7 +658,7 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_ERROR(dwError);
 
         for (i = 0; ppszUrlGPGKeys[i]; i++) {
-            printf("importing key from %s\n", ppszUrlGPGKeys[i]);
+            pr_info("importing key from %s\n", ppszUrlGPGKeys[i]);
             dwError = TDNFYesOrNo(pTdnf->pArgs, "Is this ok [y/N]: ", &nAnswer);
             BAIL_ON_TDNF_ERROR(dwError);
 
@@ -796,7 +788,7 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error processing package: %s\n", pszPackageLocation);
+    pr_err("Error processing package: %s\n", pszPackageLocation);
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pRpmCache);
     goto cleanup;
@@ -951,15 +943,15 @@ TDNFRpmCB(
                 break;
             if(what == RPMCALLBACK_INST_START)
             {
-                printf("%s", "Installing/Updating: ");
+                pr_info("%s", "Installing/Updating: ");
             }
             else
             {
-                printf("%s", "Removing: ");
+                pr_info("%s", "Removing: ");
             }
             {
                 char* pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
-                printf("%s\n", pszNevra);
+                pr_info("%s\n", pszNevra);
                 free(pszNevra);
                 (void)fflush(stdout);
             }

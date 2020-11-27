@@ -226,7 +226,7 @@ TDNFCliAlterCommand(
         {
             if(!nSilent && pSolvedPkgInfo->nNeedDownload)
             {
-                printf("\nDownloading:\n");
+                pr_info("\nDownloading:\n");
             }
 
             dwError = pContext->pFnAlter(
@@ -237,7 +237,7 @@ TDNFCliAlterCommand(
 
             if(!nSilent)
             {
-                printf("\nComplete!\n");
+                pr_info("\nComplete!\n");
             }
         }
         else
@@ -349,9 +349,8 @@ PrintNotAvailable(
 
     while(ppszPkgsNotAvailable[i])
     {
-        printf(
-            "No package " BOLD "%s " RESET "available\n",
-            ppszPkgsNotAvailable[i]);
+        pr_info("No package " BOLD "%s " RESET "available\n",
+                ppszPkgsNotAvailable[i]);
         ++i;
     }
 cleanup:
@@ -378,7 +377,7 @@ PrintExistingPackagesSkipped(
     pPkgInfo = pPkgInfos;
     while(pPkgInfo)
     {
-        printf(
+        pr_info(
             "Package %s-%s-%s.%s is already installed, skipping.\n",
             pPkgInfo->pszName,
             pPkgInfo->pszVersion,
@@ -412,7 +411,7 @@ PrintNotAvailablePackages(
     pPkgInfo = pPkgInfos;
     while(pPkgInfo)
     {
-        printf(
+        pr_info(
             "No package %s available.\n",
             pPkgInfo->pszName);
         pPkgInfo = pPkgInfo->pNext;
@@ -455,28 +454,28 @@ PrintAction(
     switch(nAlterType)
     {
         case ALTER_INSTALL:
-            printf("\nInstalling:");
+            pr_info("\nInstalling:");
             break;
         case ALTER_UPGRADE:
-            printf("\nUpgrading:");
+            pr_info("\nUpgrading:");
             break;
         case ALTER_ERASE:
-            printf("\nRemoving:");
+            pr_info("\nRemoving:");
             break;
         case ALTER_DOWNGRADE:
-            printf("\nDowngrading:");
+            pr_info("\nDowngrading:");
             break;
         case ALTER_REINSTALL:
-            printf("\nReinstalling:");
+            pr_info("\nReinstalling:");
             break;
         case ALTER_OBSOLETED:
-            printf("\nObsoleting:");
+            pr_info("\nObsoleting:");
             break;
         default:
             dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_CLI_ERROR(dwError);
     }
-    printf("\n");
+    pr_info("\n");
 
     dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
     BAIL_ON_CLI_ERROR(dwError);
@@ -523,7 +522,7 @@ PrintAction(
                                  pszEmptyString : pPkgInfo->pszRepoName;
         ppszInfoToPrint[4] = pPkgInfo->pszFormattedSize == NULL ?
                                  pszEmptyString : pPkgInfo->pszFormattedSize;
-        printf(
+        pr_info(
             "%-*s %-*s %-*s %-*s %*s\n",
             nColWidths[0],
             ppszInfoToPrint[0],
@@ -539,7 +538,7 @@ PrintAction(
     }
 
     TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
-    printf("\nTotal installed size: %s\n", pszTotalInstallSize);
+    pr_info("\nTotal installed size: %s\n", pszTotalInstallSize);
 
 cleanup:
     if (pszTotalInstallSize)

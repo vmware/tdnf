@@ -126,9 +126,7 @@ error:
     //remove any cache data that could be potentially corrupt.
     if(pRepoData)
     {
-        fprintf(
-            stderr,
-            "Error: Failed to synchronize cache for repo '%s' from '%s'\n",
+        pr_err("Error: Failed to synchronize cache for repo '%s' from '%s'\n",
             pRepoData->pszName,
             pRepoData->pszBaseUrl);
 
@@ -697,7 +695,7 @@ TDNFGetRepoMD(
 
     if (IsNullOrEmptyString(pRepoData->pszBaseUrl) && IsNullOrEmptyString(pRepoData->pszMetaLink))
     {
-        fprintf(stderr, "Error: Cannot find a valid base URL for repo: %s\n", pRepoData->pszName);
+        pr_err("Error: Cannot find a valid base URL for repo: %s\n", pRepoData->pszName);
         dwError = ERROR_TDNF_BASEURL_DOES_NOT_EXISTS;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -802,11 +800,7 @@ TDNFGetRepoMD(
     /* download repomd.xml to tmp */
     if (nNeedDownload)
     {
-        if (!pTdnf->pArgs->nQuiet)
-        {
-           printf("Refreshing metadata for: '%s'\n",
-                    pRepoData->pszName);
-        }
+        pr_info("Refreshing metadata for: '%s'\n", pRepoData->pszName);
         /* always download to tmp */
         dwError = TDNFAllocateStringPrintf(
                       &pszTmpRepoDataDir,
@@ -1005,7 +999,7 @@ error:
     TDNFGetErrorString(dwError, &pszError);
     if (!IsNullOrEmptyString(pszError))
     {
-        fprintf(stderr, "Error(%u) : %s\n", dwError, pszError);
+        pr_err("Error(%u) : %s\n", dwError, pszError);
     }
     TDNFFreeRepoMetadata(pRepoMD);
     goto cleanup;
@@ -1242,7 +1236,7 @@ TDNFParseRepoMD(
     dwError = repo_add_repomdxml(pRepo, fp, 0);
     if(dwError)
     {
-        printf("Error(%u) parsing repomd: %s\n",
+        pr_info("Error(%u) parsing repomd: %s\n",
                 dwError,
                 pool_errstr(pPool));
     }

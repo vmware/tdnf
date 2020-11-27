@@ -88,7 +88,7 @@ TDNFPyInitModule(
 
     ret = 1;
 
-error: 
+error:
     return ret;
 }
 
@@ -143,7 +143,7 @@ main(
 {
     wchar_t *program = Py_DecodeLocale(argv[0], NULL);
     if (program == NULL) {
-        fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
+        pr_err("Fatal error: cannot decode argv[0]\n");
         exit(1);
     }
 

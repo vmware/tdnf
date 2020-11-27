@@ -278,7 +278,7 @@ TDNFCheckLocalPackages(
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    printf("Checking all packages from: %s\n", pszLocalPath);
+    pr_info("Checking all packages from: %s\n", pszLocalPath);
 
     pCmdLinePool = pool_create();
     pool_set_rootdir(pCmdLinePool, pTdnf->pArgs->pszInstallRoot);
@@ -321,7 +321,7 @@ TDNFCheckLocalPackages(
         pszRPMPath = NULL;
     }
     repo_internalize(pCmdlineRepo);
-    printf("Found %u packages\n", dwPackagesFound);
+    pr_info("Found %u packages\n", dwPackagesFound);
 
     pSolv = solver_create(pCmdLinePool);
     if(pSolv == NULL)
@@ -1299,7 +1299,7 @@ TDNFUpdateInfo(
 
     if(!pUpdateInfos)
     {
-        printf("\n%d updates.\n", nUpdates);
+        pr_info("\n%d updates.\n", nUpdates);
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }

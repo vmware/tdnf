@@ -31,16 +31,16 @@ TDNFPrintConfigData(
     PKEYVALUE pKeyValue = NULL;
     if(!pData) return;
 
-    printf("File: %s\n", pData->pszConfFile);
+    pr_info("File: %s\n", pData->pszConfFile);
 
     pSection = pData->pSections;
     while(pSection)
     {
-        printf("[%s]\n", pSection->pszName);
+        pr_info("[%s]\n", pSection->pszName);
         pKeyValue = pSection->pKeyValues;
         while(pKeyValue)
         {
-            printf("%s=%s\n", pKeyValue->pszKey, pKeyValue->pszValue);
+            pr_info("%s=%s\n", pKeyValue->pszKey, pKeyValue->pszValue);
             pKeyValue = pKeyValue->pNext;
         }
         pSection = pSection->pNext;
@@ -278,7 +278,7 @@ TDNFConfKeyvalueDefault(
     pszEq = strchr(pszKey, '=');
     if(!pszEq)
     {
-        fprintf(stderr, "keyvalue lines must be of format key=value\n");
+        pr_err("keyvalue lines must be of format key=value\n");
         dwError = EDOM;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -288,7 +288,7 @@ TDNFConfKeyvalueDefault(
 
     if(!pSection)
     {
-        fprintf(stderr, "conf file must start with a section");
+        pr_err("conf file must start with a section");
         dwError = EINVAL;
         BAIL_ON_TDNF_ERROR(dwError);
     }

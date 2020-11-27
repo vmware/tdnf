@@ -31,7 +31,7 @@ _TDNFVerifyResult(
     {
         if (pSig->status)
         {
-            fprintf(stderr, "repo md signature check: %s\n", gpgme_strerror (pSig->status));
+            pr_err("repo md signature check: %s\n", gpgme_strerror (pSig->status));
             dwError = ERROR_TDNF_GPG_SIGNATURE_CHECK;
             break;
         }
@@ -97,7 +97,7 @@ TDNFVerifyRepoMDSignature(
     fpRepoMDSig = fopen(pszRepoMDSig, "rb");
     if (!fpRepoMDSig)
     {
-        fprintf(stderr, "repogpgcheck: failed to open %s\n", pszRepoMDSig);
+        pr_err("repogpgcheck: failed to open %s\n", pszRepoMDSig);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
@@ -113,7 +113,7 @@ TDNFVerifyRepoMDSignature(
     fpRepoMD = fopen(pszRepoMD, "rb");
     if (!fpRepoMD)
     {
-        fprintf(stderr, "repogpgcheck: failed to open %s\n", pszRepoMD);
+        pr_err("repogpgcheck: failed to open %s\n", pszRepoMD);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
@@ -130,7 +130,7 @@ TDNFVerifyRepoMDSignature(
     if (dwError)
     {
         pHandle->nGPGError = nGPGError;
-        fprintf(stderr, "gpg verify failed: %s\n", gpgme_strerror(dwError));
+        pr_err("gpg verify failed: %s\n", gpgme_strerror(dwError));
         dwError = ERROR_TDNF_GPG_ERROR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -219,7 +219,7 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error: %s %u\n", __FUNCTION__, dwError);
+    pr_err("Error: %s %u\n", __FUNCTION__, dwError);
     goto cleanup;
 }
 

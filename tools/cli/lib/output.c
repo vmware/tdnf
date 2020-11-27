@@ -29,8 +29,8 @@ ShowConsoleProps(
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
-    printf ("lines %d\n", w.ws_row);
-    printf ("columns %d\n", w.ws_col);
+    pr_info("lines %d\n", w.ws_row);
+    pr_info("columns %d\n", w.ws_col);
 }
 
 uint32_t

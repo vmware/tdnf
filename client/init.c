@@ -264,7 +264,7 @@ TDNFRefreshSack(
                     if(pTempRepo->nSkipIfUnavailable)
                     {
                         pTempRepo->nEnabled = 0;
-                        printf("Disabling Repo: '%s'\n",
+                        pr_info("Disabling Repo: '%s'\n",
                                 pTempRepo->pszName);
 
                         dwError = 0;

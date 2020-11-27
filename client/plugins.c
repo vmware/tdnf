@@ -478,7 +478,7 @@ _TDNFLoadPluginLib(
     pPlugin->pModule = dlopen(pszLib, RTLD_NOW);
     if(!pPlugin->pModule)
     {
-        fprintf(stderr, "Error loading plugin: %s\n", pszLib);
+        pr_err("Error loading plugin: %s\n", pszLib);
         dwError = ERROR_TDNF_PLUGIN_LOAD_ERROR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -508,13 +508,13 @@ _TDNFLoadPluginLib(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    printf("Loaded plugin: %s\n", pPlugin->pszName);
+    pr_info("Loaded plugin: %s\n", pPlugin->pszName);
 
 cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Error: %u dlerror: %s\n", dwError, dlerror());
+    pr_err("Error: %u dlerror: %s\n", dwError, dlerror());
     if (pPlugin)
     {
         if (pPlugin->pModule)
@@ -682,7 +682,7 @@ TDNFShowPluginError(
 
     if (!TDNFGetPluginErrorString(pTdnf, pPlugin, nErrorCode, &pszError))
     {
-        fprintf(stderr, "Plugin error: %s\n", pszError);
+        pr_err("Plugin error: %s\n", pszError);
     }
 
 cleanup:
