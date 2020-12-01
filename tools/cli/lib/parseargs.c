@@ -78,7 +78,8 @@ static struct option pstOptions[] =
     {"disableplugin", required_argument, 0, 0},            //--disableplugin
     {"enableplugin",  required_argument, 0, 0},            //--enableplugin
     {"disableexcludes", no_argument, &_opt.nDisableExcludes, 1}, //--disableexcludes
-    {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--download-only
+    {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
+    {"downloaddir",   required_argument, 0, 0},            //--downloaddir
     {0, 0, 0, 0}
 };
 
@@ -213,6 +214,11 @@ TDNFCliParseArgs(
         }
     }
 
+    if (pCmdArgs->pszDownloadDir && !pCmdArgs->nDownloadOnly) {
+        dwError = ERROR_TDNF_CLI_DOWNLOADDIR_REQUIRES_DOWNLOADONLY;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
@@ -300,6 +306,10 @@ ParseOption(
     else if (!strcasecmp(pszName, "installroot"))
     {
         dwError = TDNFAllocateString(optarg, &pCmdArgs->pszInstallRoot);
+    }
+    else if (!strcasecmp(pszName, "downloaddir"))
+    {
+        dwError = TDNFAllocateString(optarg, &pCmdArgs->pszDownloadDir);
     }
     else if (!strcasecmp(pszName, "releasever"))
     {

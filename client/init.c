@@ -84,6 +84,14 @@ TDNFCloneCmdArgs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(!IsNullOrEmptyString(pCmdArgsIn->pszDownloadDir))
+    {
+        dwError = TDNFAllocateString(
+                      pCmdArgsIn->pszDownloadDir,
+                      &pCmdArgs->pszDownloadDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
                   pCmdArgs->nCmdCount,

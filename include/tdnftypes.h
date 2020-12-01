@@ -237,6 +237,7 @@ typedef struct _TDNF_CMD_ARGS
     int nIPv6;             //resolve to IPv6 addresses only
     int nDisableExcludes;  //disable excludes from tdnf.conf
     int nDownloadOnly;     //download packages only, no install
+    char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location
     char* pszReleaseVer;   //Release version

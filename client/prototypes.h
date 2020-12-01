@@ -262,6 +262,16 @@ TDNFDownloadPackageToCache(
     char** ppszFilePath
     );
 
+uint32_t
+TDNFDownloadPackageToDirectory(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    const char* pszDirectory,
+    char** ppszFilePath
+    );
+
 //packageutils.c
 uint32_t
 TDNFMatchForReinstall(

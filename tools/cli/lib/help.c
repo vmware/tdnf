@@ -59,6 +59,7 @@ TDNFCliShowHelp(
     pr_crit("           [--skipdigest]\n");
     pr_crit("           [--disableexcludes]\n");
     pr_crit("           [--downloadonly]\n");
+    pr_crit("           [--downloaddir=<directory>]\n");
 
     pr_crit("List of Main Commands\n");
     pr_crit("\n");

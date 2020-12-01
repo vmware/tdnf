@@ -615,13 +615,28 @@ TDNFTransAddInstallPkg(
     }
     else
     {
-        dwError = TDNFDownloadPackageToCache(
-                      pTdnf,
-                      pszPackageLocation,
-                      pszPkgName,
-                      pszRepoName,
-                      &pszFilePath
-        );
+        if (!pTdnf->pArgs->nDownloadOnly || pTdnf->pArgs->pszDownloadDir == NULL)
+        {
+            dwError = TDNFDownloadPackageToCache(
+                          pTdnf,
+                          pszPackageLocation,
+                          pszPkgName,
+                          pszRepoName,
+                          &pszFilePath
+            );
+        }
+        else
+        {
+            dwError = TDNFDownloadPackageToDirectory(
+                          pTdnf,
+                          pszPackageLocation,
+                          pszPkgName,
+                          pszRepoName,
+                          pTdnf->pArgs->pszDownloadDir,
+                          &pszFilePath
+            );
+
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
