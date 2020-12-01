@@ -78,6 +78,7 @@ TDNFCliShowHelp(
     printf("reinstall                 reinstall a package\n");
     printf("repolist                  Display the configured software repositories\n");
     printf("search                    Search package details for the given string\n");
+    printf("update                    Upgrade a package or packages on your system (same as 'upgrade')\n");
     printf("updateinfo                Display advisories about packages\n");
     printf("upgrade                   Upgrade a package or packages on your system\n");
     printf("upgrade-to                Upgrade a package on your system to the specified version\n");
