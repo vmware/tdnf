@@ -197,12 +197,12 @@ TDNFInitCmdLineRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pRepo = repo_create(pPool, "@cmdline");
-
     if (!pRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
     pSolvRepoInfo->pRepo = pRepo;
     pRepo->appdata = pSolvRepoInfo;
 
@@ -214,6 +214,11 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pSolvRepoInfo);
     return dwError;
 error:
+    /*
+     * coverty scan throws below warning
+     * Execution cannot reach this statement: "repo_free(pRepo, 1);"
+     * Ignoring this because it's good to have this condition check
+     */
     if(pRepo)
     {
         repo_free(pRepo, 1);

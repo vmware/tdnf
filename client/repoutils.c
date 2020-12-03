@@ -458,7 +458,14 @@ cleanup:
     }
     if (!IsNullOrEmptyString(pszRpmCacheDir))
     {
-        rmdir(pszRpmCacheDir);
+        if (rmdir(pszRpmCacheDir))
+        {
+            /*
+             * Not using BAIL_ON_TDNF_SYSTEM_ERROR here to prevent infinite loop
+             * Also it makes easy to read the code
+             */
+            dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+        }
     }
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);

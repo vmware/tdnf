@@ -508,6 +508,7 @@ SolvCreateMetaDataCache(
     char *pszSolvCacheDir = NULL;
     char *pszTempSolvFile = NULL;
     char *pszCacheFilePath = NULL;
+    mode_t mask = 0;
 
     if (!pSack || !pSolvRepoInfo|| !pSolvRepoInfo->nCookieSet)
     {
@@ -539,7 +540,10 @@ SolvCreateMetaDataCache(
         }
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
+
     pszTempSolvFile = solv_dupjoin(pszSolvCacheDir, "/", ".newsolv-XXXXXX");
+    mask = umask(S_IRUSR | S_IWUSR | S_IRWXG);
+    umask(mask);
     fd = mkstemp(pszTempSolvFile);
     if (fd < 0)
     {

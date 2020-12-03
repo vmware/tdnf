@@ -222,7 +222,7 @@ static bool IsTdnfAlreadyRunning(void)
 {
     bool ret = false;
 
-    glockfd = open(TDNF_INSTANCE_LOCK_FILE, O_CREAT);
+    glockfd = open(TDNF_INSTANCE_LOCK_FILE, O_CREAT | O_RDONLY);
     if (glockfd < 0)
     {
         fprintf(stderr, "ERROR: failed to create instance lock file\n");
