@@ -144,8 +144,7 @@ extern "C" {
 #define ERROR_TDNF_URL_INVALID               1524
 
 //RPM Transaction
-#define ERROR_TDNF_TRANS_INCOMPLETE     1525
-#define ERROR_TDNF_TRANS_PKG_NOT_FOUND  1526
+#define ERROR_TDNF_TRANSACTION_FAILED        1525
 
 /* event context */
 #define ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND      1551

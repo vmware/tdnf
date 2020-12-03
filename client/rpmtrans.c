@@ -353,6 +353,7 @@ TDNFRunTransaction(
     int rpmVfyLevelMask = 0;
     uint32_t dwSkipSignature = 0;
     uint32_t dwSkipDigest = 0;
+    int rc;
 
     if(!pTS || !pTdnf || !pTdnf->pArgs)
     {
@@ -403,8 +404,12 @@ TDNFRunTransaction(
          rpmtsSetVfyLevel(pTS->pTS, ~rpmVfyLevelMask);
     }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
-    dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
-    BAIL_ON_TDNF_RPM_ERROR(dwError);
+    rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
+    if (rc != 0)
+    {
+        dwError = ERROR_TDNF_TRANSACTION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     //TODO do callbacks for output
     if(!nSilent)
@@ -412,8 +417,12 @@ TDNFRunTransaction(
         printf("Running transaction\n");
     }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_NONE);
-    dwError = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
-    BAIL_ON_TDNF_RPM_ERROR(dwError);
+    rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
+    if (rc != 0)
+    {
+        dwError = ERROR_TDNF_TRANSACTION_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 cleanup:
     return dwError;
