@@ -46,6 +46,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
     pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;
     pCmdArgs->nRefresh       = pCmdArgsIn->nRefresh;
+    pCmdArgs->nCacheOnly     = pCmdArgsIn->nCacheOnly;
     pCmdArgs->nRpmVerbosity  = pCmdArgsIn->nRpmVerbosity;
     pCmdArgs->nShowDuplicates= pCmdArgsIn->nShowDuplicates;
     pCmdArgs->nShowHelp      = pCmdArgsIn->nShowHelp;

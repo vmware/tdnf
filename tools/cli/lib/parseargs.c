@@ -46,7 +46,7 @@ static struct option pstOptions[] =
     {"assumeno",      no_argument, &_opt.nAssumeNo, 1},    //--assumeno
     {"assumeyes",     no_argument, 0, 'y'},                //--assumeyes
     {"best",          no_argument, &_opt.nBest, 1},        //--best
-    {"cacheonly",     no_argument, 0, 'C'},                //-C, --cacheonly
+    {"cacheonly",     no_argument, &_opt.nCacheOnly, 'C'}, //-C, --cacheonly
     {"config",        required_argument, 0, 'c'},          //-c, --config
     {"debuglevel",    required_argument, 0, 'd'},          //-d, --debuglevel
     {"debugsolver",   no_argument, &_opt.nDebugSolver, 1}, //--debugsolver
