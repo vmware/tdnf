@@ -111,6 +111,11 @@ TDNFCliFreeSolvedPackageInfo(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
+uint32_t
+TDNFCliRefresh(
+    PTDNF_CLI_CONTEXT pContext
+);
+
 //Commands
 uint32_t
 TDNFCliAutoEraseCommand(

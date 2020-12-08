@@ -33,6 +33,11 @@ TDNFOpenHandle(
     );
 
 uint32_t
+TDNFRefresh(
+    PTDNF pTdnf
+    );
+
+uint32_t
 TDNFAddCmdLinePackages(
     PTDNF pTdnf
 );

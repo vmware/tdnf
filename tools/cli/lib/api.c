@@ -158,6 +158,9 @@ TDNFCliListCommand(
     dwError = TDNFCliParseListArgs(pCmdArgs, &pListArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
     dwError = pContext->pFnList(pContext, pListArgs, &pPkgInfo, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -242,6 +245,9 @@ TDNFCliInfoCommand(
     }
 
     dwError = TDNFCliParseInfoArgs(pCmdArgs, &pInfoArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = TDNFCliRefresh(pContext);
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = pContext->pFnInfo(pContext, pInfoArgs, &pPkgInfo, &dwCount);
@@ -356,6 +362,9 @@ TDNFCliSearchCommand(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
     dwError = pContext->pFnSearch(pContext, pCmdArgs, &pPkgInfo, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -427,6 +436,9 @@ TDNFCliProvidesCommand(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
     dwError = pContext->pFnProvides(pContext,
                                     pCmdArgs->ppszCmds[1],
                                     &pPkgInfos);
@@ -482,6 +494,9 @@ TDNFCliCheckUpdateCommand(
                   &nPackageCount);
     BAIL_ON_CLI_ERROR(dwError);
 
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
     dwError = pContext->pFnCheckUpdate(pContext,
                                        ppszPackageArgs,
                                        &pPkgInfo,
@@ -522,8 +537,9 @@ TDNFCliMakeCacheCommand(
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
     }
-    //Empty as refresh flag is set for makecache command
-    //and will execute refresh on all enabled repos
+
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
 
     pr_crit("Metadata cache created.\n");
 
@@ -547,6 +563,9 @@ TDNFCliCheckCommand(
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
     }
+
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
 
     dwError = pContext->pFnCheck(pContext);
     BAIL_ON_CLI_ERROR(dwError);

@@ -205,9 +205,6 @@ TDNFRefreshSack(
         pTdnf->pArgs->nRefresh = 1;
     }
 
-    dwError = TDNFInitCmdLineRepo(pTdnf, pSack);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     /* First repo is the "@cmdline" repo, which always exists.
      * skip over it - options do not apply, and it is initialized. */
     if(pTdnf->pRepos->pNext)
@@ -283,3 +280,11 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFRefresh(
+    PTDNF pTdnf)
+{
+    return TDNFRefreshSack(pTdnf, pTdnf->pSack, pTdnf->pArgs->nRefresh);
+}
+

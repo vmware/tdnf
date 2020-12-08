@@ -706,10 +706,7 @@ TDNFOpenHandle(
     dwError = TDNFRepoListFinalize(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFRefreshSack(
-                  pTdnf,
-                  pSack,
-                  pTdnf->pArgs->nRefresh);
+    dwError = TDNFInitCmdLineRepo(pTdnf, pSack);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pSack = pSack;
