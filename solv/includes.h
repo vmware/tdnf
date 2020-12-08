@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 // libsolv
 #include <solv/evr.h>
