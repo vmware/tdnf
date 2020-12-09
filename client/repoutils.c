@@ -702,16 +702,148 @@ error:
 }
 
 uint32_t
+TDNFRepoApplyDownloadSettings(
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    CURL *pCurl
+    )
+{
+    CURLcode curlError = CURLE_OK;
+    uint32_t dwError = 0;
+
+    if(!pRepo || !pCurl)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if((curlError = curl_easy_setopt(
+            pCurl,
+            CURLOPT_TIMEOUT,
+            pRepo->nTimeout)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_CURL_BASE + curlError;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if((curlError = curl_easy_setopt(
+            pCurl,
+            CURLOPT_LOW_SPEED_TIME,
+            pRepo->nTimeout)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_CURL_BASE + curlError;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if((curlError = curl_easy_setopt(
+            pCurl,
+            CURLOPT_LOW_SPEED_LIMIT,
+            pRepo->nMinrate)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_CURL_BASE + curlError;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if((curlError = curl_easy_setopt(
+            pCurl,
+            CURLOPT_MAX_RECV_SPEED_LARGE,
+            pRepo->nThrottle)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_CURL_BASE + curlError;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFRepoApplySSLSettings(
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    CURL *pCurl
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pRepo || !pCurl)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(curl_easy_setopt(
+            pCurl,
+            CURLOPT_SSL_VERIFYPEER,
+            ((pRepo->nSSLVerify) ? 1 : 0)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(curl_easy_setopt(
+            pCurl,
+            CURLOPT_SSL_VERIFYHOST,
+            ((pRepo->nSSLVerify) ? 2 : 0)) != CURLE_OK)
+    {
+        dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+
+    if(!IsNullOrEmptyString(pRepo->pszSSLCaCert))
+    {
+        if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_CAINFO,
+                pRepo->pszSSLCaCert) != CURLE_OK)
+        {
+            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(!IsNullOrEmptyString(pRepo->pszSSLClientCert))
+    {
+        if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_SSLCERT,
+                pRepo->pszSSLClientCert) != CURLE_OK)
+        {
+            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if(!IsNullOrEmptyString(pRepo->pszSSLClientKey))
+    {
+        if(curl_easy_setopt(
+                pCurl,
+                CURLOPT_SSLKEY,
+                pRepo->pszSSLClientKey) != CURLE_OK)
+        {
+            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFFindRepoById(
     PTDNF pTdnf,
     const char* pszRepo,
-    CURL *pCurl
+    PTDNF_REPO_DATA_INTERNAL* ppRepo
     )
 {
     uint32_t dwError = 0;
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pCurl)
+    if(!pTdnf || IsNullOrEmptyString(pszRepo))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -737,64 +869,46 @@ TDNFRepoApplySSLSettings(
         dwError = ERROR_TDNF_REPO_NOT_FOUND;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    if(curl_easy_setopt(
-            pCurl,
-            CURLOPT_SSL_VERIFYPEER,
-            ((pRepos->nSSLVerify) ? 1 : 0)) != CURLE_OK)
-    {
-        dwError = ERROR_TDNF_SET_SSL_SETTINGS;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(curl_easy_setopt(
-            pCurl,
-            CURLOPT_SSL_VERIFYHOST,
-            ((pRepos->nSSLVerify) ? 2 : 0)) != CURLE_OK)
-    {
-        dwError = ERROR_TDNF_SET_SSL_SETTINGS;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-
-    if(!IsNullOrEmptyString(pRepos->pszSSLCaCert))
-    {
-        if(curl_easy_setopt(
-                pCurl,
-                CURLOPT_CAINFO,
-                pRepos->pszSSLCaCert) != CURLE_OK)
-        {
-            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-
-    if(!IsNullOrEmptyString(pRepos->pszSSLClientCert))
-    {
-        if(curl_easy_setopt(
-                pCurl,
-                CURLOPT_SSLCERT,
-                pRepos->pszSSLClientCert) != CURLE_OK)
-        {
-            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-
-    if(!IsNullOrEmptyString(pRepos->pszSSLClientKey))
-    {
-        if(curl_easy_setopt(
-                pCurl,
-                CURLOPT_SSLKEY,
-                pRepos->pszSSLClientKey) != CURLE_OK)
-        {
-            dwError = ERROR_TDNF_SET_SSL_SETTINGS;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
+    *ppRepo = pRepos;
 
 cleanup:
     return dwError;
 error:
     goto cleanup;
+}
+
+uint32_t
+TDNFCurlErrorIsFatal(
+    CURLcode curlError
+)
+{
+    uint32_t dwError = 0;
+
+    switch(curlError) {
+    case CURLE_UNSUPPORTED_PROTOCOL:
+    case CURLE_FAILED_INIT:
+    case CURLE_URL_MALFORMAT:
+    case CURLE_FILE_COULDNT_READ_FILE:
+    case CURLE_FUNCTION_NOT_FOUND:
+    case CURLE_UNKNOWN_OPTION:
+    case CURLE_SSL_ENGINE_NOTFOUND:
+    case CURLE_RECURSIVE_API_CALL:
+
+    case CURLE_ABORTED_BY_CALLBACK:
+    case CURLE_BAD_FUNCTION_ARGUMENT:
+    case CURLE_CONV_REQD:
+    case CURLE_COULDNT_RESOLVE_PROXY:
+    case CURLE_FILESIZE_EXCEEDED:
+    case CURLE_INTERFACE_FAILED:
+    case CURLE_NOT_BUILT_IN:
+    case CURLE_OUT_OF_MEMORY:
+    case CURLE_SSL_CACERT_BADFILE:
+    case CURLE_SSL_CRL_BADFILE:
+    case CURLE_WRITE_ERROR:
+        dwError = curlError;
+        break;
+    default:
+        break;
+    }
+    return dwError;
 }
