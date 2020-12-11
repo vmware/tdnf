@@ -90,6 +90,7 @@ typedef enum
 #define TDNF_REPO_KEY_GPGKEY              "gpgkey"
 #define TDNF_REPO_KEY_USERNAME            "username"
 #define TDNF_REPO_KEY_PASSWORD            "password"
+#define TDNF_REPO_KEY_PRIORITY            "priority"
 #define TDNF_REPO_KEY_METADATA_EXPIRE     "metadata_expire"
 #define TDNF_REPO_KEY_TIMEOUT             "timeout"
 #define TDNF_REPO_KEY_RETRIES             "retries"

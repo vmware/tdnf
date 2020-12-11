@@ -48,6 +48,7 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     char** ppszUrlGPGKeys;
     char* pszUser;
     char* pszPass;
+    int nPriority;
     int nTimeout;
     int nMinrate;
     int nThrottle;
