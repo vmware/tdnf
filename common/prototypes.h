@@ -184,7 +184,8 @@ TDNFCreateAndWriteToFile(
 uint32_t
 TDNFFileReadAllText(
     const char *pszFileName,
-    char **ppszText
+    char **ppszText,
+    int *pnLength
     );
 
 const char *

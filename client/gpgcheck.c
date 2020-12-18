@@ -36,7 +36,7 @@ TDNFGPGCheck(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = AddKeyToKeyRing(pszKeyFile, pKeyring);
+    dwError = AddKeyFileToKeyring(pszKeyFile, pKeyring);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = VerifyRpmSig(pKeyring, pszPkgFile);
@@ -94,9 +94,10 @@ error:
 }
 
 uint32_t
-ReadGPGKey(
-   const char* pszFile,
-   char** ppszKeyData
+ReadGPGKeyFile(
+    const char* pszFile,
+    char** ppszKeyData,
+    int* pnSize
    )
 {
     uint32_t dwError = 0;
@@ -104,7 +105,7 @@ ReadGPGKey(
     int nPathIsDir = 0;
     char* pszScheme = NULL;
 
-    if(IsNullOrEmptyString(pszFile) || !ppszKeyData)
+    if(IsNullOrEmptyString(pszFile) || !ppszKeyData || !pnSize)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -126,7 +127,7 @@ ReadGPGKey(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFFileReadAllText(pszFile, &pszKeyData);
+    dwError = TDNFFileReadAllText(pszFile, &pszKeyData, pnSize);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszKeyData = pszKeyData;
@@ -141,18 +142,19 @@ error:
 }
 
 uint32_t
-AddKeyToKeyRing(
+AddKeyFileToKeyring(
     const char* pszFile,
     rpmKeyring pKeyring
     )
 {
     uint32_t dwError = 0;
     pgpArmor nArmor = PGPARMOR_NONE;
-    pgpDig pDig = NULL;
-    rpmPubkey pPubkey = NULL;
     uint8_t* pPkt = NULL;
     size_t nPktLen = 0;
     char* pszKeyData = NULL;
+    int nKeyDataSize;
+    int nKeys = 0;
+    int nOffset = 0;
 
     if(IsNullOrEmptyString(pszFile) || !pKeyring)
     {
@@ -160,15 +162,49 @@ AddKeyToKeyRing(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = ReadGPGKey(pszFile, &pszKeyData);
+    dwError = ReadGPGKeyFile(pszFile, &pszKeyData, &nKeyDataSize);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    nArmor = pgpParsePkts(pszKeyData, &pPkt, &nPktLen);
-    if(nArmor != PGPARMOR_PUBKEY) 
+    while (nOffset < nKeyDataSize)
     {
+        nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
+        if(nArmor == PGPARMOR_PUBKEY)
+        {
+            dwError = AddKeyPktToKeyring(pKeyring, pPkt, nPktLen);
+            BAIL_ON_TDNF_ERROR(dwError);
+            nKeys++;
+        }
+        nOffset += nPktLen;
+    }
+    if (nKeys == 0) {
         dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszKeyData);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+AddKeyPktToKeyring(
+    rpmKeyring pKeyring,
+    uint8_t* pPkt,
+    size_t nPktLen
+    )
+{
+    uint32_t dwError = 0;
+    pgpDig pDig = NULL;
+    rpmPubkey pPubkey = NULL;
+
+    if(!pKeyring || !pPkt || nPktLen == 0)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pPubkey = rpmPubkeyNew (pPkt, nPktLen);
     if(!pPubkey)
     {
@@ -198,7 +234,6 @@ AddKeyToKeyRing(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszKeyData);
     return dwError;
 error:
     if(pPubkey)
@@ -220,7 +255,6 @@ VerifyRpmSig(
     rpmtd pTD = NULL;
     Header pPkgHeader = NULL;
     pgpDig pDigest = NULL;
-
 
     if(!pKeyring || IsNullOrEmptyString(pszPkgFile))
     {
@@ -310,7 +344,7 @@ error:
 }
 
 uint32_t
-TDNFImportGPGKey(
+TDNFImportGPGKeyFile(
     rpmts pTS,
     const char* pszFile
     )
@@ -320,6 +354,9 @@ TDNFImportGPGKey(
     uint8_t* pPkt = NULL;
     size_t nPktLen = 0;
     char* pszKeyData = NULL;
+    int nKeyDataSize;
+    int nKeys = 0;
+    int nOffset = 0;
 
     if(pTS == NULL || IsNullOrEmptyString(pszFile))
     {
@@ -327,18 +364,25 @@ TDNFImportGPGKey(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = ReadGPGKey(pszFile, &pszKeyData);
+    dwError = ReadGPGKeyFile(pszFile, &pszKeyData, &nKeyDataSize);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    nArmor = pgpParsePkts(pszKeyData, &pPkt, &nPktLen);
-    if(nArmor != PGPARMOR_PUBKEY)
+    while (nOffset < nKeyDataSize)
     {
+        nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
+        if(nArmor == PGPARMOR_PUBKEY)
+        {
+            dwError = rpmtsImportPubkey(pTS, pPkt, nPktLen);
+            BAIL_ON_TDNF_ERROR(dwError);
+            nKeys++;
+        }
+        nOffset += nPktLen;
+    }
+
+    if (nKeys == 0) {
         dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = rpmtsImportPubkey(pTS, pPkt, nPktLen);
-    BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszKeyData);

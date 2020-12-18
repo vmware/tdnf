@@ -56,7 +56,7 @@ TDNFRepoSetBaseUrl(
     }
 
     TDNF_SAFE_FREE_MEMORY(pszRepo->pszBaseUrl);
-    dwError = TDNFFileReadAllText(pszBaseUrlFile, &pszBaseUrl);
+    dwError = TDNFFileReadAllText(pszBaseUrlFile, &pszBaseUrl, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pszRepo->pszBaseUrl = pszBaseUrl;

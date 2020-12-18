@@ -11,7 +11,8 @@
 uint32_t
 TDNFFileReadAllText(
     const char *pszFileName,
-    char **ppszText
+    char **ppszText,
+    int *pnLength
     )
 {
     uint32_t dwError = 0;
@@ -52,6 +53,9 @@ TDNFFileReadAllText(
     }
 
     *ppszText = pszText;
+    if (pnLength != NULL) {
+        *pnLength = nLength;
+    }
 cleanup:
     if(fp)
     {
