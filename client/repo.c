@@ -84,7 +84,7 @@ TDNFInitRepo(
     pSolvRepoInfo->pRepo = pRepo;
     pRepo->appdata = pSolvRepoInfo;
 
-    dwError = SolvCalculateCookieForRepoMD(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
+    dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvRepoInfo->nCookieSet = 1;
@@ -680,31 +680,34 @@ TDNFGetRepoMD(
     int nNeedDownload = 0;
     int nNewRepoMDFile = 0;
     int nReplaceRepoMD = 0;
-    int nStrictlyReplace = 0;
+    int nReplacebaseURL = 0;
     int metalink = 0;
+    int nKeepCache = 0;
     TDNF_METALINK_FILE *ml_file = NULL;
     char *pszError = NULL;
 
-    if(!pTdnf ||
-       !pRepoData ||
-       IsNullOrEmptyString(pszRepoDataDir) ||
-       !ppRepoMD)
+    if (!pTdnf ||
+        !pRepoData ||
+        IsNullOrEmptyString(pszRepoDataDir) ||
+        !ppRepoMD)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if((pRepoData->pszBaseUrl == NULL) && (pRepoData->pszMetaLink == NULL))
+    if (IsNullOrEmptyString(pRepoData->pszBaseUrl) && IsNullOrEmptyString(pRepoData->pszMetaLink))
     {
         fprintf(stderr, "Error: Cannot find a valid base URL for repo: %s\n", pRepoData->pszName);
         dwError = ERROR_TDNF_BASEURL_DOES_NOT_EXISTS;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(pRepoData->pszMetaLink)
+    if (pRepoData->pszMetaLink)
     {
         metalink = 1;
     }
+
+    nKeepCache = pTdnf->pConf->nKeepCache;
 
     dwError = TDNFAllocateStringPrintf(&pszRepoMDFile,
                                        "%s/%s",
@@ -742,53 +745,25 @@ TDNFGetRepoMD(
                                        pszRepoDataDir,
                                        TDNF_REPO_BASEURL_FILE_NAME);
     BAIL_ON_TDNF_ERROR(dwError);
-    if(metalink)
+    if (metalink)
     {
         /* if metalink OR baseurl file is not present, set flag to download */
         if (access(pszMetaLinkFile, F_OK) || access(pszBaseUrlFile, F_OK))
         {
-            if(errno != ENOENT)
+            if (errno != ENOENT)
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
             }
-            nStrictlyReplace = 1;
             nNeedDownload = 1;
         }
     }
     else
     {
-        /*If metalink is not set but if metalink and baseurl file is present
-          this applies, metalink was set before but now we are
-          using Base URL instead of Metalink so we need to refresh*/
-
-        if (!access(pszBaseUrlFile, F_OK))
-        {
-            //we should remove the baseurl file now
-            if(remove(pszBaseUrlFile))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-        }
-
-        if (!access(pszMetaLinkFile, F_OK))
-        {
-            //we should remove the metalink file now
-            if(remove(pszMetaLinkFile))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-            /*setting need download true and base url might point to another mirror
-             than the mirror metalink was pointing to */
-            nNeedDownload = 1;
-            nStrictlyReplace = 1;
-        }
         /* if repomd.xml file is not present, set flag to download */
         if (access(pszRepoMDFile, F_OK))
         {
-            if(errno != ENOENT)
+            if (errno != ENOENT)
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -797,26 +772,37 @@ TDNFGetRepoMD(
         }
     }
     /* if refresh flag is set, get shasum of existing repomd file */
-    if (!nStrictlyReplace && pTdnf->pArgs->nRefresh)
+    if (pTdnf->pArgs->nRefresh)
     {
-        if(!access(pszRepoMDFile, F_OK))
+        if (metalink)
         {
-            dwError = SolvCalculateCookieForRepoMD(pszRepoMDFile, pszCookie);
-            BAIL_ON_TDNF_ERROR(dwError);
-            nNeedDownload = 1;
+            if (!access(pszMetaLinkFile, F_OK))
+            {
+                dwError = SolvCalculateCookieForFile(pszMetaLinkFile, pszCookie);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
         }
+        else
+        {
+            if (!access(pszRepoMDFile, F_OK))
+            {
+                dwError = SolvCalculateCookieForFile(pszRepoMDFile, pszCookie);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        nNeedDownload = 1;
     }
 
-    if(metalink)
+    if (metalink)
     {
         dwError = TDNFAllocateString(pRepoData->pszMetaLink, &pszRepoMetalink);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
     /* download repomd.xml to tmp */
-    if(nNeedDownload)
+    if (nNeedDownload)
     {
-        if(!pTdnf->pArgs->nQuiet)
+        if (!pTdnf->pArgs->nQuiet)
         {
            printf("Refreshing metadata for: '%s'\n",
                     pRepoData->pszName);
@@ -828,8 +814,9 @@ TDNFGetRepoMD(
                       pTdnf->pConf->pszCacheDir,
                       pRepoData->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFUtilsMakeDirs(pszTmpRepoDataDir);
-        if(dwError == ERROR_TDNF_ALREADY_EXISTS)
+        if (dwError == ERROR_TDNF_ALREADY_EXISTS)
         {
             dwError = 0;
         }
@@ -841,7 +828,7 @@ TDNFGetRepoMD(
                       pszTmpRepoDataDir,
                       TDNF_REPO_METADATA_FILE_NAME);
         BAIL_ON_TDNF_ERROR(dwError);
-        if(metalink)
+        if (metalink)
         {
             dwError = TDNFAllocateStringPrintf(&pszTmpRepoMetalinkFile,
                                                "%s/%s",
@@ -857,22 +844,54 @@ TDNFGetRepoMD(
                                        pszTmpRepoMetalinkFile, pRepoData->pszId,
                                        metalink, &ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
-            dwError = TDNFDownloadUsingMetalinkResources(
-                          pTdnf,
-                          pRepoData->pszId,
-                          pszTmpRepoMDFile,
-                          pRepoData->pszId,
-                          &pszRepoMDUrl,
-                          ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
 
-            //check if the repomd file downloaded using metalink have the same checksum
-            //as mentioned in the metalink file.
-            dwError = TDNFCheckRepoMDFileHashFromMetalink(pszTmpRepoMDFile , ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
+            nReplaceRepoMD = 1;
+            if (pszCookie[0])
+            {
+                dwError = SolvCalculateCookieForFile(pszTmpRepoMetalinkFile, pszTmpCookie);
+                BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszTempBaseUrlFile);
-            BAIL_ON_TDNF_ERROR(dwError);
+                if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+                {
+                    nReplaceRepoMD = 0;
+                }
+            }
+
+            if (nReplaceRepoMD)
+            {
+                dwError = TDNFDownloadUsingMetalinkResources(
+                              pTdnf,
+                              pRepoData->pszId,
+                              pszTmpRepoMDFile,
+                              pRepoData->pszId,
+                              &pszRepoMDUrl,
+                              ml_file);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                //check if the repomd file downloaded using metalink have the same checksum
+                //as mentioned in the metalink file.
+                dwError = TDNFCheckRepoMDFileHashFromMetalink(pszTmpRepoMDFile , ml_file);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszTempBaseUrlFile);
+                BAIL_ON_TDNF_ERROR(dwError);
+                nReplacebaseURL = 1;
+                nNewRepoMDFile = 1;
+
+                if (!access(pszRepoMDFile, F_OK))
+                {
+                    memset(pszCookie, 0, SOLV_COOKIE_LEN);
+                    memset(pszTmpCookie, 0, SOLV_COOKIE_LEN);
+                    dwError = SolvCalculateCookieForFile(pszRepoMDFile, pszCookie);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                    dwError = SolvCalculateCookieForFile(pszTmpRepoMDFile, pszTmpCookie);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                    if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+                    {
+                        nReplaceRepoMD = 0;
+                    }
+                }
+            }
         }
         else
         {
@@ -891,65 +910,63 @@ TDNFGetRepoMD(
                               0,
                               NULL);
             BAIL_ON_TDNF_ERROR(dwError);
+            nReplaceRepoMD = 1;
+            if (pszCookie[0])
+            {
+                dwError = SolvCalculateCookieForFile(pszTmpRepoMDFile, pszTmpCookie);
+                BAIL_ON_TDNF_ERROR(dwError);
+                if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+                {
+                    nReplaceRepoMD = 0;
+                }
+            }
+            nNewRepoMDFile = 1;
         }
-        /* plugin event indicating a repomd download happened */
-        dwError = TDNFEventRepoMDDownloadEnd(
-                      pTdnf,
-                      pRepoData->pszId,
-                      pszRepoMDUrl,
-                      pszTmpRepoMDFile);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        nNewRepoMDFile = 1;
+        if (nNewRepoMDFile)
+        {
+            /* plugin event indicating a repomd download happened */
+            dwError = TDNFEventRepoMDDownloadEnd(
+                          pTdnf,
+                          pRepoData->pszId,
+                          pszRepoMDUrl,
+                          pszTmpRepoMDFile);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
 
     }
-    else
+
+    if (metalink && !nReplacebaseURL && !access(pszBaseUrlFile, F_OK))
     {
         /* if metalink url is present, then, we will need to
            set the base url to the url which is used to download the repomd */
-        if(metalink)
-        {
-            dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszBaseUrlFile);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
+        dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszBaseUrlFile);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (nReplaceRepoMD)
+    {
+        /* Remove the old repodata, solvcache and lastRefreshMarker before replacing the new repomd file and metalink files. */
+        TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
+        TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
+        TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
+        if (!nKeepCache)
+        {
+            TDNFRemoveRpmCache(pTdnf, pRepoData->pszId);
+        }
+        dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFReplaceFile(pszTmpRepoMDFile, pszRepoMDFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (metalink && nReplacebaseURL)
+    {
+        dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFReplaceFile(pszTempBaseUrlFile, pszBaseUrlFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     if (nNewRepoMDFile)
     {
-        nReplaceRepoMD = 1;
-        /*We need to be strict here, if user has switched from metalink to baseurl or vice versa
-          the hash for the repomd.xml might be same, but we should still sync all the repodata
-          from the mirror which we are going to use for all tdnf operations */
-        /* compare shasum if applicable */
-        if (!nStrictlyReplace && pszCookie[0])
-        {
-            dwError = SolvCalculateCookieForRepoMD(pszTmpRepoMDFile, pszTmpCookie);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
-            {
-                nReplaceRepoMD = 0;
-            }
-        }
-
-        if (nReplaceRepoMD)
-        {
-            /* Remove the old repodata, solvcache and lastRefreshMarker before replacing the new repomd file and metalink files. */
-            TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
-            TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
-            TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
-            dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
-            BAIL_ON_TDNF_ERROR(dwError);
-            dwError = TDNFReplaceFile(pszTmpRepoMDFile, pszRepoMDFile);
-            BAIL_ON_TDNF_ERROR(dwError);
-            if (metalink)
-            {
-                dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
-                BAIL_ON_TDNF_ERROR(dwError);
-                dwError = TDNFReplaceFile(pszTempBaseUrlFile, pszBaseUrlFile);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
         dwError = TDNFRemoveTmpRepodata(pszTmpRepoDataDir);
         BAIL_ON_TDNF_ERROR(dwError);
     }

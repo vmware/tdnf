@@ -502,7 +502,7 @@ SolvIsGlob(
     );
 
 uint32_t
-SolvCalculateCookieForRepoMD(
+SolvCalculateCookieForFile(
     char* pszRepoMD,
     unsigned char* pszCookie
     );
