@@ -310,6 +310,7 @@ TDNFGoal(
 
 uint32_t
 TDNFGoalReportProblems(
+    PTDNF pTdnf,
     HyGoal hGoal,
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     );

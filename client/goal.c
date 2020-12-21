@@ -110,7 +110,7 @@ error:
     if(hGoal)
     {
         TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
-        TDNFGoalReportProblems(hGoal, dwSkipProblem);
+        TDNFGoalReportProblems(pTdnf, hGoal, dwSkipProblem);
         hy_goal_free(hGoal);
     }
     goto cleanup;
@@ -339,65 +339,122 @@ __should_skip(
     return dwResult;
 }
 
+static uint32_t
+CheckForProviders(
+    PTDNF pTdnf,
+    const char *pszProblem,
+    char *prv_pkgname
+    )
+{
+    char *beg = NULL;
+    char *end = NULL;
+    uint32_t dwError = 0;
+    char pkgname[256] = {0};
+    HySelector hSelector = NULL;
+
+    if (!pTdnf || IsNullOrEmptyString(pszProblem) || !prv_pkgname)
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
+
+    if (!strstr(pszProblem, " provides "))
+    {
+        return dwError;
+    }
+
+    beg = strstr(pszProblem, " requires ");
+    if (beg)
+    {
+        beg += strlen(" requires ");
+        end = strchr(beg, ',');
+    }
+
+    if (!beg || !end)
+    {
+        fprintf(stderr, "Error while trying to resolve\n");
+        return ERROR_TDNF_HAWKEY_FAILED;
+    }
+
+    for (int32_t i = 0; end > beg; beg++)
+    {
+        if (*beg != ' ')
+        {
+            pkgname[i++] = *beg;
+        }
+    }
+
+    if (!strcmp(pkgname, prv_pkgname))
+    {
+        return dwError;
+    }
+
+    dwError = TDNFGetSelector(
+                    pTdnf,
+                    pkgname,
+                    &hSelector);
+    if (hSelector)
+    {
+        hy_selector_free(hSelector);
+    }
+
+    return dwError;
+}
+
 uint32_t
 TDNFGoalReportProblems(
+    PTDNF pTdnf,
     HyGoal hGoal,
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem
     )
 {
+    int32_t nCount = 0;
     uint32_t dwError = 0;
-    uint32_t dwSkipProbCount = 0;
-    int i = 0;
-    int j = 0;
-    int nCount = 0;
-    char* pszProblem = NULL;
+    uint32_t total_prblms = 0;
+    char prv_pkgname[256] = {0};
 
-    if(!hGoal)
+    if (!hGoal)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+        return ERROR_TDNF_INVALID_PARAMETER;
     }
 
     nCount = hy_goal_count_problems(hGoal);
-    /**
-     * Below condition check is added to count the number of skip problems
-     * */
-    if((nCount > 0) && (dwSkipProblem != SKIPPROBLEM_NONE))
+    for (nCount--; nCount >= 0; nCount--)
     {
-        for(; i < nCount; ++i)
+        char *pszProblem = NULL;
+
+        pszProblem = hy_goal_describe_problem(hGoal, nCount);
+        if ((dwSkipProblem != SKIPPROBLEM_NONE) &&
+            __should_skip(pszProblem, dwSkipProblem))
         {
-            pszProblem = hy_goal_describe_problem(hGoal, i);
-            if (__should_skip(pszProblem, dwSkipProblem))
-            {
-              dwSkipProbCount++;
-            }
             hy_free(pszProblem);
             pszProblem = NULL;
+            continue;
         }
-    }
 
-    if(nCount > 0)
-    {
-        fprintf(stderr, "Found %d problem(s) while resolving\n", nCount - dwSkipProbCount);
-        for(i = 0; i < nCount; ++i)
+        if ((dwSkipProblem != SKIPPROBLEM_NONE) &&
+            strstr(pszProblem, " providers "))
         {
-            pszProblem = hy_goal_describe_problem(hGoal, i);
-            if (__should_skip(pszProblem, dwSkipProblem))
+            if (!CheckForProviders(pTdnf, pszProblem, prv_pkgname))
             {
                 hy_free(pszProblem);
                 pszProblem = NULL;
                 continue;
             }
-            fprintf(stderr, "%d. %s\n", ++j, pszProblem);
-            hy_free(pszProblem);
-            pszProblem = NULL;
         }
-    }
-cleanup:
-    return dwError;
 
-error:
-    goto cleanup;
+        if (!dwError)
+        {
+            dwError = ERROR_TDNF_HAWKEY_FAILED;
+        }
+        fprintf(stderr, "%u. %s\n", ++total_prblms, pszProblem);
+    }
+
+    if (dwError)
+    {
+        fprintf(stderr, "Found %u problem(s) while resolving\n", total_prblms);
+    }
+
+    return dwError;
 }
 
 uint32_t

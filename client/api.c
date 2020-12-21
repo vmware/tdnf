@@ -351,7 +351,7 @@ TDNFCheckLocalPackages(
     if(dwError)
     {
         TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
-        TDNFGoalReportProblems(hGoal, dwSkipProblem);
+        TDNFGoalReportProblems(pTdnf, hGoal, dwSkipProblem);
         BAIL_ON_TDNF_HAWKEY_ERROR(dwError);
     }
 
