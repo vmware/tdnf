@@ -52,9 +52,9 @@ progress_cb(
 
     dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
     if (!isatty(STDOUT_FILENO)) {
-        printf("%s %3.0f%% %ld\n", (char *)pUserData, dPercent, dlNow);
+        pr_info("%s %3.0f%% %ld\n", (char *)pUserData, dPercent, dlNow);
     } else {
-        printf("%-35s %10ld %5.0f%%\r", (char *)pUserData, dlNow, dPercent);
+        pr_info("%-35s %10ld %5.0f%%\r", (char *)pUserData, dlNow, dPercent);
     }
 
     fflush(stdout);
@@ -143,7 +143,7 @@ TDNFGetDigestForFile(
     fd = open(filename, O_RDONLY);
     if (fd == -1)
     {
-        fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
+        pr_err("Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
@@ -152,7 +152,7 @@ TDNFGetDigestForFile(
 
     if (!digest_type)
     {
-        fprintf(stderr, "Unknown message digest %s\n", hash->hash_type);
+        pr_err("Unknown message digest %s\n", hash->hash_type);
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -160,7 +160,7 @@ TDNFGetDigestForFile(
     ctx = EVP_MD_CTX_create();
     if (!ctx)
     {
-        fprintf(stderr, "Context Create Failed\n");
+        pr_err("Context Create Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -168,7 +168,7 @@ TDNFGetDigestForFile(
     dwError = EVP_DigestInit_ex(ctx, digest_type, NULL);
     if (!dwError)
     {
-        fprintf(stderr, "Digest Init Failed\n");
+        pr_err("Digest Init Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         /*MD5 is not approved in FIPS mode. So, overrriding
           the dwError to show the right error to the user */
@@ -184,7 +184,7 @@ TDNFGetDigestForFile(
         dwError = EVP_DigestUpdate(ctx, buf, length);
         if (!dwError)
         {
-            fprintf(stderr, "Digest Update Failed\n");
+            pr_err("Digest Update Failed\n");
             dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -193,7 +193,7 @@ TDNFGetDigestForFile(
 
     if (length == -1)
     {
-        fprintf(stderr, "Metalink: validating (%s) FAILED\n", filename);
+        pr_err("Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
@@ -201,7 +201,7 @@ TDNFGetDigestForFile(
     dwError = EVP_DigestFinal_ex(ctx, digest, &digest_length);
     if (!dwError)
     {
-        fprintf(stderr, "Digest Final Failed\n");
+        pr_err("Digest Final Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -262,7 +262,7 @@ cleanup:
 error:
     if (!IsNullOrEmptyString(filename))
     {
-        fprintf(stderr, "Error: Validating metalink (%s) FAILED (digest mismatch)\n", filename);
+        pr_err("Error: Validating metalink (%s) FAILED (digest mismatch)\n", filename);
     }
     goto cleanup;
 }
@@ -285,7 +285,7 @@ TDNFCheckRepoMDFileHashFromMetalink(
 
     if(ml_file->digest == NULL)
     {
-        fprintf(stderr,
+        pr_err(
                 "Error: Validating metalink (%s) FAILED (digest missing)\n", pszFile);
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -348,7 +348,7 @@ TDNFHexToUint(
     val = strtoul(buf, NULL, 16);
     if(errno)
     {
-        fprintf(stderr, "Error: strtoul call failed\n");
+        pr_err("Error: strtoul call failed\n");
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
@@ -536,7 +536,7 @@ error:
         TDNF_SAFE_FREE_MEMORY(metalink_file->filename);
         TDNF_SAFE_FREE_MEMORY(metalink_file);
     }
-    goto cleanup;  
+    goto cleanup;
 }
 
 uint32_t
@@ -628,7 +628,7 @@ TDNFParseAndGetURLFromMetalink(
             {
                 metalink_parser_context_delete(metalink_context);
             }
-            fprintf(stderr, "Unable to parse metalink, ERROR: code=%d\n", metalink_error);
+            pr_err("Unable to parse metalink, ERROR: code=%d\n", metalink_error);
             dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -645,13 +645,13 @@ TDNFParseAndGetURLFromMetalink(
     metalink_error = metalink_parse_final(metalink_context, NULL, 0, &metalink);
     if ((metalink_error != 0) || (metalink == NULL))
     {
-        fprintf(stderr, "metalink_parse_final failed, ERROR: code=%d\n", metalink_error);
+        pr_err("metalink_parse_final failed, ERROR: code=%d\n", metalink_error);
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if (metalink->files == NULL)
     {
-        fprintf(stderr, "Metalink does not contain any valid file.\n");
+        pr_err("Metalink does not contain any valid file.\n");
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -661,7 +661,7 @@ TDNFParseAndGetURLFromMetalink(
         resources = (*files)->resources;
         if (IsNullOrEmptyString(resources))
         {
-            fprintf(stderr, "File %s does not have any resource.\n", (*files)->name);
+            pr_err("File %s does not have any resource.\n", (*files)->name);
             dwError = ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -731,8 +731,7 @@ TDNFDownloadFile(
     PTDNF_REPO_DATA_INTERNAL pRepo;
     int i;
 
-    //If TDNF install is invoked with quiet argument,
-    //pszProgressData will be NULL
+    /* TDNFFetchRemoteGPGKey sends pszProgressData as NULL */
     if(!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszFileUrl) ||
@@ -784,10 +783,10 @@ TDNFDownloadFile(
     dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
-    if(!pTdnf->pArgs->nQuiet && pszProgressData)
+    if (!pTdnf->pArgs->nQuiet)
     {
         //print progress only if tty or verbose is specified.
-        if(isatty(STDOUT_FILENO) || pTdnf->pArgs->nVerbose)
+        if (isatty(STDOUT_FILENO) || pTdnf->pArgs->nVerbose)
         {
             dwError = set_progress_cb(pCurl, pszProgressData);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -837,7 +836,7 @@ TDNFDownloadFile(
 
     if(lStatus >= 400)
     {
-        fprintf(stderr,
+        pr_err(
                 "Error: %ld when downloading %s\n. Please check repo url.\n",
                 lStatus,
                 pszFileUrl);
@@ -887,7 +886,7 @@ error:
     if(pCurl && TDNFIsCurlError(dwError))
     {
         uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
-        fprintf(stderr,
+        pr_err(
                 "curl#%u: %s\n",
                 nCurlError,
                 curl_easy_strerror(nCurlError));
@@ -906,7 +905,6 @@ TDNFDownloadPackage(
 {
     uint32_t dwError = 0;
     char* pszBaseUrl = NULL;
-    int nSilent = 0;
     char *pszPackageUrl = NULL;
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
@@ -920,8 +918,6 @@ TDNFDownloadPackage(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    nSilent = pTdnf->pArgs->nQuiet;
 
     dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepoName, &pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -953,15 +949,12 @@ TDNFDownloadPackage(
                                pszRepoName,
                                pszPackageUrl,
                                pszPackageFile,
-                               nSilent ? NULL : pszPkgName,
+                               pszPkgName,
                                0,
                                NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(!nSilent)
-    {
-        printf("\n");
-    }
+    pr_info("\n");
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPackageUrl);

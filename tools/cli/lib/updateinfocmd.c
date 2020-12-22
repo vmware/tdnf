@@ -125,7 +125,7 @@ TDNFCliUpdateInfoSummary(
         if(pSummary[i].nCount > 0)
         {
             nCount++;
-            printf(
+            pr_info(
                 "%d %s notice(s)\n",
                 pSummary[i].nCount,
                 TDNFGetUpdateInfoType(pSummary[i].nType));
@@ -133,7 +133,7 @@ TDNFCliUpdateInfoSummary(
     }
     if (nCount == 0)
     {
-        printf(
+        pr_info(
             "\n%d updates.\n", nCount);
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_CLI_ERROR(dwError);
@@ -169,7 +169,7 @@ TDNFCliUpdateInfoList(
         pPkg = pInfo->pPackages;
         while(pPkg)
         {
-            printf("%s %s %s\n", pInfo->pszID,
+            pr_info("%s %s %s\n", pInfo->pszID,
                     TDNFGetUpdateInfoType(pInfo->nType),
                     pPkg->pszFileName);
 
@@ -204,7 +204,7 @@ TDNFCliUpdateInfoInfo(
         pPkg = pInfo->pPackages;
         while(pPkg)
         {
-            printf("       Name : %s\n"
+            pr_info("       Name : %s\n"
                    "  Update ID : %s\n"
                    "       Type : %s\n"
                    "    Updated : %s\n"

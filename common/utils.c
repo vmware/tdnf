@@ -432,12 +432,12 @@ TDNFYesOrNo(
 
     if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
     {
-        printf("%s", pszQuestion);
+        pr_crit("%s", pszQuestion);
         while ((opt = getchar()) == '\n' || opt == '\r');
         opt = tolower(opt);
         if (opt != 'y' && opt != 'n')
         {
-            printf("Invalid input\n");
+            pr_err("Invalid input\n");
             dwError = ERROR_TDNF_INVALID_INPUT;
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -693,4 +693,3 @@ error:
     }
     goto cleanup;
 }
-

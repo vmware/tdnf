@@ -21,7 +21,6 @@
 
 #include "includes.h"
 
-int nQuiet = 0;
 TDNF_CLI_CONTEXT _context = {0};
 
 /* glockfd used in exit handler nad inst*/
@@ -82,7 +81,7 @@ int main(int argc, char* argv[])
 
     if (IsTdnfAlreadyRunning())
     {
-        fprintf(stderr, "An instance of tdnf is already running, wait for it to finish\n");
+        pr_err("An instance of tdnf is already running, wait for it to finish\n");
         BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_ACCESS_DENIED));
     }
 
@@ -115,7 +114,7 @@ int main(int argc, char* argv[])
     dwError = TDNFCliParseArgs(argc, argv, &pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
-    nQuiet = pCmdArgs->nQuiet;
+    GlobalSetQuiet(pCmdArgs->nQuiet);
 
     //If --version, show version and exit
     if(pCmdArgs->nShowVersion)
@@ -205,14 +204,14 @@ static void TdnfExitHandler(void)
 
     if (flock(glockfd, LOCK_UN))
     {
-        fprintf(stderr, "ERROR: Failed to unlock lock file\n");
+        pr_err("ERROR: Failed to unlock lock file\n");
     }
 
     close(glockfd);
 
     if (remove(TDNF_INSTANCE_LOCK_FILE))
     {
-        fprintf(stderr, "ERROR: Unable to remove lockfile(%s) "
+        pr_err("ERROR: Unable to remove lockfile(%s) "
                 "Try removing it manually and run tdnf again\n",
                 TDNF_INSTANCE_LOCK_FILE);
     }
@@ -225,7 +224,7 @@ static bool IsTdnfAlreadyRunning(void)
     glockfd = open(TDNF_INSTANCE_LOCK_FILE, O_CREAT | O_RDONLY);
     if (glockfd < 0)
     {
-        fprintf(stderr, "ERROR: failed to create instance lock file\n");
+        pr_err("ERROR: failed to create instance lock file\n");
         goto end;
     }
 
@@ -234,7 +233,7 @@ static bool IsTdnfAlreadyRunning(void)
         if (errno == EAGAIN)
         {
             ret = true;
-            fprintf(stderr, "ERROR: failed to acquire lock on: %s\n", TDNF_INSTANCE_LOCK_FILE);
+            pr_err("ERROR: failed to acquire lock on: %s\n", TDNF_INSTANCE_LOCK_FILE);
         }
     }
 
@@ -274,11 +273,11 @@ TDNFCliPrintError(
 
     if (dwErrorCode)
     {
-        fprintf(stderr, "Error(%u) : %s\n", dwErrorCode, pszError);
+        pr_err("Error(%u) : %s\n", dwErrorCode, pszError);
     }
-    else if (!nQuiet)
+    else
     {
-        fprintf(stderr, "%s\n", pszError);
+        pr_err("%s\n", pszError);
     }
 
 cleanup:
@@ -286,7 +285,7 @@ cleanup:
     return dwError;
 
 error:
-    fprintf(stderr, "Retrieving error string for %u failed with %u\n",
+    pr_err("Retrieving error string for %u failed with %u\n",
             dwErrorCode, dwError);
 
     goto cleanup;
@@ -297,7 +296,7 @@ TDNFCliShowVersion(
     void
     )
 {
-    printf("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());
+    pr_info("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());
 }
 
 uint32_t
@@ -317,10 +316,10 @@ TDNFCliVerboseShowEnv(
     pOpt = pCmdArgs->pSetOpt;
     if(pOpt)
     {
-        printf("Setting options:\n");
+        pr_info("Setting options:\n");
         while(pOpt)
         {
-            printf("\t%s = %s\n", pOpt->pszOptName, pOpt->pszOptValue);
+            pr_info("\t%s = %s\n", pOpt->pszOptName, pOpt->pszOptValue);
             pOpt = pOpt->pNext;
         }
     }

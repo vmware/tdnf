@@ -338,6 +338,11 @@ TDNFPrepareSinglePkg(
 
     //Check if this is a known package. If not add to unresolved
     dwError = SolvCountPkgByName(pSack, pszPkgName, &dwCount);
+    if (dwError == ERROR_TDNF_NO_MATCH)
+    {
+        pr_err("%s package not found or not installed\n", pszPkgName);
+    }
+
     BAIL_ON_TDNF_ERROR(dwError);
     if (dwCount == 0)
     {
@@ -421,25 +426,25 @@ error:
         dwError = 0;
         if(nShowAlreadyInstalled)
         {
-            fprintf(stderr, "Package %s is already installed.\n", pszPkgName);
+            pr_err("Package %s is already installed.\n", pszPkgName);
         }
     }
     if(dwError == ERROR_TDNF_NO_UPGRADE_PATH)
     {
         dwError = 0;
-        fprintf(stderr, "There is no upgrade path for %s.\n", pszPkgName);
+        pr_err("There is no upgrade path for %s.\n", pszPkgName);
     }
     if(dwError == ERROR_TDNF_NO_DOWNGRADE_PATH)
     {
         dwError = 0;
-        fprintf(stderr, "There is no downgrade path for %s.\n", pszPkgName);
+        pr_err("There is no downgrade path for %s.\n", pszPkgName);
     }
     if(dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
     {
         dwError = 0;
         if(TDNFAddNotResolved(ppszPkgsNotResolved, pszPkgName))
         {
-            fprintf(stderr, "Error while adding not resolved packages\n");
+            pr_err("Error while adding not resolved packages\n");
         }
     }
     if(dwError == ERROR_TDNF_ERASE_NEEDS_INSTALL)

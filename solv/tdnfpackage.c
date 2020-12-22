@@ -1594,7 +1594,7 @@ check_for_providers(
 
     if (!beg || !end)
     {
-        fprintf(stderr, "Error while trying to resolve\n");
+        pr_err("Error while trying to resolve\n");
         return ERROR_TDNF_SOLV_FAILED;
     }
 
@@ -1671,12 +1671,12 @@ SolvReportProblems(
         }
 
         dwError = ERROR_TDNF_SOLV_FAILED;
-        fprintf(stderr, "%u. %s\n", ++total_prblms, pszProblem);
+        pr_err("%u. %s\n", ++total_prblms, pszProblem);
     }
 
     if (dwError)
     {
-        fprintf(stderr, "Found %u problem(s) while resolving\n", total_prblms);
+        pr_err("Found %u problem(s) while resolving\n", total_prblms);
     }
 
     return dwError;

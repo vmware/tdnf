@@ -80,17 +80,11 @@ TDNFPkgsToExclude(
 
     if (!pTdnf->pArgs->nDisableExcludes && pTdnf->pConf->ppszExcludes)
     {
-        if (!pTdnf->pArgs->nQuiet)
-        {
-            printf("Warning: The following packages are excluded "
-                   "from tdnf.conf:\n");
-        }
+        pr_info("Warning: The following packages are excluded "
+                "from tdnf.conf:\n");
         while (pTdnf->pConf->ppszExcludes[nIndex])
         {
-            if (!pTdnf->pArgs->nQuiet)
-            {
-                printf("  %s\n", pTdnf->pConf->ppszExcludes[nIndex]);
-            }
+            pr_info("  %s\n", pTdnf->pConf->ppszExcludes[nIndex]);
             dwCount++;
             nIndex++;
         }

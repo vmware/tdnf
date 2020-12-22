@@ -50,4 +50,21 @@
         }                                       \
     } while(0)
 
+#define LOG_INFO    0
+#define LOG_ERR     1
+#define LOG_CRIT    2
+
+#define pr_info(fmt, ...) \
+    log_console(LOG_INFO, fmt, ##__VA_ARGS__)
+
+#define pr_err(fmt, ...) \
+    log_console(LOG_ERR, fmt, ##__VA_ARGS__)
+
+/*
+ * If something needs to be printed (a prompt for example)
+ * irrespective of 'quiet' option
+ */
+#define pr_crit(fmt, ...) \
+    log_console(LOG_CRIT, fmt, ##__VA_ARGS__)
+
 #endif /* __INC_TDNF_COMMON_DEFINES_H__ */

@@ -26,7 +26,7 @@ TDNFCliShowUsage(
     void
     )
 {
-    printf("You need to give some command\n");
+    pr_crit("You need to give some command\n");
     TDNFCliShowHelp();
 }
 
@@ -35,53 +35,53 @@ TDNFCliShowHelp(
     void
     )
 {
-    printf("usage: tdnf [options] COMMAND\n");
-    printf("\n");
+    pr_crit("usage: tdnf [options] COMMAND\n");
+    pr_crit("\n");
 
-    printf("options    [-c [config file]]\n");
-    printf("           [--debugsolver]\n");
-    printf("           [--disablerepo=<repoid>]\n");
-    printf("           [--enablerepo=<repoid>]\n");
-    printf("           [--noplugins]\n");
-    printf("           [--enableplugin=<plugin_name>]\n");
-    printf("           [--disableplugin=<plugin_name>]\n");
-    printf("           [--rpmverbosity [debug level name]] [-v] [-y] [--assumeno]\n");
-    printf("           [--version] [--installroot [path]]\n");
-    printf("           [--nogpgcheck]\n");
-    printf("           [-q, --quiet]\n");
-    printf("           [--releasever RELEASEVER] [--setopt SETOPTS]\n");
-    printf("           [--refresh]\n");
-    printf("           [--exclude [file1,file2,...]]\n");
-    printf("           [--security]\n");
-    printf("           [--sec-severity CVSS_v3.0_Severity]\n");
-    printf("           [--reboot-required]\n");
-    printf("           [--skipsignature]\n");
-    printf("           [--skipdigest]\n");
-    printf("           [--disableexcludes]\n");
+    pr_crit("options    [-c [config file]]\n");
+    pr_crit("           [--debugsolver]\n");
+    pr_crit("           [--disablerepo=<repoid>]\n");
+    pr_crit("           [--enablerepo=<repoid>]\n");
+    pr_crit("           [--noplugins]\n");
+    pr_crit("           [--enableplugin=<plugin_name>]\n");
+    pr_crit("           [--disableplugin=<plugin_name>]\n");
+    pr_crit("           [--rpmverbosity [debug level name]] [-v] [-y] [--assumeno]\n");
+    pr_crit("           [--version] [--installroot [path]]\n");
+    pr_crit("           [--nogpgcheck]\n");
+    pr_crit("           [-q, --quiet]\n");
+    pr_crit("           [--releasever RELEASEVER] [--setopt SETOPTS]\n");
+    pr_crit("           [--refresh]\n");
+    pr_crit("           [--exclude [file1,file2,...]]\n");
+    pr_crit("           [--security]\n");
+    pr_crit("           [--sec-severity CVSS_v3.0_Severity]\n");
+    pr_crit("           [--reboot-required]\n");
+    pr_crit("           [--skipsignature]\n");
+    pr_crit("           [--skipdigest]\n");
+    pr_crit("           [--disableexcludes]\n");
 
-    printf("List of Main Commands\n");
-    printf("\n");
+    pr_crit("List of Main Commands\n");
+    pr_crit("\n");
 
-    printf("check-local               Checks local rpm folder for problems\n");
-    printf("check-update              Check for available package upgrades\n");
-    printf("clean                     Remove cached data\n");
-    printf("distro-sync               Synchronize installed packages to the latest available versions\n");
-    printf("downgrade                 downgrade a package\n");
-    printf("erase                     Remove a package or packages from your system\n");
-    printf("help                      Display a helpful usage message\n");
-    printf("info                      Display details about a package or group of packages\n");
-    printf("install                   Install a package or packages on your system\n");
-    printf("list                      List a package or groups of packages\n");
-    printf("makecache                 Generate the metadata cache\n");
-    printf("provides                  Find what package provides the given value\n");
-    printf("remove                    Remove a package or packages from your system\n");
-    printf("reinstall                 reinstall a package\n");
-    printf("repolist                  Display the configured software repositories\n");
-    printf("search                    Search package details for the given string\n");
-    printf("update                    Upgrade a package or packages on your system (same as 'upgrade')\n");
-    printf("updateinfo                Display advisories about packages\n");
-    printf("upgrade                   Upgrade a package or packages on your system\n");
-    printf("upgrade-to                Upgrade a package on your system to the specified version\n");
+    pr_crit("check-local               Checks local rpm folder for problems\n");
+    pr_crit("check-update              Check for available package upgrades\n");
+    pr_crit("clean                     Remove cached data\n");
+    pr_crit("distro-sync               Synchronize installed packages to the latest available versions\n");
+    pr_crit("downgrade                 downgrade a package\n");
+    pr_crit("erase                     Remove a package or packages from your system\n");
+    pr_crit("help                      Display a helpful usage message\n");
+    pr_crit("info                      Display details about a package or group of packages\n");
+    pr_crit("install                   Install a package or packages on your system\n");
+    pr_crit("list                      List a package or groups of packages\n");
+    pr_crit("makecache                 Generate the metadata cache\n");
+    pr_crit("provides                  Find what package provides the given value\n");
+    pr_crit("remove                    Remove a package or packages from your system\n");
+    pr_crit("reinstall                 reinstall a package\n");
+    pr_crit("repolist                  Display the configured software repositories\n");
+    pr_crit("search                    Search package details for the given string\n");
+    pr_crit("update                    Upgrade a package or packages on your system (same as 'upgrade')\n");
+    pr_crit("updateinfo                Display advisories about packages\n");
+    pr_crit("upgrade                   Upgrade a package or packages on your system\n");
+    pr_crit("upgrade-to                Upgrade a package on your system to the specified version\n");
 }
 
 void
@@ -89,7 +89,7 @@ TDNFCliShowNoSuchCommand(
     const char *pszCmd
     )
 {
-    printf("No such command: %s. Please use /usr/bin/tdnf --help\n",
+    pr_crit("No such command: %s. Please use /usr/bin/tdnf --help\n",
             pszCmd ? pszCmd : "");
 }
 
@@ -98,7 +98,7 @@ TDNFCliShowNoSuchOption(
     const char *pszOption
     )
 {
-    printf("No such option: %s. Please use /usr/bin/tdnf --help\n",
+    pr_crit("No such option: %s. Please use /usr/bin/tdnf --help\n",
             pszOption ? pszOption : "");
 }
 

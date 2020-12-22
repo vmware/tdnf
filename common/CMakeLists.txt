@@ -14,4 +14,5 @@ add_library(${LIB_TDNF_COMMON}
     setopt.c
     strings.c
     utils.c
+    log.c
 )

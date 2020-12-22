@@ -456,19 +456,19 @@ SolvGenerateCommonJob(
                 }
                 if (queueJob.count)
                 {
-                    printf("[ignoring case for '%s']\n", *ppszPkgNames);
+                    pr_info("[ignoring case for '%s']\n", *ppszPkgNames);
                 }
             }
             if (queueJob.count)
             {
                 if (nRetFlags & SELECTION_FILELIST)
                 {
-                    printf("[using file list match for '%s']\n",
+                    pr_info("[using file list match for '%s']\n",
                            *ppszPkgNames);
                 }
                 if (nRetFlags & SELECTION_PROVIDES)
                 {
-                    printf("[using capability match for '%s']\n",
+                    pr_info("[using capability match for '%s']\n",
                            *ppszPkgNames);
                 }
                 queue_insertn(&pQuery->queueJob,

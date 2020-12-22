@@ -439,7 +439,7 @@ HandleOptionsError(
     }
     else if (dwError == ERROR_TDNF_CLI_OPTION_ARG_REQUIRED)
     {
-       fprintf(stderr, "Option %s requires an argument\n", pszName);
+       pr_err("Option %s requires an argument\n", pszName);
     }
 
     return dwError;

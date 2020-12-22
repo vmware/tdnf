@@ -114,9 +114,7 @@ ReadGPGKeyFile(
     dwError = TDNFIsDir(pszFile, &nPathIsDir);
     if(dwError)
     {
-        fprintf(
-            stderr,
-            "Error: Accessing gpgkey at %s\n",
+        pr_err("Error: Accessing gpgkey at %s\n",
             pszFile);
     }
     BAIL_ON_TDNF_ERROR(dwError);
@@ -289,7 +287,7 @@ VerifyRpmSig(
 
     if(!headerConvert(pPkgHeader, HEADERCONV_RETROFIT_V3))
     {
-        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED; 
+        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED;
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
 
@@ -338,7 +336,7 @@ cleanup:
 error:
     if (pszPkgFile)
     {
-        fprintf(stderr, "Error verifying signature of: %s\n", pszPkgFile);
+        pr_err("Error verifying signature of: %s\n", pszPkgFile);
     }
     goto cleanup;
 }

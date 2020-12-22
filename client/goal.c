@@ -282,7 +282,7 @@ SolvAddDebugInfo(
     dwError = testcase_write(pSolv, pszDir, dwResultFlags, NULL, NULL);
     if(dwError == 0)
     {
-        fprintf(stderr, "Could not write debugdata to folder %s\n", pszDir);
+        pr_err("Could not write debugdata to folder %s\n", pszDir);
     }
     //need not fail if debugdata write fails.
     dwError = 0;

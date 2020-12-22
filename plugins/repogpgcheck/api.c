@@ -193,7 +193,7 @@ TDNFRepoGPGCheckEvent(
     }
     else
     {
-        fprintf(stderr, "Unexpected event %d in %s plugin\n",
+        pr_err("Unexpected event %d in %s plugin\n",
                 pContext->nEvent, PLUGIN_NAME);
         goto cleanup;
     }

@@ -283,4 +283,17 @@ TDNFGetOptWithDefault(
     const char *pszDefault,
     char **ppszOptValue
     );
+
+void
+GlobalSetQuiet(
+    int32_t val
+    );
+
+void
+log_console(
+    int32_t loglevel,
+    const char *format,
+    ...
+    );
+
 #endif /* __COMMON_PROTOTYPES_H__ */

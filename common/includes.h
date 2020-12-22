@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include <tdnftypes.h>
 #include <tdnferror.h>

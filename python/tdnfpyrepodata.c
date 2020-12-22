@@ -120,7 +120,7 @@ cleanup:
     return dwError > 0 ? -1 : 0;
 
 error:
-    fprintf(stderr, "Error = %u\n", dwError);
+    pr_err("Error = %u\n", dwError);
     goto cleanup;
 }
 
@@ -153,7 +153,7 @@ cleanup:
     return pyRepr;
 
 error:
-    printf("Error = %u\n", dwError);
+    pr_info("Error = %u\n", dwError);
     pyRepr = Py_None;
     goto cleanup;
 
