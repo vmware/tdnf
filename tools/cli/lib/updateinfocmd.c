@@ -59,6 +59,9 @@ TDNFCliUpdateInfoCommand(
     dwError = TDNFCliParseUpdateInfoArgs(pCmdArgs, &pInfoArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
     if(pInfoArgs->nMode == OUTPUT_SUMMARY)
     {
         dwError = TDNFCliUpdateInfoSummary(pContext, pCmdArgs, pInfoArgs);

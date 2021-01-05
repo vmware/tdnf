@@ -186,6 +186,9 @@ TDNFCliAlterCommand(
                   &nPackageCount);
     BAIL_ON_CLI_ERROR(dwError);
 
+    dwError = TDNFCliRefresh(pContext);
+    BAIL_ON_CLI_ERROR(dwError);
+
     dwError = pContext->pFnResolve(
                   pContext,
                   nAlterType,
