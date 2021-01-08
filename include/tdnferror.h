@@ -68,6 +68,9 @@ extern "C" {
 // for invalid input on interactive questions
 #define ERROR_TDNF_INVALID_INPUT            1033
 
+// cache only set, but no cache available
+#define ERROR_TDNF_CACHE_DISABLED           1034
+
 //curl errors
 #define ERROR_TDNF_CURL_INIT                  1200
 #define ERROR_TDNF_CURL_BASE                  1201

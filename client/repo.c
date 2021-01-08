@@ -798,7 +798,7 @@ TDNFGetRepoMD(
     }
 
     /* download repomd.xml to tmp */
-    if (nNeedDownload)
+    if(nNeedDownload && !pTdnf->pArgs->nCacheOnly)
     {
         pr_info("Refreshing metadata for: '%s'\n", pRepoData->pszName);
         /* always download to tmp */
@@ -965,6 +965,10 @@ TDNFGetRepoMD(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     dwError = TDNFParseRepoMD(pRepoMDRel);
+    if (dwError == ERROR_TDNF_FILE_NOT_FOUND && pTdnf->pArgs->nCacheOnly)
+    {
+        dwError = ERROR_TDNF_CACHE_DISABLED;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFEnsureRepoMDParts(
