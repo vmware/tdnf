@@ -80,7 +80,8 @@ AddSetOptWithValues(
        IsNullOrEmptyString(pszOptArg) ||
        IsNullOrEmptyString(pszOptValue) || nType == CMDOPT_CURL_INIT_CB)
     {
-        BAIL_ON_TDNF_ERROR((dwError = ERROR_TDNF_INVALID_PARAMETER));
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void **)&pCmdOpt);

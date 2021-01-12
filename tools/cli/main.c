@@ -82,13 +82,15 @@ int main(int argc, char* argv[])
     if (IsTdnfAlreadyRunning())
     {
         pr_err("An instance of tdnf is already running, wait for it to finish\n");
-        BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_ACCESS_DENIED));
+        dwError = ERROR_TDNF_ACCESS_DENIED;
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
     /* exit handler for normal exit */
     if (atexit(TdnfExitHandler))
     {
-        BAIL_ON_CLI_ERROR((dwError = errno));
+        dwError = errno;
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
     _context.pFnCheck = TDNFCliInvokeCheck;
@@ -163,7 +165,8 @@ int main(int argc, char* argv[])
         if(!nFound)
         {
             TDNFCliShowNoSuchCommand(pszCmd);
-            BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_CLI_NO_SUCH_CMD));
+            dwError = ERROR_TDNF_CLI_NO_SUCH_CMD;
+            BAIL_ON_CLI_ERROR(dwError);
         }
     }
     else
