@@ -1319,6 +1319,7 @@ TDNFReplaceFile(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    /* coverity[toctou] */
     dwError = rename (pszSrcFile, pszDstFile);
     BAIL_ON_TDNF_ERROR(dwError);
 

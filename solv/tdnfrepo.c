@@ -250,6 +250,7 @@ SolvReadInstalledRpms(
 
     if(pszCacheFileName && access(pszCacheFileName, F_OK) == 0)
     {
+        /* coverity[toctou] */
         pCacheFile = fopen(pszCacheFileName, "r");
         if(!pCacheFile)
         {
