@@ -848,11 +848,6 @@ TDNFDownloadFile(
 
         if (is_metalink && ml_file)
         {
-            if(fp)
-            {
-                fclose(fp);
-                fp = NULL;
-            }
             dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile, ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -862,6 +857,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFileTmp);
     if(fp)
     {
+        /* coverity[dead_error_line] */
         fclose(fp);
     }
     if(pCurl)

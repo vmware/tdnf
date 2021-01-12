@@ -219,6 +219,7 @@ error:
      */
     if(pRepo)
     {
+        /* coverity[dead_error_line] */
         repo_free(pRepo, 1);
     }
     goto cleanup;
