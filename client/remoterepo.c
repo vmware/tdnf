@@ -283,13 +283,6 @@ TDNFCheckRepoMDFileHashFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(ml_file->digest == NULL)
-    {
-        pr_err(
-                "Error: Validating metalink (%s) FAILED (digest missing)\n", pszFile);
-        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
     dwError = TDNFCheckHash(pszFile, ml_file->digest, ml_file->type);
     BAIL_ON_TDNF_ERROR(dwError);
 
