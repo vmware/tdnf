@@ -1123,5 +1123,6 @@ cleanup:
     return dwError;
 
 error:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     goto cleanup;
 }
