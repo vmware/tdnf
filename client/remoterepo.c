@@ -145,7 +145,7 @@ TDNFGetDigestForFile(
     {
         pr_err("Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
 
     digest_type = EVP_get_digestbyname(hash->hash_type);
@@ -617,7 +617,7 @@ TDNFParseAndGetURLFromMetalink(
     if (fd == -1)
     {
         dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
     while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
     {
@@ -802,7 +802,7 @@ TDNFDownloadFile(
         if(!fp)
         {
             dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
         }
 
         dwError = curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fp);

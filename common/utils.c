@@ -112,7 +112,7 @@ TDNFCreateAndWriteToFile(
     if (!fp)
     {
         dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
     fputs(data, fp);
     fclose(fp);
