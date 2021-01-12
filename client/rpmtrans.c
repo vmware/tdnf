@@ -29,6 +29,7 @@ TDNFRpmExecTransaction(
 {
     uint32_t dwError = 0;
     int nKeepCachedRpms = 0;
+    int nDownloadOnly = 0;
     TDNFRPMTS ts = {0};
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
@@ -39,6 +40,7 @@ TDNFRpmExecTransaction(
 
     ts.nQuiet = pTdnf->pArgs->nQuiet;
     nKeepCachedRpms = pTdnf->pConf->nKeepCache;
+    nDownloadOnly = pTdnf->pArgs->nDownloadOnly;
 
     dwError = TDNFAllocateMemory(
                   1,
@@ -79,8 +81,10 @@ TDNFRpmExecTransaction(
     dwError = TDNFPopulateTransaction(&ts, pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFRunTransaction(&ts, pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (!nDownloadOnly) {
+        dwError = TDNFRunTransaction(&ts, pTdnf);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 cleanup:
     if(ts.pTS)
@@ -90,7 +94,7 @@ cleanup:
     }
     if(ts.pCachedRpmsArray)
     {
-        if(!nKeepCachedRpms)
+        if(!nKeepCachedRpms && !nDownloadOnly)
         {
             TDNFRemoveCachedRpms(ts.pCachedRpmsArray);
         }
@@ -611,13 +615,28 @@ TDNFTransAddInstallPkg(
     }
     else
     {
-        dwError = TDNFDownloadPackageToCache(
-                      pTdnf,
-                      pszPackageLocation,
-                      pszPkgName,
-                      pszRepoName,
-                      &pszFilePath
-        );
+        if (!pTdnf->pArgs->nDownloadOnly || pTdnf->pArgs->pszDownloadDir == NULL)
+        {
+            dwError = TDNFDownloadPackageToCache(
+                          pTdnf,
+                          pszPackageLocation,
+                          pszPkgName,
+                          pszRepoName,
+                          &pszFilePath
+            );
+        }
+        else
+        {
+            dwError = TDNFDownloadPackageToDirectory(
+                          pTdnf,
+                          pszPackageLocation,
+                          pszPkgName,
+                          pszRepoName,
+                          pTdnf->pArgs->pszDownloadDir,
+                          &pszFilePath
+            );
+
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

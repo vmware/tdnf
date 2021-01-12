@@ -1082,3 +1082,59 @@ error:
     goto cleanup;
 
 }
+
+
+uint32_t
+TDNFDownloadPackageToDirectory(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    const char* pszDirectory,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszFilePath = NULL;
+    char* pszRemotePath = NULL;
+    char* pszFileName = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName) ||
+       IsNullOrEmptyString(pszDirectory) ||
+       !ppszFilePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFPathFromUri(pszPackageLocation, &pszRemotePath);
+    if (dwError == ERROR_TDNF_URL_INVALID)
+    {
+        dwError = TDNFAllocateString(pszPackageLocation, &pszRemotePath);
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszFileName = basename(pszRemotePath);
+
+    dwError = TDNFAllocateStringPrintf(
+                  &pszFilePath,
+                  "%s/%s",
+                  pszDirectory,
+                  pszFileName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
+                                  pszRepoName, pszDirectory);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszFilePath = pszFilePath;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRemotePath);
+    return dwError;
+
+error:
+    goto cleanup;
+}

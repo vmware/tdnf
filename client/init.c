@@ -55,6 +55,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nIPv4          = pCmdArgsIn->nIPv4;
     pCmdArgs->nIPv6          = pCmdArgsIn->nIPv6;
     pCmdArgs->nDisableExcludes = pCmdArgsIn->nDisableExcludes;
+    pCmdArgs->nDownloadOnly  = pCmdArgsIn->nDownloadOnly;
 
     dwError = TDNFAllocateString(
                   pCmdArgsIn->pszInstallRoot,
@@ -81,6 +82,14 @@ TDNFCloneCmdArgs(
         dwError = TDNFAllocateString(
                       pCmdArgsIn->pszReleaseVer,
                       &pCmdArgs->pszReleaseVer);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(!IsNullOrEmptyString(pCmdArgsIn->pszDownloadDir))
+    {
+        dwError = TDNFAllocateString(
+                      pCmdArgsIn->pszDownloadDir,
+                      &pCmdArgs->pszDownloadDir);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

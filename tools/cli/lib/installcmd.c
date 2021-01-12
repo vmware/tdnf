@@ -216,6 +216,10 @@ TDNFCliAlterCommand(
     if(!nSilent)
     {
         dwError = PrintSolvedInfo(pSolvedPkgInfo);
+        if (pCmdArgs->nDownloadOnly)
+        {
+            pr_info("tdnf will only download packages needed for the transaction\n");
+        }
     }
 
     if(pSolvedPkgInfo->nNeedAction)
@@ -241,6 +245,16 @@ TDNFCliAlterCommand(
             if(!nSilent)
             {
                 pr_info("\nComplete!\n");
+                if (pCmdArgs->nDownloadOnly)
+                {
+                    if (pCmdArgs->pszDownloadDir != NULL)
+                    {
+                        pr_info("Packages have been downloaded to %s.\n",
+                                pCmdArgs->pszDownloadDir);
+                    } else {
+                        pr_info("Packages have been downloaded to cache.\n");
+                    }
+                }
             }
         }
         else
