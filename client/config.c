@@ -197,7 +197,6 @@ TDNFConfigExpandVars(
         dwError = TDNFGetKernelArch(&pConf->pszVarBaseArch);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
 cleanup:
     return dwError;
 
@@ -313,37 +312,32 @@ TDNFConfigReplaceVars(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //fill variable values such as release and basearch
-    //if required
+    dwError = TDNFConfigExpandVars(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* fill variable values such as release and basearch
+       if required */
     if(strstr(*ppszString, TDNF_VAR_RELEASEVER) ||
        strstr(*ppszString, TDNF_VAR_BASEARCH))
     {
-        dwError = TDNFConfigExpandVars(pTdnf);
+        pConf = pTdnf->pConf;
+        dwError = TDNFReplaceString(
+                      *ppszString,
+                      TDNF_VAR_RELEASEVER,
+                      pConf->pszVarReleaseVer,
+                      &pszReplacedTemp);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReplaceString(
+                      pszReplacedTemp,
+                      TDNF_VAR_BASEARCH,
+                      pConf->pszVarBaseArch,
+                      &pszDst);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNFFreeMemory(*ppszString);
+        *ppszString = pszDst;
     }
-    else
-    {
-        goto cleanup;
-    }
-
-    pConf = pTdnf->pConf;
-    dwError = TDNFReplaceString(
-                  *ppszString,
-                  TDNF_VAR_RELEASEVER,
-                  pConf->pszVarReleaseVer,
-                  &pszReplacedTemp);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFReplaceString(
-                  pszReplacedTemp,
-                  TDNF_VAR_BASEARCH,
-                  pConf->pszVarBaseArch,
-                  &pszDst);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    TDNFFreeMemory(*ppszString);
-    *ppszString = pszDst;
-
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszReplacedTemp);
     return dwError;
