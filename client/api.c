@@ -441,6 +441,9 @@ TDNFClean(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
 
+            dwError = TDNFRemoveKeysCache(pTdnf, *ppszReposUsed);
+            BAIL_ON_TDNF_ERROR(dwError);
+
             ++ppszReposUsed;
         }
     }

@@ -240,9 +240,6 @@ TDNFRepoRemoveCache(
 {
     uint32_t dwError = 0;
     char* pszRepoCacheDir = NULL;
-    char* pszFilePath = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
 
     if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
     {
@@ -258,55 +255,15 @@ TDNFRepoRemoveCache(
                   TDNF_REPODATA_DIR_NAME);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pDir = opendir(pszRepoCacheDir);
-    if(pDir == NULL)
+    dwError = TDNFRecursivelyRemoveDir(pszRepoCacheDir);
+    if (dwError != ERROR_TDNF_SYSTEM_BASE + ENOENT)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    while ((pEnt = readdir (pDir)) != NULL )
-    {
-        if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
-        {
-            continue;
-        }
-
-        dwError = TDNFAllocateStringPrintf(
-                      &pszFilePath,
-                      "%s/%s",
-                      pszRepoCacheDir,
-                      pEnt->d_name);
         BAIL_ON_TDNF_ERROR(dwError);
-        if(pszFilePath)
-        {
-            if(unlink(pszFilePath))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-            TDNF_SAFE_FREE_MEMORY(pszFilePath);
-            pszFilePath = NULL;
-        }
-        else
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
     }
-    if(rmdir(pszRepoCacheDir))
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
+    dwError = 0;
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
-    if(pDir)
-    {
-        closedir(pDir);
-    }
     return dwError;
 
 error:
@@ -321,11 +278,6 @@ TDNFRemoveRpmCache(
 {
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
-    char *pszRpmCacheArchDir = NULL;
-    char *pszRpmCacheNoarchDir = NULL;
-    char* pszFilePath = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
 
     if (!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
     {
@@ -338,139 +290,16 @@ TDNFRemoveRpmCache(
 
     if (!IsNullOrEmptyString(pszRpmCacheDir))
     {
-        dwError = TDNFAllocateStringPrintf(
-                    &pszRpmCacheArchDir,
-                    "%s/%s",
-                    pszRpmCacheDir,
-                    pTdnf->pConf->pszVarBaseArch);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        pDir = opendir(pszRpmCacheArchDir);
-        if (pDir == NULL)
+        dwError = TDNFRecursivelyRemoveDir(pszRpmCacheDir);
+        if (dwError != ERROR_TDNF_SYSTEM_BASE + ENOENT)
         {
-            if (errno == ENOENT)
-            {
-                goto cleanup;
-            }
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-
-        while ((pEnt = readdir (pDir)) != NULL )
-        {
-            if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
-            {
-                continue;
-            }
-
-            dwError = TDNFAllocateStringPrintf(
-                        &pszFilePath,
-                        "%s/%s",
-                        pszRpmCacheArchDir,
-                        pEnt->d_name);
             BAIL_ON_TDNF_ERROR(dwError);
-            if(pszFilePath)
-            {
-                if(unlink(pszFilePath))
-                {
-                    dwError = errno;
-                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-                }
-                TDNF_SAFE_FREE_MEMORY(pszFilePath);
-                pszFilePath = NULL;
-            }
-            else
-            {
-                dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
         }
-        closedir(pDir);
-        pDir = NULL;
-
-        if(rmdir(pszRpmCacheArchDir))
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-
-        dwError = TDNFAllocateStringPrintf(
-                    &pszRpmCacheNoarchDir,
-                    "%s/%s",
-                    pszRpmCacheDir,
-                    "noarch");
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        pDir = opendir(pszRpmCacheNoarchDir);
-        if(pDir == NULL)
-        {
-            if (errno == ENOENT)
-            {
-                goto cleanup;
-            }
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-
-        while ((pEnt = readdir (pDir)) != NULL )
-        {
-            if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
-            {
-                continue;
-            }
-
-            dwError = TDNFAllocateStringPrintf(
-                        &pszFilePath,
-                        "%s/%s",
-                        pszRpmCacheNoarchDir,
-                        pEnt->d_name);
-            BAIL_ON_TDNF_ERROR(dwError);
-            if(pszFilePath)
-            {
-                if(unlink(pszFilePath))
-                {
-                    dwError = errno;
-                    BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-                }
-                TDNF_SAFE_FREE_MEMORY(pszFilePath);
-                pszFilePath = NULL;
-            }
-            else
-            {
-                dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-        closedir(pDir);
-        pDir = NULL;
-
-        if(rmdir(pszRpmCacheNoarchDir))
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
+        dwError = 0;
     }
 
 cleanup:
-    if (pDir)
-    {
-        closedir(pDir);
-    }
-    if (!IsNullOrEmptyString(pszRpmCacheDir))
-    {
-        if (rmdir(pszRpmCacheDir))
-        {
-            /*
-             * Not using BAIL_ON_TDNF_SYSTEM_ERROR here to prevent infinite loop
-             * Also it makes easy to read the code
-             */
-            dwError = ERROR_TDNF_SYSTEM_BASE + errno;
-        }
-    }
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
-    TDNF_SAFE_FREE_MEMORY(pszRpmCacheArchDir);
-    TDNF_SAFE_FREE_MEMORY(pszRpmCacheNoarchDir);
     return dwError;
 error:
     goto cleanup;
@@ -483,57 +312,20 @@ TDNFRemoveTmpRepodata(
 {
     uint32_t dwError = 0;
     char* pszFilePath = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
 
     if (IsNullOrEmptyString(pszTmpRepodataDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    pDir = opendir(pszTmpRepodataDir);
-    if(pDir == NULL)
+
+    dwError = TDNFRecursivelyRemoveDir(pszTmpRepodataDir);
+    if (dwError != ERROR_TDNF_SYSTEM_BASE + ENOENT)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-    while ((pEnt = readdir (pDir)) != NULL )
-    {
-        if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
-        {
-            continue;
-        }
-        dwError = TDNFAllocateStringPrintf(
-                    &pszFilePath,
-                    "%s/%s",
-                    pszTmpRepodataDir,
-                    pEnt->d_name);
-        if(pszFilePath)
-        {
-            if(unlink(pszFilePath))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-            TDNF_SAFE_FREE_MEMORY(pszFilePath);
-            pszFilePath = NULL;
-        }
-        else
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-    if (rmdir(pszTmpRepodataDir))
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
+    dwError = 0;
 cleanup:
-    if (pDir)
-    {
-        closedir(pDir);
-    }
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     return dwError;
 error:
@@ -585,9 +377,6 @@ TDNFRemoveSolvCache(
 {
     uint32_t dwError = 0;
     char* pszSolvCacheDir = NULL;
-    char* pszFilePath = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
 
     if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
     {
@@ -603,55 +392,50 @@ TDNFRemoveSolvCache(
                   TDNF_SOLVCACHE_DIR_NAME);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pDir = opendir(pszSolvCacheDir);
-    if(pDir == NULL)
+    dwError = TDNFRecursivelyRemoveDir(pszSolvCacheDir);
+    if (dwError != ERROR_TDNF_SYSTEM_BASE + ENOENT)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    while ((pEnt = readdir (pDir)) != NULL )
-    {
-        if (!strcmp(pEnt->d_name, ".") || !strcmp(pEnt->d_name, ".."))
-        {
-            continue;
-        }
-
-        dwError = TDNFAllocateStringPrintf(
-                      &pszFilePath,
-                      "%s/%s",
-                      pszSolvCacheDir,
-                      pEnt->d_name);
         BAIL_ON_TDNF_ERROR(dwError);
-        if(pszFilePath)
-        {
-            if(unlink(pszFilePath))
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-            TDNF_SAFE_FREE_MEMORY(pszFilePath);
-            pszFilePath = NULL;
-        }
-        else
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
     }
-    if(rmdir(pszSolvCacheDir))
+    dwError = 0;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSolvCacheDir);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFRemoveKeysCache(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    )
+{
+    uint32_t dwError = 0;
+    char* pszKeysDir = NULL;
+
+    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
-    TDNF_SAFE_FREE_MEMORY(pszSolvCacheDir);
-    if(pDir)
+    dwError = TDNFAllocateStringPrintf(
+                  &pszKeysDir,
+                  "%s/%s/keys",
+                  pTdnf->pConf->pszCacheDir,
+                  pszRepoId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRecursivelyRemoveDir(pszKeysDir);
+    if (dwError != ERROR_TDNF_SYSTEM_BASE + ENOENT)
     {
-        closedir(pDir);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
+    dwError = 0;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszKeysDir);
     return dwError;
 
 error:

@@ -189,6 +189,12 @@ TDNFRemoveSolvCache(
     );
 
 uint32_t
+TDNFRemoveKeysCache(
+    PTDNF pTdnf,
+    const char* pszRepoId
+    );
+
+uint32_t
 TDNFRepoApplyDownloadSettings(
     PTDNF_REPO_DATA_INTERNAL pRepo,
     CURL *pCurl
