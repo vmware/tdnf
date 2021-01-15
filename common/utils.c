@@ -6,6 +6,7 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
+#include <ftw.h>
 #include "includes.h"
 
 uint32_t
@@ -692,5 +693,41 @@ error:
     {
         *ppszNormalPath = NULL;
     }
+    goto cleanup;
+}
+
+static int
+_rm_file(const char *path, const struct stat *sbuf, int type, struct FTW *ftwb)
+{
+    UNUSED(sbuf);
+    UNUSED(type);
+    UNUSED(ftwb);
+
+    if(remove(path) < 0)
+    {
+        pr_crit("unable to remove %s: %s\n", path, strerror(errno));
+    }
+    return 0;
+}
+
+uint32_t
+TDNFRecursivelyRemoveDir(const char *pszPath)
+{
+    uint32_t dwError = 0;
+
+    if (IsNullOrEmptyString(pszPath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (nftw(pszPath, _rm_file, 10, FTW_DEPTH|FTW_MOUNT|FTW_PHYS) < 0)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+cleanup:
+    return dwError;
+error:
     goto cleanup;
 }
