@@ -464,7 +464,7 @@ TDNFGetFileHashFromMetalink(
     metalink_checksum_t **metalink_checksum;
     metalink_resource_t **metalink_resource;
 
-    if(!fileinfo)
+    if (!fileinfo || !ml_file)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -599,7 +599,8 @@ TDNFParseAndGetURLFromMetalink(
     if (!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszRepo) ||
-       IsNullOrEmptyString(pszFile))
+       IsNullOrEmptyString(pszFile) ||
+       !ml_file)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -682,12 +683,9 @@ TDNFParseAndGetURLFromMetalink(
             ++resources;
         }
 
-        if (ml_file)
-        {
-            dwError = TDNFGetFileHashFromMetalink((*files), ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
-            (*ml_file)->urls = urls_head;
-        }
+        dwError = TDNFGetFileHashFromMetalink((*files), ml_file);
+        BAIL_ON_TDNF_ERROR(dwError);
+        (*ml_file)->urls = urls_head;
     }
 cleanup:
     if (fd != -1)
@@ -848,7 +846,7 @@ TDNFDownloadFile(
         dwError = rename(pszFileTmp, pszFile);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if(is_metalink)
+        if (is_metalink && ml_file)
         {
             if(fp)
             {
