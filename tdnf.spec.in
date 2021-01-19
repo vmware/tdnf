@@ -102,6 +102,7 @@ cmake \
 -DCMAKE_BUILD_TYPE=Debug \
 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
 -DCMAKE_INSTALL_LIBDIR:PATH=lib \
+-DSYSTEMD_DIR=%{_unitdir} \
 ..
 make %{?_smp_mflags} && make python
 
