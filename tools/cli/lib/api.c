@@ -577,3 +577,11 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFCliRefresh(
+    PTDNF_CLI_CONTEXT pContext)
+{
+    return TDNFRefresh(pContext->hTdnf);
+}
+
