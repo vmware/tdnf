@@ -560,7 +560,7 @@ TDNFFetchRemoteGPGKey(
     }
 
     dwError = TDNFDownloadFile(pTdnf, pszRepoName, pszUrlGPGKey, pszFilePath,
-                               NULL, 0, NULL);
+                               basename(pszFilePath), 0, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszKeyLocation = pszNormalPath;
