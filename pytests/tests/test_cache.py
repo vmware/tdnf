@@ -93,3 +93,12 @@ def test_enable_repo_make_cache(utils):
     utils.run([ 'tdnf', '--disablerepo=*', '--enablerepo=photon-test', 'makecache' ])
     after = os.path.getmtime(lastrefresh)
     assert (before < after)
+
+# -v (verbose) prints progress data
+def test_enable_repo_make_cache_verbose(utils):
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    lastrefresh = os.path.join(cache_dir, 'photon-test/lastrefresh')
+    before = os.path.getmtime(lastrefresh)
+    utils.run([ 'tdnf', '-v', '--disablerepo=*', '--enablerepo=photon-test', 'makecache' ])
+    after = os.path.getmtime(lastrefresh)
+    assert (before < after)
