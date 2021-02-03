@@ -250,6 +250,7 @@ SolvReadInstalledRpms(
 
     if(pszCacheFileName && access(pszCacheFileName, F_OK) == 0)
     {
+        /* coverity[toctou] */
         pCacheFile = fopen(pszCacheFileName, "r");
         if(!pCacheFile)
         {
@@ -295,19 +296,22 @@ SolvCalculateCookieForFile(
 
     if (!pszFilePath)
     {
-        BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_INVALID_PARAMETER));
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
     fp = fopen(pszFilePath, "r");
     if (!fp)
     {
-        BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_IO));
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
     pChkSum = solv_chksum_create(REPOKEY_TYPE_SHA256);
     if (!pChkSum)
     {
-        BAIL_ON_TDNF_LIBSOLV_ERROR((dwError = ERROR_TDNF_SOLV_CHKSUM));
+        dwError = ERROR_TDNF_SOLV_CHKSUM;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
     solv_chksum_add(pChkSum, SOLV_COOKIE_IDENT, strlen(SOLV_COOKIE_IDENT));
 

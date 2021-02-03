@@ -375,14 +375,14 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
             if(!pLocalTime)
             {
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                BAIL_ON_TDNF_ERROR(dwError);
             }
             memset(szDate, 0, DATELEN);
             dwError = strftime(szDate, DATELEN, "%c", pLocalTime);
             if(dwError == 0)
             {
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                BAIL_ON_TDNF_ERROR(dwError);
             }
             dwError = TDNFAllocateString(szDate, &pInfo->pszDate);
             BAIL_ON_TDNF_ERROR(dwError);

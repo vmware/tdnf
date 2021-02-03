@@ -145,7 +145,7 @@ TDNFGetDigestForFile(
     {
         pr_err("Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
 
     digest_type = EVP_get_digestbyname(hash->hash_type);
@@ -283,13 +283,6 @@ TDNFCheckRepoMDFileHashFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(ml_file->digest == NULL)
-    {
-        pr_err(
-                "Error: Validating metalink (%s) FAILED (digest missing)\n", pszFile);
-        dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
     dwError = TDNFCheckHash(pszFile, ml_file->digest, ml_file->type);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -617,7 +610,7 @@ TDNFParseAndGetURLFromMetalink(
     if (fd == -1)
     {
         dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
     while((length = read(fd, buf, (sizeof(buf)-1))) > 0)
     {
@@ -802,7 +795,7 @@ TDNFDownloadFile(
         if(!fp)
         {
             dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
         }
 
         dwError = curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fp);
@@ -848,11 +841,6 @@ TDNFDownloadFile(
 
         if (is_metalink && ml_file)
         {
-            if(fp)
-            {
-                fclose(fp);
-                fp = NULL;
-            }
             dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile, ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -862,6 +850,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFileTmp);
     if(fp)
     {
+        /* coverity[dead_error_line] */
         fclose(fp);
     }
     if(pCurl)
@@ -1134,5 +1123,6 @@ cleanup:
     return dwError;
 
 error:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     goto cleanup;
 }

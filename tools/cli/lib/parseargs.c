@@ -319,7 +319,8 @@ ParseOption(
     {
         if (!optarg)
         {
-            BAIL_ON_CLI_ERROR((dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED));
+            dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
+            BAIL_ON_CLI_ERROR(dwError);
         }
 
         dwError = AddSetOpt(pCmdArgs, optarg);
