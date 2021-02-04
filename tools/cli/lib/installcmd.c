@@ -180,6 +180,11 @@ TDNFCliAlterCommand(
 
     nSilent = pCmdArgs->nNoOutput;
 
+    dwError = TDNFAddCmdLinePackages(
+                  pContext->hTdnf
+                  );
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFCliParsePackageArgs(
                   pCmdArgs,
                   &ppszPackageArgs,

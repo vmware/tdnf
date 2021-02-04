@@ -25,6 +25,13 @@ def test_whatprovides_invalid_arg(utils):
     ret = utils.run([ 'tdnf', 'whatprovides', 'invalid_arg' ])
     assert(ret['stderr'][0] == 'No data available')
 
-def test_whatprovides_valid_file(utils):
+def test_whatprovides_valid_file_notinstalled(utils):
     ret = utils.run([ 'tdnf', 'whatprovides', '/lib/systemd/system/tdnf-test-one.service' ])
+    assert('tdnf-test-one' in "\n".join(ret['stdout']))
+    assert(ret['retval'] == 0)
+
+def test_whatprovides_valid_file_installed(utils):
+    ret = utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', 'tdnf-test-one' ])
+    ret = utils.run([ 'tdnf', 'whatprovides', '/lib/systemd/system/tdnf-test-one.service' ])
+    assert('tdnf-test-one' in "\n".join(ret['stdout']))
     assert(ret['retval'] == 0)

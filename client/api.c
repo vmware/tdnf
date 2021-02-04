@@ -710,12 +710,6 @@ TDNFOpenHandle(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pSack = pSack;
-    pSack = NULL;
-    dwError = TDNFAddCmdLinePackages(
-                  pTdnf
-                  );
-    BAIL_ON_TDNF_ERROR(dwError);
-
     *ppTdnf = pTdnf;
 
 cleanup:
