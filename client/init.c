@@ -206,13 +206,13 @@ TDNFRefreshSack(
     int nMetadataExpired = 0;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
 
-    if(!pTdnf || !pTdnf->pArgs)
+    if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (nCleanMetadata == 1)
+    if (nCleanMetadata == 1 && pTdnf->pArgs)
     {
         pTdnf->pArgs->nRefresh = 1;
     }
@@ -291,6 +291,11 @@ uint32_t
 TDNFRefresh(
     PTDNF pTdnf)
 {
+    uint32_t dwError = 0;
+    if(!pTdnf || !pTdnf->pSack || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        return dwError;
+    }
     return TDNFRefreshSack(pTdnf, pTdnf->pSack, pTdnf->pArgs->nRefresh);
 }
-
