@@ -165,6 +165,9 @@ TDNFAlterCommand(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo, nAlterType);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -484,6 +487,9 @@ TDNFCountCommand(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = SolvCountPackages(pTdnf->pSack, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -521,6 +527,9 @@ TDNFInfo(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -602,6 +611,9 @@ TDNFList(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -850,6 +862,9 @@ TDNFProvides(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -987,6 +1002,12 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFAddCmdLinePackages(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if(nAlterType == ALTER_INSTALL)
     {
         queue_init_clone(&queueGoal, &pTdnf->queueCmdLinePkgs);
@@ -1108,6 +1129,9 @@ TDNFSearchCommand(
         }
     }
 
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1217,6 +1241,10 @@ TDNFUpdateInfo(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if(!ppszPackageNameSpecs)
     {
         dwError = SolvFindAllInstalled(pTdnf->pSack, &pInstalledPkgList);
