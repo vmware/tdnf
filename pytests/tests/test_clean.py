@@ -51,7 +51,17 @@ def test_clean_all(utils):
     assert (ret['retval'] == 0)
 
 def test_clean_all_clean_already(utils):
+    utils.run(['tdnf', 'makecache'])
     utils.run([ 'tdnf', 'clean', 'all' ])
+    ret = utils.run([ 'tdnf', 'clean', 'all' ])
+    assert (ret['retval'] == 0)
+
+def test_clean_install_and_clean(utils):
+    utils.run(['tdnf', 'makecache'])
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname ])
+
     ret = utils.run([ 'tdnf', 'clean', 'all' ])
     assert (ret['retval'] == 0)
 
