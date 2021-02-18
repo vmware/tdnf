@@ -153,7 +153,7 @@ cleanup:
     return pyRepr;
 
 error:
-    pr_info("Error = %u\n", dwError);
+    pr_crit("Error = %u\n", dwError);
     pyRepr = Py_None;
     goto cleanup;
 

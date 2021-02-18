@@ -1241,7 +1241,7 @@ TDNFParseRepoMD(
     dwError = repo_add_repomdxml(pRepo, fp, 0);
     if(dwError)
     {
-        pr_info("Error(%u) parsing repomd: %s\n",
+        pr_crit("Error(%u) parsing repomd: %s\n",
                 dwError,
                 pool_errstr(pPool));
     }
