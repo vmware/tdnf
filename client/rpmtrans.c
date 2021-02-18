@@ -310,7 +310,7 @@ doCheck(PTDNFRPMTS pTS)
         int nProbs = rpmpsNumProblems(ps);
         if(nProbs > 0)
         {
-            pr_info("Found %d problems\n", nProbs);
+            pr_crit("Found %d problems\n", nProbs);
 
             psi = rpmpsInitIterator(ps);
             while(rpmpsNextIterator(psi) >= 0)
@@ -319,11 +319,11 @@ doCheck(PTDNFRPMTS pTS)
                 char *msg = rpmProblemString(prob);
                 if (strstr(msg, "no digest") != NULL)
                 {
-                    pr_info("%s. Use --skipdigest to ignore\n", msg);
+                    pr_crit("%s. Use --skipdigest to ignore\n", msg);
                 }
                 else
                 {
-                    pr_info("%s\n", msg);
+                    pr_crit("%s\n", msg);
                     if (rpmProblemGetType(prob) == RPMPROB_REQUIRES)
                     {
                         dwError = TDNFAllocateString(rpmProblemGetStr(prob), &pErrorStr);

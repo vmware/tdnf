@@ -803,7 +803,7 @@ TDNFDownloadFile(
 
         if (i > 0)
         {
-            printf("\nretrying %d/%d\n", i, pRepo->nRetries);
+            pr_crit("\nretrying %d/%d\n", i, pRepo->nRetries);
         }
         dwError = curl_easy_perform(pCurl);
         if (dwError == CURLE_OK)
