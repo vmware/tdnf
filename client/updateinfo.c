@@ -50,6 +50,9 @@ TDNFUpdateInfoSummary(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if(!ppszPackageNameSpecs)
     {
         dwError = SolvFindAllInstalled(pTdnf->pSack, &pInstalledPkgList);
