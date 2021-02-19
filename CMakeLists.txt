@@ -52,6 +52,9 @@ add_c_compiler_flag(-O3 RELEASE)
 add_c_compiler_flag(-s RELEASE)
 add_c_compiler_flag(-g DEBUG)
 
+add_c_compiler_flag(-D_XOPEN_SOURCE=500)
+add_c_compiler_flag(-D_DEFAULT_SOURCE)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ### External dependency: rpm-devel

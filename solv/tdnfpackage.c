@@ -1744,7 +1744,7 @@ SolvDataIterator(
     Id keyname = SOLVABLE_NAME;
     int flags = 0;
     char **ppszPackagesTemp = NULL;
-    uint32_t dwError;
+    uint32_t dwError = 0;
 
     if (!pPool || !ppszExcludes || !pMap)
     {

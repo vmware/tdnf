@@ -44,3 +44,24 @@ def test_clean_expire_cache(utils):
 def test_clean_plugins(utils):
     ret = utils.run([ 'tdnf', 'clean', 'plugins' ])
     assert (ret['retval'] == 1016)
+
+def test_clean_all(utils):
+    utils.run(['tdnf', 'makecache'])
+    ret = utils.run([ 'tdnf', 'clean', 'all' ])
+    assert (ret['retval'] == 0)
+
+def test_clean_all_clean_already(utils):
+    utils.run(['tdnf', 'makecache'])
+    utils.run([ 'tdnf', 'clean', 'all' ])
+    ret = utils.run([ 'tdnf', 'clean', 'all' ])
+    assert (ret['retval'] == 0)
+
+def test_clean_install_and_clean(utils):
+    utils.run(['tdnf', 'makecache'])
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname ])
+
+    ret = utils.run([ 'tdnf', 'clean', 'all' ])
+    assert (ret['retval'] == 0)
+

@@ -227,6 +227,11 @@ TDNFNormalizePath(
     const char* pszPath,
     char** ppszNormalPath);
 
+uint32_t
+TDNFRecursivelyRemoveDir(
+    const char *pszPath
+);
+
 //setopt.c
 uint32_t
 AddSetOpt(
