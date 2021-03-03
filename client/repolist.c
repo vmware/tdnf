@@ -336,6 +336,13 @@ TDNFLoadReposFromFile(
 
         dwError = TDNFReadKeyValueInt(
                       pSections,
+                      TDNF_REPO_KEY_PRIORITY,
+                      50,
+                      &pRepo->nPriority);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadKeyValueInt(
+                      pSections,
                       TDNF_REPO_KEY_TIMEOUT,
                       0,
                       &pRepo->nTimeout);

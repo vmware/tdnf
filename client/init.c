@@ -194,6 +194,13 @@ error:
     goto cleanup;
 }
 
+static
+int _repo_compare(const void *ppRepo1, const void *ppRepo2)
+{
+    return (*(PTDNF_REPO_DATA_INTERNAL*)(ppRepo1))->nPriority -
+           (*(PTDNF_REPO_DATA_INTERNAL*)(ppRepo2))->nPriority;
+}
+
 uint32_t
 TDNFRefreshSack(
     PTDNF pTdnf,
@@ -205,6 +212,9 @@ TDNFRefreshSack(
     char* pszRepoCacheDir = NULL;
     int nMetadataExpired = 0;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA_INTERNAL *ppRepoArray = NULL;
+    int i = 0;
+    int nCount = 0;
 
     if(!pTdnf)
     {
@@ -226,6 +236,32 @@ TDNFRefreshSack(
         {
             continue;
         }
+        nCount++;
+    }
+
+    /* nCount may be 0 if --disablerepo=* is used */
+    if (nCount > 0)
+    {
+        dwError = TDNFAllocateMemory(nCount, sizeof(PTDNF_REPO_DATA_INTERNAL),
+                                     (void **)&ppRepoArray);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+        {
+            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+                (!pRepo->nEnabled))
+            {
+                continue;
+            }
+            ppRepoArray[i++] = pRepo;
+        }
+
+        qsort(ppRepoArray, nCount, sizeof(PTDNF_REPO_DATA_INTERNAL), _repo_compare);
+    }
+
+    for (i = 0; i < nCount; i++)
+    {
+        pRepo = ppRepoArray[i];
 
         nMetadataExpired = 0;
         //Check if expired since last sync per metadata_expire
@@ -281,6 +317,7 @@ TDNFRefreshSack(
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+    TDNF_SAFE_FREE_MEMORY(ppRepoArray);
     return dwError;
 
 error:
