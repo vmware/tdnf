@@ -53,9 +53,8 @@ EOF
 
 echo building packages
 rpmbuild  --define "_topdir ${BUILD_PATH}" \
-	  --define "__gpg_sign_cmd %%{__gpg} gpg --batch" \
-	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec --sign
-
+	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec
+rpmsign --addsign ${BUILD_PATH}/RPMS/*/*.rpm
 cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
 
 # save key to later be imported:
