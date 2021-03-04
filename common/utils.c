@@ -721,7 +721,7 @@ TDNFRecursivelyRemoveDir(const char *pszPath)
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (nftw(pszPath, _rm_file, 10, FTW_DEPTH|FTW_MOUNT|FTW_PHYS) < 0)
+    if (nftw(pszPath, _rm_file, 10, FTW_DEPTH|FTW_PHYS) < 0)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
