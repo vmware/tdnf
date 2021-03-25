@@ -31,6 +31,7 @@ TDNFRpmExecTransaction(
     int nKeepCachedRpms = 0;
     int nDownloadOnly = 0;
     TDNFRPMTS ts = {0};
+    PTDNF_CMD_OPT pSetOpt = NULL;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
     {
@@ -64,7 +65,22 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ts.nTransFlags = rpmtsSetFlags (ts.pTS, RPMTRANS_FLAG_NONE);
+    /* parse transaction flags - so far only tsflags=noscripts is
+       supported. */
+    ts.nTransFlags = RPMTRANS_FLAG_NONE;
+    for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
+    {
+        if (pSetOpt->nType != CMDOPT_KEYVALUE  ||
+            strcasecmp(pSetOpt->pszOptName, "tsflags"))
+        {
+            continue;
+        }
+
+        if (!strcasecmp(pSetOpt->pszOptValue, "noscripts"))
+        {
+            ts.nTransFlags |= RPMTRANS_FLAG_NOSCRIPTS;
+        }
+    }
 
     if(rpmtsSetRootDir (ts.pTS, pTdnf->pArgs->pszInstallRoot))
     {
@@ -412,7 +428,7 @@ TDNFRunTransaction(
     //TODO do callbacks for output
     pr_info("Running transaction\n");
 
-    rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_NONE);
+    rpmtsSetFlags(pTS->pTS, pTS->nTransFlags);
     rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
     if (rc != 0)
     {
