@@ -935,9 +935,6 @@ TDNFRpmCB(
     char* pszFileName = (char*)key;
     PTDNFRPMTS pTS = (PTDNFRPMTS)data;
 
-    UNUSED(total);
-    UNUSED(amount);
-
     switch (what)
     {
         case RPMCALLBACK_INST_OPEN_FILE:
@@ -973,6 +970,36 @@ TDNFRpmCB(
                 pr_info("%s\n", pszNevra);
                 free(pszNevra);
                 (void)fflush(stdout);
+            }
+            break;
+        case RPMCALLBACK_SCRIPT_ERROR:
+            {
+                /* https://bugzilla.redhat.com/show_bug.cgi?id=216221#c15 */
+                const char *pszScript;
+                const char* pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
+
+                switch (amount)
+                {
+                    case RPMTAG_PREIN:
+                        pszScript = "%prein";
+                        break;
+                    case RPMTAG_POSTIN:
+                        pszScript = "%postin";
+                        break;
+                    case RPMTAG_PREUN:
+                        pszScript = "%preun";
+                        break;
+                    case RPMTAG_POSTUN:
+                        pszScript = "%postun";
+                        break;
+                    default:
+                        pszScript = "(unknown)";
+                        break;
+                }
+                /* %pre and %preun will cause errors (install/uninstall will fail),
+                   other scripts just warn (install/uninstall will succeed) */
+                pr_crit("package %s: script %s in %s\n",
+                    pszNevra, total == RPMRC_OK ? "warning" : "error", pszScript);
             }
             break;
         default:
