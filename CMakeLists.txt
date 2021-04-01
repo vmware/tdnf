@@ -9,9 +9,9 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(tdnf VERSION 3.0.0 LANGUAGES C)
+project(tdnf VERSION 3.1.0 LANGUAGES C)
 set(VERSION ${PROJECT_VERSION})
-set(PROJECT_YEAR 2019)
+set(PROJECT_YEAR 2021)
 
 # Ensure correct directory paths are used for installation
 include(GNUInstallDirs)
