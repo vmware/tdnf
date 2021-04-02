@@ -8,7 +8,6 @@ Makefile.in
 *.status
 *.log
 *.pc
-*.spec
 *.patch
 *.diff
 
