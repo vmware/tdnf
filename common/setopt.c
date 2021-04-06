@@ -52,6 +52,9 @@ AddSetOpt(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = AddSetOptWithValues(pCmdArgs, CMDOPT_KEYVALUE, pCmdOpt->pszOptName, pCmdOpt->pszOptValue);
+    BAIL_ON_TDNF_ERROR(dwError);
+
 cleanup:
     if(pCmdOpt)
     {
