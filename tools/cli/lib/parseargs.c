@@ -34,7 +34,10 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_DISABLEREPO, "disablerepo", NULL},
     {CMDOPT_ENABLEPLUGIN, "enableplugin", NULL},
     {CMDOPT_DISABLEPLUGIN, "disableplugin", NULL},
-    {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;noplugins;reboot-required;security", "1"}
+    {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;"
+                      "noplugins;reboot-required;security;"
+                      "delete;download-metadata;gpgcheck;newest-only;urls",
+                      "1"}
 };
 
 static TDNF_CMD_ARGS _opt = {0};
@@ -80,6 +83,15 @@ static struct option pstOptions[] =
     {"disableexcludes", no_argument, &_opt.nDisableExcludes, 1}, //--disableexcludes
     {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
     {"downloaddir",   required_argument, 0, 0},            //--downloaddir
+    // reposync options
+    {"arch",          required_argument, 0, 'a'},
+    {"delete",        no_argument, 0, 0},
+    {"download-metadata", no_argument, 0, 0},
+    {"gpgcheck", no_argument, 0, 'g'},
+    {"metadata-path", required_argument, 0, 0},
+    {"newest-only",   no_argument, 0, 'n'},
+    {"download-path", required_argument, 0, 0},
+    {"urls",          no_argument, 0, 'u'},
     {0, 0, 0, 0}
 };
 
@@ -314,6 +326,15 @@ ParseOption(
     else if (!strcasecmp(pszName, "releasever"))
     {
         dwError = TDNFAllocateString(optarg, &pCmdArgs->pszReleaseVer);
+    }
+    else if ((!strcasecmp(pszName, "metadata-path")) ||
+             (!strcasecmp(pszName, "download-path")))
+    {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                            CMDOPT_KEYVALUE,
+                            pszName,
+                            optarg);
+        BAIL_ON_CLI_ERROR(dwError);
     }
     else if (!strcasecmp(pszName, "setopt"))
     {

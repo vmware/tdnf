@@ -22,6 +22,7 @@ add_library(${LIB_TDNF_CLI} SHARED
     parsecleanargs.c
     parselistargs.c
     parserepolistargs.c
+    parsereposyncargs.c
     parseupdateinfo.c
     updateinfocmd.c
 )

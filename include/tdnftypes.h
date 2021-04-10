@@ -333,6 +333,20 @@ typedef struct _TDNF_UPDATEINFO_SUMMARY
     int nType;
 }TDNF_UPDATEINFO_SUMMARY, *PTDNF_UPDATEINFO_SUMMARY;
 
+typedef struct _TDNF_REPOSYNC_ARGS
+{
+    int nDelete;
+    int nDownloadMetadata;
+    int nGPGCheck;
+    int nNewestOnly;
+    int nPrintUrlsOnly;
+    char *pszDownloadPath;
+    char *pszMetaDataPath;
+    char **pszArchs;
+}TDNF_REPOSYNC_ARGS, *PTDNF_REPOSYNC_ARGS;
+
+
+
 #ifdef __cplusplus
 }
 #endif

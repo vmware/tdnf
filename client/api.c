@@ -980,6 +980,144 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFRepoSync(
+    PTDNF pTdnf,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfos = NULL;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    char *pszRepoDir = NULL;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+    char *pszRootPath = NULL;
+    char *pszDir = NULL;
+    char *pszFilePath;
+    uint32_t dwCount = 0;
+
+    if(!pTdnf || !pTdnf->pSack)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFApplyScopeFilter(pQuery, SCOPE_ALL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPopulatePkgInfoForRepoSync(pTdnf->pSack, pPkgList, &pPkgInfos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pReposyncArgs->pszDownloadPath == NULL)
+    {
+        pszRootPath = getcwd(NULL, 0);
+        if (!pszRootPath)
+        {
+            BAIL_ON_TDNF_SYSTEM_ERROR(errno);
+        }
+    }
+    else
+    {
+        dwError = TDNFAllocateString(pReposyncArgs->pszDownloadPath, &pszRootPath);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        dwCount++;
+        if (strcmp(pPkgInfo->pszRepoName, SYSTEM_REPO_NAME) == 0)
+        {
+            continue;
+        }
+
+        dwError = TDNFAllocateStringPrintf(&pszDir, "%s/%s",
+                    pszRootPath, pPkgInfo->pszRepoName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFUtilsMakeDir(pszDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadPackageToDirectory(pTdnf,
+                        pPkgInfo->pszLocation, pPkgInfo->pszName,
+                        pPkgInfo->pszRepoName, pszDir,
+                        &pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pszDir);
+        TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    }
+
+    if (pReposyncArgs->nDownloadMetadata)
+    {
+        for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+        {
+
+            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+                (!pRepo->nEnabled))
+            {
+                continue;
+            }
+
+            if (pReposyncArgs->pszMetaDataPath == NULL)
+            {
+                dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
+                            pszRootPath, pRepo->pszId);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
+                            pReposyncArgs->pszMetaDataPath, pRepo->pszId);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+
+            dwError = TDNFUtilsMakeDir(pszRepoDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFDownloadMetadata(pTdnf, pRepo, pszRepoDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            TDNF_SAFE_FREE_MEMORY(pszRepoDir);
+        }
+    }
+
+cleanup:
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    if(pPkgList)
+    {
+        SolvFreePackageList(pPkgList);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszDir);
+    TDNF_SAFE_FREE_MEMORY(pszRepoDir);
+    TDNF_SAFE_FREE_MEMORY(pszRootPath);
+    TDNFFreePackageInfoArray(pPkgInfos, dwCount);
+    return dwError;
+error: 
+    if(dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+    }
+    goto cleanup;
+}
+
 //Resolve alter command before presenting
 //the goal steps to user for approval
 uint32_t

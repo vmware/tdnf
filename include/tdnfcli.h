@@ -72,6 +72,12 @@ TDNFCliParseRepoListArgs(
     );
 
 uint32_t
+TDNFCliParseRepoSyncArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_REPOSYNC_ARGS* ppReposyncArgs
+    );
+
+uint32_t
 TDNFCliParseMode(
     const char* pszOutMode,
     TDNF_UPDATEINFO_OUTPUT* pnOutMode
@@ -185,6 +191,12 @@ TDNFCliMakeCacheCommand(
 
 uint32_t
 TDNFCliProvidesCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
+TDNFCliRepoSyncCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     );

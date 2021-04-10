@@ -292,6 +292,13 @@ TDNFPopulatePkgInfos(
     );
 
 uint32_t
+TDNFPopulatePkgInfoForRepoSync(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO* ppPkgInfo
+    );
+
+uint32_t
 TDNFPopulatePkgInfoArray(
     PSolvSack pSack,
     PSolvPackageList pPkgList,
@@ -640,6 +647,21 @@ uint32_t
 TDNFReplaceFile(
     const char *pszSrcFile,
     const char *pszDstFile
+    );
+
+uint32_t
+TDNFDownloadMetadata(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    const char *pszRepoDir
+    );
+
+uint32_t
+TDNFDownloadRepoMDParts(
+    PTDNF pTdnf,
+    Repo *pSolvRepo,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    const char *pszDir
     );
 
 //repolist.c

@@ -1327,3 +1327,155 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFDownloadMetadata(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    const char *pszRepoDir
+    )
+{
+    uint32_t dwError = 0;
+    char *pszRepoMDUrl = NULL;
+    char *pszRepoMDPath = NULL;
+    char *pszRepoDataDir = NULL;
+    Repo *pSolvRepo = NULL;
+    Pool *pPool = NULL;
+    FILE *fp = NULL;
+
+    dwError = TDNFUtilsMakeDir(pszRepoDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pszRepoDataDir, "%s/repodata",
+                pszRepoDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFUtilsMakeDir(pszRepoDataDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pszRepoMDPath, "%s/%s",
+                pszRepoDataDir, TDNF_REPO_METADATA_FILE_NAME);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
+                                       "%s/%s",
+                                       pRepo->pszBaseUrl,
+                                       TDNF_REPO_METADATA_FILE_PATH);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszRepoMDUrl, pszRepoMDPath, pRepo->pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pPool = pool_create();
+    pSolvRepo = repo_create(pPool, "md_parse_temp");
+
+    fp = fopen(pszRepoMDPath, "r");
+    if(!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    dwError = repo_add_repomdxml(pSolvRepo, fp, 0);
+    if(dwError)
+    {
+        pr_crit("Error(%u) parsing repomd: %s\n",
+                dwError,
+                pool_errstr(pPool));
+    }
+
+    dwError = TDNFDownloadRepoMDParts(pTdnf, pSolvRepo, pRepo, pszRepoDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if (fp)
+    {
+        fclose(fp);
+    }
+    if (pSolvRepo)
+    {
+        repo_free(pSolvRepo, 0);
+    }
+    if (pPool)
+    {
+        pool_free(pPool);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszRepoMDPath);
+    TDNF_SAFE_FREE_MEMORY(pszRepoMDUrl);
+    TDNF_SAFE_FREE_MEMORY(pszRepoDataDir);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadRepoMDParts(
+    PTDNF pTdnf,
+    Repo *pSolvRepo,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    const char *pszDir
+    )
+{
+    uint32_t dwError = 0;
+    Pool *pPool = NULL;
+    Dataiterator di = {0};
+    const char *pszPartFile = NULL;
+    char *pszPartUrl = NULL;
+    char *pszPartPath = NULL;
+
+    if(!pSolvRepo ||
+       !pSolvRepo->pool ||
+       !pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pPool = pSolvRepo->pool;
+
+    dwError = dataiterator_init(
+                  &di,
+                  pPool,
+                  pSolvRepo,
+                  SOLVID_META,
+                  REPOSITORY_REPOMD_TYPE,
+                  0,
+                  SEARCH_STRING);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dataiterator_prepend_keyname(&di, REPOSITORY_REPOMD);
+
+    while (dataiterator_step(&di))
+    {
+        dataiterator_setpos_parent(&di);
+        pszPartFile = pool_lookup_str(
+                          pPool,
+                          SOLVID_POS,
+                          REPOSITORY_REPOMD_LOCATION);
+
+        dwError = TDNFAllocateStringPrintf(&pszPartUrl,
+                                           "%s/%s",
+                                           pRepo->pszBaseUrl,
+                                           pszPartFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(&pszPartPath,
+                                           "%s/%s",
+                                           pszDir,
+                                           pszPartFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszPartUrl, pszPartPath, pRepo->pszId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pszPartUrl);
+        TDNF_SAFE_FREE_MEMORY(pszPartPath);
+    }
+
+cleanup:
+    dataiterator_free(&di);
+    return dwError;
+error:
+    goto cleanup;
+}
+

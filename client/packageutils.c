@@ -208,6 +208,100 @@ error:
 }
 
 uint32_t
+TDNFPopulatePkgInfoForRepoSync(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO* ppPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    int dwPkgIndex = 0;
+    Id dwPkgId = 0;
+    PTDNF_PKG_INFO pPkgInfos = NULL;
+    PTDNF_PKG_INFO pPkgInfo  = NULL;
+
+    if(!ppPkgInfo || !pSack || !pPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetPackageListSize(pPkgList, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  dwCount,
+                  sizeof(TDNF_PKG_INFO),
+                  (void**)&pPkgInfos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+    {
+        pPkgInfo = &pPkgInfos[dwPkgIndex];
+        if ((uint32_t)dwPkgIndex < dwCount-1)
+        {
+            pPkgInfo->pNext = &pPkgInfos[dwPkgIndex+1];
+        }
+
+        dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgNameFromId(pSack, dwPkgId, &pPkgInfo->pszName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgArchFromId(pSack, dwPkgId, &pPkgInfo->pszArch);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgVersionFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszVersion);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgReleaseFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszRelease);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgRepoNameFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszRepoName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgLocationFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszLocation);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppPkgInfo = pPkgInfos;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppPkgInfo)
+    {
+        *ppPkgInfo = NULL;
+    }
+    if(pPkgInfos)
+    {
+        TDNFFreePackageInfoArray(pPkgInfos, dwCount);
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFAppendPackages(
     PTDNF_PKG_INFO* ppDest,
     PTDNF_PKG_INFO  pSource

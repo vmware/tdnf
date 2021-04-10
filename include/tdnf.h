@@ -113,6 +113,13 @@ TDNFProvides(
     PTDNF_PKG_INFO* ppPkgInfo
     );
 
+//query repo
+uint32_t
+TDNFRepoSync(
+    PTDNF pTdnf,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    );
+
 //Show update info for specified scope
 uint32_t
 TDNFUpdateInfo(
