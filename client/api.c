@@ -1345,6 +1345,70 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFRepoQuery(
+    PTDNF pTdnf,
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs,
+    PTDNF_PKG_INFO* ppPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+
+    if(!pTdnf || !pTdnf->pSack || !pRepoqueryArgs ||
+       !ppPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFApplyScopeFilter(pQuery, SCOPE_ALL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplySinglePackageFilter(pQuery, pRepoqueryArgs->pszSpec);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPopulatePkgInfos(pTdnf->pSack, pPkgList, &pPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppPkgInfo = pPkgInfo;
+cleanup:
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    if(pPkgList)
+    {
+        SolvFreePackageList(pPkgList);
+    }
+    return dwError;
+error:
+    if(ppPkgInfo)
+    {
+      *ppPkgInfo = NULL;
+    }
+    TDNFFreePackageInfo(pPkgInfo);
+    if(dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+    }
+    goto cleanup;
+}
+
 //Resolve alter command before presenting
 //the goal steps to user for approval
 uint32_t

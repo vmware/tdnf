@@ -78,6 +78,12 @@ TDNFCliParseRepoSyncArgs(
     );
 
 uint32_t
+TDNFCliParseRepoQueryArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_REPOQUERY_ARGS* ppRepoqueryArgs
+    );
+
+uint32_t
 TDNFCliParseMode(
     const char* pszOutMode,
     TDNF_UPDATEINFO_OUTPUT* pnOutMode
@@ -125,6 +131,11 @@ TDNFCliRefresh(
 void
 TDNFCliFreeRepoSyncArgs(
     PTDNF_REPOSYNC_ARGS pReposyncArgs
+    );
+
+void
+TDNFCliFreeRepoQueryArgs(
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs
     );
 
 //Commands
@@ -202,6 +213,12 @@ TDNFCliProvidesCommand(
 
 uint32_t
 TDNFCliRepoSyncCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
+TDNFCliRepoQueryCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     );

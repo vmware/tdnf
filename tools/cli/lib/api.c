@@ -486,6 +486,51 @@ error:
 }
 
 uint32_t
+TDNFCliRepoQueryCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_PKG_INFO pPkgInfos = NULL;
+
+    if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoQuery)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFCliParseRepoQueryArgs(pCmdArgs, &pRepoqueryArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    pPkgInfo = pPkgInfos;
+    while(pPkgInfo)
+    {
+        pr_crit("%s-%s-%s.%s\n",
+            pPkgInfo->pszName,
+            pPkgInfo->pszVersion,
+            pPkgInfo->pszRelease,
+            pPkgInfo->pszArch);
+        pPkgInfo = pPkgInfo->pNext;
+    }
+
+cleanup:
+    if(pPkgInfos)
+    {
+        TDNFFreePackageInfo(pPkgInfos);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFCliCheckUpdateCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs

@@ -351,6 +351,17 @@ typedef struct _TDNF_REPOSYNC_ARGS
     char **ppszArchs;
 }TDNF_REPOSYNC_ARGS, *PTDNF_REPOSYNC_ARGS;
 
+typedef struct _TDNF_REPOQUERY_ARGS
+{
+    char *pszSpec;
+
+    /* select options */
+    char **ppszWhatDepends;
+
+    /* query options */
+    int nDepends;
+}TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
+
 #ifdef __cplusplus
 }
 #endif
