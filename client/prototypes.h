@@ -894,6 +894,11 @@ TDNFGetSystemError(
     );
 
 uint32_t
+TDNFGetCurlError(
+    uint32_t dwError
+    );
+
+uint32_t
 TDNFIsFileOrSymlink(
     const char* pszPath,
     int* pnPathIsFile

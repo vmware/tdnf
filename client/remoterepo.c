@@ -803,7 +803,7 @@ TDNFDownloadFile(
 
         if (i > 0)
         {
-            pr_crit("\nretrying %d/%d\n", i, pRepo->nRetries);
+            pr_info("retrying %d/%d\n", i, pRepo->nRetries);
         }
         dwError = curl_easy_perform(pCurl);
         if (dwError == CURLE_OK)
@@ -870,14 +870,6 @@ error:
         unlink(pszFileTmp);
     }
 
-    if(pCurl && TDNFIsCurlError(dwError))
-    {
-        uint32_t nCurlError = dwError - ERROR_TDNF_CURL_BASE;
-        pr_err(
-                "curl#%u: %s\n",
-                nCurlError,
-                curl_easy_strerror(nCurlError));
-    }
     goto cleanup;
 }
 

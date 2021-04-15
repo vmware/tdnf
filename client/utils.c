@@ -29,6 +29,7 @@ TDNFGetErrorString(
     uint32_t dwError = 0;
     char* pszError = NULL;
     char* pszSystemError = NULL;
+    const char* pszCurlError = NULL;
     int i = 0;
     int nCount = 0;
     uint32_t dwActualError = 0;
@@ -56,6 +57,18 @@ TDNFGetErrorString(
         if(pszSystemError)
         {
             dwError = TDNFAllocateString(pszSystemError, &pszError);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    //Get curl error
+    if(!pszError && TDNFIsCurlError(dwErrorCode))
+    {
+        dwActualError = TDNFGetCurlError(dwErrorCode);
+        pszCurlError = curl_easy_strerror(dwActualError);
+        if(pszCurlError)
+        {
+            dwError = TDNFAllocateString(pszCurlError, &pszError);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
@@ -108,6 +121,19 @@ TDNFGetSystemError(
         dwSystemError = dwError - ERROR_TDNF_SYSTEM_BASE;
     }
     return dwSystemError;
+}
+
+uint32_t
+TDNFGetCurlError(
+    uint32_t dwError
+    )
+{
+    uint32_t dwCurlError = 0;
+    if(TDNFIsCurlError(dwError))
+    {
+        dwCurlError = dwError - ERROR_TDNF_CURL_BASE;
+    }
+    return dwCurlError;
 }
 
 int
