@@ -245,9 +245,7 @@ TDNFDownloadFile(
     const char *pszRepo,
     const char *pszFileUrl,
     const char *pszFile,
-    const char *pszProgressData,
-    int metalink,
-    TDNF_METALINK_FILE **ml_file
+    const char *pszProgressData
     );
 
 uint32_t

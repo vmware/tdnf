@@ -201,9 +201,7 @@ TDNFVerifySignature(
                                pcszRepoId,
                                pszRepoMDSigUrl,
                                pszRepoMDSigFile,
-                               pcszRepoId,
-                               0,
-                               NULL);
+                               pcszRepoId);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFVerifyRepoMDSignature(pHandle, pcszRepoMDFile, pszRepoMDSigFile);

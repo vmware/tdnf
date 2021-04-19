@@ -599,7 +599,7 @@ TDNFDownloadUsingMetalinkResources(
             BAIL_ON_TDNF_ERROR(dwError);
         }
         dwError = TDNFDownloadFile(pTdnf, pszRepo, urls->url, pszFile,
-                                   pszProgressData, 0, NULL);
+                                   pszProgressData);
         if (dwError)
         {
             urls = urls->next;
@@ -836,8 +836,11 @@ TDNFGetRepoMD(
                                                TDNF_REPO_BASEURL_FILE_NAME);
             BAIL_ON_TDNF_ERROR(dwError);
             dwError = TDNFDownloadFile(pTdnf, pRepoData->pszId, pszRepoMetalink,
-                                       pszTmpRepoMetalinkFile, pRepoData->pszId,
-                                       metalink, &ml_file);
+                                       pszTmpRepoMetalinkFile, pRepoData->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFParseAndGetURLFromMetalink(pTdnf,
+                        pRepoData->pszId, pszTmpRepoMetalinkFile, &ml_file);
             BAIL_ON_TDNF_ERROR(dwError);
 
             nReplaceRepoMD = 1;
@@ -901,9 +904,7 @@ TDNFGetRepoMD(
                               pRepoData->pszId,
                               pszRepoMDUrl,
                               pszTmpRepoMDFile,
-                              pRepoData->pszId,
-                              0,
-                              NULL);
+                              pRepoData->pszId);
             BAIL_ON_TDNF_ERROR(dwError);
             nReplaceRepoMD = 1;
             if (pszCookie[0])
@@ -1051,9 +1052,7 @@ TDNFDownloadRepoMDPart(
                       pszRepo,
                       pszTempUrl,
                       pszDestPath,
-                      pszRepo,
-                      0,
-                      NULL);
+                      pszRepo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
