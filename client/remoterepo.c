@@ -707,9 +707,7 @@ TDNFDownloadFile(
     const char *pszRepo,
     const char *pszFileUrl,
     const char *pszFile,
-    const char *pszProgressData,
-    int is_metalink,
-    TDNF_METALINK_FILE **ml_file
+    const char *pszProgressData
     )
 {
     uint32_t dwError = 0;
@@ -838,12 +836,6 @@ TDNFDownloadFile(
     {
         dwError = rename(pszFileTmp, pszFile);
         BAIL_ON_TDNF_ERROR(dwError);
-
-        if (is_metalink && ml_file)
-        {
-            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile, ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
@@ -928,9 +920,7 @@ TDNFDownloadPackage(
                                pszRepoName,
                                pszPackageUrl,
                                pszPackageFile,
-                               pszPkgName,
-                               0,
-                               NULL);
+                               pszPkgName);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pr_info("\n");
