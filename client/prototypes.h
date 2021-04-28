@@ -903,6 +903,12 @@ TDNFIsFileOrSymlink(
     );
 
 uint32_t
+TDNFGetFileSize(
+    const char* pszPath,
+    int *pnSize
+    );
+
+uint32_t
 TDNFIsDir(
     const char* pszPath,
     int* pnPathIsDir
