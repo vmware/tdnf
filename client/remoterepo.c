@@ -879,6 +879,7 @@ TDNFDownloadPackage(
     char *pszPackageUrl = NULL;
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
+    int nSize;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
@@ -916,11 +917,21 @@ TDNFDownloadPackage(
                                        basename(pszCopyOfPackageLocation));
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFDownloadFile(pTdnf,
-                               pszRepoName,
-                               pszPackageUrl,
-                               pszPackageFile,
-                               pszPkgName);
+    /* don't download if file is already there. Older versions may have left
+       size 0 files, so check for those too */
+    dwError = TDNFGetFileSize(pszPackageFile, &nSize);
+    if ((dwError == ERROR_TDNF_FILE_NOT_FOUND) || (nSize == 0))
+    {
+        dwError = TDNFDownloadFile(pTdnf,
+                                   pszRepoName,
+                                   pszPackageUrl,
+                                   pszPackageFile,
+                                   pszPkgName);
+    }
+    else
+    {
+        pr_info("%s package already downloaded", pszPkgName);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     pr_info("\n");
