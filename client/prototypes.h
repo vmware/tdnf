@@ -249,6 +249,14 @@ TDNFDownloadFile(
     );
 
 uint32_t
+TDNFCreatePackageUrl(
+    PTDNF pTdnf,
+    const char* pszRepoName,
+    const char* pszPackageLocation,
+    char **ppszPackageUrl
+    );
+
+uint32_t
 TDNFDownloadPackage(
     PTDNF pTdnf,
     const char* pszPackageLocation,
