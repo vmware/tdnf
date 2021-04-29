@@ -1332,7 +1332,8 @@ uint32_t
 TDNFDownloadMetadata(
     PTDNF pTdnf,
     PTDNF_REPO_DATA_INTERNAL pRepo,
-    const char *pszRepoDir
+    const char *pszRepoDir,
+    int nPrintOnly
     )
 {
     uint32_t dwError = 0;
@@ -1343,28 +1344,44 @@ TDNFDownloadMetadata(
     Pool *pPool = NULL;
     FILE *fp = NULL;
 
-    dwError = TDNFUtilsMakeDir(pszRepoDir);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFAllocateStringPrintf(&pszRepoDataDir, "%s/repodata",
-                pszRepoDir);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFUtilsMakeDir(pszRepoDataDir);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFAllocateStringPrintf(&pszRepoMDPath, "%s/%s",
-                pszRepoDataDir, TDNF_REPO_METADATA_FILE_NAME);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
                                        "%s/%s",
                                        pRepo->pszBaseUrl,
                                        TDNF_REPO_METADATA_FILE_PATH);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszRepoMDUrl, pszRepoMDPath, pRepo->pszId);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (!nPrintOnly)
+    {
+        dwError = TDNFUtilsMakeDir(pszRepoDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(&pszRepoDataDir, "%s/repodata",
+                    pszRepoDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFUtilsMakeDir(pszRepoDataDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(&pszRepoMDPath, "%s/%s",
+                    pszRepoDataDir, TDNF_REPO_METADATA_FILE_NAME);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszRepoMDUrl, pszRepoMDPath, pRepo->pszId);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        /* if printing only we use the already downloaded repomd.xml */
+        dwError = TDNFAllocateStringPrintf(
+                  &pszRepoMDPath,
+                  "%s/%s/%s",
+                  pTdnf->pConf->pszCacheDir,
+                  pRepo->pszId,
+                  TDNF_REPO_METADATA_FILE_PATH);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pr_info("%s\n", pszRepoMDUrl);
+    }
 
     pPool = pool_create();
     pSolvRepo = repo_create(pPool, "md_parse_temp");
@@ -1384,7 +1401,7 @@ TDNFDownloadMetadata(
                 pool_errstr(pPool));
     }
 
-    dwError = TDNFDownloadRepoMDParts(pTdnf, pSolvRepo, pRepo, pszRepoDir);
+    dwError = TDNFDownloadRepoMDParts(pTdnf, pSolvRepo, pRepo, pszRepoDir, nPrintOnly);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -1413,7 +1430,8 @@ TDNFDownloadRepoMDParts(
     PTDNF pTdnf,
     Repo *pSolvRepo,
     PTDNF_REPO_DATA_INTERNAL pRepo,
-    const char *pszDir
+    const char *pszDir,
+    int nPrintOnly
     )
 {
     uint32_t dwError = 0;
@@ -1465,8 +1483,15 @@ TDNFDownloadRepoMDParts(
                                            pszPartFile);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszPartUrl, pszPartPath, pRepo->pszId);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (!nPrintOnly)
+        {
+            dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszPartUrl, pszPartPath, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else
+        {
+            pr_info("%s\n", pszPartUrl);
+        }
 
         TDNF_SAFE_FREE_MEMORY(pszPartUrl);
         TDNF_SAFE_FREE_MEMORY(pszPartPath);

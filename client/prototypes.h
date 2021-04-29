@@ -661,7 +661,8 @@ uint32_t
 TDNFDownloadMetadata(
     PTDNF pTdnf,
     PTDNF_REPO_DATA_INTERNAL pRepo,
-    const char *pszRepoDir
+    const char *pszRepoDir,
+    int nPrintOnly
     );
 
 uint32_t
@@ -669,7 +670,8 @@ TDNFDownloadRepoMDParts(
     PTDNF pTdnf,
     Repo *pSolvRepo,
     PTDNF_REPO_DATA_INTERNAL pRepo,
-    const char *pszDir
+    const char *pszDir,
+    int nPrintOnly
     );
 
 //repolist.c

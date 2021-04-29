@@ -36,7 +36,7 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_DISABLEPLUGIN, "disableplugin", NULL},
     {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;"
                       "noplugins;reboot-required;security;"
-                      "delete;download-metadata;gpgcheck;newest-only;urls",
+                      "delete;download-metadata;gpgcheck;newest-only;norepopath;urls",
                       "1"}
 };
 
@@ -84,14 +84,15 @@ static struct option pstOptions[] =
     {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
     {"downloaddir",   required_argument, 0, 0},            //--downloaddir
     // reposync options
-    {"arch",          required_argument, 0, 'a'},
+    {"arch",          required_argument, 0, 0},
     {"delete",        no_argument, 0, 0},
     {"download-metadata", no_argument, 0, 0},
-    {"gpgcheck", no_argument, 0, 'g'},
+    {"gpgcheck", no_argument, 0, 0},
     {"metadata-path", required_argument, 0, 0},
-    {"newest-only",   no_argument, 0, 'n'},
+    {"newest-only",   no_argument, 0, 0},
+    {"norepopath",    no_argument, 0, 0},
     {"download-path", required_argument, 0, 0},
-    {"urls",          no_argument, 0, 'u'},
+    {"urls",          no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 

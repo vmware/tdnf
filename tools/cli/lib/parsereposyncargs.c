@@ -56,6 +56,10 @@ TDNFCliParseRepoSyncArgs(
             {
                 pReposyncArgs->nNewestOnly = 1;
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "norepopath") == 0)
+            {
+                pReposyncArgs->nNoRepoPath = 1;
+            }
             else if (strcasecmp(pSetOpt->pszOptName, "urls") == 0)
             {
                 pReposyncArgs->nPrintUrlsOnly = 1;

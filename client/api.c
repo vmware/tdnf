@@ -18,6 +18,7 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
+#include <ftw.h>
 #include "includes.h"
 #include "config.h"
 
@@ -980,6 +981,58 @@ error:
     goto cleanup;
 }
 
+static int
+_rm_rpms(
+    const char *pszFilePath,
+    const struct stat *sbuf,
+    int type,
+    struct FTW *ftwb
+    )
+{
+    uint32_t dwError = 0;
+    char *pszKeepFile = NULL;
+    struct stat statKeep = {0};
+
+    UNUSED(sbuf);
+    UNUSED(type);
+    UNUSED(ftwb);
+
+    if (strcmp(&pszFilePath[strlen(pszFilePath)-4], ".rpm") == 0)
+    {
+        dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (stat(pszKeepFile, &statKeep))
+        {
+            if (errno == ENOENT)
+            {
+                if(remove(pszFilePath) < 0)
+                {
+                    pr_crit("unable to remove %s: %s\n", pszFilePath, strerror(errno));
+                }
+            }
+            else
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+        else
+        {
+            /* marker file can be removed now */
+            if(remove(pszKeepFile) < 0)
+            {
+                pr_crit("unable to remove %s: %s\n", pszKeepFile, strerror(errno));
+            }
+        }
+    }
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszKeepFile);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFRepoSync(
     PTDNF pTdnf,
@@ -994,12 +1047,40 @@ TDNFRepoSync(
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
     char *pszRootPath = NULL;
+    char *pszUrl = NULL;
     char *pszDir = NULL;
-    char *pszFilePath;
+    char *pszFilePath = NULL;
+    char *pszKeepFile = NULL;
     uint32_t dwCount = 0;
+    uint32_t dwRepoCount = 0;
 
     if(!pTdnf || !pTdnf->pSack)
     {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+    {
+        if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+            (!pRepo->nEnabled))
+        {
+            continue;
+        }
+        dwRepoCount++;
+    }
+
+    if (dwRepoCount > 1 && pReposyncArgs->nNoRepoPath)
+    {
+        pr_crit("cannot use norepopath with multiple repos\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pReposyncArgs->nDelete && pReposyncArgs->nNoRepoPath)
+    {
+        /* prevent accidental deletion of packages */
+        pr_crit("cannot use the delete option with norepopath\n");
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -1044,52 +1125,113 @@ TDNFRepoSync(
             continue;
         }
 
-        dwError = TDNFAllocateStringPrintf(&pszDir, "%s/%s",
-                    pszRootPath, pPkgInfo->pszRepoName);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (!pReposyncArgs->nPrintUrlsOnly)
+        {
+            if (!pReposyncArgs->nNoRepoPath)
+            {
+                dwError = TDNFAllocateStringPrintf(&pszDir, "%s/%s",
+                            pszRootPath, pPkgInfo->pszRepoName);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                dwError = TDNFAllocateString(pszRootPath, &pszDir);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
 
-        dwError = TDNFUtilsMakeDir(pszDir);
-        BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFUtilsMakeDir(pszDir);
+            BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFDownloadPackageToDirectory(pTdnf,
-                        pPkgInfo->pszLocation, pPkgInfo->pszName,
-                        pPkgInfo->pszRepoName, pszDir,
-                        &pszFilePath);
-        BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFDownloadPackageToDirectory(pTdnf,
+                            pPkgInfo->pszLocation, pPkgInfo->pszName,
+                            pPkgInfo->pszRepoName, pszDir,
+                            &pszFilePath);
+            BAIL_ON_TDNF_ERROR(dwError);
 
-        TDNF_SAFE_FREE_MEMORY(pszDir);
-        TDNF_SAFE_FREE_MEMORY(pszFilePath);
+            if (pReposyncArgs->nDelete)
+            {
+                /* if deleting, create a marker file to protect
+                   what we just downloaded. Later all *.rpm files that do not 
+                   have a marker file will be deleted */
+                dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                dwError = TDNFTouchFile(pszKeepFile);
+                BAIL_ON_TDNF_ERROR(dwError);
+                TDNF_SAFE_FREE_MEMORY(pszKeepFile);
+            }
+
+            TDNF_SAFE_FREE_MEMORY(pszDir);
+            TDNF_SAFE_FREE_MEMORY(pszFilePath);
+        }
+        else
+        {
+            dwError = TDNFCreatePackageUrl(pTdnf,
+                                            pPkgInfo->pszRepoName,
+                                            pPkgInfo->pszLocation,
+                                            &pszUrl);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            pr_info("%s\n", pszUrl);
+
+            TDNF_SAFE_FREE_MEMORY(pszUrl);
+        }
     }
 
-    if (pReposyncArgs->nDownloadMetadata)
+    if (pReposyncArgs->nDelete)
     {
         for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
         {
-
             if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
                 (!pRepo->nEnabled))
             {
                 continue;
             }
 
-            if (pReposyncArgs->pszMetaDataPath == NULL)
+            dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
+                        pszRootPath, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if (nftw(pszRepoDir, _rm_rpms, 10, FTW_DEPTH|FTW_PHYS) < 0)
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+    }
+
+    if (pReposyncArgs->nDownloadMetadata)
+    {
+        for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+        {
+            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+                (!pRepo->nEnabled))
+            {
+                continue;
+            }
+
+            if (!pReposyncArgs->nNoRepoPath)
             {
                 dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                            pszRootPath, pRepo->pszId);
+                            pReposyncArgs->pszMetaDataPath ?
+                                pReposyncArgs->pszMetaDataPath : pszRootPath,
+                            pRepo->pszId);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             else
             {
-                dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                            pReposyncArgs->pszMetaDataPath, pRepo->pszId);
+                dwError = TDNFAllocateString(
+                            pReposyncArgs->pszMetaDataPath ?
+                                pReposyncArgs->pszMetaDataPath : pszRootPath,
+                            &pszRepoDir);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-
 
             dwError = TDNFUtilsMakeDir(pszRepoDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFDownloadMetadata(pTdnf, pRepo, pszRepoDir);
+            dwError = TDNFDownloadMetadata(pTdnf, pRepo, pszRepoDir,
+                                           pReposyncArgs->nPrintUrlsOnly);
             BAIL_ON_TDNF_ERROR(dwError);
 
             TDNF_SAFE_FREE_MEMORY(pszRepoDir);
@@ -1108,6 +1250,8 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoDir);
     TDNF_SAFE_FREE_MEMORY(pszRootPath);
+    TDNF_SAFE_FREE_MEMORY(pszKeepFile);
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     return dwError;
 error: 

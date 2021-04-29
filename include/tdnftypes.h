@@ -340,12 +340,11 @@ typedef struct _TDNF_REPOSYNC_ARGS
     int nGPGCheck;
     int nNewestOnly;
     int nPrintUrlsOnly;
+    int nNoRepoPath;
     char *pszDownloadPath;
     char *pszMetaDataPath;
     char **pszArchs;
 }TDNF_REPOSYNC_ARGS, *PTDNF_REPOSYNC_ARGS;
-
-
 
 #ifdef __cplusplus
 }
