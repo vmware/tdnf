@@ -92,6 +92,23 @@ TDNFImportGPGKeyFile(
     const char* pszFile
     );
 
+uint32_t
+TDNFGPGCheckPackage(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf,
+    const char* pszRepoName,
+    const char* pszFilePath,
+    Header *pRpmHeader
+    );
+
+uint32_t
+TDNFFetchRemoteGPGKey(
+    PTDNF pTdnf,
+    const char* pszRepoName,
+    const char* pszUrlGPGKey,
+    char** ppszKeyLocation
+    );
+
 //init.c
 uint32_t
 TDNFCloneCmdArgs(
