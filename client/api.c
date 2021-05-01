@@ -1006,6 +1006,7 @@ _rm_rpms(
         {
             if (errno == ENOENT)
             {
+                pr_info("deleting %s\n", pszFilePath);
                 if(remove(pszFilePath) < 0)
                 {
                     pr_crit("unable to remove %s: %s\n", pszFilePath, strerror(errno));
@@ -1053,6 +1054,7 @@ TDNFRepoSync(
     char *pszKeepFile = NULL;
     uint32_t dwCount = 0;
     uint32_t dwRepoCount = 0;
+    TDNFRPMTS ts = {0};
 
     if(!pTdnf || !pTdnf->pSack)
     {
@@ -1103,6 +1105,16 @@ TDNFRepoSync(
     dwError = TDNFPopulatePkgInfoForRepoSync(pTdnf->pSack, pPkgList, &pPkgInfos);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    if (pReposyncArgs->nGPGCheck)
+    {
+        ts.pTS = rpmtsCreate();
+        if(!ts.pTS)
+        {
+            dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
     if (pReposyncArgs->pszDownloadPath == NULL)
     {
         pszRootPath = getcwd(NULL, 0);
@@ -1148,9 +1160,23 @@ TDNFRepoSync(
                             &pszFilePath);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            if (pReposyncArgs->nDelete)
+            if (pReposyncArgs->nGPGCheck)
             {
-                /* if deleting, create a marker file to protect
+                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgInfo->pszRepoName, pszFilePath, NULL);
+                if (dwError)
+                {
+                    pr_crit("checking package %s failed: %d, deleting\n", pszFilePath, dwError);
+                    if(remove(pszFilePath) < 0)
+                    {
+                        pr_crit("unable to remove %s: %s\n", pszFilePath, strerror(errno));
+                    }
+                }
+            }
+
+            /* dwError==0 means TDNFGPGCheckPackage() succeeded or wasn't called */
+            if (pReposyncArgs->nDelete && dwError == 0)
+            {
+                /* if "delete" option is given, create a marker file to protect
                    what we just downloaded. Later all *.rpm files that do not 
                    have a marker file will be deleted */
                 dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
@@ -1160,6 +1186,7 @@ TDNFRepoSync(
                 BAIL_ON_TDNF_ERROR(dwError);
                 TDNF_SAFE_FREE_MEMORY(pszKeepFile);
             }
+            dwError = 0;
 
             TDNF_SAFE_FREE_MEMORY(pszDir);
             TDNF_SAFE_FREE_MEMORY(pszFilePath);
@@ -1246,6 +1273,11 @@ cleanup:
     if(pPkgList)
     {
         SolvFreePackageList(pPkgList);
+    }
+    if(ts.pTS)
+    {
+        rpmtsCloseDB(ts.pTS);
+        rpmtsFree(ts.pTS);
     }
     TDNF_SAFE_FREE_MEMORY(pszDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoDir);
