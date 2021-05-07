@@ -56,7 +56,6 @@ int main(int argc, char* argv[])
         {"remove",             TDNFCliEraseCommand},
         {"repolist",           TDNFCliRepoListCommand},
         {"reposync",           TDNFCliRepoSyncCommand},
-        {"provides",           TDNFCliProvidesCommand},
         {"search",             TDNFCliSearchCommand},
         {"update",             TDNFCliUpgradeCommand},
         {"update-to",          TDNFCliUpgradeCommand},

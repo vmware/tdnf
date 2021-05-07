@@ -307,10 +307,8 @@ TDNFGetFileSize(
 
     if(stat(pszPath, &stStat))
     {
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
     else
     {

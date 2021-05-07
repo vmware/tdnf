@@ -28,6 +28,12 @@ TDNFCliParseRepoSyncArgs(
     PTDNF_REPOSYNC_ARGS pReposyncArgs = NULL;
     PTDNF_CMD_OPT pSetOpt = NULL;
 
+    if (!pArgs || !ppReposyncArgs)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     dwError = TDNFAllocateMemory(
         1,
         sizeof(TDNF_REPOSYNC_ARGS),

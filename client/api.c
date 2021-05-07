@@ -1056,7 +1056,7 @@ TDNFRepoSync(
     uint32_t dwRepoCount = 0;
     TDNFRPMTS ts = {0};
 
-    if(!pTdnf || !pTdnf->pSack)
+    if(!pTdnf || !pTdnf->pSack || !pReposyncArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -1194,9 +1194,9 @@ TDNFRepoSync(
         else
         {
             dwError = TDNFCreatePackageUrl(pTdnf,
-                                            pPkgInfo->pszRepoName,
-                                            pPkgInfo->pszLocation,
-                                            &pszUrl);
+                                           pPkgInfo->pszRepoName,
+                                           pPkgInfo->pszLocation,
+                                           &pszUrl);
             BAIL_ON_TDNF_ERROR(dwError);
 
             pr_info("%s\n", pszUrl);
