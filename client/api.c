@@ -1125,7 +1125,7 @@ TDNFRepoSync(
     }
     else
     {
-        dwError = TDNFAllocateString(pReposyncArgs->pszDownloadPath, &pszRootPath);
+        dwError = TDNFNormalizePath(pReposyncArgs->pszDownloadPath, &pszRootPath);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -1154,7 +1154,7 @@ TDNFRepoSync(
             dwError = TDNFUtilsMakeDir(pszDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFDownloadPackageToDirectory(pTdnf,
+            dwError = TDNFDownloadPackageToTree(pTdnf,
                             pPkgInfo->pszLocation, pPkgInfo->pszName,
                             pPkgInfo->pszRepoName, pszDir,
                             &pszFilePath);

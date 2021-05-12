@@ -992,11 +992,6 @@ TDNFDownloadPackageToCache(
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
     char* pszNormalRpmCacheDir = NULL;
-    char* pszFilePath = NULL;
-    char* pszNormalPath = NULL;
-    char* pszFilePathCopy = NULL;
-    char* pszDownloadCacheDir = NULL;
-    char* pszRemotePath = NULL;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszPackageLocation) ||
@@ -1020,6 +1015,58 @@ TDNFDownloadPackageToCache(
                                 &pszNormalRpmCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFDownloadPackageToTree(pTdnf,
+                                        pszPackageLocation,
+                                        pszPkgName,
+                                        pszRepoName,
+                                        pszNormalRpmCacheDir,
+                                        ppszFilePath);
+    BAIL_ON_TDNF_ERROR(dwError);
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszNormalRpmCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/*
+ * TDNFDownloadPackageToTree()
+ *
+ * Download a package while preserving the directory path. For example,
+ * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm, the destination will
+ * be downloaded under the destination directory in RPMS/x86_64/foo-1.2-3.rpm
+ * (so 'RPMS/x86_64/' will be preserved).
+*/
+
+uint32_t
+TDNFDownloadPackageToTree(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    char* pszNormalRpmCacheDir,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszFilePath = NULL;
+    char* pszNormalPath = NULL;
+    char* pszFilePathCopy = NULL;
+    char* pszDownloadCacheDir = NULL;
+    char* pszRemotePath = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName) ||
+       IsNullOrEmptyString(pszNormalRpmCacheDir) ||
+       !ppszFilePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFPathFromUri(pszPackageLocation, &pszRemotePath);
     if (dwError == ERROR_TDNF_URL_INVALID)
     {
@@ -1030,7 +1077,7 @@ TDNFDownloadPackageToCache(
     dwError = TDNFAllocateStringPrintf(
                   &pszFilePath,
                   "%s/%s",
-                  pszRpmCacheDir,
+                  pszNormalRpmCacheDir,
                   pszRemotePath);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1085,8 +1132,6 @@ TDNFDownloadPackageToCache(
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
-    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
-    TDNF_SAFE_FREE_MEMORY(pszNormalRpmCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszRemotePath);
     return dwError;
 
@@ -1096,6 +1141,14 @@ error:
 
 }
 
+/*
+ * TDNFDownloadPackageToDirectory()
+ *
+ * Download a package withou preserving the directory path. For example,
+ * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm, the destination will
+ * be downloaded under the destination directory (pszDirectory) as foo-1.2-3.rpm
+ * (so RPMS/x86_64/ will be stripped).
+*/
 
 uint32_t
 TDNFDownloadPackageToDirectory(

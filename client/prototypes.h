@@ -292,6 +292,16 @@ TDNFDownloadPackageToCache(
     );
 
 uint32_t
+TDNFDownloadPackageToTree(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    char* pszNormalRpmCacheDir,
+    char** ppszFilePath
+    );
+
+uint32_t
 TDNFDownloadPackageToDirectory(
     PTDNF pTdnf,
     const char* pszPackageLocation,
