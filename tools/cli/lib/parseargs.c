@@ -36,7 +36,7 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_DISABLEPLUGIN, "disableplugin", NULL},
     {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;"
                       "noplugins;reboot-required;security;"
-                      "delete;download-metadata;gpgcheck;newest-only;norepopath;urls",
+                      "delete;download-metadata;gpgcheck;newest-only;norepopath;source;urls",
                       "1"}
 };
 
@@ -92,6 +92,7 @@ static struct option pstOptions[] =
     {"newest-only",   no_argument, 0, 0},
     {"norepopath",    no_argument, 0, 0},
     {"download-path", required_argument, 0, 0},
+    {"source",        no_argument, 0, 0},
     {"urls",          no_argument, 0, 0},
     {0, 0, 0, 0}
 };
@@ -329,7 +330,8 @@ ParseOption(
         dwError = TDNFAllocateString(optarg, &pCmdArgs->pszReleaseVer);
     }
     else if ((!strcasecmp(pszName, "metadata-path")) ||
-             (!strcasecmp(pszName, "download-path")))
+             (!strcasecmp(pszName, "download-path")) ||
+             (!strcasecmp(pszName, "arch")))
     {
         dwError = AddSetOptWithValues(pCmdArgs,
                             CMDOPT_KEYVALUE,

@@ -476,7 +476,9 @@ TDNFCliRepoSyncCommand(
 
     dwError = pContext->pFnRepoSync(pContext, pReposyncArgs);
     BAIL_ON_CLI_ERROR(dwError);
+
 cleanup:
+    TDNFCliFreeRepoSyncArgs(pReposyncArgs);
     return dwError;
 
 error:

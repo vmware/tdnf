@@ -1062,6 +1062,7 @@ TDNFRepoSync(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* count enabled repos */
     for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
         if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
@@ -1087,9 +1088,18 @@ TDNFRepoSync(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (pReposyncArgs->nSourceOnly && pReposyncArgs->ppszArchs)
+    {
+        pr_crit("cannot use the source option with arch\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFRefresh(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /* generate list of packages, result will be
+       in pPkgInfos */
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1129,12 +1139,29 @@ TDNFRepoSync(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* iterate through all packages */
     for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
         dwCount++;
         if (strcmp(pPkgInfo->pszRepoName, SYSTEM_REPO_NAME) == 0)
         {
             continue;
+        }
+        if (pReposyncArgs->ppszArchs)
+        {
+            int result = 0;
+            TDNFStringMatchesOneOf(pPkgInfo->pszArch, pReposyncArgs->ppszArchs, &result);
+            if (result == 0)
+            {
+                continue;
+            }
+        }
+        else if (pReposyncArgs->nSourceOnly)
+        {
+            if (strcmp(pPkgInfo->pszArch, "src") != 0)
+            {
+                continue;
+            }
         }
 
         if (!pReposyncArgs->nPrintUrlsOnly)
@@ -1160,6 +1187,8 @@ TDNFRepoSync(
                             &pszFilePath);
             BAIL_ON_TDNF_ERROR(dwError);
 
+            /* if gpgcheck option is given, check for a valid signature. If that fails,
+               delete the package */
             if (pReposyncArgs->nGPGCheck)
             {
                 dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgInfo->pszRepoName, pszFilePath, NULL);
@@ -1193,6 +1222,7 @@ TDNFRepoSync(
         }
         else
         {
+            /* print URLs only */
             dwError = TDNFCreatePackageUrl(pTdnf,
                                            pPkgInfo->pszRepoName,
                                            pPkgInfo->pszLocation,
@@ -1207,6 +1237,9 @@ TDNFRepoSync(
 
     if (pReposyncArgs->nDelete)
     {
+        /* go through all packages in the destination directory,
+           delete those that were not just downloaded as indicated by the
+           marker file */
         for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
         {
             if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||

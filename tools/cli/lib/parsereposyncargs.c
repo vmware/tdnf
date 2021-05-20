@@ -27,6 +27,7 @@ TDNFCliParseRepoSyncArgs(
     uint32_t dwError = 0;
     PTDNF_REPOSYNC_ARGS pReposyncArgs = NULL;
     PTDNF_CMD_OPT pSetOpt = NULL;
+    int i;
 
     if (!pArgs || !ppReposyncArgs)
     {
@@ -46,7 +47,24 @@ TDNFCliParseRepoSyncArgs(
     {
         if(pSetOpt->nType == CMDOPT_KEYVALUE)
         {
-            if (strcasecmp(pSetOpt->pszOptName, "delete") == 0)
+            if (strcasecmp(pSetOpt->pszOptName, "arch") == 0)
+            {
+                if (pReposyncArgs->ppszArchs == NULL)
+                {
+                    TDNFAllocateMemory(TDNF_REPOSYNC_MAXARCHS+1, sizeof(char *),
+                        (void **)&pReposyncArgs->ppszArchs);
+                    BAIL_ON_CLI_ERROR(dwError);
+                }
+                for (i = 0; pReposyncArgs->ppszArchs[i] && i < TDNF_REPOSYNC_MAXARCHS; i++);
+                if (i < TDNF_REPOSYNC_MAXARCHS)
+                {
+                    dwError = TDNFAllocateString(
+                        pSetOpt->pszOptValue,
+                        &(pReposyncArgs->ppszArchs[i]));
+                    BAIL_ON_CLI_ERROR(dwError);
+                }
+            }
+            else if (strcasecmp(pSetOpt->pszOptName, "delete") == 0)
             {
                 pReposyncArgs->nDelete = 1;
             }
@@ -65,6 +83,10 @@ TDNFCliParseRepoSyncArgs(
             else if (strcasecmp(pSetOpt->pszOptName, "norepopath") == 0)
             {
                 pReposyncArgs->nNoRepoPath = 1;
+            }
+            else if (strcasecmp(pSetOpt->pszOptName, "source") == 0)
+            {
+                pReposyncArgs->nSourceOnly = 1;
             }
             else if (strcasecmp(pSetOpt->pszOptName, "urls") == 0)
             {
@@ -90,6 +112,24 @@ TDNFCliParseRepoSyncArgs(
 cleanup:
     return dwError;
 error:
+    if (pReposyncArgs)
+    {
+        TDNFCliFreeRepoSyncArgs(pReposyncArgs);
+    }
     goto cleanup;
+}
+
+void
+TDNFCliFreeRepoSyncArgs(
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    )
+{
+    if(pReposyncArgs)
+    {
+        TDNF_CLI_SAFE_FREE_STRINGARRAY(pReposyncArgs->ppszArchs);
+        TDNF_SAFE_FREE_MEMORY(pReposyncArgs->pszDownloadPath);
+        TDNF_SAFE_FREE_MEMORY(pReposyncArgs->pszMetaDataPath);
+        TDNFFreeMemory(pReposyncArgs);
+    }
 }
 

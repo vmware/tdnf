@@ -122,6 +122,11 @@ TDNFCliRefresh(
     PTDNF_CLI_CONTEXT pContext
 );
 
+void
+TDNFCliFreeRepoSyncArgs(
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    );
+
 //Commands
 uint32_t
 TDNFCliAutoEraseCommand(
