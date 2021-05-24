@@ -160,6 +160,7 @@ typedef struct _TDNF_PKG_INFO
     char* pszRepoName;
     char* pszVersion;
     char* pszArch;
+    char* pszEVR;
     char* pszSummary;
     char* pszURL;
     char* pszLicense;

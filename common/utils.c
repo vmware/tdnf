@@ -220,6 +220,7 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRepoName);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszVersion);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszArch);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszEVR);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszSummary);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszURL);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLicense);

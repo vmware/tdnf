@@ -262,7 +262,8 @@ SolvGetNevraFromId(
     char **ppszName,
     char **ppszVersion,
     char **ppszRelease,
-    char **ppszArch
+    char **ppszArch,
+    char **ppszEVR
     );
 
 // tdnfpool.c

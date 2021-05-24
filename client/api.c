@@ -1139,6 +1139,11 @@ TDNFRepoSync(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (pReposyncArgs->nNewestOnly)
+    {
+        TDNFPkgInfoFilterNewest(pTdnf->pSack, pPkgInfos);
+    }
+
     /* iterate through all packages */
     for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {

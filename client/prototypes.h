@@ -334,6 +334,12 @@ TDNFPopulatePkgInfoForRepoSync(
     );
 
 uint32_t
+TDNFPkgInfoFilterNewest(
+    PSolvSack pSack,
+    PTDNF_PKG_INFO pPkgInfos
+);
+
+uint32_t
 TDNFPopulatePkgInfoArray(
     PSolvSack pSack,
     PSolvPackageList pPkgList,

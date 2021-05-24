@@ -18,6 +18,7 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
+#define _GNU_SOURCE 1
 #include "includes.h"
 
 uint32_t
@@ -253,22 +254,15 @@ TDNFPopulatePkgInfoForRepoSync(
         dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgNameFromId(pSack, dwPkgId, &pPkgInfo->pszName);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvGetPkgArchFromId(pSack, dwPkgId, &pPkgInfo->pszArch);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvGetPkgVersionFromId(
+        dwError = SolvGetNevraFromId(
                       pSack,
                       dwPkgId,
-                      &pPkgInfo->pszVersion);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvGetPkgReleaseFromId(
-                      pSack,
-                      dwPkgId,
-                      &pPkgInfo->pszRelease);
+                      &pPkgInfo->dwEpoch,
+                      &pPkgInfo->pszName,
+                      &pPkgInfo->pszVersion,
+                      &pPkgInfo->pszRelease,
+                      &pPkgInfo->pszArch,
+                      &pPkgInfo->pszEVR);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgRepoNameFromId(
@@ -298,6 +292,93 @@ error:
     {
         TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     }
+    goto cleanup;
+}
+
+static
+int _pkginfo_compare(
+        const void *ptr1,
+        const void *ptr2,
+        void *data
+    )
+{
+    const PTDNF_PKG_INFO* ppPkgInfo1 = (PTDNF_PKG_INFO*)ptr1;
+    const PTDNF_PKG_INFO* ppPkgInfo2 = (PTDNF_PKG_INFO*)ptr2;
+    Pool *pPool = (Pool *)data;
+    int ret;
+
+    /* sort by repo name first, then name, then version */
+    ret = strcmp((*ppPkgInfo1)->pszRepoName, (*ppPkgInfo2)->pszRepoName);
+    if (ret != 0)
+    {
+        return ret;
+    }
+    ret = strcmp((*ppPkgInfo1)->pszName, (*ppPkgInfo2)->pszName);
+    if (ret != 0)
+    {
+        return ret;
+    }
+
+    /* we want newest version first, so reverse it by using the negated value */
+    ret = - pool_evrcmp_str(pPool,
+                          (*ppPkgInfo1)->pszEVR, (*ppPkgInfo2)->pszEVR,
+                          EVRCMP_COMPARE);
+    return ret;
+}
+
+uint32_t
+TDNFPkgInfoFilterNewest(
+    PSolvSack pSack,
+    PTDNF_PKG_INFO pPkgInfos
+)
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount, i;
+    PTDNF_PKG_INFO* ppPkgInfos = NULL;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+
+    dwCount = 0;
+    for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        dwCount++;
+    }
+
+    dwError = TDNFAllocateMemory(
+                  dwCount,
+                  sizeof(PTDNF_PKG_INFO),
+                  (void**)&ppPkgInfos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    i = 0;
+    for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        ppPkgInfos[i++] = pPkgInfo;
+    }
+
+    qsort_r(ppPkgInfos, dwCount,
+            sizeof(PTDNF_PKG_INFO), _pkginfo_compare, (void *)pSack->pPool);
+
+    /* Loop though pointer array, use the linked list to skip over
+       older versions of the same packages. The linked list will only
+       touch the newest (first) version of a package.
+       The same package in different repos will be handled as two different
+       packages. */ 
+    pPkgInfo = ppPkgInfos[0];
+    for (i = 1; i < dwCount; i++)
+    {
+        if ((strcmp(ppPkgInfos[i]->pszRepoName, pPkgInfo->pszRepoName) != 0) ||
+            (strcmp(ppPkgInfos[i]->pszName, pPkgInfo->pszName) != 0))
+        {
+            pPkgInfo->pNext = ppPkgInfos[i];
+            pPkgInfo = ppPkgInfos[i];
+        }
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(ppPkgInfos);
+    return dwError;
+
+error:
     goto cleanup;
 }
 
@@ -864,7 +945,8 @@ TDNFPopulatePkgInfos(
                       &pPkgInfo->pszName,
                       &pPkgInfo->pszVersion,
                       &pPkgInfo->pszRelease,
-                      &pPkgInfo->pszArch);
+                      &pPkgInfo->pszArch,
+                      NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgRepoNameFromId(

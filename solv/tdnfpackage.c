@@ -1804,7 +1804,8 @@ SolvGetNevraFromId(
     char **ppszName,
     char **ppszVersion,
     char **ppszRelease,
-    char **ppszArch
+    char **ppszArch,
+    char **ppszEVR
     )
 {
     uint32_t dwError = 0;
@@ -1816,6 +1817,7 @@ SolvGetNevraFromId(
     char *pszVersion = NULL;
     char *pszRelease = NULL;
     char *pszArch = NULL;
+    char *pszEVR = NULL;
 
     if(!pSack ||
        !ppszName ||
@@ -1862,6 +1864,9 @@ SolvGetNevraFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFAllocateString(pszTmp, &pszEVR);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = SolvSplitEvr(pSack,
                            pszTmp,
                            &pszEpoch,
@@ -1879,6 +1884,10 @@ SolvGetNevraFromId(
     *ppszVersion = pszVersion;
     *ppszRelease = pszRelease;
     *ppszArch = pszArch;
+    if (ppszEVR)
+    {
+        *ppszEVR = pszEVR;
+    }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszEpoch);
     return dwError;
@@ -1904,9 +1913,14 @@ error:
     {
         *ppszArch = NULL;
     }
+    if(ppszEVR)
+    {
+        *ppszEVR = NULL;
+    }
     TDNF_SAFE_FREE_MEMORY(pszName);
     TDNF_SAFE_FREE_MEMORY(pszVersion);
     TDNF_SAFE_FREE_MEMORY(pszRelease);
     TDNF_SAFE_FREE_MEMORY(pszArch);
+    TDNF_SAFE_FREE_MEMORY(pszEVR);
     goto cleanup;
 }
