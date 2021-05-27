@@ -1029,7 +1029,7 @@ _rm_rpms(
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszKeepFile);
-    return dwError;
+    return (int)dwError;
 error:
     goto cleanup;
 }
@@ -1041,6 +1041,7 @@ TDNFRepoSync(
     )
 {
     uint32_t dwError = 0;
+    int ret;
     PTDNF_PKG_INFO pPkgInfos = NULL;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
@@ -1197,7 +1198,11 @@ TDNFRepoSync(
             if (pReposyncArgs->nGPGCheck)
             {
                 dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgInfo->pszRepoName, pszFilePath, NULL);
-                if (dwError)
+                if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
+                {
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                else if (dwError)
                 {
                     pr_crit("checking package %s failed: %d, deleting\n", pszFilePath, dwError);
                     if(remove(pszFilePath) < 0)
@@ -1257,10 +1262,16 @@ TDNFRepoSync(
                         pszRootPath, pRepo->pszId);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            if (nftw(pszRepoDir, _rm_rpms, 10, FTW_DEPTH|FTW_PHYS) < 0)
+            ret = nftw(pszRepoDir, _rm_rpms, 10, FTW_DEPTH|FTW_PHYS);
+            if (ret < 0)
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            else
+            {
+                dwError = ret;
+                BAIL_ON_TDNF_ERROR(dwError);
             }
         }
     }
