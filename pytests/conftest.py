@@ -241,16 +241,17 @@ class TestUtils(object):
                         '--error-exitcode=1']
         return self._run(memcheck_cmd + cmd, retvalonly=True)
 
-    def run(self, cmd):
+    def run(self, cmd, cwd=None):
         self._decorate_tdnf_cmd_for_test(cmd)
-        return self._run(cmd)
+        return self._run(cmd, cwd=cwd)
 
-    def _run(self, cmd, retvalonly=False):
+    def _run(self, cmd, retvalonly=False, cwd=None):
         use_shell = not isinstance(cmd, list)
         print(cmd)
         process = subprocess.Popen(cmd, shell=use_shell, #nosec
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stderr=subprocess.PIPE,
+                                   cwd=cwd)
         #process.wait()
         out, err = process.communicate()
         if retvalonly:

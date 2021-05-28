@@ -232,6 +232,12 @@ TDNFRecursivelyRemoveDir(
     const char *pszPath
 );
 
+uint32_t
+TDNFStringMatchesOneOf(
+    const char *pszSearch,
+    char **ppszList,
+    int *pRet);
+
 //setopt.c
 uint32_t
 AddSetOpt(

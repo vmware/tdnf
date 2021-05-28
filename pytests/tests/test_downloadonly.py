@@ -39,7 +39,7 @@ def test_install_download_only(utils):
 # be in specified directory
 def test_install_download_only_to_directory(utils):
     pkgname = utils.config["sglversion_pkgname"]
-    os.makedirs(DOWNLOADDIR)
+    os.makedirs(DOWNLOADDIR, exist_ok=True)
     ret = utils.run([ 'tdnf', 'install', '-y', '--downloadonly', '--downloaddir', DOWNLOADDIR, pkgname])
     print (ret)
     assert(ret['retval']  == 0)

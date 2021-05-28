@@ -92,6 +92,12 @@ TDNFCliInvokeRepoList(
     );
 
 uint32_t
+TDNFCliInvokeRepoSync(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    );
+
+uint32_t
 TDNFCliInvokeResolve(
     PTDNF_CLI_CONTEXT pContext,
     TDNF_ALTERTYPE nAlterType,
@@ -299,6 +305,13 @@ uint32_t
 TDNFCliParseRepoListArgs(
     PTDNF_CMD_ARGS pCmdArgs,
     TDNF_REPOLISTFILTER* pnFilter
+    );
+
+//parsereposyncargs.c
+uint32_t
+TDNFCliParseRepoSyncArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_REPOSYNC_ARGS* ppReposyncArgs
     );
 
 //parseupdateinfo.c

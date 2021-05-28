@@ -25,6 +25,7 @@ PUBLISH_PATH=${TEST_REPO_DIR}/photon-test
 mkdir -p ${BUILD_PATH}/BUILD \
 	 ${BUILD_PATH}/SRPMS \
 	 ${BUILD_PATH}/RPMS/x86_64 \
+	 ${BUILD_PATH}/RPMS/noarch \
 	 ${PUBLISH_PATH} \
 	 ${TEST_REPO_DIR}/yum.repos.d
 

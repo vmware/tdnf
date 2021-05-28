@@ -707,9 +707,7 @@ TDNFDownloadFile(
     const char *pszRepo,
     const char *pszFileUrl,
     const char *pszFile,
-    const char *pszProgressData,
-    int is_metalink,
-    TDNF_METALINK_FILE **ml_file
+    const char *pszProgressData
     )
 {
     uint32_t dwError = 0;
@@ -838,12 +836,6 @@ TDNFDownloadFile(
     {
         dwError = rename(pszFileTmp, pszFile);
         BAIL_ON_TDNF_ERROR(dwError);
-
-        if (is_metalink && ml_file)
-        {
-            dwError = TDNFParseAndGetURLFromMetalink(pTdnf, pszRepo, pszFile, ml_file);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
@@ -874,25 +866,22 @@ error:
 }
 
 uint32_t
-TDNFDownloadPackage(
+TDNFCreatePackageUrl(
     PTDNF pTdnf,
-    const char* pszPackageLocation,
-    const char* pszPkgName,
     const char* pszRepoName,
-    const char* pszRpmCacheDir
+    const char* pszPackageLocation,
+    char **ppszPackageUrl
     )
 {
     uint32_t dwError = 0;
     char* pszBaseUrl = NULL;
     char *pszPackageUrl = NULL;
-    char *pszPackageFile = NULL;
-    char *pszCopyOfPackageLocation = NULL;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszPackageLocation) ||
-       IsNullOrEmptyString(pszPkgName) ||
-       IsNullOrEmptyString(pszRepoName))
+       IsNullOrEmptyString(pszRepoName) ||
+       !ppszPackageUrl)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -913,6 +902,44 @@ TDNFDownloadPackage(
         dwError = TDNFAllocateString(pszPackageLocation, &pszPackageUrl);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    *ppszPackageUrl = pszPackageUrl;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszPackageUrl);
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadPackage(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    const char* pszRpmCacheDir
+    )
+{
+    uint32_t dwError = 0;
+    char *pszPackageUrl = NULL;
+    char *pszPackageFile = NULL;
+    char *pszCopyOfPackageLocation = NULL;
+    int nSize;
+
+    if(!pTdnf ||
+       !pTdnf->pArgs ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFCreatePackageUrl(pTdnf, pszRepoName, pszPackageLocation, &pszPackageUrl);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateString(pszPackageLocation,
                                  &pszCopyOfPackageLocation);
@@ -924,13 +951,21 @@ TDNFDownloadPackage(
                                        basename(pszCopyOfPackageLocation));
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFDownloadFile(pTdnf,
-                               pszRepoName,
-                               pszPackageUrl,
-                               pszPackageFile,
-                               pszPkgName,
-                               0,
-                               NULL);
+    /* don't download if file is already there. Older versions may have left
+       size 0 files, so check for those too */
+    dwError = TDNFGetFileSize(pszPackageFile, &nSize);
+    if ((dwError == ERROR_TDNF_FILE_NOT_FOUND) || (nSize == 0))
+    {
+        dwError = TDNFDownloadFile(pTdnf,
+                                   pszRepoName,
+                                   pszPackageUrl,
+                                   pszPackageFile,
+                                   pszPkgName);
+    }
+    else
+    {
+        pr_info("%s package already downloaded", pszPkgName);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     pr_info("\n");
@@ -939,7 +974,6 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszPackageUrl);
     TDNF_SAFE_FREE_MEMORY(pszCopyOfPackageLocation);
     TDNF_SAFE_FREE_MEMORY(pszPackageFile);
-    TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
     return dwError;
 
 error:
@@ -958,11 +992,6 @@ TDNFDownloadPackageToCache(
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
     char* pszNormalRpmCacheDir = NULL;
-    char* pszFilePath = NULL;
-    char* pszNormalPath = NULL;
-    char* pszFilePathCopy = NULL;
-    char* pszDownloadCacheDir = NULL;
-    char* pszRemotePath = NULL;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszPackageLocation) ||
@@ -986,6 +1015,58 @@ TDNFDownloadPackageToCache(
                                 &pszNormalRpmCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFDownloadPackageToTree(pTdnf,
+                                        pszPackageLocation,
+                                        pszPkgName,
+                                        pszRepoName,
+                                        pszNormalRpmCacheDir,
+                                        ppszFilePath);
+    BAIL_ON_TDNF_ERROR(dwError);
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszNormalRpmCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/*
+ * TDNFDownloadPackageToTree()
+ *
+ * Download a package while preserving the directory path. For example,
+ * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm, the destination will
+ * be downloaded under the destination directory in RPMS/x86_64/foo-1.2-3.rpm
+ * (so 'RPMS/x86_64/' will be preserved).
+*/
+
+uint32_t
+TDNFDownloadPackageToTree(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    char* pszNormalRpmCacheDir,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszFilePath = NULL;
+    char* pszNormalPath = NULL;
+    char* pszFilePathCopy = NULL;
+    char* pszDownloadCacheDir = NULL;
+    char* pszRemotePath = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       IsNullOrEmptyString(pszRepoName) ||
+       IsNullOrEmptyString(pszNormalRpmCacheDir) ||
+       !ppszFilePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFPathFromUri(pszPackageLocation, &pszRemotePath);
     if (dwError == ERROR_TDNF_URL_INVALID)
     {
@@ -996,7 +1077,7 @@ TDNFDownloadPackageToCache(
     dwError = TDNFAllocateStringPrintf(
                   &pszFilePath,
                   "%s/%s",
-                  pszRpmCacheDir,
+                  pszNormalRpmCacheDir,
                   pszRemotePath);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1051,8 +1132,6 @@ TDNFDownloadPackageToCache(
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszFilePathCopy);
-    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
-    TDNF_SAFE_FREE_MEMORY(pszNormalRpmCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszRemotePath);
     return dwError;
 
@@ -1062,6 +1141,14 @@ error:
 
 }
 
+/*
+ * TDNFDownloadPackageToDirectory()
+ *
+ * Download a package withou preserving the directory path. For example,
+ * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm, the destination will
+ * be downloaded under the destination directory (pszDirectory) as foo-1.2-3.rpm
+ * (so RPMS/x86_64/ will be stripped).
+*/
 
 uint32_t
 TDNFDownloadPackageToDirectory(

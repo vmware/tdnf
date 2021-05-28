@@ -220,6 +220,7 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRepoName);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszVersion);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszArch);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszEVR);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszSummary);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszURL);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLicense);
@@ -725,6 +726,34 @@ TDNFRecursivelyRemoveDir(const char *pszPath)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/* search pszSearch in the string ppszList, result will be in pRet */
+uint32_t
+TDNFStringMatchesOneOf(const char *pszSearch, char **ppszList, int *pRet)
+{
+    int i;
+    uint32_t dwError = 0;
+
+    if (IsNullOrEmptyString(pszSearch) || !ppszList || !pRet)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *pRet = 0;
+    for(i = 0; ppszList[i]; i++)
+    {
+        if (strcmp(pszSearch, ppszList[i]) == 0)
+        {
+            *pRet = 1;
+            goto cleanup;
+        }
     }
 cleanup:
     return dwError;

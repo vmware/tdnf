@@ -457,6 +457,35 @@ error:
 }
 
 uint32_t
+TDNFCliRepoSyncCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPOSYNC_ARGS pReposyncArgs;
+
+    if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoSync)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFCliParseRepoSyncArgs(pCmdArgs, &pReposyncArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = pContext->pFnRepoSync(pContext, pReposyncArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+cleanup:
+    TDNFCliFreeRepoSyncArgs(pReposyncArgs);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFCliCheckUpdateCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs

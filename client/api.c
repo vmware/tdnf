@@ -18,6 +18,7 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
+#include <ftw.h>
 #include "includes.h"
 #include "config.h"
 
@@ -976,6 +977,368 @@ error:
     if(pReposAll)
     {
         TDNFFreeRepos(pReposAll);
+    }
+    goto cleanup;
+}
+
+static int
+_rm_rpms(
+    const char *pszFilePath,
+    const struct stat *sbuf,
+    int type,
+    struct FTW *ftwb
+    )
+{
+    uint32_t dwError = 0;
+    char *pszKeepFile = NULL;
+    struct stat statKeep = {0};
+
+    UNUSED(sbuf);
+    UNUSED(type);
+    UNUSED(ftwb);
+
+    if (strcmp(&pszFilePath[strlen(pszFilePath)-4], ".rpm") == 0)
+    {
+        dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (stat(pszKeepFile, &statKeep))
+        {
+            if (errno == ENOENT)
+            {
+                pr_info("deleting %s\n", pszFilePath);
+                if(remove(pszFilePath) < 0)
+                {
+                    pr_crit("unable to remove %s: %s\n", pszFilePath, strerror(errno));
+                }
+            }
+            else
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+        else
+        {
+            /* marker file can be removed now */
+            if(remove(pszKeepFile) < 0)
+            {
+                pr_crit("unable to remove %s: %s\n", pszKeepFile, strerror(errno));
+            }
+        }
+    }
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszKeepFile);
+    return (int)dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFRepoSync(
+    PTDNF pTdnf,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    )
+{
+    uint32_t dwError = 0;
+    int ret;
+    PTDNF_PKG_INFO pPkgInfos = NULL;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    char *pszRepoDir = NULL;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+    char *pszRootPath = NULL;
+    char *pszUrl = NULL;
+    char *pszDir = NULL;
+    char *pszFilePath = NULL;
+    char *pszKeepFile = NULL;
+    uint32_t dwCount = 0;
+    uint32_t dwRepoCount = 0;
+    TDNFRPMTS ts = {0};
+
+    if(!pTdnf || !pTdnf->pSack || !pReposyncArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* count enabled repos */
+    for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+    {
+        if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+            (!pRepo->nEnabled))
+        {
+            continue;
+        }
+        dwRepoCount++;
+    }
+
+    if (dwRepoCount > 1 && pReposyncArgs->nNoRepoPath)
+    {
+        pr_crit("cannot use norepopath with multiple repos\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pReposyncArgs->nDelete && pReposyncArgs->nNoRepoPath)
+    {
+        /* prevent accidental deletion of packages */
+        pr_crit("cannot use the delete option with norepopath\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pReposyncArgs->nSourceOnly && pReposyncArgs->ppszArchs)
+    {
+        pr_crit("cannot use the source option with arch\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* generate list of packages, result will be
+       in pPkgInfos */
+    dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFApplyScopeFilter(pQuery, SCOPE_ALL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPopulatePkgInfoForRepoSync(pTdnf->pSack, pPkgList, &pPkgInfos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pReposyncArgs->nGPGCheck)
+    {
+        ts.pTS = rpmtsCreate();
+        if(!ts.pTS)
+        {
+            dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    if (pReposyncArgs->pszDownloadPath == NULL)
+    {
+        pszRootPath = getcwd(NULL, 0);
+        if (!pszRootPath)
+        {
+            BAIL_ON_TDNF_SYSTEM_ERROR(errno);
+        }
+    }
+    else
+    {
+        dwError = TDNFNormalizePath(pReposyncArgs->pszDownloadPath, &pszRootPath);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pReposyncArgs->nNewestOnly)
+    {
+        TDNFPkgInfoFilterNewest(pTdnf->pSack, pPkgInfos);
+    }
+
+    /* iterate through all packages */
+    for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        dwCount++;
+        if (strcmp(pPkgInfo->pszRepoName, SYSTEM_REPO_NAME) == 0)
+        {
+            continue;
+        }
+        if (pReposyncArgs->ppszArchs)
+        {
+            int result = 0;
+            TDNFStringMatchesOneOf(pPkgInfo->pszArch, pReposyncArgs->ppszArchs, &result);
+            if (result == 0)
+            {
+                continue;
+            }
+        }
+        else if (pReposyncArgs->nSourceOnly)
+        {
+            if (strcmp(pPkgInfo->pszArch, "src") != 0)
+            {
+                continue;
+            }
+        }
+
+        if (!pReposyncArgs->nPrintUrlsOnly)
+        {
+            if (!pReposyncArgs->nNoRepoPath)
+            {
+                dwError = TDNFAllocateStringPrintf(&pszDir, "%s/%s",
+                            pszRootPath, pPkgInfo->pszRepoName);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                dwError = TDNFAllocateString(pszRootPath, &pszDir);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFUtilsMakeDir(pszDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFDownloadPackageToTree(pTdnf,
+                            pPkgInfo->pszLocation, pPkgInfo->pszName,
+                            pPkgInfo->pszRepoName, pszDir,
+                            &pszFilePath);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            /* if gpgcheck option is given, check for a valid signature. If that fails,
+               delete the package */
+            if (pReposyncArgs->nGPGCheck)
+            {
+                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgInfo->pszRepoName, pszFilePath, NULL);
+                if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
+                {
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                else if (dwError)
+                {
+                    pr_crit("checking package %s failed: %d, deleting\n", pszFilePath, dwError);
+                    if(remove(pszFilePath) < 0)
+                    {
+                        pr_crit("unable to remove %s: %s\n", pszFilePath, strerror(errno));
+                    }
+                }
+            }
+
+            /* dwError==0 means TDNFGPGCheckPackage() succeeded or wasn't called */
+            if (pReposyncArgs->nDelete && dwError == 0)
+            {
+                /* if "delete" option is given, create a marker file to protect
+                   what we just downloaded. Later all *.rpm files that do not 
+                   have a marker file will be deleted */
+                dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                dwError = TDNFTouchFile(pszKeepFile);
+                BAIL_ON_TDNF_ERROR(dwError);
+                TDNF_SAFE_FREE_MEMORY(pszKeepFile);
+            }
+            dwError = 0;
+
+            TDNF_SAFE_FREE_MEMORY(pszDir);
+            TDNF_SAFE_FREE_MEMORY(pszFilePath);
+        }
+        else
+        {
+            /* print URLs only */
+            dwError = TDNFCreatePackageUrl(pTdnf,
+                                           pPkgInfo->pszRepoName,
+                                           pPkgInfo->pszLocation,
+                                           &pszUrl);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            pr_info("%s\n", pszUrl);
+
+            TDNF_SAFE_FREE_MEMORY(pszUrl);
+        }
+    }
+
+    if (pReposyncArgs->nDelete)
+    {
+        /* go through all packages in the destination directory,
+           delete those that were not just downloaded as indicated by the
+           marker file */
+        for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+        {
+            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+                (!pRepo->nEnabled))
+            {
+                continue;
+            }
+
+            dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
+                        pszRootPath, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            ret = nftw(pszRepoDir, _rm_rpms, 10, FTW_DEPTH|FTW_PHYS);
+            if (ret < 0)
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            else
+            {
+                dwError = ret;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+
+    if (pReposyncArgs->nDownloadMetadata)
+    {
+        for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+        {
+            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+                (!pRepo->nEnabled))
+            {
+                continue;
+            }
+
+            if (!pReposyncArgs->nNoRepoPath)
+            {
+                dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
+                            pReposyncArgs->pszMetaDataPath ?
+                                pReposyncArgs->pszMetaDataPath : pszRootPath,
+                            pRepo->pszId);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                dwError = TDNFAllocateString(
+                            pReposyncArgs->pszMetaDataPath ?
+                                pReposyncArgs->pszMetaDataPath : pszRootPath,
+                            &pszRepoDir);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFUtilsMakeDir(pszRepoDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFDownloadMetadata(pTdnf, pRepo, pszRepoDir,
+                                           pReposyncArgs->nPrintUrlsOnly);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            TDNF_SAFE_FREE_MEMORY(pszRepoDir);
+        }
+    }
+
+cleanup:
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    if(pPkgList)
+    {
+        SolvFreePackageList(pPkgList);
+    }
+    if(ts.pTS)
+    {
+        rpmtsCloseDB(ts.pTS);
+        rpmtsFree(ts.pTS);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszDir);
+    TDNF_SAFE_FREE_MEMORY(pszRepoDir);
+    TDNF_SAFE_FREE_MEMORY(pszRootPath);
+    TDNF_SAFE_FREE_MEMORY(pszKeepFile);
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNFFreePackageInfoArray(pPkgInfos, dwCount);
+    return dwError;
+error: 
+    if(dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
     }
     goto cleanup;
 }

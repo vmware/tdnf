@@ -108,6 +108,12 @@ typedef uint32_t
     );
 
 typedef uint32_t
+(*PFN_TDNF_REPOSYNC)(
+    PTDNF_CLI_CONTEXT,
+    PTDNF_REPOSYNC_ARGS
+    );
+
+typedef uint32_t
 (*PFN_TDNF_RESOLVE)(
     PTDNF_CLI_CONTEXT,
     TDNF_ALTERTYPE,
@@ -148,6 +154,7 @@ typedef struct _TDNF_CLI_CONTEXT_
     PFN_TDNF_LIST               pFnList;
     PFN_TDNF_PROVIDES           pFnProvides;
     PFN_TDNF_REPOLIST           pFnRepoList;
+    PFN_TDNF_REPOSYNC           pFnRepoSync;
     PFN_TDNF_RESOLVE            pFnResolve;
     PFN_TDNF_SEARCH             pFnSearch;
     PFN_TDNF_UPDATEINFO         pFnUpdateInfo;

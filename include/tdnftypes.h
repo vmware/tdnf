@@ -160,6 +160,7 @@ typedef struct _TDNF_PKG_INFO
     char* pszRepoName;
     char* pszVersion;
     char* pszArch;
+    char* pszEVR;
     char* pszSummary;
     char* pszURL;
     char* pszLicense;
@@ -332,6 +333,22 @@ typedef struct _TDNF_UPDATEINFO_SUMMARY
     int nCount;
     int nType;
 }TDNF_UPDATEINFO_SUMMARY, *PTDNF_UPDATEINFO_SUMMARY;
+
+#define TDNF_REPOSYNC_MAXARCHS 10
+
+typedef struct _TDNF_REPOSYNC_ARGS
+{
+    int nDelete;
+    int nDownloadMetadata;
+    int nGPGCheck;
+    int nNewestOnly;
+    int nPrintUrlsOnly;
+    int nNoRepoPath;
+    int nSourceOnly;
+    char *pszDownloadPath;
+    char *pszMetaDataPath;
+    char **ppszArchs;
+}TDNF_REPOSYNC_ARGS, *PTDNF_REPOSYNC_ARGS;
 
 #ifdef __cplusplus
 }

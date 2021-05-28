@@ -92,6 +92,23 @@ TDNFImportGPGKeyFile(
     const char* pszFile
     );
 
+uint32_t
+TDNFGPGCheckPackage(
+    PTDNFRPMTS pTS,
+    PTDNF pTdnf,
+    const char* pszRepoName,
+    const char* pszFilePath,
+    Header *pRpmHeader
+    );
+
+uint32_t
+TDNFFetchRemoteGPGKey(
+    PTDNF pTdnf,
+    const char* pszRepoName,
+    const char* pszUrlGPGKey,
+    char** ppszKeyLocation
+    );
+
 //init.c
 uint32_t
 TDNFCloneCmdArgs(
@@ -245,9 +262,15 @@ TDNFDownloadFile(
     const char *pszRepo,
     const char *pszFileUrl,
     const char *pszFile,
-    const char *pszProgressData,
-    int metalink,
-    TDNF_METALINK_FILE **ml_file
+    const char *pszProgressData
+    );
+
+uint32_t
+TDNFCreatePackageUrl(
+    PTDNF pTdnf,
+    const char* pszRepoName,
+    const char* pszPackageLocation,
+    char **ppszPackageUrl
     );
 
 uint32_t
@@ -265,6 +288,16 @@ TDNFDownloadPackageToCache(
     const char* pszPackageLocation,
     const char* pszPkgName,
     const char* pszRepoName,
+    char** ppszFilePath
+    );
+
+uint32_t
+TDNFDownloadPackageToTree(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    const char* pszRepoName,
+    char* pszNormalRpmCacheDir,
     char** ppszFilePath
     );
 
@@ -292,6 +325,19 @@ TDNFPopulatePkgInfos(
     PSolvPackageList pPkgList,
     PTDNF_PKG_INFO* ppPkgInfo
     );
+
+uint32_t
+TDNFPopulatePkgInfoForRepoSync(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO* ppPkgInfo
+    );
+
+uint32_t
+TDNFPkgInfoFilterNewest(
+    PSolvSack pSack,
+    PTDNF_PKG_INFO pPkgInfos
+);
 
 uint32_t
 TDNFPopulatePkgInfoArray(
@@ -644,6 +690,23 @@ TDNFReplaceFile(
     const char *pszDstFile
     );
 
+uint32_t
+TDNFDownloadMetadata(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    const char *pszRepoDir,
+    int nPrintOnly
+    );
+
+uint32_t
+TDNFDownloadRepoMDParts(
+    PTDNF pTdnf,
+    Repo *pSolvRepo,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
+    const char *pszDir,
+    int nPrintOnly
+    );
+
 //repolist.c
 uint32_t
 TDNFLoadReposFromFile(
@@ -902,6 +965,12 @@ uint32_t
 TDNFIsFileOrSymlink(
     const char* pszPath,
     int* pnPathIsFile
+    );
+
+uint32_t
+TDNFGetFileSize(
+    const char* pszPath,
+    int *pnSize
     );
 
 uint32_t

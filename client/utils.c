@@ -291,6 +291,44 @@ error:
 }
 
 uint32_t
+TDNFGetFileSize(
+    const char* pszPath,
+    int *pnSize
+    )
+{
+    uint32_t dwError = 0;
+    struct stat stStat = {0};
+
+    if(!pnSize || IsNullOrEmptyString(pszPath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(stat(pszPath, &stStat))
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    else
+    {
+        if (S_ISREG(stStat.st_mode))
+        {
+            *pnSize = stStat.st_size;
+        }
+    }
+cleanup:
+    return dwError;
+
+error:
+    if(pnSize)
+    {
+        *pnSize = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFIsDir(
     const char* pszPath,
     int* pnPathIsDir

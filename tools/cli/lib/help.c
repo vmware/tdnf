@@ -60,6 +60,19 @@ TDNFCliShowHelp(
     pr_crit("           [--disableexcludes]\n");
     pr_crit("           [--downloadonly]\n");
     pr_crit("           [--downloaddir=<directory>]\n");
+    pr_crit("\n");
+    pr_crit("reposync options:\n");
+    pr_crit("           [--arch=<arch> [--arch=<arch> [..]]\n");
+    pr_crit("           [--delete]\n");
+    pr_crit("           [--download-path=<directory>]\n");
+    pr_crit("           [--download-metadata]\n");
+    pr_crit("           [--gpgcheck]\n");
+    pr_crit("           [--metadata-path=<directory>]\n");
+    pr_crit("           [--newest-only]\n");
+    pr_crit("           [--norepopath]\n");
+    pr_crit("           [--source]\n");
+    pr_crit("           [--urls]\n");
+    pr_crit("\n");
 
     pr_crit("List of Main Commands\n");
     pr_crit("\n");
@@ -79,6 +92,7 @@ TDNFCliShowHelp(
     pr_crit("remove                    Remove a package or packages from your system\n");
     pr_crit("reinstall                 reinstall a package\n");
     pr_crit("repolist                  Display the configured software repositories\n");
+    pr_crit("reposync                  Download all packages from one or more repositories to a directory\n");
     pr_crit("search                    Search package details for the given string\n");
     pr_crit("update                    Upgrade a package or packages on your system (same as 'upgrade')\n");
     pr_crit("updateinfo                Display advisories about packages\n");
