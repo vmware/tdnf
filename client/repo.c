@@ -380,7 +380,8 @@ TDNFGetGPGSignatureCheck(
             nGPGSigCheck = 1;
             if (pppszUrlGPGKeys != NULL)
             {
-                if (IsNullOrEmptyString(pRepo->ppszUrlGPGKeys[0]))
+                if (pRepo->ppszUrlGPGKeys == NULL ||
+                    IsNullOrEmptyString(pRepo->ppszUrlGPGKeys[0]))
                 {
                     dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
                     BAIL_ON_TDNF_ERROR(dwError);
