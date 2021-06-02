@@ -116,3 +116,12 @@ def test_install_remote_key_no_traversal2(utils):
     ret = utils.run([ 'tdnf', 'install', '-y', pkgname])
     assert(ret['retval']  != 0)
 
+# test with gpgcheck enabled but no key entry, expect fail
+def test_install_nokey(utils):
+    set_gpgcheck(utils, True)
+    set_repo_key(utils, None)
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run([ 'tdnf', 'install', '-y', pkgname])
+    assert(ret['retval']  == 1523)
+    assert(not utils.check_package(pkgname))
+
