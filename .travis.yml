@@ -1,12 +1,15 @@
 language: minimal
-
 services:
-  - docker
-
+- docker
 env:
+  matrix:
   - DIST=fedora
   - DIST=photon
-
+  global:
+  - secure: Iz1LRzqDzoAs3y0xRJ6yc1dBDlQ13wR4Hl20altTwsmcu2eJdeW5WJzetxqryzSjARMw8c+v6loUzNLAz1BlJyo2/Yv7X8/85UTwxRX2KYa6w/mJLETLV5ndnLhU3h5Qqn+6B6pIWNJa+DV4OeGrslg0wqJ01ZyMZ1xSEEnNZeA=
+  - secure: VttimlPhD1xNvgSSxechwjfxK6fDN5lbDu4n+FMa0LZ4oEtXPTgUAyAd9wCzqZ9KrmVqwSeu3YFD0MRipKdu3UgzByDT5OR7/QyrQQYA+VDSVI8ovxC+3fqsRK7JnEy/KK8qDYgu8SUFX7zop052pbORAkKHJKFfYBaIjeuOn8k=
 script:
-  - docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
-  - docker run --security-opt seccomp:unconfined --rm -it -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
+- echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+- docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
+- docker run --security-opt seccomp:unconfined --rm -it -e DIST -v$(pwd):/build -w/build
+  ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
