@@ -101,6 +101,9 @@ typedef enum
 #define TDNF_REPO_KEY_SSL_CLI_CERT        "sslclientcert"
 #define TDNF_REPO_KEY_SSL_CLI_KEY         "sslclientkey"
 
+//setopt keys
+#define TDNF_SETOPT_KEY_REPOSDIR          "reposdir"
+
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
 #define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
