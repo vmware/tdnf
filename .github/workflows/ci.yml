@@ -1,0 +1,34 @@
+name: tdnf CI
+
+on: [pull_request, push, workflow_dispatch]
+
+jobs:
+    photon:
+        env:
+            DIST: photon
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: build container
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
+            - name: run container with tests
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker run --security-opt seccomp:unconfined --rm -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
+    fedora:
+        env:
+            DIST: fedora
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: build container
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
+            - name: run container with tests
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker run --security-opt seccomp:unconfined --rm -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
+        
