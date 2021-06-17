@@ -29,6 +29,7 @@ TDNFCloneCmdArgs(
     uint32_t dwError = 0;
     int nIndex = 0;
     PTDNF_CMD_ARGS pCmdArgs = NULL;
+    char *pszConfFileInstallRoot = NULL;
 
     dwError = TDNFAllocateMemory(
                   1,
@@ -62,17 +63,38 @@ TDNFCloneCmdArgs(
                   &pCmdArgs->pszInstallRoot);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(IsNullOrEmptyString(pCmdArgsIn->pszConfFile))
+    /* if using --installroot, we prefer the tdnf.conf from the
+       installroot unless a tdnf.conf location is explicitely set */
+    if(IsNullOrEmptyString(pCmdArgsIn->pszConfFile) &&
+       !IsNullOrEmptyString(pCmdArgsIn->pszInstallRoot) &&
+       strcmp(pCmdArgsIn->pszInstallRoot, "/"))
     {
+        /* no conf file explicitely set in args,
+           but using --installroot */
+
+        int nExists = 0;
+
+        /* prepend installroot to tdnf.conf location */
+        dwError = TDNFAllocateStringPrintf(&pszConfFileInstallRoot, "%s/%s",
+                                           pCmdArgsIn->pszInstallRoot,
+                                           TDNF_CONF_FILE);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFIsFileOrSymlink(pszConfFileInstallRoot, &nExists);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        /* if we find tdnf.conf inside the install root use it,
+           otherwise use tdnf.conf from the host */
         dwError = TDNFAllocateString(
-                      TDNF_CONF_FILE,
+                      nExists ? pszConfFileInstallRoot : TDNF_CONF_FILE,
                       &pCmdArgs->pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else
     {
         dwError = TDNFAllocateString(
-                      pCmdArgsIn->pszConfFile,
+                      pCmdArgsIn->pszConfFile ?
+                            pCmdArgsIn->pszConfFile : TDNF_CONF_FILE,
                       &pCmdArgs->pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -127,6 +149,7 @@ TDNFCloneCmdArgs(
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszConfFileInstallRoot);
     return dwError;
 
 error:

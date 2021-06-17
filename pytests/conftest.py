@@ -220,11 +220,11 @@ class TestUtils(object):
             shutil.copyfileobj(r.raw, f)
         return True, None
 
-    def _decorate_tdnf_cmd_for_test(self, cmd):
+    def _decorate_tdnf_cmd_for_test(self, cmd, noconfig=False):
         if cmd[0] == 'tdnf':
             if 'build_dir' in self.config:
                 cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
-            if cmd[1] != '--config':
+            if cmd[1] != '--config' and not noconfig:
                 cmd.insert(1, '-c')
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
 
@@ -241,8 +241,8 @@ class TestUtils(object):
                         '--error-exitcode=1']
         return self._run(memcheck_cmd + cmd, retvalonly=True)
 
-    def run(self, cmd, cwd=None):
-        self._decorate_tdnf_cmd_for_test(cmd)
+    def run(self, cmd, cwd=None, noconfig=False):
+        self._decorate_tdnf_cmd_for_test(cmd, noconfig)
         return self._run(cmd, cwd=cwd)
 
     def _run(self, cmd, retvalonly=False, cwd=None):
