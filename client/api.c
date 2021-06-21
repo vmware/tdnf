@@ -629,20 +629,19 @@ TDNFList(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFPopulatePkgInfoArray(
-                  pTdnf->pSack,
-                  pPkgList,
-                  DETAIL_LIST,
-                  &pPkgInfo,
-                  &dwCount);
-
     if (dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
     {
         dwError = 0;
     }
-
+    else if (dwError == 0)
+    {
+        dwError = TDNFPopulatePkgInfoArray(
+                      pTdnf->pSack,
+                      pPkgList,
+                      DETAIL_LIST,
+                      &pPkgInfo,
+                      &dwCount);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
