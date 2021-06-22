@@ -166,8 +166,6 @@ TDNFAlterCommand(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = TDNFRefresh(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo, nAlterType);
     BAIL_ON_TDNF_ERROR(dwError);
