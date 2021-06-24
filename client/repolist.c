@@ -34,12 +34,14 @@ TDNFLoadRepoData(
     PTDNF_REPO_DATA_INTERNAL pReposTemp = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
     PTDNF_CONF pConf = NULL;
+    PTDNF_CMD_OPT pSetOpt = NULL;
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
     int nLen = 0;
     int nLenRepoExt = 0;
+    char **ppszUrlIdTuple = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !ppReposAll)
+    if(!pTdnf || !pTdnf->pConf || !pTdnf->pArgs || !ppReposAll)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -48,6 +50,27 @@ TDNFLoadRepoData(
 
     dwError = TDNFCreateCmdLineRepo(&pReposAll);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    for(pSetOpt = pTdnf->pArgs->pSetOpt;
+        pSetOpt;
+        pSetOpt = pSetOpt->pNext)
+    {
+        if(strcmp(pSetOpt->pszOptName, "repofrompath") == 0)
+        {
+            TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszUrlIdTuple);
+            if ((ppszUrlIdTuple[0] == NULL) || ppszUrlIdTuple[1] == NULL)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            dwError = TDNFCreateRepoFromPath(&pReposAll,
+                ppszUrlIdTuple[0], ppszUrlIdTuple[1]);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            TDNF_SAFE_FREE_STRINGARRAY(ppszUrlIdTuple);
+            ppszUrlIdTuple = NULL;
+        }
+    }
 
     pDir = opendir(pConf->pszRepoDir);
     if(pDir == NULL)
@@ -111,6 +134,7 @@ cleanup:
         closedir(pDir);
     }
     TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszUrlIdTuple);
 
     return dwError;
 error:
@@ -139,17 +163,124 @@ TDNFCreateCmdLineRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFCreateRepo(&pRepo, "@cmdline");
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString("@cmdline", &pRepo->pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppRepo = pRepo;
+cleanup:
+    return dwError;
+error:
+    if(ppRepo)
+    {
+        *ppRepo = NULL;
+    }
+    if(pRepo)
+    {
+        TDNFFreeReposInternal(pRepo);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFCreateRepoFromPath(
+    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    const char *pszId,
+    const char *pszPath
+    )
+{
+    uint32_t dwError;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    int nIsDir = 0;
+    int nDummy = 0;
+
+    if(!ppRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFCreateRepo(&pRepo, pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* we want it enabled, or there was no point in adding it */
+    pRepo->nEnabled = 1;
+
+    dwError = TDNFSafeAllocateString(pszId, &pRepo->pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* '/some/dir' => 'file:///some/dir */
+    if (pszPath[0] == '/')
+    {
+        dwError = TDNFIsDir(pszPath, &nIsDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (nIsDir)
+        {
+            dwError = TDNFAllocateStringPrintf(&pRepo->pszBaseUrl, "file://%s", pszPath);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    else
+    {
+        /* valid prefixes including file:// will not return an error */
+        dwError = TDNFUriIsRemote(pszPath, &nDummy);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFSafeAllocateString(pszPath, &pRepo->pszBaseUrl);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    *ppRepo = pRepo;
+cleanup:
+    return dwError;
+error:
+    if(ppRepo)
+    {
+        *ppRepo = NULL;
+    }
+    if(pRepo)
+    {
+        TDNFFreeReposInternal(pRepo);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFCreateRepo(
+    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    const char *pszId
+    )
+{
+    uint32_t dwError;
+    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+
+    if(!ppRepo || !pszId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFAllocateMemory(
                   1,
                   sizeof(TDNF_REPO_DATA_INTERNAL),
                   (void**)&pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSafeAllocateString("@cmdline", &pRepo->pszName);
+    dwError = TDNFSafeAllocateString(pszId, &pRepo->pszId);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSafeAllocateString("@cmdline", &pRepo->pszId);
-    BAIL_ON_TDNF_ERROR(dwError);
+    pRepo->nEnabled = TDNF_REPO_DEFAULT_ENABLED;
+    pRepo->nSkipIfUnavailable = TDNF_REPO_DEFAULT_SKIP;
+    pRepo->nGPGCheck = TDNF_REPO_DEFAULT_GPGCHECK;
+    pRepo->nSSLVerify = TDNF_REPO_DEFAULT_SSLVERIFY;
+    pRepo->lMetadataExpire = TDNF_REPO_DEFAULT_METADATA_EXPIRE;
+    pRepo->nPriority = TDNF_REPO_DEFAULT_PRIORITY;
+    pRepo->nTimeout = TDNF_REPO_DEFAULT_TIMEOUT;
+    pRepo->nMinrate = TDNF_REPO_DEFAULT_MINRATE;
+    pRepo->nThrottle = TDNF_REPO_DEFAULT_THROTTLE;
+    pRepo->nRetries = TDNF_REPO_DEFAULT_RETRIES;
 
     *ppRepo = pRepo;
 cleanup:
@@ -400,7 +531,7 @@ TDNFLoadReposFromFile(
         dwError = TDNFReadKeyValue(
                       pSections,
                       TDNF_REPO_KEY_METADATA_EXPIRE,
-                      TDNF_REPO_DEFAULT_METADATA_EXPIRE,
+                      TDNF_REPO_DEFAULT_METADATA_EXPIRE_STR,
                       &pszMetadataExpire);
         BAIL_ON_TDNF_ERROR(dwError);
 

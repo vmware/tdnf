@@ -57,6 +57,7 @@ static struct option pstOptions[] =
     {"enablerepo",    required_argument, 0, 0},            //--enablerepo
     {"repo",          required_argument, 0, 0},            //--repo
     {"repoid",        required_argument, 0, 0},            //--repoid (same as --repo)
+    {"repofrompath",  required_argument, 0, 0},            //--repofrompath
     {"errorlevel",    required_argument, 0, 'e'},          //-e --errorlevel
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
@@ -333,7 +334,8 @@ ParseOption(
     }
     else if ((!strcasecmp(pszName, "metadata-path")) ||
              (!strcasecmp(pszName, "download-path")) ||
-             (!strcasecmp(pszName, "arch")))
+             (!strcasecmp(pszName, "arch")) ||
+             (!strcasecmp(pszName, "repofrompath")))
     {
         dwError = AddSetOptWithValues(pCmdArgs,
                             CMDOPT_KEYVALUE,

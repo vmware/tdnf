@@ -28,6 +28,9 @@ typedef enum
     DETAIL_INFO
 }TDNF_PKG_DETAIL;
 
+#define STRINGIFYX(N) STRINGIFY(N)
+#define STRINGIFY(N) #N
+
 #define BAIL_ON_TDNF_RPM_ERROR(dwError) \
     do {                                                           \
         if (dwError)                                               \
@@ -45,6 +48,8 @@ typedef enum
             goto error;                                            \
         }                                                          \
     } while(0)
+
+#define STR_IS_TRUE(s) (s && (!strcmp(s, "1") || !strcasecmp(s, "true")))
 
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
@@ -131,7 +136,8 @@ typedef enum
 #define TDNF_REPO_DEFAULT_SSLVERIFY       1
 #define TDNF_REPO_DEFAULT_RETRIES         10
 #define TDNF_REPO_DEFAULT_PRIORITY        50
-#define TDNF_REPO_DEFAULT_METADATA_EXPIRE "172800" // 48 hours in seconds
+#define TDNF_REPO_DEFAULT_METADATA_EXPIRE 172800 // 48 hours in seconds
+#define TDNF_REPO_DEFAULT_METADATA_EXPIRE_STR STRINGIFYX(TDNF_REPO_DEFAULT_METADATA_EXPIRE)
 
 // var names
 #define TDNF_VAR_RELEASEVER               "$releasever"
