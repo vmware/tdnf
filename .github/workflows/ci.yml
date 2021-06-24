@@ -17,6 +17,21 @@ jobs:
               working-directory: ${{ github.workspace }}
               run: |
                 docker run --security-opt seccomp:unconfined --rm -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/docker-entrypoint.sh
+    photon-3:
+        env:
+            DIST: photon
+            DIST_VERSION: '3.0'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: build container
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker build -t ${DIST}/tdnf-build:${DIST_VERSION} -f ci/Dockerfile.${DIST}-${DIST_VERSION} .
+            - name: run container with tests
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker run --security-opt seccomp:unconfined --rm -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build:${DIST_VERSION} ./ci/docker-entrypoint.sh
     fedora:
         env:
             DIST: fedora
