@@ -195,7 +195,7 @@ TDNFInitCmdLineRepo(
                   (void**)&pSolvRepoInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pRepo = repo_create(pPool, "@cmdline");
+    pRepo = repo_create(pPool, CMDLINE_REPO_NAME);
     if (!pRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;

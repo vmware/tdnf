@@ -254,7 +254,7 @@ TDNFRefreshSack(
     {
         /* skip the @cmdline repo - options do not apply, and it is
            initialized. */
-        if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+        if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
             (!pRepo->nEnabled))
         {
             continue;
@@ -271,7 +271,7 @@ TDNFRefreshSack(
 
         for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
         {
-            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+            if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
                 (!pRepo->nEnabled))
             {
                 continue;

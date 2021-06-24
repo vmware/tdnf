@@ -812,7 +812,7 @@ TDNFAddCmdLinePackages(
                                pTdnf,
                                pszPkgName,
                                basename(pszCopyOfPkgName),
-                               "@cmdline",
+                               CMDLINE_REPO_NAME,
                                &pszRPMPath
                            );
                  BAIL_ON_TDNF_ERROR(dwError);
@@ -1063,7 +1063,7 @@ TDNFRepoSync(
     /* count enabled repos */
     for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
-        if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+        if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
             (!pRepo->nEnabled))
         {
             continue;
@@ -1250,7 +1250,7 @@ TDNFRepoSync(
            marker file */
         for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
         {
-            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+            if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
                 (!pRepo->nEnabled))
             {
                 continue;
@@ -1280,7 +1280,7 @@ TDNFRepoSync(
     {
         for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
         {
-            if ((strcmp(pRepo->pszName, "@cmdline") == 0) ||
+            if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
                 (!pRepo->nEnabled))
             {
                 continue;
