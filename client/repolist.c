@@ -451,6 +451,7 @@ TDNFRepoListFinalize(
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pSetOpt = NULL;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    int nRepoidSeen = 0;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pRepos)
     {
@@ -472,8 +473,23 @@ TDNFRepoListFinalize(
                           pSetOpt->nType == CMDOPT_ENABLEREPO,
                           pSetOpt->pszOptValue);
             BAIL_ON_TDNF_ERROR(dwError);
-         }
-         pSetOpt = pSetOpt->pNext;
+        }
+        else if(strcmp(pSetOpt->pszOptName, "repoid") == 0)
+        {
+            if (!nRepoidSeen)
+            {
+                dwError = TDNFAlterRepoState(
+                              pTdnf->pRepos, 0, "*");
+                BAIL_ON_TDNF_ERROR(dwError);
+                nRepoidSeen = 1;
+            }
+            dwError = TDNFAlterRepoState(
+                          pTdnf->pRepos,
+                          1,
+                          pSetOpt->pszOptValue);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pSetOpt = pSetOpt->pNext;
     }
 
     //Now that the overrides are applied, replace config vars
