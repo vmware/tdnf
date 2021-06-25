@@ -275,7 +275,7 @@ TDNFLoadReposFromFile(
         dwError = TDNFReadKeyValueBoolean(
                       pSections,
                       TDNF_REPO_KEY_ENABLED,
-                      0,
+                      TDNF_REPO_DEFAULT_ENABLED,
                       &pRepo->nEnabled);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -303,14 +303,14 @@ TDNFLoadReposFromFile(
         dwError = TDNFReadKeyValueBoolean(
                       pSections,
                       TDNF_REPO_KEY_SKIP,
-                      1,
+                      TDNF_REPO_DEFAULT_SKIP,
                       &pRepo->nSkipIfUnavailable);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValueBoolean(
                       pSections,
                       TDNF_REPO_KEY_GPGCHECK,
-                      1,
+                      TDNF_REPO_DEFAULT_GPGCHECK,
                       &pRepo->nGPGCheck);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -337,42 +337,42 @@ TDNFLoadReposFromFile(
         dwError = TDNFReadKeyValueInt(
                       pSections,
                       TDNF_REPO_KEY_PRIORITY,
-                      50,
+                      TDNF_REPO_DEFAULT_PRIORITY,
                       &pRepo->nPriority);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValueInt(
                       pSections,
                       TDNF_REPO_KEY_TIMEOUT,
-                      0,
+                      TDNF_REPO_DEFAULT_TIMEOUT,
                       &pRepo->nTimeout);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValueInt(
                       pSections,
                       TDNF_REPO_KEY_RETRIES,
-                      10,
+                      TDNF_REPO_DEFAULT_RETRIES,
                       &pRepo->nRetries);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValueInt(
                       pSections,
                       TDNF_REPO_KEY_MINRATE,
-                      0,
+                      TDNF_REPO_DEFAULT_MINRATE,
                       &pRepo->nMinrate);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValueInt(
                       pSections,
                       TDNF_REPO_KEY_THROTTLE,
-                      0,
+                      TDNF_REPO_DEFAULT_THROTTLE,
                       &pRepo->nThrottle);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValueBoolean(
                       pSections,
                       TDNF_REPO_KEY_SSL_VERIFY,
-                      1,
+                      TDNF_REPO_DEFAULT_SSLVERIFY,
                       &pRepo->nSSLVerify);
         BAIL_ON_TDNF_ERROR(dwError);
 
