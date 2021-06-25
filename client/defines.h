@@ -110,7 +110,8 @@ typedef enum
 #define TDNF_REPO_METADATA_FILE_NAME      "repomd.xml"
 #define TDNF_REPO_METALINK_FILE_NAME      "metalink"
 #define TDNF_REPO_BASEURL_FILE_NAME       "baseurl"
-//Repo defaults
+
+// repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
 #define TDNF_DEFAULT_DISTROVERPKG         "system-release"
@@ -118,9 +119,21 @@ typedef enum
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
 #define TDNF_SOLVCACHE_DIR_NAME           "solvcache"
-#define TDNF_REPO_DEFAULT_METADATA_EXPIRE "8294400"//48 hours in seconds
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
-//var names
+
+// repo default settings
+#define TDNF_REPO_DEFAULT_ENABLED         0
+#define TDNF_REPO_DEFAULT_SKIP            0
+#define TDNF_REPO_DEFAULT_GPGCHECK        1
+#define TDNF_REPO_DEFAULT_MINRATE         0
+#define TDNF_REPO_DEFAULT_THROTTLE        0
+#define TDNF_REPO_DEFAULT_TIMEOUT         0
+#define TDNF_REPO_DEFAULT_SSLVERIFY       1
+#define TDNF_REPO_DEFAULT_RETRIES         10
+#define TDNF_REPO_DEFAULT_PRIORITY        50
+#define TDNF_REPO_DEFAULT_METADATA_EXPIRE "172800" // 48 hours in seconds
+
+// var names
 #define TDNF_VAR_RELEASEVER               "$releasever"
 #define TDNF_VAR_BASEARCH                 "$basearch"
 /* dummy setopt values */
