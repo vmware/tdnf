@@ -274,6 +274,13 @@ class TestUtils(object):
         ret['retval'] = retval
         return ret
 
+    # helper to create directory tree without complains when it exists:
+    def makedirs(self, d):
+        try:
+            os.makedirs(d)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
 
 @pytest.fixture(scope='session')
 def utils():
