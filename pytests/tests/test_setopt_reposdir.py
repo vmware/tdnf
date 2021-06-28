@@ -25,24 +25,11 @@ def teardown_test(utils):
     if os.path.isdir(REPODIR):
         shutil.rmtree(REPODIR)
 
-def create_repoconf(filename, baseurl, name):
-    templ = """
-[{name}]
-name=Test Repo
-baseurl={baseurl}
-enabled=1
-gpgcheck=0
-metadata_expire=86400
-ui_repoid_vars=basearch
-"""
-    with open(filename, "w") as f:
-        f.write(templ.format(name=name, baseurl=baseurl))
-
 def test_setopt_reposdir(utils):
     utils.makedirs(REPODIR)
-    create_repoconf(os.path.join(REPODIR, REPOFILENAME),
-                    "http://foo.bar.com/packages",
-                    REPONAME)
+    utils.create_repoconf(os.path.join(REPODIR, REPOFILENAME),
+                          "http://foo.bar.com/packages",
+                          REPONAME)
     ret = utils.run(['tdnf', '--setopt=reposdir={}'.format(REPODIR), 'repolist'])
     assert(REPONAME in "\n".join(ret['stdout']))
 

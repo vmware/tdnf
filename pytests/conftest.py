@@ -282,6 +282,19 @@ class TestUtils(object):
             if e.errno != errno.EEXIST:
                 raise
 
+    def create_repoconf(self, filename, baseurl, name):
+        templ = """
+[{name}]
+name=Test Repo
+baseurl={baseurl}
+enabled=1
+gpgcheck=0
+metadata_expire=86400
+ui_repoid_vars=basearch
+"""
+        with open(filename, "w") as f:
+            f.write(templ.format(name=name, baseurl=baseurl))
+
 @pytest.fixture(scope='session')
 def utils():
     test_utils = TestUtils()

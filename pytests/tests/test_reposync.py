@@ -57,19 +57,6 @@ def check_synced_repo(utils, reponame, synced_dir):
     for rpm in local_rpms:
         assert(os.path.isfile(os.path.join(synced_dir, 'RPMS', ARCH, rpm)))
 
-def create_repoconf(filename, baseurl, name):
-    templ = """
-[{name}]
-name=Test Repo
-baseurl={baseurl}
-enabled=1
-gpgcheck=0
-metadata_expire=86400
-ui_repoid_vars=basearch
-"""
-    with open(filename, "w") as f:
-        f.write(templ.format(name=name, baseurl=baseurl))
-
 # reposync with no options - sync to local directory
 def test_reposync(utils):
     reponame = TESTREPO
@@ -337,7 +324,7 @@ def test_reposync_create_repo(utils):
     filename = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
     baseurl = "file://{}".format(synced_dir)
 
-    create_repoconf(filename, baseurl, "synced-repo")
+    utils.create_repoconf(filename, baseurl, "synced-repo")
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo=synced-repo',
