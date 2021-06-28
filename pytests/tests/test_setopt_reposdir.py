@@ -25,14 +25,6 @@ def teardown_test(utils):
     if os.path.isdir(REPODIR):
         shutil.rmtree(REPODIR)
 
-# helper to create directory tree without complains when it exists:
-def makedirs(d):
-    try:
-        os.makedirs(d)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
 def create_repoconf(filename, baseurl, name):
     templ = """
 [{name}]
@@ -47,7 +39,7 @@ ui_repoid_vars=basearch
         f.write(templ.format(name=name, baseurl=baseurl))
 
 def test_setopt_reposdir(utils):
-    makedirs(REPODIR)
+    utils.makedirs(REPODIR)
     create_repoconf(os.path.join(REPODIR, REPOFILENAME),
                     "http://foo.bar.com/packages",
                     REPONAME)

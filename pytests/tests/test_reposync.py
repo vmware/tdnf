@@ -36,14 +36,6 @@ def teardown_test(utils):
     if os.path.isfile(filename):
         os.remove(filename)
 
-# helper to create directory tree without complains when it exists:
-def makedirs(d):
-    try:
-        os.makedirs(d)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
 # helper to check a synced repo -
 # uses the local repository and compares the list of RPMs
 def check_synced_repo(utils, reponame, synced_dir):
@@ -77,7 +69,7 @@ ui_repoid_vars=basearch
 def test_reposync(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -95,7 +87,7 @@ def test_reposync(utils):
 def test_reposync_download_path(utils):
     reponame = 'photon-test'
     downloaddir = DOWNLOADDIR
-    makedirs(downloaddir)
+    utils.makedirs(downloaddir)
     assert(os.path.isdir(downloaddir))
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -111,7 +103,7 @@ def test_reposync_download_path(utils):
 def test_reposync_download_path_slash(utils):
     reponame = 'photon-test'
     downloaddir = DOWNLOADDIR + '/'
-    makedirs(downloaddir)
+    utils.makedirs(downloaddir)
     assert(os.path.isdir(downloaddir))
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -162,7 +154,7 @@ def xxxtest_reposync_download_path_norepopath_multiple_repos(utils):
 def test_reposync_metadata(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-metadata',
@@ -182,9 +174,9 @@ def test_reposync_metadata(utils):
 def test_reposync_metadata_path(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
     mdatadir = METADATADIR
-    makedirs(mdatadir)
+    utils.makedirs(mdatadir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-metadata',
@@ -204,10 +196,10 @@ def test_reposync_metadata_path(utils):
 def test_reposync_delete(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
-    makedirs(synced_dir)
+    utils.makedirs(synced_dir)
 
     faked_rpm = os.path.join((synced_dir), 'faked-0.1.2.rpm')
     with open(faked_rpm, 'w') as f:
@@ -234,10 +226,10 @@ def test_reposync_delete(utils):
 def test_reposync_no_delete(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
-    makedirs(synced_dir)
+    utils.makedirs(synced_dir)
 
     faked_rpm = os.path.join((synced_dir), 'faked-0.1.2.rpm')
     with open(faked_rpm, 'w') as f:
@@ -263,7 +255,7 @@ def test_reposync_no_delete(utils):
 def test_reposync_gpgcheck(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -282,7 +274,7 @@ def test_reposync_gpgcheck(utils):
 def test_reposync_urls(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -297,7 +289,7 @@ def test_reposync_urls(utils):
 def test_reposync_create_repo(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-metadata',
@@ -335,7 +327,7 @@ def test_reposync_create_repo(utils):
 def test_reposync_arch_x86_64(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
     if os.path.isdir(synced_dir):
@@ -359,7 +351,7 @@ def test_reposync_arch_x86_64(utils):
 def test_reposync_arch_x86_64_others(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
     if os.path.isdir(synced_dir):
@@ -385,7 +377,7 @@ def test_reposync_arch_x86_64_others(utils):
 def test_reposync_newest(utils):
     reponame = 'photon-test'
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
