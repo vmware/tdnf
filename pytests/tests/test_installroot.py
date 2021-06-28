@@ -97,26 +97,13 @@ def test_makecache(utils):
 
     shutil.rmtree(INSTALLROOT)
 
-def create_repoconf(filename, baseurl, name):
-    templ = """
-[{name}]
-name=Test Repo
-baseurl={baseurl}
-enabled=1
-gpgcheck=0
-metadata_expire=86400
-ui_repoid_vars=basearch
-"""
-    with open(filename, "w") as f:
-        f.write(templ.format(name=name, baseurl=baseurl))
-
 # --setopt=reposdir overrides any dir in install root
 def test_setopt_reposdir_with_installroot(utils):
     install_root(utils)
     utils.makedirs(REPODIR)
-    create_repoconf(os.path.join(REPODIR, REPOFILENAME),
-                    "http://foo.bar.com/packages",
-                    REPONAME)
+    utils.create_repoconf(os.path.join(REPODIR, REPOFILENAME),
+                          "http://foo.bar.com/packages",
+                          REPONAME)
     ret = utils.run(['tdnf',
                      '--installroot', INSTALLROOT,
                      '--releasever=4.0',
