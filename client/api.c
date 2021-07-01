@@ -514,79 +514,11 @@ TDNFInfo(
     uint32_t* pdwCount
     )
 {
-    uint32_t dwError = 0;
-    uint32_t dwCount = 0;
-    PSolvQuery pQuery = NULL;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
-    PSolvPackageList pPkgList = NULL;
-
-    if(!pTdnf || !pTdnf->pSack ||!pdwCount || !ppPkgInfo ||
-       !ppszPackageNameSpecs)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFRefresh(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFApplyScopeFilter(pQuery, nScope);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvApplyPackageFilter(pQuery, ppszPackageNameSpecs);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvApplyListQuery(pQuery);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvGetQueryResult(pQuery, &pPkgList);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFPopulatePkgInfoArray(
-                  pTdnf->pSack,
-                  pPkgList,
-                  DETAIL_INFO,
-                  &pPkgInfo,
-                  &dwCount);
-
-    if (dwError == ERROR_TDNF_NO_MATCH && !*ppszPackageNameSpecs)
-    {
-        dwError = 0;
-    }
-
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    *ppPkgInfo = pPkgInfo;
-    *pdwCount = dwCount;
-
-cleanup:
-    if(pQuery)
-    {
-        SolvFreeQuery(pQuery);
-    }
-    if(pPkgList)
-    {
-        SolvFreePackageList(pPkgList);
-    }
-    return dwError;
-
-error:
-    if(ppPkgInfo)
-    {
-        *ppPkgInfo = NULL;
-    }
-    if(pdwCount)
-    {
-        *pdwCount = 0;
-    }
-    if(pPkgInfo)
-    {
-        TDNFFreePackageInfoArray(pPkgInfo, dwCount);
-    }
-    goto cleanup;
+    return TDNFListInternal(pTdnf, nScope,
+                    ppszPackageNameSpecs,
+                    ppPkgInfo, pdwCount,
+                    DETAIL_INFO
+                    );
 }
 
 uint32_t
@@ -596,6 +528,22 @@ TDNFList(
     char** ppszPackageNameSpecs,
     PTDNF_PKG_INFO* ppPkgInfo,
     uint32_t* pdwCount
+    )
+{
+    return TDNFListInternal(pTdnf, nScope,
+                    ppszPackageNameSpecs,
+                    ppPkgInfo, pdwCount,
+                    DETAIL_LIST);
+}
+
+uint32_t
+TDNFListInternal(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    char** ppszPackageNameSpecs,
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t* pdwCount,
+    TDNF_PKG_DETAIL nDetail
     )
 {
     uint32_t dwError = 0;
@@ -636,7 +584,7 @@ TDNFList(
         dwError = TDNFPopulatePkgInfoArray(
                       pTdnf->pSack,
                       pPkgList,
-                      DETAIL_LIST,
+                      nDetail,
                       &pPkgInfo,
                       &dwCount);
     }

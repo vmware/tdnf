@@ -1094,4 +1094,15 @@ TDNFFreeEventData(
     PTDNF_EVENT_DATA pData
     );
 
+/* api.c */
+uint32_t
+TDNFListInternal(
+    PTDNF pTdnf,
+    TDNF_SCOPE nScope,
+    char** ppszPackageNameSpecs,
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t* pdwCount,
+    TDNF_PKG_DETAIL nDetail
+    );
+
 #endif /* __CLIENT_PROTOTYPES_H__ */
