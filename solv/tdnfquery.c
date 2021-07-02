@@ -15,6 +15,18 @@
 #define MODE_VERIFY      5
 #define MODE_PATCH       6
 
+/* must be same order as REPOQUERY_WHAT_KEY */
+Id allDepKeyIds[] = {
+    SOLVABLE_PROVIDES,
+    SOLVABLE_OBSOLETES,
+    SOLVABLE_CONFLICTS,
+    SOLVABLE_REQUIRES,
+    SOLVABLE_RECOMMENDS,
+    SOLVABLE_SUGGESTS,
+    SOLVABLE_SUPPLEMENTS,
+    SOLVABLE_ENHANCES
+};
+
 uint32_t
 SolvAddUpgradeAllJob(
     Queue* pQueueJobs
@@ -177,6 +189,10 @@ SolvCreateQuery(
     queue_init(&pQuery->queueJob);
     queue_init(&pQuery->queueRepoFilter);
     queue_init(&pQuery->queueResult);
+
+    /* create analog to SOLVABLE_REQUIRES but for all depends */
+    pQuery->idDepends = pool_str2id(pQuery->pSack->pPool, "tdnfquery:depends", 1);
+
     *ppQuery = pQuery;
 
 cleanup:
@@ -1112,5 +1128,101 @@ cleanup:
     return dwError;
 
 error:
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyDepsFilter(
+    PSolvQuery pQuery,
+    char **ppszDeps,
+    Id idKeyname)
+{
+    uint32_t dwError = 0;
+    Queue queueDeps = {0};
+    Queue queueFiltered = {0};
+    int i, j;
+    Id idDep;
+    Id allDepKeys[] = {
+        SOLVABLE_REQUIRES,
+        SOLVABLE_RECOMMENDS,
+        SOLVABLE_SUGGESTS,
+        SOLVABLE_SUPPLEMENTS,
+        SOLVABLE_ENHANCES
+    };
+
+    if(!pQuery || !pQuery->pSack || !ppszDeps)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    /* convert string dep array to id queue */
+    queue_init(&queueDeps);
+    for(i = 0; ppszDeps[i] != NULL; i++)
+    {
+        idDep = pool_str2id(pQuery->pSack->pPool, ppszDeps[i], 0);
+        /* if it's not found, nothing can depend on it */
+        if (idDep)
+        {
+            queue_push(&queueDeps, idDep);
+        }
+    }
+
+    queue_init(&queueFiltered);
+    for (j = 0; j < pQuery->queueResult.count; j++)
+    {
+        Id idPkg = pQuery->queueResult.elements[j];
+        Solvable *pSolvable = pool_id2solvable(pQuery->pSack->pPool, idPkg);
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        for (i = 0; i < queueDeps.count; i++)
+        {
+            idDep = queueDeps.elements[i];
+
+            if (idKeyname != pQuery->idDepends)
+            {
+                /* single dependency type */
+                if (solvable_matchesdep(pSolvable, idKeyname, idDep, 0))
+                {
+                    queue_push(&queueFiltered, idPkg);
+                    break;
+                }
+            }
+            else
+            {
+                size_t k;
+                int nBreak = 0;
+
+                for (k = 0; k < sizeof(allDepKeys)/sizeof(Id); k++)
+                {
+                    if (solvable_matchesdep(pSolvable, allDepKeys[k], idDep, 0))
+                    {
+                        queue_push(&queueFiltered, idPkg);
+                        nBreak = 1;
+                        break;
+                    }
+                }
+                if (nBreak)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueFiltered;
+
+cleanup:
+    queue_free(&queueDeps);
+    return dwError;
+
+error:
+    queue_free(&queueFiltered);
     goto cleanup;
 }

@@ -1356,6 +1356,7 @@ TDNFRepoQuery(
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
+    int i;
 
     if(!pTdnf || !pTdnf->pSack || !pRepoqueryArgs ||
        !ppPkgInfo)
@@ -1373,11 +1374,31 @@ TDNFRepoQuery(
     dwError = TDNFApplyScopeFilter(pQuery, SCOPE_ALL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvApplySinglePackageFilter(pQuery, pRepoqueryArgs->pszSpec);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pRepoqueryArgs->pszSpec)
+    {
+        dwError = SolvApplySinglePackageFilter(pQuery, pRepoqueryArgs->pszSpec);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pRepoqueryArgs->ppszWhatDepends != NULL)
+    {
+        dwError = SolvApplyDepsFilter(pQuery, pRepoqueryArgs->ppszWhatDepends, pQuery->idDepends);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+    {
+        if (pRepoqueryArgs->pppszWhatKeys[i])
+        {
+            dwError = SolvApplyDepsFilter(pQuery,
+                        pRepoqueryArgs->pppszWhatKeys[i],
+                        allDepKeyIds[i]);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);

@@ -351,12 +351,25 @@ typedef struct _TDNF_REPOSYNC_ARGS
     char **ppszArchs;
 }TDNF_REPOSYNC_ARGS, *PTDNF_REPOSYNC_ARGS;
 
+typedef enum {
+    REPOQUERY_KEY_PROVIDES,
+    REPOQUERY_KEY_OBSOLETES,
+    REPOQUERY_KEY_CONFLICTS,
+    REPOQUERY_KEY_REQUIRES,
+    REPOQUERY_KEY_RECOMMENDS,
+    REPOQUERY_KEY_SUGGESTS,
+    REPOQUERY_KEY_SUPPLEMENTS,
+    REPOQUERY_KEY_ENHANCES,
+    REPOQUERY_KEY_COUNT
+} REPOQUERY_WHAT_KEY;
+
 typedef struct _TDNF_REPOQUERY_ARGS
 {
     char *pszSpec;
 
     /* select options */
     char **ppszWhatDepends;
+    char ***pppszWhatKeys;
 
     /* query options */
     int nDepends;

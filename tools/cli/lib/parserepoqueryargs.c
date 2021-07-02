@@ -18,6 +18,17 @@
 
 #include "includes.h"
 
+char *whatKeys[REPOQUERY_KEY_COUNT] = {
+    "whatprovides",
+    "whatobsoletes",
+    "whatconflicts",
+    "whatrequires",
+    "whatrecommends",
+    "whatsuggests",
+    "whatsupplements",
+    "whatenhances"
+};
+
 uint32_t
 TDNFCliParseRepoQueryArgs(
     PTDNF_CMD_ARGS pArgs,
@@ -40,6 +51,11 @@ TDNFCliParseRepoQueryArgs(
         (void**) &pRepoqueryArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
+    dwError = TDNFAllocateMemory(
+        REPOQUERY_KEY_COUNT,
+        sizeof(char **),
+        (void **) &pRepoqueryArgs->pppszWhatKeys);
+
     for (pSetOpt = pArgs->pSetOpt;
          pSetOpt;
          pSetOpt = pSetOpt->pNext)
@@ -57,10 +73,29 @@ TDNFCliParseRepoQueryArgs(
             {
                 pRepoqueryArgs->nDepends = 1;
             }
+            else
+            {
+                int i;
+                for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+                {
+                    if (strcasecmp(pSetOpt->pszOptName, whatKeys[i]) == 0)
+                    {
+                        dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
+                            ",",
+                            &pRepoqueryArgs->pppszWhatKeys[i]);
+                        BAIL_ON_CLI_ERROR(dwError);
+                    }
+                }
+            }
         }
     }
 
-    /* TODO: check for redundant args and throw error */
+    if(pArgs->nCmdCount > 2)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     if(pArgs->nCmdCount > 1)
     {
         dwError = TDNFAllocateString(pArgs->ppszCmds[1],
@@ -87,6 +122,15 @@ TDNFCliFreeRepoQueryArgs(
     if(pRepoqueryArgs)
     {
         TDNF_CLI_SAFE_FREE_STRINGARRAY(pRepoqueryArgs->ppszWhatDepends);
+        if (pRepoqueryArgs->pppszWhatKeys)
+        {
+            int i;
+            for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+            {
+                TDNF_CLI_SAFE_FREE_STRINGARRAY(pRepoqueryArgs->pppszWhatKeys[i]);
+            }
+        }
+        TDNFFreeMemory(pRepoqueryArgs->pppszWhatKeys);
         TDNFFreeMemory(pRepoqueryArgs);
     }
 }
