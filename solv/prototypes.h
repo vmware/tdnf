@@ -30,6 +30,7 @@ typedef struct _SolvQuery
     Queue       queueResult;
     uint32_t    dwNewPackages;
     TDNF_SCOPE  nScope;
+    Id          idDepends;
 } SolvQuery, *PSolvQuery;
 
 typedef struct _SolvPackageList
@@ -43,6 +44,8 @@ typedef struct _SOLV_REPO_INFO_INTERNAL_
     unsigned char cookie[SOLV_COOKIE_LEN];
     int           nCookieSet;
 }SOLV_REPO_INFO_INTERNAL, *PSOLV_REPO_INFO_INTERNAL;
+
+extern Id allDepKeyIds[];
 
 // tdnfpackage.c
 uint32_t
@@ -428,6 +431,12 @@ SolvGetUpdateAdvisories(
     PSolvSack pSack,
     Id dwPkgIdpkg,
     PSolvPackageList* ppPkgList);
+
+uint32_t
+SolvApplyDepsFilter(
+    PSolvQuery pQuery,
+    char **ppszDeps,
+    Id idKeyname);
 
 // tdnfrepo.c
 uint32_t
