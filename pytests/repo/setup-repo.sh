@@ -54,6 +54,10 @@ cat << EOF > ~/.rpmmacros
 %__gpg /usr/bin/gpg
 EOF
 
+for d in conflicts enhances obsoletes provides recommends requires suggests supplements ; do
+    sed s/@@dep@@/$d/ < ${REPO_SRC_DIR}/tdnf-repoquery-deps.spec.in > ${REPO_SRC_DIR}/tdnf-repoquery-$d.spec
+done
+
 echo building packages
 rpmbuild  --define "_topdir ${BUILD_PATH}" \
 	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec
