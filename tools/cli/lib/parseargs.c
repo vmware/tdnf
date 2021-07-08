@@ -38,6 +38,17 @@ static SetOptArgs OptValTable[] = {
                       "noplugins;reboot-required;security;"
                       "delete;download-metadata;gpgcheck;newest-only;norepopath;source;urls",
                       "1"},
+    /* "depends" must be before "whatdepends",
+       same for the others */
+    {CMDOPT_KEYVALUE, "depends", "1"},
+    {CMDOPT_KEYVALUE, "provides", "1"},
+    {CMDOPT_KEYVALUE, "obsoletes", "1"},
+    {CMDOPT_KEYVALUE, "conflicts", "1"},
+    {CMDOPT_KEYVALUE, "requires", "1"},
+    {CMDOPT_KEYVALUE, "recommends", "1"},
+    {CMDOPT_KEYVALUE, "suggests", "1"},
+    {CMDOPT_KEYVALUE, "supplements", "1"},
+    {CMDOPT_KEYVALUE, "enhances", "1"},
     {CMDOPT_KEYVALUE, "whatdepends", NULL},
     {CMDOPT_KEYVALUE, "whatprovides", NULL},
     {CMDOPT_KEYVALUE, "whatobsoletes", NULL},
@@ -47,7 +58,6 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "whatsuggests", NULL},
     {CMDOPT_KEYVALUE, "whatsupplements", NULL},
     {CMDOPT_KEYVALUE, "whatenhances", NULL},
-    {CMDOPT_KEYVALUE, "depends", "1"},
 };
 
 static TDNF_CMD_ARGS _opt = {0};
@@ -107,16 +117,24 @@ static struct option pstOptions[] =
     // repoquery option
     // repoquery select options
     {"whatdepends",   required_argument, 0, 0},
-    {"whatprovides",   required_argument, 0, 0},
-    {"whatobsoletes",   required_argument, 0, 0},
-    {"whatconflicts",   required_argument, 0, 0},
-    {"whatrequires",   required_argument, 0, 0},
-    {"whatrecommends",   required_argument, 0, 0},
-    {"whatsuggests",   required_argument, 0, 0},
-    {"whatsupplements",   required_argument, 0, 0},
-    {"whatenhances",   required_argument, 0, 0},
+    {"whatprovides",  required_argument, 0, 0},
+    {"whatobsoletes", required_argument, 0, 0},
+    {"whatconflicts", required_argument, 0, 0},
+    {"whatrequires",  required_argument, 0, 0},
+    {"whatrecommends",required_argument, 0, 0},
+    {"whatsuggests",  required_argument, 0, 0},
+    {"whatsupplements", required_argument, 0, 0},
+    {"whatenhances",  required_argument, 0, 0},
     // repoquery query options
     {"depends",       no_argument, 0, 0},
+    {"provides",      no_argument, 0, 0},
+    {"obsoletes",     no_argument, 0, 0},
+    {"conflicts",     no_argument, 0, 0},
+    {"requires",      no_argument, 0, 0},
+    {"recommends",    no_argument, 0, 0},
+    {"suggests",      no_argument, 0, 0},
+    {"supplements",   no_argument, 0, 0},
+    {"enhances",      no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 

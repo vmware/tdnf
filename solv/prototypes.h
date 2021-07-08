@@ -11,6 +11,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define TDNF_ID_DEPENDS "tdnf:depends"
+#define TDNF_ID_REQUIRES_PRE "tdnf:requires-pre"
+
 typedef struct _SolvSack
 {
     Pool*       pPool;
@@ -30,7 +34,6 @@ typedef struct _SolvQuery
     Queue       queueResult;
     uint32_t    dwNewPackages;
     TDNF_SCOPE  nScope;
-    Id          idDepends;
 } SolvQuery, *PSolvQuery;
 
 typedef struct _SolvPackageList
@@ -268,6 +271,13 @@ SolvGetNevraFromId(
     char **ppszArch,
     char **ppszEVR
     );
+
+uint32_t
+SolvGetDependenciesFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    Id idKey,
+    char ***pppszDependencies);
 
 // tdnfpool.c
 uint32_t

@@ -190,9 +190,6 @@ SolvCreateQuery(
     queue_init(&pQuery->queueRepoFilter);
     queue_init(&pQuery->queueResult);
 
-    /* create analog to SOLVABLE_REQUIRES but for all depends */
-    pQuery->idDepends = pool_str2id(pQuery->pSack->pPool, "tdnfquery:depends", 1);
-
     *ppQuery = pQuery;
 
 cleanup:
@@ -1149,12 +1146,17 @@ SolvApplyDepsFilter(
         SOLVABLE_SUPPLEMENTS,
         SOLVABLE_ENHANCES
     };
+    Id idDepends;
 
     if(!pQuery || !pQuery->pSack || !ppszDeps)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
+
+    idDepends = pool_str2id(pQuery->pSack->pPool, TDNF_ID_DEPENDS, 0);
+
+    pool_addfileprovides(pQuery->pSack->pPool);
 
     /* convert string dep array to id queue */
     queue_init(&queueDeps);
@@ -1184,7 +1186,7 @@ SolvApplyDepsFilter(
         {
             idDep = queueDeps.elements[i];
 
-            if (idKeyname != pQuery->idDepends)
+            if (idKeyname != idDepends)
             {
                 /* single dependency type */
                 if (solvable_matchesdep(pSolvable, idKeyname, idDep, 0))

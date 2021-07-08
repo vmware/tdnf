@@ -125,7 +125,8 @@ uint32_t
 TDNFRepoQuery(
     PTDNF pTdnf,
     PTDNF_REPOQUERY_ARGS pRepoqueryArgs,
-    PTDNF_PKG_INFO* ppPkgInfo
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t *pdwCount
     );
 
 //Show update info for specified scope

@@ -18,6 +18,17 @@
 
 #include "includes.h"
 
+char *depKeys[REPOQUERY_KEY_COUNT] = {
+    "provides",
+    "obsoletes",
+    "conflicts",
+    "requires",
+    "recommends",
+    "suggests",
+    "supplements",
+    "enhances"
+};
+
 char *whatKeys[REPOQUERY_KEY_COUNT] = {
     "whatprovides",
     "whatobsoletes",
@@ -76,14 +87,28 @@ TDNFCliParseRepoQueryArgs(
             else
             {
                 int i;
+                int nFound = 0;
+
                 for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
                 {
-                    if (strcasecmp(pSetOpt->pszOptName, whatKeys[i]) == 0)
+                    if (strcasecmp(pSetOpt->pszOptName, depKeys[i]) == 0)
                     {
-                        dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
-                            ",",
-                            &pRepoqueryArgs->pppszWhatKeys[i]);
-                        BAIL_ON_CLI_ERROR(dwError);
+                        pRepoqueryArgs->anDeps[i] = 1;
+                        nFound = 1;
+                    }
+                }
+                if (!nFound)
+                {
+                    for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+                    {
+                        if (strcasecmp(pSetOpt->pszOptName, whatKeys[i]) == 0)
+                        {
+                            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
+                                ",",
+                                &pRepoqueryArgs->pppszWhatKeys[i]);
+                            BAIL_ON_CLI_ERROR(dwError);
+                            nFound = 1;
+                        }
                     }
                 }
             }

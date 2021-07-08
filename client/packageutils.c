@@ -184,6 +184,10 @@ TDNFPopulatePkgInfoArray(
                           &pPkgInfo->pszDescription);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        if ((uint32_t)dwPkgIndex < dwCount - 1)
+        {
+            pPkgInfo->pNext = &pPkgInfos[dwPkgIndex+1];
+        }
     }
 
     *pdwCount = dwCount;
@@ -1084,3 +1088,51 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFPopulatePkgInfoArrayDependencies(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    Id idKey,
+    PTDNF_PKG_INFO pPkgInfos
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    int dwPkgIndex = 0;
+    Id dwPkgId = 0;
+    PTDNF_PKG_INFO pPkgInfo  = NULL;
+
+    if(!pPkgInfos || !pSack || !pPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetPackageListSize(pPkgList, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+    {
+        pPkgInfo = &pPkgInfos[dwPkgIndex];
+
+        dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetDependenciesFromId(pSack, dwPkgId, idKey, &pPkgInfo->ppDependencies);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+

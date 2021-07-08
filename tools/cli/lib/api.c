@@ -492,9 +492,11 @@ TDNFCliRepoQueryCommand(
     )
 {
     uint32_t dwError = 0;
+    uint32_t dwCount = 0;
     PTDNF_REPOQUERY_ARGS pRepoqueryArgs;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PTDNF_PKG_INFO pPkgInfos = NULL;
+    int i, j;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoQuery)
     {
@@ -505,24 +507,35 @@ TDNFCliRepoQueryCommand(
     dwError = TDNFCliParseRepoQueryArgs(pCmdArgs, &pRepoqueryArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
-    dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos);
+    dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
     pPkgInfo = pPkgInfos;
-    while(pPkgInfo)
+
+    for (i = 0; i < (int)dwCount; i++)
     {
-        pr_crit("%s-%s-%s.%s\n",
-            pPkgInfo->pszName,
-            pPkgInfo->pszVersion,
-            pPkgInfo->pszRelease,
-            pPkgInfo->pszArch);
+        pPkgInfo = &pPkgInfos[i];
+
+        if (pPkgInfo->ppDependencies)
+        {
+            for (j = 0; pPkgInfo->ppDependencies[j]; j++)
+            {
+                pr_crit("%s\n", pPkgInfo->ppDependencies[j]);
+            }
+        } else {
+            pr_crit("%s-%s-%s.%s\n",
+                pPkgInfo->pszName,
+                pPkgInfo->pszVersion,
+                pPkgInfo->pszRelease,
+                pPkgInfo->pszArch);
+        }
         pPkgInfo = pPkgInfo->pNext;
     }
 
 cleanup:
     if(pPkgInfos)
     {
-        TDNFFreePackageInfo(pPkgInfos);
+        TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     }
     return dwError;
 

@@ -101,7 +101,8 @@ uint32_t
 TDNFCliInvokeRepoQuery(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_REPOQUERY_ARGS pRepoqueryArgs,
-    PTDNF_PKG_INFO *ppPkgInfos
+    PTDNF_PKG_INFO *ppPkgInfos,
+    uint32_t *pdwCount
     );
 
 uint32_t

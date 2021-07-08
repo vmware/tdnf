@@ -461,10 +461,11 @@ uint32_t
 TDNFCliInvokeRepoQuery(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_REPOQUERY_ARGS pRepoQueryArgs,
-    PTDNF_PKG_INFO *ppPkgInfos
+    PTDNF_PKG_INFO *ppPkgInfos,
+    uint32_t *pdwCount
     )
 {
-    return TDNFRepoQuery(pContext->hTdnf, pRepoQueryArgs, ppPkgInfos);
+    return TDNFRepoQuery(pContext->hTdnf, pRepoQueryArgs, ppPkgInfos, pdwCount);
 }
 
 uint32_t

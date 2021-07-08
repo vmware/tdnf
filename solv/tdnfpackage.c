@@ -1924,3 +1924,84 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszEVR);
     goto cleanup;
 }
+
+
+uint32_t
+SolvGetDependenciesFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    Id idKey,
+    char ***pppszDependencies)
+{
+    uint32_t dwError = 0;
+    Solvable *pSolv = NULL;
+    Queue queueDeps = {0};
+    char **ppszDependencies = NULL;
+    const char *pszDep = NULL;
+    int nNumDeps, i, j;
+    Id allDepKeys[] = {
+        SOLVABLE_REQUIRES,
+        SOLVABLE_RECOMMENDS,
+        SOLVABLE_SUGGESTS,
+        SOLVABLE_SUPPLEMENTS,
+        SOLVABLE_ENHANCES
+    };
+
+    if(!pSack || !pppszDependencies)
+    {   
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {   
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (idKey == pool_str2id(pSack->pPool, TDNF_ID_DEPENDS, 0))
+    {
+        queue_init(&queueDeps);
+        for (i = 0; i < (int)(sizeof(allDepKeys)/sizeof(Id)); i++)
+        {
+            Queue queueTmp = {0};
+            solvable_lookup_deparray(pSolv, allDepKeys[i], &queueTmp, -1);
+
+            for (j = 0; j < queueTmp.count; j++)
+            {
+                queue_pushunique(&queueDeps, queueTmp.elements[j]);
+            }
+            queue_free(&queueTmp);
+        }
+    }
+    else if (idKey == pool_str2id(pSack->pPool, TDNF_ID_REQUIRES_PRE, 0))
+    {
+        solvable_lookup_deparray(pSolv, SOLVABLE_REQUIRES, &queueDeps, 1);
+    }
+    else
+    {
+        solvable_lookup_deparray(pSolv, idKey, &queueDeps, -1);
+    }
+    nNumDeps = queueDeps.count;
+    
+    dwError = TDNFAllocateMemory(nNumDeps + 1, sizeof(char *), (void**)&ppszDependencies);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; i < nNumDeps; i++)
+    {
+        pszDep = pool_id2str(pSack->pPool, queueDeps.elements[i]);
+        dwError = TDNFAllocateString(pszDep, &ppszDependencies[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *pppszDependencies = ppszDependencies;
+
+cleanup:
+    queue_free(&queueDeps);
+    return dwError;
+error:
+    TDNFFreeStringArray(ppszDependencies);
+    goto cleanup;
+}
+

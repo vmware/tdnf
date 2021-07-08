@@ -117,7 +117,8 @@ typedef uint32_t
 (*PFN_TDNF_REPOQUERY)(
     PTDNF_CLI_CONTEXT,
     PTDNF_REPOQUERY_ARGS,
-    PTDNF_PKG_INFO *
+    PTDNF_PKG_INFO *,
+    uint32_t *
     );
 
 typedef uint32_t

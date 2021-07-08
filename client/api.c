@@ -1349,7 +1349,8 @@ uint32_t
 TDNFRepoQuery(
     PTDNF pTdnf,
     PTDNF_REPOQUERY_ARGS pRepoqueryArgs,
-    PTDNF_PKG_INFO* ppPkgInfo
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t *pdwCount
     )
 {
     uint32_t dwError = 0;
@@ -1357,6 +1358,8 @@ TDNFRepoQuery(
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
     int i;
+    uint32_t dwCount;
+    Id idDepends, idRequiresPre;
 
     if(!pTdnf || !pTdnf->pSack || !pRepoqueryArgs ||
        !ppPkgInfo)
@@ -1364,6 +1367,10 @@ TDNFRepoQuery(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    /* create analog to SOLVABLE_REQUIRES */
+    idDepends = pool_str2id(pTdnf->pSack->pPool, TDNF_ID_DEPENDS, 1);
+    idRequiresPre = pool_str2id(pTdnf->pSack->pPool, TDNF_ID_REQUIRES_PRE, 1);
 
     dwError = TDNFRefresh(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -1385,7 +1392,7 @@ TDNFRepoQuery(
 
     if (pRepoqueryArgs->ppszWhatDepends != NULL)
     {
-        dwError = SolvApplyDepsFilter(pQuery, pRepoqueryArgs->ppszWhatDepends, pQuery->idDepends);
+        dwError = SolvApplyDepsFilter(pQuery, pRepoqueryArgs->ppszWhatDepends, idDepends);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -1403,10 +1410,38 @@ TDNFRepoQuery(
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFPopulatePkgInfos(pTdnf->pSack, pPkgList, &pPkgInfo);
+    dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_LIST, &pPkgInfo, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    if (pRepoqueryArgs->nDepends)
+    {
+        dwError = TDNFPopulatePkgInfoArrayDependencies(
+                pTdnf->pSack,
+                pPkgList,
+                idDepends,
+                pPkgInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+        {
+            if (pRepoqueryArgs->anDeps[i])
+            {
+                dwError = TDNFPopulatePkgInfoArrayDependencies(
+                        pTdnf->pSack,
+                        pPkgList,
+                        allDepKeyIds[i],
+                        pPkgInfo);
+                BAIL_ON_TDNF_ERROR(dwError);
+                break;
+            }
+        }
+    }
+
     *ppPkgInfo = pPkgInfo;
+    *pdwCount = dwCount;
+
 cleanup:
     if(pQuery)
     {

@@ -167,7 +167,6 @@ SolvReadYumRepo(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-
     dwError = SolvLoadRepomd(pRepo, pszRepomd);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
