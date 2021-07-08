@@ -61,6 +61,17 @@ TDNFCliShowHelp(
     pr_crit("           [--downloadonly]\n");
     pr_crit("           [--downloaddir=<directory>]\n");
     pr_crit("\n");
+    pr_crit("repoquery options:\n");
+    pr_crit("           [--whatdepends <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatrequires <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatenhances <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatobsoletes <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatprovides <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatrecommends <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatrequires <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatsuggests <capability1>[,<capability2>[..]]]\n");
+    pr_crit("           [--whatsupplements <capability1>[,<capability2>[..]]]\n");
+    pr_crit("\n");
     pr_crit("reposync options:\n");
     pr_crit("           [--arch=<arch> [--arch=<arch> [..]]\n");
     pr_crit("           [--delete]\n");
@@ -92,6 +103,7 @@ TDNFCliShowHelp(
     pr_crit("remove                    Remove a package or packages from your system\n");
     pr_crit("reinstall                 reinstall a package\n");
     pr_crit("repolist                  Display the configured software repositories\n");
+    pr_crit("repoquery                 Query repositories\n");
     pr_crit("reposync                  Download all packages from one or more repositories to a directory\n");
     pr_crit("search                    Search package details for the given string\n");
     pr_crit("update                    Upgrade a package or packages on your system (same as 'upgrade')\n");

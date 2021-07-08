@@ -37,7 +37,17 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;"
                       "noplugins;reboot-required;security;"
                       "delete;download-metadata;gpgcheck;newest-only;norepopath;source;urls",
-                      "1"}
+                      "1"},
+    {CMDOPT_KEYVALUE, "whatdepends", NULL},
+    {CMDOPT_KEYVALUE, "whatprovides", NULL},
+    {CMDOPT_KEYVALUE, "whatobsoletes", NULL},
+    {CMDOPT_KEYVALUE, "whatconflicts", NULL},
+    {CMDOPT_KEYVALUE, "whatrequires", NULL},
+    {CMDOPT_KEYVALUE, "whatrecommends", NULL},
+    {CMDOPT_KEYVALUE, "whatsuggests", NULL},
+    {CMDOPT_KEYVALUE, "whatsupplements", NULL},
+    {CMDOPT_KEYVALUE, "whatenhances", NULL},
+    {CMDOPT_KEYVALUE, "depends", "1"},
 };
 
 static TDNF_CMD_ARGS _opt = {0};
@@ -94,6 +104,19 @@ static struct option pstOptions[] =
     {"download-path", required_argument, 0, 0},
     {"source",        no_argument, 0, 0},
     {"urls",          no_argument, 0, 0},
+    // repoquery option
+    // repoquery select options
+    {"whatdepends",   required_argument, 0, 0},
+    {"whatprovides",   required_argument, 0, 0},
+    {"whatobsoletes",   required_argument, 0, 0},
+    {"whatconflicts",   required_argument, 0, 0},
+    {"whatrequires",   required_argument, 0, 0},
+    {"whatrecommends",   required_argument, 0, 0},
+    {"whatsuggests",   required_argument, 0, 0},
+    {"whatsupplements",   required_argument, 0, 0},
+    {"whatenhances",   required_argument, 0, 0},
+    // repoquery query options
+    {"depends",       no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 

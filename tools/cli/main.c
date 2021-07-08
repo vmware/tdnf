@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
         {"remove",             TDNFCliEraseCommand},
         {"repolist",           TDNFCliRepoListCommand},
         {"reposync",           TDNFCliRepoSyncCommand},
+        {"repoquery",          TDNFCliRepoQueryCommand},
         {"search",             TDNFCliSearchCommand},
         {"update",             TDNFCliUpgradeCommand},
         {"update-to",          TDNFCliUpgradeCommand},
@@ -104,6 +105,7 @@ int main(int argc, char* argv[])
     _context.pFnProvides = TDNFCliInvokeProvides;
     _context.pFnRepoList = TDNFCliInvokeRepoList;
     _context.pFnRepoSync = TDNFCliInvokeRepoSync;
+    _context.pFnRepoQuery = TDNFCliInvokeRepoQuery;
 
     /*
      * Alter and resolve will address commands like
@@ -453,6 +455,16 @@ TDNFCliInvokeRepoSync(
     )
 {
     return TDNFRepoSync(pContext->hTdnf, pRepoSyncArgs);
+}
+
+uint32_t
+TDNFCliInvokeRepoQuery(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_REPOQUERY_ARGS pRepoQueryArgs,
+    PTDNF_PKG_INFO *ppPkgInfos
+    )
+{
+    return TDNFRepoQuery(pContext->hTdnf, pRepoQueryArgs, ppPkgInfos);
 }
 
 uint32_t
