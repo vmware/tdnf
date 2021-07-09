@@ -375,6 +375,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     /* query options */
     int nDepends;
     int anDeps[REPOQUERY_KEY_COUNT];
+    int nRequiresPre;
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 
 #ifdef __cplusplus

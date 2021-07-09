@@ -1422,6 +1422,15 @@ TDNFRepoQuery(
                 pPkgInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else if (pRepoqueryArgs->nRequiresPre)
+    {
+        dwError = TDNFPopulatePkgInfoArrayDependencies(
+                pTdnf->pSack,
+                pPkgList,
+                idRequiresPre,
+                pPkgInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     else
     {
         for (i = 0; i < REPOQUERY_KEY_COUNT; i++)

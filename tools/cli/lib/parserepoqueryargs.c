@@ -84,6 +84,10 @@ TDNFCliParseRepoQueryArgs(
             {
                 pRepoqueryArgs->nDepends = 1;
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "requires-pre") == 0)
+            {
+                pRepoqueryArgs->nRequiresPre = 1;
+            }
             else
             {
                 int i;
