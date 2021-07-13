@@ -366,7 +366,7 @@ TDNFPkgInfoFilterNewest(
        older versions of the same packages. The linked list will only
        touch the newest (first) version of a package.
        The same package in different repos will be handled as two different
-       packages. */ 
+       packages. */
     pPkgInfo = ppPkgInfos[0];
     for (i = 1; i < dwCount; i++)
     {
@@ -1125,7 +1125,53 @@ TDNFPopulatePkgInfoArrayDependencies(
         dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetDependenciesFromId(pSack, dwPkgId, idKey, &pPkgInfo->ppDependencies);
+        dwError = SolvGetDependenciesFromId(pSack, dwPkgId, idKey, &pPkgInfo->ppszDependencies);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFPopulatePkgInfoArrayFileList(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO pPkgInfos
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    int dwPkgIndex = 0;
+    Id dwPkgId = 0;
+    PTDNF_PKG_INFO pPkgInfo  = NULL;
+
+    if(!pPkgInfos || !pSack || !pPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetPackageListSize(pPkgList, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+    {
+        pPkgInfo = &pPkgInfos[dwPkgIndex];
+
+        dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetFileListFromId(pSack, dwPkgId, &pPkgInfo->ppszFileList);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

@@ -438,6 +438,13 @@ TDNFPopulatePkgInfoArrayDependencies(
     PTDNF_PKG_INFO pPkgInfos
     );
 
+uint32_t
+TDNFPopulatePkgInfoArrayFileList(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO pPkgInfos
+    );
+
 //goal.c
 uint32_t
 TDNFGoal(

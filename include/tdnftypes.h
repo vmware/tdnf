@@ -168,7 +168,8 @@ typedef struct _TDNF_PKG_INFO
     char* pszFormattedSize;
     char* pszRelease;
     char* pszLocation;
-    char **ppDependencies;
+    char **ppszDependencies;
+    char **ppszFileList;
     struct _TDNF_PKG_INFO* pNext;
 }TDNF_PKG_INFO, *PTDNF_PKG_INFO;
 
@@ -376,6 +377,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int nDepends;
     int anDeps[REPOQUERY_KEY_COUNT];
     int nRequiresPre;
+    int nList;
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 
 #ifdef __cplusplus

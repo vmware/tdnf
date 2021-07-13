@@ -1925,7 +1925,6 @@ error:
     goto cleanup;
 }
 
-
 uint32_t
 SolvGetDependenciesFromId(
     PSolvSack pSack,
@@ -1948,14 +1947,14 @@ SolvGetDependenciesFromId(
     };
 
     if(!pSack || !pppszDependencies)
-    {   
+    {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
     pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
     if(!pSolv)
-    {   
+    {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -1984,7 +1983,7 @@ SolvGetDependenciesFromId(
         solvable_lookup_deparray(pSolv, idKey, &queueDeps, -1);
     }
     nNumDeps = queueDeps.count;
-    
+
     dwError = TDNFAllocateMemory(nNumDeps + 1, sizeof(char *), (void**)&ppszDependencies);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -2002,6 +2001,57 @@ cleanup:
     return dwError;
 error:
     TDNFFreeStringArray(ppszDependencies);
+    goto cleanup;
+}
+
+uint32_t
+SolvGetFileListFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char ***pppszFiles)
+{
+    uint32_t dwError = 0;
+    Solvable *pSolv = NULL;
+    Dataiterator di;
+    int i = 0, nCount = 0;
+    char **ppszFiles = NULL;
+
+    if(!pSack || !pppszFiles)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dataiterator_init(&di, pSack->pPool, pSolv->repo, dwPkgId, SOLVABLE_FILELIST, NULL,
+                      SEARCH_FILES | SEARCH_COMPLETE_FILELIST);
+    while (dataiterator_step(&di)) {
+        nCount++;
+    }
+    dataiterator_free(&di);
+
+    dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszFiles);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dataiterator_init(&di, pSack->pPool, pSolv->repo, dwPkgId, SOLVABLE_FILELIST, NULL,
+                      SEARCH_FILES | SEARCH_COMPLETE_FILELIST);
+    while (dataiterator_step(&di)) {
+        dwError = TDNFAllocateString(di.kv.str, &ppszFiles[i++]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dataiterator_free(&di);
+
+    *pppszFiles = ppszFiles;
+cleanup:
+    return dwError;
+error:
+    TDNFFreeStringArray(ppszFiles);
     goto cleanup;
 }
 

@@ -516,13 +516,22 @@ TDNFCliRepoQueryCommand(
     {
         pPkgInfo = &pPkgInfos[i];
 
-        if (pPkgInfo->ppDependencies)
+        if (pPkgInfo->ppszDependencies)
         {
-            for (j = 0; pPkgInfo->ppDependencies[j]; j++)
+            for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
             {
-                pr_crit("%s\n", pPkgInfo->ppDependencies[j]);
+                pr_crit("%s\n", pPkgInfo->ppszDependencies[j]);
             }
-        } else {
+        }
+        else if (pPkgInfo->ppszFileList)
+        {
+            for (j = 0; pPkgInfo->ppszFileList[j]; j++)
+            {
+                pr_crit("%s\n", pPkgInfo->ppszFileList[j]);
+            }
+        }
+        else
+        {
             pr_crit("%s-%s-%s.%s\n",
                 pPkgInfo->pszName,
                 pPkgInfo->pszVersion,

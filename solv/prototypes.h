@@ -279,6 +279,12 @@ SolvGetDependenciesFromId(
     Id idKey,
     char ***pppszDependencies);
 
+uint32_t
+SolvGetFileListFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char ***pppszFiles);
+
 // tdnfpool.c
 uint32_t
 SolvCreateSack(
