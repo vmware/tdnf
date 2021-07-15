@@ -88,6 +88,14 @@ TDNFCliParseRepoQueryArgs(
             {
                 pRepoqueryArgs->nRequiresPre = 1;
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "available") == 0)
+            {
+                pRepoqueryArgs->nAvailable = 1;
+            }
+            else if (strcasecmp(pSetOpt->pszOptName, "installed") == 0)
+            {
+                pRepoqueryArgs->nInstalled = 1;
+            }
             else if (strcasecmp(pSetOpt->pszOptName, "list") == 0)
             {
                 pRepoqueryArgs->nList = 1;

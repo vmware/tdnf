@@ -374,6 +374,8 @@ typedef struct _TDNF_REPOQUERY_ARGS
     char ***pppszWhatKeys;
 
     /* query options */
+    int nInstalled;
+    int nAvailable;
     int nDepends;
     int anDeps[REPOQUERY_KEY_COUNT];
     int nRequiresPre;

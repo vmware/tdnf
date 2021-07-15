@@ -1378,6 +1378,18 @@ TDNFRepoQuery(
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    if (!pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable)
+    {
+        dwError = SolvAddAvailableRepoFilter(pQuery);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pRepoqueryArgs->nInstalled)
+    {
+        dwError = SolvAddSystemRepoFilter(pQuery);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFApplyScopeFilter(pQuery, SCOPE_ALL);
     BAIL_ON_TDNF_ERROR(dwError);
 

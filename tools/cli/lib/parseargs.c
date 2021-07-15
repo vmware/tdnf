@@ -38,8 +38,10 @@ static SetOptArgs OptValTable[] = {
                       "noplugins;reboot-required;security;"
                       "delete;download-metadata;gpgcheck;newest-only;norepopath;source;urls",
                       "1"},
+    {CMDOPT_KEYVALUE, "available", "1"},
+    {CMDOPT_KEYVALUE, "installed", "1"},
     /* "depends" must be before "whatdepends",
-       same for the others */
+       same for the others with partial string matches */
     {CMDOPT_KEYVALUE, "depends", "1"},
     {CMDOPT_KEYVALUE, "provides", "1"},
     {CMDOPT_KEYVALUE, "obsoletes", "1"},
@@ -128,6 +130,8 @@ static struct option pstOptions[] =
     {"whatsupplements", required_argument, 0, 0},
     {"whatenhances",  required_argument, 0, 0},
     // repoquery query options
+    {"available",     no_argument, 0, 0},
+    {"installed",     no_argument, 0, 0},
     {"depends",       no_argument, 0, 0},
     {"provides",      no_argument, 0, 0},
     {"obsoletes",     no_argument, 0, 0},
