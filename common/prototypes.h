@@ -124,6 +124,11 @@ TDNFStringArrayCount(
     int *pnCount
     );
 
+uint32_t
+TDNFStringArraySort(
+    char **ppszArray
+    );
+
 //configreader.c
 void
 TDNFPrintConfigData(

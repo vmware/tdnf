@@ -524,3 +524,33 @@ error:
     goto cleanup;
 }
 
+static int
+_cmpstringp(const void *p1, const void *p2)
+{
+    return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+
+uint32_t
+TDNFStringArraySort(
+    char **ppszArray
+)
+{
+    uint32_t dwError = 0;
+    int nCount;
+
+    if (IsNullOrEmptyString(ppszArray))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(nCount = 0; ppszArray[nCount]; nCount++);
+
+    qsort(ppszArray, nCount, sizeof(char *), _cmpstringp);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+

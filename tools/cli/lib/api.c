@@ -496,7 +496,8 @@ TDNFCliRepoQueryCommand(
     PTDNF_REPOQUERY_ARGS pRepoqueryArgs;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PTDNF_PKG_INFO pPkgInfos = NULL;
-    int i, j;
+    int nCount = 0, i, j, k;
+    char **ppszLines = NULL;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoQuery)
     {
@@ -510,25 +511,19 @@ TDNFCliRepoQueryCommand(
     dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
-    pPkgInfo = pPkgInfos;
-
     for (i = 0; i < (int)dwCount; i++)
     {
         pPkgInfo = &pPkgInfos[i];
 
         if (pPkgInfo->ppszDependencies)
         {
-            for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
-            {
-                pr_crit("%s\n", pPkgInfo->ppszDependencies[j]);
-            }
+            for (j = 0; pPkgInfo->ppszDependencies[j]; j++);
+            nCount +=j;
         }
         else if (pPkgInfo->ppszFileList)
         {
-            for (j = 0; pPkgInfo->ppszFileList[j]; j++)
-            {
-                pr_crit("%s\n", pPkgInfo->ppszFileList[j]);
-            }
+            for (j = 0; pPkgInfo->ppszFileList[j]; j++);
+            nCount +=j;
         }
         else
         {
@@ -538,13 +533,54 @@ TDNFCliRepoQueryCommand(
                 pPkgInfo->pszRelease,
                 pPkgInfo->pszArch);
         }
-        pPkgInfo = pPkgInfo->pNext;
+    }
+
+    if (nCount > 0)
+    {
+        k = 0;
+
+        dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszLines);
+        BAIL_ON_CLI_ERROR(dwError);
+        for (i = 0; i < (int)dwCount; i++)
+        {
+            pPkgInfo = &pPkgInfos[i];
+
+            if (pPkgInfo->ppszDependencies)
+            {
+                for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
+                {
+                    ppszLines[k++] = pPkgInfo->ppszDependencies[j];
+                }
+            }
+            else if (pPkgInfo->ppszFileList)
+            {
+                for (j = 0; pPkgInfo->ppszFileList[j]; j++)
+                {
+                    ppszLines[k++] = pPkgInfo->ppszFileList[j];
+                }
+            }
+        }
+
+        dwError = TDNFStringArraySort(ppszLines);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        for (j = 0; ppszLines[j]; j++)
+        {
+            if (j == 0 || strcmp(ppszLines[j], ppszLines[j-1]))
+            {
+                pr_crit("%s\n", ppszLines[j]);
+            }
+        }
     }
 
 cleanup:
     if(pPkgInfos)
     {
         TDNFFreePackageInfoArray(pPkgInfos, dwCount);
+    }
+    if (ppszLines)
+    {
+        TDNFFreeMemory(ppszLines);
     }
     return dwError;
 
