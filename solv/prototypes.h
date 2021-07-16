@@ -454,6 +454,10 @@ SolvApplyDepsFilter(
     char **ppszDeps,
     Id idKeyname);
 
+uint32_t
+SolvApplyExtrasFilter(
+    PSolvQuery pQuery);
+
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(

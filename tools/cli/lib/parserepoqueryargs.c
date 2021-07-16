@@ -96,6 +96,10 @@ TDNFCliParseRepoQueryArgs(
             {
                 pRepoqueryArgs->nInstalled = 1;
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "extras") == 0)
+            {
+                pRepoqueryArgs->nExtras = 1;
+            }
             else if (strcasecmp(pSetOpt->pszOptName, "list") == 0)
             {
                 pRepoqueryArgs->nList = 1;

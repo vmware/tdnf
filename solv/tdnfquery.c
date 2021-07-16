@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -737,7 +737,6 @@ SolvApplyListQuery(
         }
     }
 
-
 cleanup:
     queue_free(&queueTmp);
     return dwError;
@@ -1226,5 +1225,75 @@ cleanup:
 
 error:
     queue_free(&queueFiltered);
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyExtrasFilter(
+    PSolvQuery pQuery)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Queue queueExtras = {0};
+    int i, j;
+
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pPool = pQuery->pSack->pPool;
+
+    queue_init(&queueExtras);
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pSolvable->repo == pPool->installed)
+        {
+            int nFound = 0;
+            for (j = 0; j < pQuery->queueResult.count; j++)
+            {
+                if (i != j)
+                {
+                    Id idPkg2 = pQuery->queueResult.elements[j];
+                    Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+
+                    if (pSolvable2->repo == pPool->installed)
+                    {
+                        continue;
+                    }
+
+                    if (pSolvable2->name == pSolvable->name &&
+                        pSolvable2->arch == pSolvable->arch &&
+                        pSolvable2->evr == pSolvable->evr)
+                    {
+                        nFound = 1;
+                    }
+                }
+            }
+            if (!nFound)
+            {
+                queue_push(&queueExtras, idPkg);
+            }
+        }
+    }
+
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueExtras;
+
+cleanup:
+    return dwError;
+
+error:
+    queue_free(&queueExtras);
     goto cleanup;
 }
