@@ -100,6 +100,10 @@ TDNFCliParseRepoQueryArgs(
             {
                 pRepoqueryArgs->nList = 1;
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "upgrades") == 0)
+            {
+                pRepoqueryArgs->nUpgrades = 1;
+            }
             else
             {
                 int i;

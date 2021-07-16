@@ -380,6 +380,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int anDeps[REPOQUERY_KEY_COUNT];
     int nRequiresPre;
     int nList;
+    int nUpgrades;
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 
 #ifdef __cplusplus

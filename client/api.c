@@ -1390,7 +1390,8 @@ TDNFRepoQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFApplyScopeFilter(pQuery, SCOPE_ALL);
+    dwError = TDNFApplyScopeFilter(pQuery,
+        pRepoqueryArgs->nUpgrades ? SCOPE_UPGRADES : SCOPE_ALL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (pRepoqueryArgs->pszSpec)

@@ -53,6 +53,7 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "enhances", "1"},
     {CMDOPT_KEYVALUE, "requires-pre", "1"},
     {CMDOPT_KEYVALUE, "list", "1"},
+    {CMDOPT_KEYVALUE, "upgrades", "1"},
     {CMDOPT_KEYVALUE, "whatdepends", NULL},
     {CMDOPT_KEYVALUE, "whatprovides", NULL},
     {CMDOPT_KEYVALUE, "whatobsoletes", NULL},
@@ -143,6 +144,7 @@ static struct option pstOptions[] =
     {"enhances",      no_argument, 0, 0},
     {"requires-pre",  no_argument, 0, 0},
     {"list",          no_argument, 0, 0},
+    {"upgrades",      no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 
