@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2019-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -135,13 +135,14 @@ TDNFPyRepoDataRepr(
     PPY_TDNF_REPODATA pRepoData = NULL;
 
     pRepoData = (PPY_TDNF_REPODATA)self;
+
     dwError = TDNFAllocateStringPrintf(
                   &pszRepr,
-                  "{id: %s, name: %s, baseurl: %s, enabled: %d}",
-                  pRepoData->id ? PyBytes_AsString(pRepoData->id) : "",
-                  pRepoData->name ? PyBytes_AsString(pRepoData->name) : "",
-                  pRepoData->baseurl ? PyBytes_AsString(pRepoData->baseurl) : "",
-                  pRepoData->metalink ? PyBytes_AsString(pRepoData->metalink) : "",
+                  "{id: %s, name: %s, baseurl: %s, metalink: %s, enabled: %d}",
+                  pRepoData->id ? PyBytes_AsString(pRepoData->id) : "''",
+                  pRepoData->name ? PyBytes_AsString(pRepoData->name) : "''",
+                  pRepoData->baseurl ? PyBytes_AsString(pRepoData->baseurl) : "''",
+                  pRepoData->metalink ? PyBytes_AsString(pRepoData->metalink) : "''",
                   pRepoData->enabled);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -190,11 +191,28 @@ TDNFPyMakeRepoData(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pPyRepoData->id = PyBytes_FromString(pRepoData->pszId);
-    pPyRepoData->name = PyBytes_FromString(pRepoData->pszName);
-    pPyRepoData->baseurl = PyBytes_FromString(pRepoData->pszBaseUrl);
-    pPyRepoData->metalink = PyBytes_FromString(pRepoData->pszMetaLink);
+    if (pRepoData->pszId)
+    {
+        pPyRepoData->id = PyBytes_FromString(pRepoData->pszId);
+    }
+
+    if (pRepoData->pszName)
+    {
+        pPyRepoData->name = PyBytes_FromString(pRepoData->pszName);
+    }
+
+    if (pRepoData->pszBaseUrl)
+    {
+        pPyRepoData->baseurl = PyBytes_FromString(pRepoData->pszBaseUrl);
+    }
+
+    if (pRepoData->pszMetaLink)
+    {
+        pPyRepoData->metalink = PyBytes_FromString(pRepoData->pszMetaLink);
+    }
+
     pPyRepoData->enabled = pRepoData->nEnabled;
+
 
     *ppPyRepoData = (PyObject *)pPyRepoData;
 cleanup:

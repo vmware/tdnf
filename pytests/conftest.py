@@ -1,91 +1,80 @@
 #
-# Copyright (C) 2019 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2021 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Siddharth Chandrasekaran <csiddharth@vmware.com>
 
-import pytest
-import json
-import subprocess
 import os
 import re
-import errno
-import shutil
 import ssl
+import sys
+import time
+import json
+import errno
+import socket
+import shutil
+import pytest
+import atexit
 import requests
+import subprocess
 import configparser
 import distutils.spawn
-from pprint import pprint
+from OpenSSL import crypto
 from urllib.parse import urlparse
-from OpenSSL import crypto, SSL
+from multiprocessing import Process
 from http.server import SimpleHTTPRequestHandler, HTTPServer
-import socketserver
-import threading
-import ssl
 
-class TestRepoServer(threading.Thread):
 
-    def __init__(self, root, port=8080, interface="", enable_https=False):
-        super().__init__()
-        self.daemon = True
-        self.port = port
-        self.root = root
-        self.addr = (interface, port)
-        self.enable_https = enable_https
+def StopTestRepoServer(server):
+    server.terminate()
+    server.join()
 
-    def make_cert(self):
-        if os.path.exists("cert.pem") and os.path.exists("key.pem"):
-            self.keyfile = os.path.join(os.getcwd(), 'key.pem')
-            self.certfile = os.path.join(os.getcwd(), 'cert.pem')
-            return
+
+def TestRepoServer(root, port=8080, interface='', enable_https=False):
+    addr = (interface, port)
+    enable_https = enable_https
+
+    def dump_cert(fn, cert):
+        with open(fn, 'wt') as f:
+            tmp = crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+            f.write(tmp.decode('utf-8'))
+
+    os.chdir(root)
+
+    if enable_https:
         k = crypto.PKey()
         k.generate_key(crypto.TYPE_RSA, 2048)
         cert = crypto.X509()
-        cert.get_subject().C = "IN"
-        cert.get_subject().ST = "Karnataka"
-        cert.get_subject().L = "Bangalore"
-        cert.get_subject().O = "VMware"
-        cert.get_subject().OU = "Photon OS"
-        cert.get_subject().CN = "pytest.tdnf.vmware.github.io"
-        cert.get_subject().emailAddress = "tdnf-devel@vmware.com"
+        cert.get_subject().C = 'IN'
+        cert.get_subject().ST = 'Karnataka'
+        cert.get_subject().L = 'Bangalore'
+        cert.get_subject().O = 'VMware'
+        cert.get_subject().OU = 'Photon OS'
+        cert.get_subject().CN = 'pytest.tdnf.vmware.github.io'
+        cert.get_subject().emailAddress = 'tdnf-devel@vmware.com'
         cert.set_serial_number(0)
         cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(365*24*60*60)
+        cert.gmtime_adj_notAfter(365 * 24 * 60 * 60)
         cert.set_issuer(cert.get_subject())
         cert.set_pubkey(k)
-        cert.sign(k, "sha512")
-        with open("cert.pem", "wt") as f:
-            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
-        with open("key.pem", "wt") as f:
-            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
-        self.keyfile = os.path.join(os.getcwd(), 'key.pem')
-        self.certfile = os.path.join(os.getcwd(), 'cert.pem')
+        cert.sign(k, 'sha512')
 
-    def run(self):
-        if self.enable_https:
-            self.make_cert()
-        os.chdir(self.root)
-        try:
-            self.httpd = HTTPServer(self.addr, SimpleHTTPRequestHandler)
-            if self.enable_https:
-                self.httpd.socket = ssl.wrap_socket(self.httpd.socket,
-                                                    keyfile = self.keyfile,
-                                                    certfile = self.certfile,
-                                                    server_side = True)
-            self.httpd.serve_forever()
-        finally:
-            self.httpd.server_close()
+        keyfile = os.path.join(os.getcwd(), 'key.pem')
+        dump_cert(keyfile, cert)
 
-    def join(self):
-        self.httpd.shutdown()
-        super().join()
+        certfile = os.path.join(os.getcwd(), 'cert.pem')
+        dump_cert(keyfile, k)
+
+    httpd = HTTPServer(addr, SimpleHTTPRequestHandler)
+    if enable_https:
+        httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=keyfile,
+                                       certfile=certfile, server_side=True)
+    httpd.serve_forever()
 
 
 class JsonWrapper(object):
-
     def __init__(self, filename):
         self.filename = filename
 
@@ -116,9 +105,6 @@ class TestUtils(object):
 
         # check execution environment and enable valgrind if suitable
         self.check_valgrind()
-
-        self.server = TestRepoServer(self.config['repo_path'])
-        self.server.start()
 
     def version_str_to_int(self, version):
         version_parts = version.split('.')
@@ -151,10 +137,11 @@ class TestUtils(object):
 
     def assert_file_exists(self, file_path):
         if not os.path.isfile(file_path):
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
+                                    file_path)
 
     def check_package(self, package, version=None):
-        """ Check if a package exists """
+        ''' Check if a package exists '''
         ret = self.run([ 'tdnf', 'list', package ])
         for line in ret['stdout']:
             if package in line and '@System' in line:
@@ -190,7 +177,7 @@ class TestUtils(object):
         try:
             u = urlparse(url)
         except:
-            return False, "Failed to parse URL"
+            return False, 'Failed to parse URL'
         if not all([ u.scheme, u.netloc ]):
             return False, 'Invalid URL'
         if enforce_https:
@@ -199,7 +186,7 @@ class TestUtils(object):
         r = self._requests_get(url, True)
         if r is None:
             if fingerprint is None:
-                return False, "Unable to verify server certificate"
+                return False, 'Unable to verify server certificate'
             port = u.port
             if port is None:
                 port = 443
@@ -208,13 +195,13 @@ class TestUtils(object):
                 cert = load_certificate(FILETYPE_PEM, pem)
                 fp = cert.digest('sha1').decode()
             except:
-                return False, "Failed to get server certificate"
+                return False, 'Failed to get server certificate'
             if fingerprint != fp:
-                return False, "Server fingerprint did not match provided. Got: " + fp
+                return False, 'Server fingerprint did not match provided. Got: ' + fp
             # Download file without validation
             r = self._requests_get(url, False)
             if r is None:
-                return False, "Failed to download file"
+                return False, 'Failed to download file'
         r.raw.decode_content = True
         with open(out, 'wb') as f:
             shutil.copyfileobj(r.raw, f)
@@ -280,4 +267,25 @@ class TestUtils(object):
 @pytest.fixture(scope='session')
 def utils():
     test_utils = TestUtils()
+    server = Process(target=TestRepoServer,
+                     args=(test_utils.config['repo_path'], ))
+    server.start()
+
+    atexit.register(StopTestRepoServer, server)
+
+    result = -1
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    for retry in range(0, 10):
+        result = sock.connect_ex(('localhost', 8080))
+        if not result:
+            print('Server is up and running')
+            sock.close()
+            break
+        print('Server is not running, retrying ...')
+        time.sleep(1)
+
+    if result:
+        print('Server failed to start, aborting ...')
+        sys.exit(1)
+
     return test_utils

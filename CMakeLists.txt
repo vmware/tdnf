@@ -1,17 +1,23 @@
 #
-# Copyright (C) 2019-2020 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2021 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Siddharth Chandrasekaran <csiddharth@vmware.com>
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
 project(tdnf VERSION 3.1.0 LANGUAGES C)
 set(VERSION ${PROJECT_VERSION})
 set(PROJECT_YEAR 2021)
+
+# needed for spec file
+execute_process (
+    COMMAND bash -c "uname -r | cut -d'.' -f4"
+    OUTPUT_VARIABLE dist
+)
+set(DIST .${dist})
 
 # Ensure correct directory paths are used for installation
 include(GNUInstallDirs)

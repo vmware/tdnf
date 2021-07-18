@@ -1,7 +1,4 @@
-FROM fedora:32
-
-MAINTAINER csiddharth@vmware.com
-
+FROM fedora:latest
 
 RUN dnf -q -y upgrade
 RUN dnf -q -y install gcc make cmake libcurl-devel rpm-devel rpm-build libsolv-devel \
