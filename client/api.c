@@ -1368,6 +1368,22 @@ TDNFRepoQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* check if args make sense */
+    if (pRepoqueryArgs->nExtras &&
+        (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable ||
+         pRepoqueryArgs->nDuplicates))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pRepoqueryArgs->nDuplicates &&
+        (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     /* create analog to SOLVABLE_REQUIRES */
     idDepends = pool_str2id(pTdnf->pSack->pPool, TDNF_ID_DEPENDS, 1);
     idRequiresPre = pool_str2id(pTdnf->pSack->pPool, TDNF_ID_REQUIRES_PRE, 1);
@@ -1386,7 +1402,7 @@ TDNFRepoQuery(
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        if (pRepoqueryArgs->nInstalled)
+        if (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nDuplicates)
         {
             dwError = SolvAddSystemRepoFilter(pQuery);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -1409,6 +1425,11 @@ TDNFRepoQuery(
     if (pRepoqueryArgs->nExtras)
     {
         dwError = SolvApplyExtrasFilter(pQuery);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else if (pRepoqueryArgs->nDuplicates)
+    {
+        dwError = SolvApplyDuplicatesFilter(pQuery);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

@@ -100,6 +100,10 @@ TDNFCliParseRepoQueryArgs(
             {
                 pRepoqueryArgs->nExtras = 1;
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "duplicates") == 0)
+            {
+                pRepoqueryArgs->nDuplicates = 1;
+            }
             else if (strcasecmp(pSetOpt->pszOptName, "list") == 0)
             {
                 pRepoqueryArgs->nList = 1;

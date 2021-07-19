@@ -458,6 +458,10 @@ uint32_t
 SolvApplyExtrasFilter(
     PSolvQuery pQuery);
 
+uint32_t
+SolvApplyDuplicatesFilter(
+    PSolvQuery pQuery);
+
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(

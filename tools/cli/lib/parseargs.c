@@ -41,6 +41,7 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "available", "1"},
     {CMDOPT_KEYVALUE, "installed", "1"},
     {CMDOPT_KEYVALUE, "extras", "1"},
+    {CMDOPT_KEYVALUE, "duplicates", "1"},
     /* "depends" must be before "whatdepends",
        same for the others with partial string matches */
     {CMDOPT_KEYVALUE, "depends", "1"},
@@ -135,6 +136,7 @@ static struct option pstOptions[] =
     {"available",     no_argument, 0, 0},
     {"installed",     no_argument, 0, 0},
     {"extras",        no_argument, 0, 0},
+    {"duplicates",    no_argument, 0, 0},
     {"depends",       no_argument, 0, 0},
     {"provides",      no_argument, 0, 0},
     {"obsoletes",     no_argument, 0, 0},

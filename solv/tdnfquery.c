@@ -1297,3 +1297,74 @@ error:
     queue_free(&queueExtras);
     goto cleanup;
 }
+
+uint32_t
+SolvApplyDuplicatesFilter(
+    PSolvQuery pQuery)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Queue queueDuplicates = {0};
+    int i, j;
+
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pPool = pQuery->pSack->pPool;
+
+    queue_init(&queueDuplicates);
+
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pSolvable->repo == pPool->installed)
+        {
+            int nFound = 0;
+            for (j = 0; j < pQuery->queueResult.count; j++)
+            {
+                if (i != j)
+                {
+                    Id idPkg2 = pQuery->queueResult.elements[j];
+                    Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+
+                    if (pSolvable2->repo != pPool->installed)
+                    {
+                        continue;
+                    }
+
+                    if (pSolvable2->name == pSolvable->name &&
+                        pSolvable2->arch == pSolvable->arch)
+                    {
+                        nFound = 1;
+                    }
+                }
+            }
+            if (nFound)
+            {
+                queue_push(&queueDuplicates, idPkg);
+            }
+        }
+    }
+
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueDuplicates;
+
+cleanup:
+    return dwError;
+
+error:
+    queue_free(&queueDuplicates);
+    goto cleanup;
+}
+
