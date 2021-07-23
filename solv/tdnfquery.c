@@ -1368,3 +1368,46 @@ error:
     goto cleanup;
 }
 
+uint32_t
+SolvApplyFileProvidesFilter(
+    PSolvQuery pQuery,
+    char *pszFile)
+{
+    uint32_t dwError = 0;
+    Pool *pool;
+    Queue queueFiltered = {0};
+    Dataiterator di;
+    int i;
+
+    if(!pQuery || IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pool = pQuery->pSack->pPool;
+
+    queue_init(&queueFiltered);
+
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+
+        dataiterator_init(&di, pool, NULL, idPkg, SOLVABLE_FILELIST, pszFile,
+                          SEARCH_FILES | SEARCH_STRING);
+        /* using 'if' instead of 'while' because one match is enough */
+        if (dataiterator_step(&di)) {
+            queue_push(&queueFiltered, idPkg);
+        }
+        dataiterator_free(&di);
+    }
+
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueFiltered;
+cleanup:
+    return dwError;
+error:
+    queue_free(&queueFiltered);
+    goto cleanup;
+}
+

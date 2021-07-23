@@ -1450,6 +1450,12 @@ TDNFRepoQuery(
         }
     }
 
+    if (pRepoqueryArgs->pszFile)
+    {
+        dwError = SolvApplyFileProvidesFilter(pQuery, pRepoqueryArgs->pszFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 

@@ -73,7 +73,13 @@ TDNFCliParseRepoQueryArgs(
     {
         if(pSetOpt->nType == CMDOPT_KEYVALUE)
         {
-            if (strcasecmp(pSetOpt->pszOptName, "whatdepends") == 0)
+            if (strcasecmp(pSetOpt->pszOptName, "file") == 0)
+            {
+                dwError = TDNFAllocateString(pSetOpt->pszOptValue,
+                                             &pRepoqueryArgs->pszFile);
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+            else if (strcasecmp(pSetOpt->pszOptName, "whatdepends") == 0)
             {
                 dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
                     ",",
@@ -184,6 +190,7 @@ TDNFCliFreeRepoQueryArgs(
             }
         }
         TDNFFreeMemory(pRepoqueryArgs->pppszWhatKeys);
+        TDNFFreeMemory(pRepoqueryArgs->pszFile);
         TDNFFreeMemory(pRepoqueryArgs);
     }
 }

@@ -370,6 +370,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     char *pszSpec;
 
     /* select options */
+    char *pszFile;
     char **ppszWhatDepends;
     char ***pppszWhatKeys;
 

@@ -56,6 +56,7 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "requires-pre", "1"},
     {CMDOPT_KEYVALUE, "list", "1"},
     {CMDOPT_KEYVALUE, "upgrades", "1"},
+    {CMDOPT_KEYVALUE, "file", NULL},
     {CMDOPT_KEYVALUE, "whatdepends", NULL},
     {CMDOPT_KEYVALUE, "whatprovides", NULL},
     {CMDOPT_KEYVALUE, "whatobsoletes", NULL},
@@ -123,6 +124,7 @@ static struct option pstOptions[] =
     {"urls",          no_argument, 0, 0},
     // repoquery option
     // repoquery select options
+    {"file",          required_argument, 0, 0},
     {"whatdepends",   required_argument, 0, 0},
     {"whatprovides",  required_argument, 0, 0},
     {"whatobsoletes", required_argument, 0, 0},

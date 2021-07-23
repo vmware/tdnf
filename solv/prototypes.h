@@ -462,6 +462,11 @@ uint32_t
 SolvApplyDuplicatesFilter(
     PSolvQuery pQuery);
 
+uint32_t
+SolvApplyFileProvidesFilter(
+    PSolvQuery pQuery,
+    char *pszFile);
+
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(
