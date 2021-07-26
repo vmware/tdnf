@@ -224,7 +224,7 @@ class TestUtils(object):
         if cmd[0] == 'tdnf':
             if 'build_dir' in self.config:
                 cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
-            if cmd[1] != '--config' and not noconfig:
+            if ('-c' not in cmd and '--config' not in cmd and not noconfig):
                 cmd.insert(1, '-c')
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))
 
