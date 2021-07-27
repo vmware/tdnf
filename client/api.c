@@ -1459,7 +1459,18 @@ TDNFRepoQuery(
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_LIST, &pPkgInfo, &dwCount);
+    if (pRepoqueryArgs->nChangeLogs)
+    {
+        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_CHANGELOG, &pPkgInfo, &dwCount);
+    }
+    else if (pRepoqueryArgs->nSource)
+    {
+        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_SOURCEPKG, &pPkgInfo, &dwCount);
+    }
+    else
+    {
+        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_LIST, &pPkgInfo, &dwCount);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (pRepoqueryArgs->nDepends)

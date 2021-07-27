@@ -1155,8 +1155,6 @@ SolvApplyDepsFilter(
 
     idDepends = pool_str2id(pQuery->pSack->pPool, TDNF_ID_DEPENDS, 0);
 
-    pool_addfileprovides(pQuery->pSack->pPool);
-
     /* convert string dep array to id queue */
     queue_init(&queueDeps);
     for(i = 0; ppszDeps[i] != NULL; i++)

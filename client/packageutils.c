@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -97,6 +97,9 @@ TDNFPopulatePkgInfoArray(
     Id dwPkgId = 0;
     PTDNF_PKG_INFO pPkgInfos = NULL;
     PTDNF_PKG_INFO pPkgInfo  = NULL;
+    char *pszSrcName = NULL;
+    char *pszSrcArch = NULL;
+    char *pszSrcEVR = NULL;
 
     if(!ppPkgInfo || !pdwCount || !pSack || !pPkgList)
     {
@@ -182,6 +185,30 @@ TDNFPopulatePkgInfoArray(
                           pSack,
                           dwPkgId,
                           &pPkgInfo->pszDescription);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (nDetail == DETAIL_CHANGELOG)
+        {
+            dwError = SolvGetChangeLogFromId(
+                          pSack,
+                          dwPkgId,
+                          &pPkgInfo->pChangeLogEntries);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (nDetail == DETAIL_SOURCEPKG)
+        {
+            dwError = SolvGetSourceFromId(
+                          pSack,
+                          dwPkgId,
+                          &pszSrcName,
+                          &pszSrcArch,
+                          &pszSrcEVR);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFAllocateStringPrintf(
+                          &pPkgInfo->pszSourcePkg,
+                          "%s-%s.%s",
+                          pszSrcName, pszSrcEVR, pszSrcArch);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if ((uint32_t)dwPkgIndex < dwCount - 1)

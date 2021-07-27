@@ -24,8 +24,11 @@
 
 typedef enum
 {
+    /* this should be a bitmask */
     DETAIL_LIST,
-    DETAIL_INFO
+    DETAIL_INFO,
+    DETAIL_CHANGELOG,
+    DETAIL_SOURCEPKG
 }TDNF_PKG_DETAIL;
 
 #define BAIL_ON_TDNF_RPM_ERROR(dwError) \

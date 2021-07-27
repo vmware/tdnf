@@ -285,6 +285,22 @@ SolvGetFileListFromId(
     uint32_t dwPkgId,
     char ***pppszFiles);
 
+uint32_t
+SolvGetSourceFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char **ppszName,
+    char **ppszArch,
+    char **ppszEVR
+    );
+
+uint32_t
+SolvGetChangeLogFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    PTDNF_PKG_CHANGELOG_ENTRY *ppEntries
+    );
+
 // tdnfpool.c
 uint32_t
 SolvCreateSack(

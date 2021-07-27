@@ -233,6 +233,11 @@ TDNFFreePackageInfoArray(
     );
 
 void
+TDNFFreeChangeLogEntry(
+    PTDNF_PKG_CHANGELOG_ENTRY pEntry
+);
+
+void
 TDNFFreeRepos(
     PTDNF_REPO_DATA pRepos
     );

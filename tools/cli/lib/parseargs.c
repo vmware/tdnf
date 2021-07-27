@@ -41,6 +41,7 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "available", "1"},
     {CMDOPT_KEYVALUE, "installed", "1"},
     {CMDOPT_KEYVALUE, "extras", "1"},
+    {CMDOPT_KEYVALUE, "changelogs", "1"},
     {CMDOPT_KEYVALUE, "duplicates", "1"},
     /* "depends" must be before "whatdepends",
        same for the others with partial string matches */
@@ -136,6 +137,7 @@ static struct option pstOptions[] =
     {"whatenhances",  required_argument, 0, 0},
     // repoquery query options
     {"available",     no_argument, 0, 0},
+    {"changelogs",    no_argument, 0, 0},
     {"installed",     no_argument, 0, 0},
     {"extras",        no_argument, 0, 0},
     {"duplicates",    no_argument, 0, 0},

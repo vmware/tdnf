@@ -510,7 +510,6 @@ TDNFCliRepoQueryCommand(
 
     dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
-
     for (i = 0; i < (int)dwCount; i++)
     {
         pPkgInfo = &pPkgInfos[i];
@@ -524,6 +523,23 @@ TDNFCliRepoQueryCommand(
         {
             for (j = 0; pPkgInfo->ppszFileList[j]; j++);
             nCount +=j;
+        }
+        else if (pPkgInfo->pChangeLogEntries)
+        {
+            PTDNF_PKG_CHANGELOG_ENTRY pEntry;
+            for (pEntry = pPkgInfo->pChangeLogEntries; pEntry; pEntry = pEntry->pNext)
+            {
+                char szTime[20];
+                strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime));
+                pr_crit("%s %s\n%s\n",
+                    szTime,
+                    pEntry->pszAuthor,
+                    pEntry->pszText);
+            }
+        }
+        else if (pPkgInfo->pszSourcePkg)
+        {
+            pr_crit("%s\n", pPkgInfo->pszSourcePkg);
         }
         else
         {

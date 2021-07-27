@@ -86,6 +86,10 @@ TDNFCliParseRepoQueryArgs(
                     &pRepoqueryArgs->ppszWhatDepends);
                 BAIL_ON_CLI_ERROR(dwError);
             }
+            else if (strcasecmp(pSetOpt->pszOptName, "changelogs") == 0)
+            {
+                pRepoqueryArgs->nChangeLogs = 1;
+            }
             else if (strcasecmp(pSetOpt->pszOptName, "depends") == 0)
             {
                 pRepoqueryArgs->nDepends = 1;
@@ -113,6 +117,10 @@ TDNFCliParseRepoQueryArgs(
             else if (strcasecmp(pSetOpt->pszOptName, "list") == 0)
             {
                 pRepoqueryArgs->nList = 1;
+            }
+            else if (strcasecmp(pSetOpt->pszOptName, "source") == 0)
+            {
+                pRepoqueryArgs->nSource = 1;
             }
             else if (strcasecmp(pSetOpt->pszOptName, "upgrades") == 0)
             {

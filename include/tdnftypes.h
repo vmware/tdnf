@@ -152,6 +152,14 @@ typedef enum
 
 typedef struct _TDNF_ *PTDNF;
 
+typedef struct _TDNF_PKG_CHANGELOG_ENTRY
+{
+    time_t timeTime;
+    char *pszAuthor;
+    char *pszText;
+    struct _TDNF_PKG_CHANGELOG_ENTRY *pNext;
+} TDNF_PKG_CHANGELOG_ENTRY, *PTDNF_PKG_CHANGELOG_ENTRY;
+
 typedef struct _TDNF_PKG_INFO
 {
     uint32_t dwEpoch;
@@ -170,6 +178,8 @@ typedef struct _TDNF_PKG_INFO
     char* pszLocation;
     char **ppszDependencies;
     char **ppszFileList;
+    PTDNF_PKG_CHANGELOG_ENTRY pChangeLogEntries;
+    char *pszSourcePkg;
     struct _TDNF_PKG_INFO* pNext;
 }TDNF_PKG_INFO, *PTDNF_PKG_INFO;
 
@@ -375,14 +385,16 @@ typedef struct _TDNF_REPOQUERY_ARGS
     char ***pppszWhatKeys;
 
     /* query options */
-    int nInstalled;
     int nAvailable;
+    int nChangeLogs;
     int nDuplicates;
-    int nExtras;
     int nDepends;
     int anDeps[REPOQUERY_KEY_COUNT];
-    int nRequiresPre;
+    int nExtras;
+    int nInstalled;
     int nList;
+    int nRequiresPre;
+    int nSource;
     int nUpgrades;
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 

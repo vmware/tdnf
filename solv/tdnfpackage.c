@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -2055,3 +2055,171 @@ error:
     goto cleanup;
 }
 
+uint32_t
+SolvGetSourceFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char **ppszName,
+    char **ppszArch,
+    char **ppszEVR
+    )
+{
+    uint32_t dwError = 0;
+    const char* pszTmp = NULL;
+    Solvable *pSolv = NULL;
+    char *pszName = NULL;
+    char *pszArch = NULL;
+    char *pszEVR = NULL;
+
+    if(!pSack ||
+       !ppszName ||
+       !ppszArch ||
+       !ppszEVR)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszTmp = solvable_lookup_str(pSolv, SOLVABLE_SOURCENAME);
+    if(!pszTmp)
+    {
+        /* if the name is the same we get NULL */
+        pszTmp = solvable_lookup_str(pSolv, SOLVABLE_NAME);
+    }
+    if(!pszTmp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszTmp, &pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszTmp = solvable_lookup_str(pSolv, SOLVABLE_SOURCEARCH);
+    if(!pszTmp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszTmp, &pszArch);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pszTmp = solvable_lookup_str(pSolv, SOLVABLE_SOURCEEVR);
+    if(!pszTmp)
+    {
+        /* if the evr is the same we get NULL */
+        pszTmp = solvable_lookup_str(pSolv, SOLVABLE_EVR);
+    }
+    if(!pszTmp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszTmp, &pszEVR);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszName = pszName;
+    *ppszArch = pszArch;
+    *ppszEVR = pszEVR;
+cleanup:
+    return dwError;
+
+error:
+    if(ppszName)
+    {
+        *ppszName = NULL;
+    }
+    if(ppszArch)
+    {
+        *ppszArch = NULL;
+    }
+    if(ppszEVR)
+    {
+        *ppszEVR = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pszName);
+    TDNF_SAFE_FREE_MEMORY(pszArch);
+    TDNF_SAFE_FREE_MEMORY(pszEVR);
+    goto cleanup;
+}
+
+uint32_t
+SolvGetChangeLogFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    PTDNF_PKG_CHANGELOG_ENTRY *ppEntries
+    )
+{
+    uint32_t dwError = 0;
+    Solvable *pSolv = NULL;
+    Dataiterator di;
+    PTDNF_PKG_CHANGELOG_ENTRY pEntry = NULL;
+    PTDNF_PKG_CHANGELOG_ENTRY pEntryNext = NULL;
+    PTDNF_PKG_CHANGELOG_ENTRY pEntries = NULL;
+
+    if(!pSack ||
+       !ppEntries)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dataiterator_init(&di, pSack->pPool, pSolv->repo, dwPkgId,
+                      SOLVABLE_CHANGELOG_AUTHOR, NULL, 0);
+    dataiterator_prepend_keyname(&di, SOLVABLE_CHANGELOG);
+    while (dataiterator_step(&di)) {
+        dataiterator_setpos_parent(&di);
+
+        pEntryNext = pEntry;
+        dwError = TDNFAllocateMemory(sizeof(TDNF_PKG_CHANGELOG_ENTRY), 1, (void **)&pEntry);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if (pEntries == NULL)
+        {
+            pEntries = pEntry;
+        }
+        pEntry->pNext = pEntryNext;
+
+        pEntry->timeTime = (time_t)pool_lookup_num(
+            pSack->pPool, SOLVID_POS, SOLVABLE_CHANGELOG_TIME, 0);
+        dwError = TDNFAllocateString(
+            pool_lookup_str(pSack->pPool, SOLVID_POS, SOLVABLE_CHANGELOG_AUTHOR),
+            &pEntry->pszAuthor);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFAllocateString(
+            pool_lookup_str(pSack->pPool, SOLVID_POS, SOLVABLE_CHANGELOG_TEXT),
+            &pEntry->pszText);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dataiterator_free(&di);
+
+    *ppEntries = pEntry;
+
+cleanup:
+    return dwError;
+
+error:
+    for (pEntry = pEntries;
+         pEntry;
+         pEntry = pEntryNext)
+    {
+        pEntryNext = pEntry->pNext;
+        TDNFFreeChangeLogEntry(pEntry);
+    }
+    goto cleanup;
+}
