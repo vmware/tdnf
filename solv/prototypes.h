@@ -475,7 +475,8 @@ SolvReadYumRepo(
     const char *pszRepomd,
     const char *pszPrimary,
     const char *pszFilelists,
-    const char *pszUpdateinfo
+    const char *pszUpdateinfo,
+    const char *pszOther
     );
 
 uint32_t

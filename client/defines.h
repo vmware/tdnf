@@ -56,6 +56,7 @@ typedef enum
 #define TDNF_REPOMD_TYPE_PRIMARY          "primary"
 #define TDNF_REPOMD_TYPE_FILELISTS        "filelists"
 #define TDNF_REPOMD_TYPE_UPDATEINFO       "updateinfo"
+#define TDNF_REPOMD_TYPE_OTHER            "other"
 
 //Repo defines
 #define TDNF_REPO_EXT                     ".repo"

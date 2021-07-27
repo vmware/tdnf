@@ -104,6 +104,7 @@ typedef struct _TDNF_REPO_METADATA
     char *pszPrimary;
     char *pszFileLists;
     char *pszUpdateInfo;
+    char *pszOther;
 }TDNF_REPO_METADATA,*PTDNF_REPO_METADATA;
 
 typedef struct _TDNF_EVENT_DATA_

@@ -160,7 +160,8 @@ TDNFInitRepoFromMetadata(
                   pRepoMD->pszRepoMD,
                   pRepoMD->pszPrimary,
                   pRepoMD->pszFileLists,
-                  pRepoMD->pszUpdateInfo);
+                  pRepoMD->pszUpdateInfo,
+                  pRepoMD->pszOther);
 cleanup:
     return dwError;
 
@@ -1137,6 +1138,23 @@ TDNFEnsureRepoMDParts(
                       pRepoMD->pszUpdateInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    if(!IsNullOrEmptyString(pRepoMDRel->pszOther))
+    {
+        dwError = TDNFAppendPath(
+                      pRepoMDRel->pszRepoCacheDir,
+                      pRepoMDRel->pszOther,
+                      &pRepoMD->pszOther);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadRepoMDPart(
+                      pTdnf,
+                      pszBaseUrl,
+                      pRepoMDRel->pszRepo,
+                      pRepoMDRel->pszOther,
+                      pRepoMD->pszOther);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     *ppRepoMD = pRepoMD;
 
 cleanup:
@@ -1271,6 +1289,16 @@ TDNFParseRepoMD(
         dwError = 0;
     }
     BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFFindRepoMDPart(
+                  pRepo,
+                  TDNF_REPOMD_TYPE_OTHER,
+                  &pRepoMD->pszOther);
+    BAIL_ON_TDNF_ERROR(dwError);
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
     if (fp)
@@ -1306,6 +1334,7 @@ TDNFFreeRepoMetadata(
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszPrimary);
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszFileLists);
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszUpdateInfo);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszOther);
     TDNF_SAFE_FREE_MEMORY(pRepoMD);
 }
 
