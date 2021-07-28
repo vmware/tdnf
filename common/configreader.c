@@ -296,7 +296,8 @@ TDNFConfKeyvalueDefault(
     pKeyValue = pSection->pKeyValues;
     for(;pKeyValue && pKeyValue->pNext; pKeyValue = pKeyValue->pNext);
 
-    pszTemp = TDNFRightTrim(pszValue, pszEq);
+    pszTemp = TDNFRightTrim(pszValue, pszEq - 1);
+    pszTemp++;
     dwError = TDNFAllocateMemory(sizeof(KEYVALUE), 1, (void**)&pNewKeyValue);
     BAIL_ON_TDNF_ERROR(dwError);
 
