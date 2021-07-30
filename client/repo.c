@@ -962,11 +962,6 @@ TDNFGetRepoMD(
         dwError = TDNFReplaceFile(pszTempBaseUrlFile, pszBaseUrlFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    if (nNewRepoMDFile)
-    {
-        dwError = TDNFRemoveTmpRepodata(pszTmpRepoDataDir);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
     dwError = TDNFParseRepoMD(pRepoMDRel);
     if (dwError == ERROR_TDNF_FILE_NOT_FOUND && pTdnf->pArgs->nCacheOnly)
     {
@@ -983,6 +978,14 @@ TDNFGetRepoMD(
     *ppRepoMD = pRepoMD;
 
 cleanup:
+    if (!IsNullOrEmptyString(pszTmpRepoDataDir))
+    {
+        if((TDNFRemoveTmpRepodata(pszTmpRepoDataDir)) &&
+           (dwError == ERROR_TDNF_CHECKSUM_VALIDATION_FAILED))
+	{
+	    pr_crit("Downloaded repomd shasum mismatch, failed to remove %s file.  please remove.", pszTmpRepoDataDir);
+	}
+    }
     TDNFFreeRepoMetadata(pRepoMDRel);
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoMDFile);
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoDataDir);

@@ -311,7 +311,6 @@ TDNFRemoveTmpRepodata(
     )
 {
     uint32_t dwError = 0;
-    char* pszFilePath = NULL;
 
     if (IsNullOrEmptyString(pszTmpRepodataDir))
     {
@@ -326,7 +325,6 @@ TDNFRemoveTmpRepodata(
     }
     dwError = 0;
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     return dwError;
 error:
     goto cleanup;
