@@ -253,7 +253,6 @@ TDNFCheckHash(
 
     if (memcmp(digest_from_file, digest, hash->length))
     {
-	printf("digestfile %s digest %s\n", digest_from_file, digest);
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -290,7 +289,6 @@ TDNFCheckRepoMDFileHashFromMetalink(
     {
         sprintf(buf, "rm -rf %s", dirname(pszFile));
         system(buf);
-        pr_err("Error: Deleting (%s) FAILED (digest mismatch)\n", buf);
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
