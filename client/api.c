@@ -1213,7 +1213,7 @@ TDNFRepoSync(
             if (pReposyncArgs->nDelete && dwError == 0)
             {
                 /* if "delete" option is given, create a marker file to protect
-                   what we just downloaded. Later all *.rpm files that do not 
+                   what we just downloaded. Later all *.rpm files that do not
                    have a marker file will be deleted */
                 dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
                 BAIL_ON_TDNF_ERROR(dwError);
@@ -1332,7 +1332,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     return dwError;
-error: 
+error:
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
         dwError = ERROR_TDNF_NO_DATA;

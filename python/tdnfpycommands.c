@@ -13,7 +13,7 @@ PyObject *
 TDNFPyRepoList(PyObject *self, PyObject *args, PyObject *kwds)
 {
     uint32_t dwError = 0;
-    char *kwlist[] = { "filter", NULL };
+    char *kwlist[] = { "filter", "config", NULL };
     PyObject *ppyRepoList = Py_None;
     TDNF_CMD_ARGS cmdArgs = {0};
     char *szCmds[] = {""};
@@ -21,16 +21,24 @@ TDNFPyRepoList(PyObject *self, PyObject *args, PyObject *kwds)
     PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_REPO_DATA pReposTemp = NULL;
     TDNF_REPOLISTFILTER nFilter = REPOLISTFILTER_ENABLED;
+    PyObject *CfgFile = NULL;
 
     cmdArgs.pszInstallRoot = "/";
     cmdArgs.ppszCmds = szCmds;
     cmdArgs.nCmdCount = 1;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "|i", kwlist,
-            &nFilter))
+            args, kwds, "|iO", kwlist,
+            &nFilter, &CfgFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (CfgFile)
+    {
+        const char *fname = PyUnicode_AsUTF8(CfgFile);
+        dwError = TDNFAllocateString(fname, &cmdArgs.pszConfFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -66,6 +74,7 @@ TDNFPyRepoList(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(cmdArgs.pszConfFile);
     if (pRepos)
     {
         TDNFFreeRepos(pRepos);
@@ -86,19 +95,21 @@ uint32_t
 _TDNFPyGetAlterArgs(TDNF_ALTERTYPE type, PyObject *args,
                     PyObject *kwds, PTDNF_CMD_ARGS pCmdArgs)
 {
+    size_t nPkgCount = 0;
     uint32_t dwError = 0;
-    char *kwlist[] = { "pkgs", "refresh", "quiet", NULL };
+    char *kwlist[] = { "pkgs", "refresh", "quiet", "config", NULL };
     PyObject *pyPkgList = NULL;
     PyObject *pyRefresh = NULL;
     PyObject *pyQuiet = NULL;
-    size_t nPkgCount = 0;
+    PyObject *CfgFile = NULL;
     PyObject *ppyString = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "|O!O!O!", kwlist,
+            args, kwds, "|O!O!O!O", kwlist,
             &PyList_Type, &pyPkgList,
             &PyBool_Type, &pyRefresh,
-            &PyBool_Type, &pyQuiet))
+            &PyBool_Type, &pyQuiet,
+            &CfgFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -132,8 +143,16 @@ _TDNFPyGetAlterArgs(TDNF_ALTERTYPE type, PyObject *args,
         nPkgCount = 1;
     }
 
+    if (CfgFile)
+    {
+        const char *fname = PyUnicode_AsUTF8(CfgFile);
+        dwError = TDNFAllocateString(fname, &pCmdArgs->pszConfFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     pCmdArgs->nRefresh = pyRefresh ? PyObject_IsTrue(pyRefresh) : 0;
     pCmdArgs->nQuiet = pyQuiet ? PyObject_IsTrue(pyQuiet) : 0;
+    GlobalSetQuiet(pCmdArgs->nQuiet);
     pCmdArgs->nCmdCount = nPkgCount;
 
 error:
@@ -158,15 +177,20 @@ _TDNFPyAlter(TDNF_ALTERTYPE alterType, PyObject *self, PyObject *args, PyObject 
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFResolve(pTDNF, alterType, &pSolvedInfo);
+    if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pSolvedInfo->nNeedAction)
+    if (pSolvedInfo && pSolvedInfo->nNeedAction)
     {
         dwError = TDNFAlterCommand(pTDNF, alterType, pSolvedInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(cmdArgs.pszConfFile);
     TDNFFreeStringArrayWithCount(cmdArgs.ppszCmds, cmdArgs.nCmdCount);
     TDNFFreeSolvedPackageInfo(pSolvedInfo);
     if (pTDNF)

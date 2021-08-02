@@ -22,7 +22,7 @@ returns a python list of repodata types.
 example:
 ```
 root [ / ]# python3
-Python 3.7.3 (default, Jun 20 2019, 03:44:05) 
+Python 3.7.3 (default, Jun 20 2019, 03:44:05)
 [GCC 7.3.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import tdnf
@@ -109,10 +109,10 @@ synchronize installed packages to the latest available versions
 
 ##parameter (optional): quiet
 ```
-tdnf.distro-sync(quiet=True)
+tdnf.distro_sync(quiet=True)
 ```
 
 ##parameter (optional): refresh
 ```
-tdnf.distro-sync(refresh=True)
+tdnf.distro_sync(refresh=True)
 ```
