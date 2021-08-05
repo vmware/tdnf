@@ -1172,7 +1172,8 @@ TDNFRepoSync(
             if (!pReposyncArgs->nNoRepoPath)
             {
                 dwError = TDNFAllocateStringPrintf(&pszDir, "%s/%s",
-                            pszRootPath, pPkgInfo->pszRepoName);
+                            strcmp(pszRootPath, "/") ? pszRootPath : "",
+                            pPkgInfo->pszRepoName);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             else
@@ -1255,8 +1256,10 @@ TDNFRepoSync(
                 continue;
             }
 
+            /* no need to check nNoRepoPath since we wouldn't get here */
             dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                        pszRootPath, pRepo->pszId);
+                        strcmp(pszRootPath, "/") ? pszRootPath : "",
+                        pRepo->pszId);
             BAIL_ON_TDNF_ERROR(dwError);
 
             ret = nftw(pszRepoDir, _rm_rpms, 10, FTW_DEPTH|FTW_PHYS);
@@ -1285,9 +1288,11 @@ TDNFRepoSync(
 
             if (!pReposyncArgs->nNoRepoPath)
             {
+                const char *pszBasePath = pReposyncArgs->pszMetaDataPath ?
+                                pReposyncArgs->pszMetaDataPath : pszRootPath;
+
                 dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                            pReposyncArgs->pszMetaDataPath ?
-                                pReposyncArgs->pszMetaDataPath : pszRootPath,
+                            strcmp(pszBasePath, "/") ? pszBasePath : "",
                             pRepo->pszId);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
