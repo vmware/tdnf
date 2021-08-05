@@ -16,6 +16,7 @@ DOWNLOADDIR='/root/reposync/download'
 METADATADIR='/root/reposync/metadata'
 WORKDIR='/root/reposync/workdir'
 REPOFILENAME='reposync.repo'
+TESTREPO='photon-test'
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
@@ -35,6 +36,8 @@ def teardown_test(utils):
     filename = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
     if os.path.isfile(filename):
         os.remove(filename)
+    if os.path.isdir(os.path.join('/', TESTREPO)):
+        shutil.rmtree(os.path.join('/', TESTREPO))
 
 # helper to create directory tree without complains when it exists:
 def makedirs(d):
@@ -75,7 +78,7 @@ ui_repoid_vars=basearch
 
 # reposync with no options - sync to local directory
 def test_reposync(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -93,7 +96,7 @@ def test_reposync(utils):
 
 # reposync with download directory
 def test_reposync_download_path(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     downloaddir = DOWNLOADDIR
     makedirs(downloaddir)
     assert(os.path.isdir(downloaddir))
@@ -109,7 +112,7 @@ def test_reposync_download_path(utils):
 # reposync with download directory with an ending slash
 # (There was a bug about this)
 def test_reposync_download_path_slash(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     downloaddir = DOWNLOADDIR + '/'
     makedirs(downloaddir)
     assert(os.path.isdir(downloaddir))
@@ -122,9 +125,35 @@ def test_reposync_download_path_slash(utils):
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
 
+# github issue #254
+def test_reposync_download_path_root(utils):
+    reponame = TESTREPO
+    downloaddir = '/'
+
+    ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
+                     '--download-path={}'.format(downloaddir),
+                     'reposync'])
+    assert(ret['retval'] == 0)
+    assert(os.path.isdir(os.path.join(downloaddir, reponame)))
+
+    check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
+
+# github issue #254
+def test_reposync_workdir_root(utils):
+    reponame = TESTREPO
+    workdir = '/'
+
+    ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
+                     'reposync'],
+                     cwd=workdir)
+    assert(ret['retval'] == 0)
+    assert(os.path.isdir(os.path.join(workdir, reponame)))
+
+    check_synced_repo(utils, reponame, os.path.join(workdir, reponame))
+
 # reposync excluding the repo name from path
 def test_reposync_download_path_norepopath(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     downloaddir = DOWNLOADDIR
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -138,7 +167,7 @@ def test_reposync_download_path_norepopath(utils):
 
 # reposync excluding the repo name and delete option is incompatible
 def test_reposync_download_path_norepopath_delete(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     downloaddir = DOWNLOADDIR
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -150,7 +179,7 @@ def test_reposync_download_path_norepopath_delete(utils):
 
 # reposync excluding the repo name and multiple repos is incompatible
 def xxxtest_reposync_download_path_norepopath_multiple_repos(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     downloaddir = DOWNLOADDIR
     ret = utils.run(['tdnf',
                      '--download-path={}'.format(downloaddir),
@@ -160,7 +189,7 @@ def xxxtest_reposync_download_path_norepopath_multiple_repos(utils):
 
 # reposync with metadata
 def test_reposync_metadata(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -180,7 +209,7 @@ def test_reposync_metadata(utils):
 
 # reposync with metadata
 def test_reposync_metadata_path(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
     mdatadir = METADATADIR
@@ -202,7 +231,7 @@ def test_reposync_metadata_path(utils):
 
 # test --delete option
 def test_reposync_delete(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -232,7 +261,7 @@ def test_reposync_delete(utils):
 
 # test no --delete option (we should not delete files if not asked to)
 def test_reposync_no_delete(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -261,7 +290,7 @@ def test_reposync_no_delete(utils):
 
 # reposync with gpgcheck
 def test_reposync_gpgcheck(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -280,7 +309,7 @@ def test_reposync_gpgcheck(utils):
 
 # reposync with --urls option (print only)
 def test_reposync_urls(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -295,7 +324,7 @@ def test_reposync_urls(utils):
 
 # reposync a repo and install from it
 def test_reposync_create_repo(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -333,7 +362,7 @@ def test_reposync_create_repo(utils):
 
 # reposync with arch option should not sync other archs
 def test_reposync_arch_x86_64(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -357,7 +386,7 @@ def test_reposync_arch_x86_64(utils):
 
 # reposync with arch option should work for multiple archs
 def test_reposync_arch_x86_64_others(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
@@ -383,7 +412,7 @@ def test_reposync_arch_x86_64_others(utils):
 
 # reposync with --newest-only option - sync to local directory
 def test_reposync_newest(utils):
-    reponame = 'photon-test'
+    reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
 
