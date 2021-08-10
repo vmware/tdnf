@@ -276,7 +276,7 @@ uint32_t
 SolvGetDependenciesFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    Id idKey,
+    REPOQUERY_DEP_KEY depKey,
     char ***pppszDependencies);
 
 uint32_t
@@ -468,7 +468,7 @@ uint32_t
 SolvApplyDepsFilter(
     PSolvQuery pQuery,
     char **ppszDeps,
-    Id idKeyname);
+    REPOQUERY_WHAT_KEY whatKey);
 
 uint32_t
 SolvApplyExtrasFilter(

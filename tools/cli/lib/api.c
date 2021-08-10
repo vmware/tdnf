@@ -517,24 +517,31 @@ TDNFCliRepoQueryCommand(
         if (pPkgInfo->ppszDependencies)
         {
             for (j = 0; pPkgInfo->ppszDependencies[j]; j++);
-            nCount +=j;
+            nCount += j;
         }
         else if (pPkgInfo->ppszFileList)
         {
             for (j = 0; pPkgInfo->ppszFileList[j]; j++);
-            nCount +=j;
+            nCount += j;
         }
         else if (pPkgInfo->pChangeLogEntries)
         {
             PTDNF_PKG_CHANGELOG_ENTRY pEntry;
             for (pEntry = pPkgInfo->pChangeLogEntries; pEntry; pEntry = pEntry->pNext)
             {
-                char szTime[20];
-                strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime));
-                pr_crit("%s %s\n%s\n",
-                    szTime,
-                    pEntry->pszAuthor,
-                    pEntry->pszText);
+                char szTime[20] = {0};
+                if (strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime)))
+                {
+                    pr_crit("%s %s\n%s\n",
+                        szTime,
+                        pEntry->pszAuthor,
+                        pEntry->pszText);
+                }
+                else
+                {
+                    dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+                    BAIL_ON_CLI_ERROR(dwError);
+                }
             }
         }
         else if (pPkgInfo->pszSourcePkg)
@@ -553,11 +560,9 @@ TDNFCliRepoQueryCommand(
 
     if (nCount > 0)
     {
-        k = 0;
-
         dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszLines);
         BAIL_ON_CLI_ERROR(dwError);
-        for (i = 0; i < (int)dwCount; i++)
+        for (k = 0, i = 0; i < (int)dwCount; i++)
         {
             pPkgInfo = &pPkgInfos[i];
 
@@ -594,10 +599,8 @@ cleanup:
     {
         TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     }
-    if (ppszLines)
-    {
-        TDNFFreeMemory(ppszLines);
-    }
+    TDNF_CLI_SAFE_FREE_MEMORY(ppszLines);
+    TDNFCliFreeRepoQueryArgs(pRepoqueryArgs);
     return dwError;
 
 error:

@@ -243,8 +243,8 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
-        TDNFFreeStringArray(pPkgInfo->ppszDependencies);
-        TDNFFreeStringArray(pPkgInfo->ppszFileList);
+        TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->ppszDependencies);
+        TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->ppszFileList);
         for (pEntry = pPkgInfo->pChangeLogEntries;
              pEntry;
              pEntry = pEntryNext)

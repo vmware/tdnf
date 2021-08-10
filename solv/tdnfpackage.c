@@ -1929,7 +1929,7 @@ uint32_t
 SolvGetDependenciesFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
-    Id idKey,
+    REPOQUERY_DEP_KEY depKey,
     char ***pppszDependencies)
 {
     uint32_t dwError = 0;
@@ -1938,13 +1938,6 @@ SolvGetDependenciesFromId(
     char **ppszDependencies = NULL;
     const char *pszDep = NULL;
     int nNumDeps, i, j;
-    Id allDepKeys[] = {
-        SOLVABLE_REQUIRES,
-        SOLVABLE_RECOMMENDS,
-        SOLVABLE_SUGGESTS,
-        SOLVABLE_SUPPLEMENTS,
-        SOLVABLE_ENHANCES
-    };
 
     if(!pSack || !pppszDependencies)
     {
@@ -1959,10 +1952,17 @@ SolvGetDependenciesFromId(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (idKey == pool_str2id(pSack->pPool, TDNF_ID_DEPENDS, 0))
+    if (depKey == REPOQUERY_DEP_KEY_DEPENDS)
     {
+        Id allDepKeys[] = {
+            SOLVABLE_REQUIRES,
+            SOLVABLE_RECOMMENDS,
+            SOLVABLE_SUGGESTS,
+            SOLVABLE_SUPPLEMENTS,
+            SOLVABLE_ENHANCES
+        };
         queue_init(&queueDeps);
-        for (i = 0; i < (int)(sizeof(allDepKeys)/sizeof(Id)); i++)
+        for (i = 0; i < (int)ARRAY_SIZE(allDepKeys); i++)
         {
             Queue queueTmp = {0};
             solvable_lookup_deparray(pSolv, allDepKeys[i], &queueTmp, -1);
@@ -1974,13 +1974,24 @@ SolvGetDependenciesFromId(
             queue_free(&queueTmp);
         }
     }
-    else if (idKey == pool_str2id(pSack->pPool, TDNF_ID_REQUIRES_PRE, 0))
+    else if (depKey == REPOQUERY_DEP_KEY_REQUIRES_PRE)
     {
         solvable_lookup_deparray(pSolv, SOLVABLE_REQUIRES, &queueDeps, 1);
     }
     else
     {
-        solvable_lookup_deparray(pSolv, idKey, &queueDeps, -1);
+        Id allDepKeyIds[] = {
+            ID_NULL,
+            SOLVABLE_PROVIDES,
+            SOLVABLE_OBSOLETES,
+            SOLVABLE_CONFLICTS,
+            SOLVABLE_REQUIRES,
+            SOLVABLE_RECOMMENDS,
+            SOLVABLE_SUGGESTS,
+            SOLVABLE_SUPPLEMENTS,
+            SOLVABLE_ENHANCES
+        };
+        solvable_lookup_deparray(pSolv, allDepKeyIds[depKey], &queueDeps, -1);
     }
     nNumDeps = queueDeps.count;
 
@@ -2071,10 +2082,7 @@ SolvGetSourceFromId(
     char *pszArch = NULL;
     char *pszEVR = NULL;
 
-    if(!pSack ||
-       !ppszName ||
-       !ppszArch ||
-       !ppszEVR)
+    if(!pSack || !ppszName || !ppszArch || !ppszEVR)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -2134,18 +2142,9 @@ cleanup:
     return dwError;
 
 error:
-    if(ppszName)
-    {
-        *ppszName = NULL;
-    }
-    if(ppszArch)
-    {
-        *ppszArch = NULL;
-    }
-    if(ppszEVR)
-    {
-        *ppszEVR = NULL;
-    }
+    *ppszName = NULL;
+    *ppszArch = NULL;
+    *ppszEVR = NULL;
     TDNF_SAFE_FREE_MEMORY(pszName);
     TDNF_SAFE_FREE_MEMORY(pszArch);
     TDNF_SAFE_FREE_MEMORY(pszEVR);
@@ -2166,8 +2165,7 @@ SolvGetChangeLogFromId(
     PTDNF_PKG_CHANGELOG_ENTRY pEntryNext = NULL;
     PTDNF_PKG_CHANGELOG_ENTRY pEntries = NULL;
 
-    if(!pSack ||
-       !ppEntries)
+    if(!pSack || !ppEntries)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -2195,8 +2193,9 @@ SolvGetChangeLogFromId(
         }
         pEntry->pNext = pEntryNext;
 
-        pEntry->timeTime = (time_t)pool_lookup_num(
-            pSack->pPool, SOLVID_POS, SOLVABLE_CHANGELOG_TIME, 0);
+        pEntry->timeTime =
+            (time_t)pool_lookup_num(pSack->pPool, SOLVID_POS,
+                                    SOLVABLE_CHANGELOG_TIME, 0);
         dwError = TDNFAllocateString(
             pool_lookup_str(pSack->pPool, SOLVID_POS, SOLVABLE_CHANGELOG_AUTHOR),
             &pEntry->pszAuthor);
@@ -2214,9 +2213,7 @@ cleanup:
     return dwError;
 
 error:
-    for (pEntry = pEntries;
-         pEntry;
-         pEntry = pEntryNext)
+    for (pEntry = pEntries; pEntry; pEntry = pEntryNext)
     {
         pEntryNext = pEntry->pNext;
         TDNFFreeChangeLogEntry(pEntry);

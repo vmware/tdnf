@@ -93,7 +93,7 @@ TDNFPopulatePkgInfoArray(
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
-    int dwPkgIndex = 0;
+    uint32_t dwPkgIndex = 0;
     Id dwPkgId = 0;
     PTDNF_PKG_INFO pPkgInfos = NULL;
     PTDNF_PKG_INFO pPkgInfo  = NULL;
@@ -211,7 +211,7 @@ TDNFPopulatePkgInfoArray(
                           pszSrcName, pszSrcEVR, pszSrcArch);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        if ((uint32_t)dwPkgIndex < dwCount - 1)
+        if (dwPkgIndex < dwCount - 1)
         {
             pPkgInfo->pNext = &pPkgInfos[dwPkgIndex+1];
         }
@@ -221,6 +221,9 @@ TDNFPopulatePkgInfoArray(
     *ppPkgInfo = pPkgInfos;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSrcName);
+    TDNF_SAFE_FREE_MEMORY(pszSrcArch);
+    TDNF_SAFE_FREE_MEMORY(pszSrcEVR);
     return dwError;
 
 error:
@@ -1120,13 +1123,13 @@ uint32_t
 TDNFPopulatePkgInfoArrayDependencies(
     PSolvSack pSack,
     PSolvPackageList pPkgList,
-    Id idKey,
+    REPOQUERY_DEP_KEY depKey,
     PTDNF_PKG_INFO pPkgInfos
     )
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
-    int dwPkgIndex = 0;
+    uint32_t dwPkgIndex = 0;
     Id dwPkgId = 0;
     PTDNF_PKG_INFO pPkgInfo  = NULL;
 
@@ -1145,14 +1148,14 @@ TDNFPopulatePkgInfoArrayDependencies(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+    for (dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
     {
         pPkgInfo = &pPkgInfos[dwPkgIndex];
 
         dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetDependenciesFromId(pSack, dwPkgId, idKey, &pPkgInfo->ppszDependencies);
+        dwError = SolvGetDependenciesFromId(pSack, dwPkgId, depKey, &pPkgInfo->ppszDependencies);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -1172,7 +1175,7 @@ TDNFPopulatePkgInfoArrayFileList(
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
-    int dwPkgIndex = 0;
+    uint32_t dwPkgIndex = 0;
     Id dwPkgId = 0;
     PTDNF_PKG_INFO pPkgInfo  = NULL;
 
@@ -1191,7 +1194,7 @@ TDNFPopulatePkgInfoArrayFileList(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+    for (dwPkgIndex = 0; dwPkgIndex < dwCount; dwPkgIndex++)
     {
         pPkgInfo = &pPkgInfos[dwPkgIndex];
 

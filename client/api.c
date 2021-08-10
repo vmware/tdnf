@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -1357,18 +1357,18 @@ TDNFRepoQuery(
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
-    int i;
-    uint32_t dwCount;
-    Id idDepends, idRequiresPre;
+    int nDetail;
+    uint32_t dwCount = 0;
+    TDNF_SCOPE nScope = SCOPE_ALL;
 
     if(!pTdnf || !pTdnf->pSack || !pRepoqueryArgs ||
-       !ppPkgInfo)
+       !ppPkgInfo || !pdwCount)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* check if args make sense */
+    /* check if args make sense. extra packages are installed by definition */
     if (pRepoqueryArgs->nExtras &&
         (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable ||
          pRepoqueryArgs->nDuplicates))
@@ -1377,6 +1377,7 @@ TDNFRepoQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* duplicate packages are also installed by definition */
     if (pRepoqueryArgs->nDuplicates &&
         (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable))
     {
@@ -1384,12 +1385,10 @@ TDNFRepoQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* create analog to SOLVABLE_REQUIRES */
-    idDepends = pool_str2id(pTdnf->pSack->pPool, TDNF_ID_DEPENDS, 1);
-    idRequiresPre = pool_str2id(pTdnf->pSack->pPool, TDNF_ID_REQUIRES_PRE, 1);
-
     dwError = TDNFRefresh(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    /* handle select options */
 
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -1398,30 +1397,32 @@ TDNFRepoQuery(
     {
         if (!pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable)
         {
-            dwError = SolvAddAvailableRepoFilter(pQuery);
-            BAIL_ON_TDNF_ERROR(dwError);
+            nScope = SCOPE_AVAILABLE;
         }
-
-        if (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nDuplicates)
+        else if (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nDuplicates)
         {
-            dwError = SolvAddSystemRepoFilter(pQuery);
-            BAIL_ON_TDNF_ERROR(dwError);
+            nScope = SCOPE_INSTALLED;
+        }
+        else if(pRepoqueryArgs->nUpgrades)
+        {
+            nScope = SCOPE_UPGRADES;
         }
     }
-
-    dwError = TDNFApplyScopeFilter(pQuery,
-        pRepoqueryArgs->nUpgrades ? SCOPE_UPGRADES : SCOPE_ALL);
+    dwError = TDNFApplyScopeFilter(pQuery, nScope);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /* filter for package(s) given as arguments, if any */
     if (pRepoqueryArgs->pszSpec)
     {
         dwError = SolvApplySinglePackageFilter(pQuery, pRepoqueryArgs->pszSpec);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* run all the filters */
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /* now filter for extras or duplicates */
     if (pRepoqueryArgs->nExtras)
     {
         dwError = SolvApplyExtrasFilter(pQuery);
@@ -1433,65 +1434,46 @@ TDNFRepoQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (pRepoqueryArgs->ppszWhatDepends != NULL)
+    /* filter for package(s) that depend on give package(s) */
+    if (pRepoqueryArgs->pppszWhatKeys)
     {
-        dwError = SolvApplyDepsFilter(pQuery, pRepoqueryArgs->ppszWhatDepends, idDepends);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+        REPOQUERY_WHAT_KEY whatKey;
 
-    for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
-    {
-        if (pRepoqueryArgs->pppszWhatKeys[i])
+        for (whatKey = 0; whatKey < REPOQUERY_WHAT_KEY_COUNT; whatKey++)
         {
-            dwError = SolvApplyDepsFilter(pQuery,
-                        pRepoqueryArgs->pppszWhatKeys[i],
-                        allDepKeyIds[i]);
-            BAIL_ON_TDNF_ERROR(dwError);
+            if (pRepoqueryArgs->pppszWhatKeys[whatKey])
+            {
+                dwError = SolvApplyDepsFilter(pQuery,
+                            pRepoqueryArgs->pppszWhatKeys[whatKey],
+                            whatKey);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
         }
     }
 
+    /* filter for package(s) that provide a given file */
     if (pRepoqueryArgs->pszFile)
     {
         dwError = SolvApplyFileProvidesFilter(pQuery, pRepoqueryArgs->pszFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* get results in list */ 
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pRepoqueryArgs->nChangeLogs)
-    {
-        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_CHANGELOG, &pPkgInfo, &dwCount);
-    }
-    else if (pRepoqueryArgs->nSource)
-    {
-        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_SOURCEPKG, &pPkgInfo, &dwCount);
-    }
-    else
-    {
-        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, DETAIL_LIST, &pPkgInfo, &dwCount);
-    }
+    /* handle query options */
+
+    /* TDNFPopulatePkgInfoArray fills in details */
+    nDetail = pRepoqueryArgs->nChangeLogs ? DETAIL_CHANGELOG :
+              pRepoqueryArgs->nSource ? DETAIL_SOURCEPKG :
+              DETAIL_LIST;
+    dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, nDetail,
+                                       &pPkgInfo, &dwCount);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pRepoqueryArgs->nDepends)
-    {
-        dwError = TDNFPopulatePkgInfoArrayDependencies(
-                pTdnf->pSack,
-                pPkgList,
-                idDepends,
-                pPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    else if (pRepoqueryArgs->nRequiresPre)
-    {
-        dwError = TDNFPopulatePkgInfoArrayDependencies(
-                pTdnf->pSack,
-                pPkgList,
-                idRequiresPre,
-                pPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    else if (pRepoqueryArgs->nList)
+    /* fill in file list or dependencies */
+    if (pRepoqueryArgs->nList)
     {
         dwError = TDNFPopulatePkgInfoArrayFileList(
                 pTdnf->pSack,
@@ -1499,21 +1481,14 @@ TDNFRepoQuery(
                 pPkgInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    else
+    else if (pRepoqueryArgs->depKey)
     {
-        for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
-        {
-            if (pRepoqueryArgs->anDeps[i])
-            {
-                dwError = TDNFPopulatePkgInfoArrayDependencies(
-                        pTdnf->pSack,
-                        pPkgList,
-                        allDepKeyIds[i],
-                        pPkgInfo);
-                BAIL_ON_TDNF_ERROR(dwError);
-                break;
-            }
-        }
+        dwError = TDNFPopulatePkgInfoArrayDependencies(
+                pTdnf->pSack,
+                pPkgList,
+                pRepoqueryArgs->depKey,
+                pPkgInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     *ppPkgInfo = pPkgInfo;
@@ -1530,10 +1505,6 @@ cleanup:
     }
     return dwError;
 error:
-    if(ppPkgInfo)
-    {
-      *ppPkgInfo = NULL;
-    }
     TDNFFreePackageInfo(pPkgInfo);
     if(dwError == ERROR_TDNF_NO_MATCH)
     {

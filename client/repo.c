@@ -943,7 +943,8 @@ TDNFGetRepoMD(
 
     if (nReplaceRepoMD)
     {
-        /* Remove the old repodata, solvcache and lastRefreshMarker before replacing the new repomd file and metalink files. */
+        /* Remove the old repodata, solvcache and lastRefreshMarker before
+           replacing the new repomd file and metalink files. */
         TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
         TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
         TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
@@ -1289,11 +1290,11 @@ TDNFParseRepoMD(
         dwError = 0;
     }
     BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFFindRepoMDPart(
                   pRepo,
                   TDNF_REPOMD_TYPE_OTHER,
                   &pRepoMD->pszOther);
-    BAIL_ON_TDNF_ERROR(dwError);
     if(dwError == ERROR_TDNF_NO_DATA)
     {
         dwError = 0;

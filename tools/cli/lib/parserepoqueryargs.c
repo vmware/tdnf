@@ -18,7 +18,7 @@
 
 #include "includes.h"
 
-char *depKeys[REPOQUERY_KEY_COUNT] = {
+char *depKeys[] = {
     "provides",
     "obsoletes",
     "conflicts",
@@ -26,10 +26,12 @@ char *depKeys[REPOQUERY_KEY_COUNT] = {
     "recommends",
     "suggests",
     "supplements",
-    "enhances"
+    "enhances",
+    "depends",
+    "requires-pre"
 };
 
-char *whatKeys[REPOQUERY_KEY_COUNT] = {
+char *whatKeys[REPOQUERY_WHAT_KEY_COUNT] = {
     "whatprovides",
     "whatobsoletes",
     "whatconflicts",
@@ -37,7 +39,8 @@ char *whatKeys[REPOQUERY_KEY_COUNT] = {
     "whatrecommends",
     "whatsuggests",
     "whatsupplements",
-    "whatenhances"
+    "whatenhances",
+    "whatdepends"
 };
 
 uint32_t
@@ -63,7 +66,7 @@ TDNFCliParseRepoQueryArgs(
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
-        REPOQUERY_KEY_COUNT,
+        REPOQUERY_WHAT_KEY_COUNT,
         sizeof(char **),
         (void **) &pRepoqueryArgs->pppszWhatKeys);
 
@@ -79,24 +82,9 @@ TDNFCliParseRepoQueryArgs(
                                              &pRepoqueryArgs->pszFile);
                 BAIL_ON_CLI_ERROR(dwError);
             }
-            else if (strcasecmp(pSetOpt->pszOptName, "whatdepends") == 0)
-            {
-                dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
-                    ",",
-                    &pRepoqueryArgs->ppszWhatDepends);
-                BAIL_ON_CLI_ERROR(dwError);
-            }
             else if (strcasecmp(pSetOpt->pszOptName, "changelogs") == 0)
             {
                 pRepoqueryArgs->nChangeLogs = 1;
-            }
-            else if (strcasecmp(pSetOpt->pszOptName, "depends") == 0)
-            {
-                pRepoqueryArgs->nDepends = 1;
-            }
-            else if (strcasecmp(pSetOpt->pszOptName, "requires-pre") == 0)
-            {
-                pRepoqueryArgs->nRequiresPre = 1;
             }
             else if (strcasecmp(pSetOpt->pszOptName, "available") == 0)
             {
@@ -128,34 +116,43 @@ TDNFCliParseRepoQueryArgs(
             }
             else
             {
-                int i;
-                int nFound = 0;
+                REPOQUERY_DEP_KEY depKey;
 
-                for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+                for (depKey = 0; depKey < REPOQUERY_DEP_KEY_COUNT - 1; depKey++)
                 {
-                    if (strcasecmp(pSetOpt->pszOptName, depKeys[i]) == 0)
+                    if (strcasecmp(pSetOpt->pszOptName, depKeys[depKey]) == 0)
                     {
-                        pRepoqueryArgs->anDeps[i] = 1;
-                        nFound = 1;
-                    }
-                }
-                if (!nFound)
-                {
-                    for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
-                    {
-                        if (strcasecmp(pSetOpt->pszOptName, whatKeys[i]) == 0)
+                        if (pRepoqueryArgs->depKey == 0)
                         {
-                            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
-                                ",",
-                                &pRepoqueryArgs->pppszWhatKeys[i]);
+                            pRepoqueryArgs->depKey = depKey + 1;
+                            break;
+                        }
+                        else
+                        {
+                            dwError = ERROR_TDNF_CLI_ONE_DEP_ONLY;
                             BAIL_ON_CLI_ERROR(dwError);
-                            nFound = 1;
                         }
                     }
                 }
-            }
-        }
-    }
+                if (depKey == REPOQUERY_DEP_KEY_COUNT - 1) /* not found in loop above */
+                {
+                    REPOQUERY_WHAT_KEY whatKey;
+
+                    for (whatKey = 0; whatKey < REPOQUERY_WHAT_KEY_COUNT; whatKey++)
+                    {
+                        if (strcasecmp(pSetOpt->pszOptName, whatKeys[whatKey]) == 0)
+                        {
+                            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue,
+                                ",",
+                                &pRepoqueryArgs->pppszWhatKeys[whatKey]);
+                            BAIL_ON_CLI_ERROR(dwError);
+                            break;
+                        }
+                    }
+                } /* if (i == REPOQUERY_WHAT_KEY_COUNT) */
+            } /* if (strcasecmp(pSetOpt->pszOptName, ... */
+        } /* if(pSetOpt->nType == CMDOPT_KEYVALUE) */
+    } /* for (pSetOpt ... */
 
     if(pArgs->nCmdCount > 2)
     {
@@ -174,10 +171,7 @@ TDNFCliParseRepoQueryArgs(
 cleanup:
     return dwError;
 error:
-    if (pRepoqueryArgs)
-    {
-        TDNFCliFreeRepoQueryArgs(pRepoqueryArgs);
-    }
+    TDNFCliFreeRepoQueryArgs(pRepoqueryArgs);
     goto cleanup;
 }
 
@@ -188,18 +182,19 @@ TDNFCliFreeRepoQueryArgs(
 {
     if(pRepoqueryArgs)
     {
-        TDNF_CLI_SAFE_FREE_STRINGARRAY(pRepoqueryArgs->ppszWhatDepends);
         if (pRepoqueryArgs->pppszWhatKeys)
         {
             int i;
-            for (i = 0; i < REPOQUERY_KEY_COUNT; i++)
+            for (i = 0; i < REPOQUERY_WHAT_KEY_COUNT; i++)
             {
                 TDNF_CLI_SAFE_FREE_STRINGARRAY(pRepoqueryArgs->pppszWhatKeys[i]);
+                TDNFFreeMemory(pRepoqueryArgs->pppszWhatKeys[i]);
             }
+            TDNFFreeMemory(pRepoqueryArgs->pppszWhatKeys);
         }
-        TDNFFreeMemory(pRepoqueryArgs->pppszWhatKeys);
-        TDNFFreeMemory(pRepoqueryArgs->pszFile);
-        TDNFFreeMemory(pRepoqueryArgs);
+        TDNF_CLI_SAFE_FREE_MEMORY(pRepoqueryArgs->pszFile);
+        TDNF_CLI_SAFE_FREE_MEMORY(pRepoqueryArgs->pszSpec);
+        TDNF_CLI_SAFE_FREE_MEMORY(pRepoqueryArgs);
     }
 }
 

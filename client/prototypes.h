@@ -434,7 +434,7 @@ uint32_t
 TDNFPopulatePkgInfoArrayDependencies(
     PSolvSack pSack,
     PSolvPackageList pPkgList,
-    Id idKey,
+    REPOQUERY_DEP_KEY depKey,
     PTDNF_PKG_INFO pPkgInfos
     );
 

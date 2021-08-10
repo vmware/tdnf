@@ -15,18 +15,6 @@
 #define MODE_VERIFY      5
 #define MODE_PATCH       6
 
-/* must be same order as REPOQUERY_WHAT_KEY */
-Id allDepKeyIds[] = {
-    SOLVABLE_PROVIDES,
-    SOLVABLE_OBSOLETES,
-    SOLVABLE_CONFLICTS,
-    SOLVABLE_REQUIRES,
-    SOLVABLE_RECOMMENDS,
-    SOLVABLE_SUGGESTS,
-    SOLVABLE_SUPPLEMENTS,
-    SOLVABLE_ENHANCES
-};
-
 uint32_t
 SolvAddUpgradeAllJob(
     Queue* pQueueJobs
@@ -1131,29 +1119,19 @@ uint32_t
 SolvApplyDepsFilter(
     PSolvQuery pQuery,
     char **ppszDeps,
-    Id idKeyname)
+    REPOQUERY_WHAT_KEY whatKey)
 {
     uint32_t dwError = 0;
     Queue queueDeps = {0};
     Queue queueFiltered = {0};
     int i, j;
     Id idDep;
-    Id allDepKeys[] = {
-        SOLVABLE_REQUIRES,
-        SOLVABLE_RECOMMENDS,
-        SOLVABLE_SUGGESTS,
-        SOLVABLE_SUPPLEMENTS,
-        SOLVABLE_ENHANCES
-    };
-    Id idDepends;
 
     if(!pQuery || !pQuery->pSack || !ppszDeps)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-
-    idDepends = pool_str2id(pQuery->pSack->pPool, TDNF_ID_DEPENDS, 0);
 
     /* convert string dep array to id queue */
     queue_init(&queueDeps);
@@ -1183,10 +1161,20 @@ SolvApplyDepsFilter(
         {
             idDep = queueDeps.elements[i];
 
-            if (idKeyname != idDepends)
+            if (whatKey != REPOQUERY_WHAT_KEY_DEPENDS)
             {
+                Id allDepKeyIds[] = {
+                    SOLVABLE_PROVIDES,
+                    SOLVABLE_OBSOLETES,
+                    SOLVABLE_CONFLICTS,
+                    SOLVABLE_REQUIRES,
+                    SOLVABLE_RECOMMENDS,
+                    SOLVABLE_SUGGESTS,
+                    SOLVABLE_SUPPLEMENTS,
+                    SOLVABLE_ENHANCES
+                };
                 /* single dependency type */
-                if (solvable_matchesdep(pSolvable, idKeyname, idDep, 0))
+                if (solvable_matchesdep(pSolvable, allDepKeyIds[whatKey], idDep, 0))
                 {
                     queue_push(&queueFiltered, idPkg);
                     break;
@@ -1195,18 +1183,23 @@ SolvApplyDepsFilter(
             else
             {
                 size_t k;
-                int nBreak = 0;
+                Id allDepKeys[] = {
+                    SOLVABLE_REQUIRES,
+                    SOLVABLE_RECOMMENDS,
+                    SOLVABLE_SUGGESTS,
+                    SOLVABLE_SUPPLEMENTS,
+                    SOLVABLE_ENHANCES
+                };
 
-                for (k = 0; k < sizeof(allDepKeys)/sizeof(Id); k++)
+                for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
                 {
                     if (solvable_matchesdep(pSolvable, allDepKeys[k], idDep, 0))
                     {
                         queue_push(&queueFiltered, idPkg);
-                        nBreak = 1;
                         break;
                     }
                 }
-                if (nBreak)
+                if (k < ARRAY_SIZE(allDepKeys))
                 {
                     break;
                 }
@@ -1244,6 +1237,10 @@ SolvApplyExtrasFilter(
     pPool = pQuery->pSack->pPool;
 
     queue_init(&queueExtras);
+
+    /* Outer loop iterates over all installed solvables,
+       inner loop over all solvables that are *not* installed.
+       If we don't find a match, it's an extra package */
     for (i = 0; i < pQuery->queueResult.count; i++)
     {
         Id idPkg = pQuery->queueResult.elements[i];
@@ -1265,6 +1262,12 @@ SolvApplyExtrasFilter(
                     Id idPkg2 = pQuery->queueResult.elements[j];
                     Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
 
+                    if(!pSolvable2)
+                    {
+                        dwError = ERROR_TDNF_NO_DATA;
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
+
                     if (pSolvable2->repo == pPool->installed)
                     {
                         continue;
@@ -1284,13 +1287,10 @@ SolvApplyExtrasFilter(
             }
         }
     }
-
     queue_free(&pQuery->queueResult);
     pQuery->queueResult = queueExtras;
-
 cleanup:
     return dwError;
-
 error:
     queue_free(&queueExtras);
     goto cleanup;
@@ -1329,23 +1329,26 @@ SolvApplyDuplicatesFilter(
         if (pSolvable->repo == pPool->installed)
         {
             int nFound = 0;
-            for (j = 0; j < pQuery->queueResult.count; j++)
+            /* no need to compare b with a if we already compared b with a,
+               so we can start with j = i + 1 */
+            for (j = i + 1; j < pQuery->queueResult.count; j++)
             {
-                if (i != j)
+                Id idPkg2 = pQuery->queueResult.elements[j];
+                Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+
+                if(!pSolvable2)
                 {
-                    Id idPkg2 = pQuery->queueResult.elements[j];
-                    Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
-
-                    if (pSolvable2->repo != pPool->installed)
-                    {
-                        continue;
-                    }
-
-                    if (pSolvable2->name == pSolvable->name &&
-                        pSolvable2->arch == pSolvable->arch)
-                    {
-                        nFound = 1;
-                    }
+                    dwError = ERROR_TDNF_NO_DATA;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                if (pSolvable2->repo != pPool->installed)
+                {
+                    continue;
+                }
+                if (pSolvable2->name == pSolvable->name &&
+                    pSolvable2->arch == pSolvable->arch)
+                {
+                    nFound = 1;
                 }
             }
             if (nFound)
@@ -1354,13 +1357,10 @@ SolvApplyDuplicatesFilter(
             }
         }
     }
-
     queue_free(&pQuery->queueResult);
     pQuery->queueResult = queueDuplicates;
-
 cleanup:
     return dwError;
-
 error:
     queue_free(&queueDuplicates);
     goto cleanup;
@@ -1399,7 +1399,6 @@ SolvApplyFileProvidesFilter(
         }
         dataiterator_free(&di);
     }
-
     queue_free(&pQuery->queueResult);
     pQuery->queueResult = queueFiltered;
 cleanup:
