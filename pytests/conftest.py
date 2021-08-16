@@ -25,7 +25,9 @@ from OpenSSL import crypto
 from urllib.parse import urlparse
 from multiprocessing import Process
 from http.server import SimpleHTTPRequestHandler, HTTPServer
+import platform
 
+ARCH=platform.machine()
 
 def StopTestRepoServer(server):
     server.terminate()
@@ -130,6 +132,15 @@ class TestUtils(object):
         if current_version < minimum_version:
             self.config['valgrind_disabled_reason'] = 'valgrind minimum version constraint not met'
             return
+
+        # some architectures may require a higher version
+        if 'valgrind_minimum_version_{}'.format(ARCH) in self.config:
+            minimum_version = \
+                self.version_str_to_int(self.config['valgrind_minimum_version_{}'.format(ARCH)])
+            if current_version < minimum_version:
+                self.config['valgrind_disabled_reason'] = \
+                    'valgrind minimum version constraint not met for this architecture'
+                return
 
         # All okay. Enable valgrind checks
         self.config['valgrind_disabled_reason'] = None
