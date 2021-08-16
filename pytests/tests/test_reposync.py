@@ -11,7 +11,9 @@ import os
 import shutil
 import errno
 import pytest
+import platform
 
+ARCH = platform.machine()
 DOWNLOADDIR='/root/reposync/download'
 METADATADIR='/root/reposync/metadata'
 WORKDIR='/root/reposync/workdir'
@@ -51,7 +53,7 @@ def makedirs(d):
 # uses the local repository and compares the list of RPMs
 def check_synced_repo(utils, reponame, synced_dir):
 
-    local_dir = os.path.join(utils.config['repo_path'], reponame, 'RPMS', 'x86_64')
+    local_dir = os.path.join(utils.config['repo_path'], reponame, 'RPMS', ARCH)
 
     local_rpms = \
         list(filter(lambda f: os.path.isfile(os.path.join(local_dir, f)) and f.endswith('.rpm'), \
@@ -61,7 +63,7 @@ def check_synced_repo(utils, reponame, synced_dir):
     assert(len(local_rpms) > 0)
 
     for rpm in local_rpms:
-        assert(os.path.isfile(os.path.join(synced_dir, 'RPMS', 'x86_64', rpm)))
+        assert(os.path.isfile(os.path.join(synced_dir, 'RPMS', ARCH, rpm)))
 
 def create_repoconf(filename, baseurl, name):
     templ = """
@@ -361,7 +363,7 @@ def test_reposync_create_repo(utils):
     assert(utils.check_package(pkgname) == True)
 
 # reposync with arch option should not sync other archs
-def test_reposync_arch_x86_64(utils):
+def test_reposync_arch(utils):
     reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
@@ -372,7 +374,7 @@ def test_reposync_arch_x86_64(utils):
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
-                     '--arch', 'x86_64',
+                     '--arch', ARCH,
                      'reposync'],
                      cwd=workdir)
     assert(ret['retval'] == 0)
@@ -385,7 +387,7 @@ def test_reposync_arch_x86_64(utils):
 
 
 # reposync with arch option should work for multiple archs
-def test_reposync_arch_x86_64_others(utils):
+def test_reposync_arch_others(utils):
     reponame = TESTREPO
     workdir = WORKDIR
     makedirs(workdir)
@@ -399,7 +401,7 @@ def test_reposync_arch_x86_64_others(utils):
                      '--arch', 'classic',
                      '--arch', 'baroque',
                      '--arch', 'modern',
-                     '--arch', 'x86_64',
+                     '--arch', ARCH,
                      'reposync'],
                      cwd=workdir)
     assert(ret['retval'] == 0)
@@ -426,7 +428,7 @@ def test_reposync_newest(utils):
     assert(os.path.isdir(synced_dir))
 
     mulversion_pkgname_found = False
-    for f in os.listdir(os.path.join(synced_dir, 'RPMS', 'x86_64')):
+    for f in os.listdir(os.path.join(synced_dir, 'RPMS', ARCH)):
         if f.startswith(utils.config['mulversion_pkgname']):
             assert(not utils.config['mulversion_lower'] in f)
             mulversion_pkgname_found = True
