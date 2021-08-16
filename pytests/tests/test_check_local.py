@@ -10,7 +10,9 @@ import os
 import tempfile
 import pytest
 import shutil
+import platform
 
+ARCH=platform.machine()
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
@@ -41,7 +43,7 @@ def test_check_local_empty_directory(utils):
 def test_check_local_with_local_rpm(utils):
     with tempfile.TemporaryDirectory() as tmpdir:
         dest = os.path.join(tmpdir, 'test.rpm')
-        src = os.path.join(utils.config['repo_path'], 'build/RPMS/x86_64/tdnf-test-two-1.0.1-1.x86_64.rpm')
+        src = os.path.join(utils.config['repo_path'], 'build', 'RPMS', ARCH, 'tdnf-test-two-1.0.1-1.{}.rpm'.format(ARCH))
         shutil.copyfile(src, dest)
 
         ret = utils.run(['tdnf', 'check-local', tmpdir])

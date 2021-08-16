@@ -22,9 +22,11 @@ TEST_REPO_DIR=$1
 BUILD_PATH=${TEST_REPO_DIR}/build
 PUBLISH_PATH=${TEST_REPO_DIR}/photon-test
 
+ARCH=$(uname -m)
+
 mkdir -p ${BUILD_PATH}/BUILD \
 	 ${BUILD_PATH}/SRPMS \
-	 ${BUILD_PATH}/RPMS/x86_64 \
+	 ${BUILD_PATH}/RPMS/${ARCH} \
 	 ${BUILD_PATH}/RPMS/noarch \
 	 ${PUBLISH_PATH} \
 	 ${TEST_REPO_DIR}/yum.repos.d
