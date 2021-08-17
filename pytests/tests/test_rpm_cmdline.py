@@ -8,6 +8,9 @@
 import os
 import glob
 import pytest
+import platform
+
+ARCH=platform.machine()
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test_function(utils):
@@ -23,12 +26,12 @@ def teardown_test(utils):
     os.rmdir(os.path.join(utils.config['repo_path'], 'dummydir'))
 
 def get_pkg_file_path(utils, pkgname):
-    dir = os.path.join(utils.config['repo_path'], 'photon-test', 'RPMS', 'x86_64')
+    dir = os.path.join(utils.config['repo_path'], 'photon-test', 'RPMS', ARCH)
     matches = glob.glob('{}/{}-*.rpm'.format(dir, pkgname))
     return matches[0]
 
 def get_pkg_file_path_with_doubledots(utils, pkgname):
-    dir = os.path.join(utils.config['repo_path'], 'dummydir', '..', 'photon-test', 'RPMS', 'x86_64')
+    dir = os.path.join(utils.config['repo_path'], 'dummydir', '..', 'photon-test', 'RPMS', ARCH)
     matches = glob.glob('{}/{}-*.rpm'.format(dir, pkgname))
     return matches[0]
 

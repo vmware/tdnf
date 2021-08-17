@@ -15,5 +15,6 @@
     "requiring_package": "tdnf-test-dependson-base",
     "required_package": "tdnf-test-base",
     "dummy_requires_pkgname": "tdnf-test-dummy-requires",
-    "valgrind_minimum_version": "3.15.0"
+    "valgrind_minimum_version": "3.15.0",
+    "valgrind_minimum_version_aarch64": "3.17.0"
 }
