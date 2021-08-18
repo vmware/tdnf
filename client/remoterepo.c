@@ -274,7 +274,6 @@ TDNFCheckRepoMDFileHashFromMetalink(
     TDNF_METALINK_FILE *ml_file
     )
 {
-
     uint32_t dwError = 0;
     if(IsNullOrEmptyString(pszFile) ||
        !ml_file)

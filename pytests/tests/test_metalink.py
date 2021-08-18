@@ -247,6 +247,9 @@ def test_invalid_md5_digest(utils):
     set_invalid_md5(utils)
     ret = utils.run([ 'tdnf', 'makecache'])
     assert(ret['stderr'][0].startswith('Error: Validating metalink'))
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
+    assert(os.path.isdir(tmp_dir) == False)
 
 def test_invalid_sha1_digest(utils):
     set_metalink(utils, True)
@@ -258,6 +261,9 @@ def test_invalid_sha1_digest(utils):
     set_invalid_sha1(utils)
     ret = utils.run([ 'tdnf', 'makecache'])
     assert(ret['stderr'][0].startswith('Error: Validating metalink'))
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
+    assert(os.path.isdir(tmp_dir) == False)
 
 def test_invalid_sha256_digest(utils):
     set_metalink(utils, True)
@@ -269,6 +275,9 @@ def test_invalid_sha256_digest(utils):
     set_invalid_sha256(utils)
     ret = utils.run([ 'tdnf', 'makecache'])
     assert(ret['stderr'][0].startswith('Error: Validating metalink'))
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
+    assert(os.path.isdir(tmp_dir) == False)
 
 def test_invalid_sha256_valid_sha1(utils):
     set_metalink(utils, True)
