@@ -368,11 +368,12 @@ TDNFRunTransaction(
     PTDNF pTdnf
     )
 {
+    int rc;
     uint32_t dwError = 0;
     int rpmVfyLevelMask = 0;
     uint32_t dwSkipSignature = 0;
     uint32_t dwSkipDigest = 0;
-    int rc;
+    rpmtxn txn_lock = NULL;
 
     if(!pTS || !pTdnf || !pTdnf->pArgs)
     {
@@ -417,8 +418,12 @@ TDNFRunTransaction(
          }
          rpmtsSetVfyLevel(pTS->pTS, ~rpmVfyLevelMask);
     }
+
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
+
+    txn_lock = rpmtxnBegin(pTS->pTS, RPMTXN_WRITE);
     rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
+    rpmtxnEnd(txn_lock);
     if (rc != 0)
     {
         dwError = ERROR_TDNF_TRANSACTION_FAILED;
@@ -429,7 +434,10 @@ TDNFRunTransaction(
     pr_info("Running transaction\n");
 
     rpmtsSetFlags(pTS->pTS, pTS->nTransFlags);
+
+    txn_lock = rpmtxnBegin(pTS->pTS, RPMTXN_WRITE);
     rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
+    rpmtxnEnd(txn_lock);
     if (rc != 0)
     {
         dwError = ERROR_TDNF_TRANSACTION_FAILED;
