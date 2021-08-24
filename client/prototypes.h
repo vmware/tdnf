@@ -424,6 +424,12 @@ TDNFCheckProtectedPkgs(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
+uint32_t
+TDNFCheckMinVersions(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
 //goal.c
 uint32_t
 TDNFGoal(

@@ -1426,6 +1426,9 @@ TDNFResolve(
     dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFCheckMinVersions(pTdnf, pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pSolvedPkgInfo->nNeedAction =
         pSolvedPkgInfo->pPkgsToInstall ||
         pSolvedPkgInfo->pPkgsToUpgrade ||

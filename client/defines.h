@@ -80,6 +80,7 @@ typedef enum
 #define TDNF_CONF_KEY_PLUGIN_CONF_PATH    "pluginconfpath"
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
+#define TDNF_CONF_KEY_MINVERSIONS         "minversions"
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"
@@ -202,6 +203,9 @@ typedef enum
     {ERROR_TDNF_RPM_CHECK,           "ERROR_TDNF_RPM_CHECK",           "rpm check reported errors"}, \
     {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
     {ERROR_TDNF_SELF_ERASE, "ERROR_TDNF_SELF_ERASE", "The operation would result in removing the protected package : tdnf"},\
+    {ERROR_TDNF_DOWNGRADE_NOT_ALLOWED,\
+	    "ERROR_TDNF_DOWNGRADE_NOT_ALLOWED",\
+	    "a downgrade is not allowed below the minimal version. Check 'minversions' in the configuration."},\
     {ERROR_TDNF_PERM, "ERROR_TDNF_PERM", "Operation not permitted. You have to be root."},\
     {ERROR_TDNF_OPT_NOT_FOUND, "ERROR_TDNF_OPT_NOT_FOUND", "A required option was not found"},\
     {ERROR_TDNF_OPERATION_ABORTED, "ERROR_TDNF_OPERATION_ABORTED", "Operation aborted."},\
