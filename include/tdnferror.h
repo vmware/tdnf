@@ -145,6 +145,7 @@ extern "C" {
 #define ERROR_TDNF_NO_PLUGIN_ERROR           1522
 #define ERROR_TDNF_NO_GPGKEY_CONF_ENTRY      1523
 #define ERROR_TDNF_URL_INVALID               1524
+#define ERROR_TDNF_RPMTS_LOCK_FAILED         1525
 
 //RPM Transaction
 #define ERROR_TDNF_TRANSACTION_FAILED        1525

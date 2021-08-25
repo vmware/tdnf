@@ -220,5 +220,6 @@ typedef enum
     {ERROR_TDNF_CURLE_UNSUPPORTED_PROTOCOL,          "ERROR_TDNF_CURLE_UNSUPPORTED_PROTOCOL",          "Curl doesn't Support this protocol"},\
     {ERROR_TDNF_CURLE_FAILED_INIT,                   "ERROR_TDNF_CURLE_FAILED_INIT",                   "Curl Init Failed"},\
     {ERROR_TDNF_CURLE_URL_MALFORMAT,                 "ERROR_TDNF_CURLE_URL_MALFORMAT",                 "URL seems to be corrupted. Please clean all and makecache"},\
+    {ERROR_TDNF_RPMTS_LOCK_FAILED,                   "ERROR_TDNF_RPMTS_LOCK_FAILED",                   "Failed to lock the RPM database"},\
     {ERROR_TDNF_SYSTEM_BASE,                         "ERROR_TDNF_SYSTEM_BASE",                         "unknown system error"},\
 };

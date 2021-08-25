@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -32,6 +32,7 @@ TDNFRpmExecTransaction(
     int nDownloadOnly = 0;
     TDNFRPMTS ts = {0};
     PTDNF_CMD_OPT pSetOpt = NULL;
+    rpmtxn txn_lock = NULL;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
     {
@@ -63,6 +64,15 @@ TDNFRpmExecTransaction(
     {
         dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (!nDownloadOnly) {
+        txn_lock = rpmtxnBegin(ts.pTS, RPMTXN_WRITE);
+        if (!txn_lock)
+        {
+            dwError = ERROR_TDNF_RPMTS_LOCK_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     /* parse transaction flags - so far only tsflags=noscripts is
@@ -106,6 +116,7 @@ cleanup:
     if(ts.pTS)
     {
         rpmtsCloseDB(ts.pTS);
+        rpmtxnEnd(txn_lock);
         rpmtsFree(ts.pTS);
     }
     if(ts.pCachedRpmsArray)
