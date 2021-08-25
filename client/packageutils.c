@@ -949,6 +949,7 @@ TDNFHasMinVersionInList(
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszTemp);
     TDNF_SAFE_FREE_STRINGARRAY(ppszTokens);
+    return dwError;
 error:
     goto cleanup;
 }
