@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -51,6 +51,8 @@ TDNFReadConfig(
     PTDNF_CONF pConf = NULL;
     PCONF_DATA pData = NULL;
     PCONF_SECTION pSection = NULL;
+    char *pszConfFileCopy = NULL;
+    char *pszMinVersionsDir = NULL;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszConfFile) ||
@@ -143,6 +145,16 @@ TDNFReadConfig(
                   pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /* We need a copy of pszConfFile because dirname() modifies its argument */
+    dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pszMinVersionsDir, "%s/minversions.d", dirname(pszConfFileCopy));
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadMinVersionsFiles(pszMinVersionsDir, &pConf->ppszMinVersions);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pTdnf->pConf = pConf;
 
 cleanup:
@@ -150,6 +162,8 @@ cleanup:
     {
         TDNFFreeConfigData(pData);
     }
+    TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
+    TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
     return dwError;
 
 error:
@@ -297,6 +311,9 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszBaseArch);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
         TDNFFreeMemory(pConf);
     }
 }
@@ -438,5 +455,153 @@ cleanup:
     return dwError;
 
 error:
+    goto cleanup;
+}
+
+/*
+ * Read all minimal versions files from pszDir, and store results into
+ * string array pointed to by pppszMinVersions. pppszMinVersions may already
+ * have values set from the config file, which are preserved.
+ */
+uint32_t
+TDNFReadMinVersionsFiles(
+    char *pszDir,
+    char ***pppszMinVersions
+    )
+{
+    uint32_t dwError = 0;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
+    char *pszFile = NULL;
+    char **ppszNewMinVersions = NULL;
+    char ***pppszArrayList = NULL;
+    int nFileCount = 0;
+    int i, j, k;
+    int nLineCount = 0;
+    int nTmp = 0;
+
+    if(IsNullOrEmptyString(pszDir) || !pppszMinVersions)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* first, open directory and count all files match *.conf,
+     * so we know how much memory we need */
+    pDir = opendir(pszDir);
+    if (pDir == NULL)
+    {
+        goto cleanup;
+    }
+
+    while((pEnt = readdir(pDir)) != NULL)
+    {
+        if (fnmatch("*.conf", pEnt->d_name, 0) != 0)
+        {
+            continue;
+        }
+        nFileCount++;
+    }
+    closedir(pDir);
+    pDir = NULL;
+
+    /* allocate memory for our string array */
+    dwError = TDNFAllocateMemory(nFileCount + 1, sizeof(char **), (void **)&pppszArrayList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* read directory again and the files, store content of each file
+     * temporarily in pppszArrayList[i] */
+    i = 0;
+    pDir = opendir(pszDir);
+    while((pEnt = readdir(pDir)) != NULL && i < nFileCount)
+    {
+        if (fnmatch("*.conf", pEnt->d_name, 0) != 0)
+        {
+            continue;
+        }
+        dwError = TDNFAllocateStringPrintf(&pszFile, "%s/%s", pszDir, pEnt->d_name);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadFileToStringArray(pszFile, &pppszArrayList[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pszFile);
+
+        i++;
+    }
+    closedir(pDir);
+    pDir = NULL;
+
+    /* append values that are already set */
+    pppszArrayList[i] = *pppszMinVersions;
+
+    /* each file can have multiple lines, count them */
+    for (i = 0; pppszArrayList[i]; i++)
+    {
+        dwError = TDNFStringArrayCount(pppszArrayList[i], &nTmp);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        nLineCount += nTmp;
+    }
+
+    /* move the lines from 2 dimensional pppszArrayList to
+     * flat pointer list ppszMinVersions */
+    dwError = TDNFAllocateMemory(nLineCount+1, sizeof(char *), (void **)&ppszNewMinVersions);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0, k = 0; pppszArrayList[i]; i++)
+    {
+        for (j = 0; pppszArrayList[i][j]; j++)
+        {
+            ppszNewMinVersions[k++] = pppszArrayList[i][j];
+        }
+        TDNF_SAFE_FREE_MEMORY(pppszArrayList[i]);
+    }
+
+    *pppszMinVersions = ppszNewMinVersions;
+
+cleanup:
+    if (pDir)
+    {
+        closedir(pDir);
+    }
+    TDNF_SAFE_FREE_MEMORY(pppszArrayList);
+    TDNF_SAFE_FREE_MEMORY(pszFile);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/* read all lines in file pszFile and store in string array
+ * pointed to by pppszArray, one entry for each line */
+uint32_t
+TDNFReadFileToStringArray(
+    const char *pszFile,
+    char ***pppszArray
+    )
+{
+    uint32_t dwError = 0;
+    int nLength = 0;
+    char *pszText = NULL;
+    char **ppszArray = NULL;
+
+    if (!pszFile || !pppszArray)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFFileReadAllText(pszFile, &pszText, &nLength);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSplitStringToArray(pszText, "\n", &ppszArray);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *pppszArray = ppszArray;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszText);
+    return dwError;
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszArray);
     goto cleanup;
 }

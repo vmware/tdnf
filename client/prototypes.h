@@ -580,6 +580,18 @@ TDNFConfigReplaceVars(
     char** pszString
     );
 
+uint32_t
+TDNFReadMinVersionsFiles(
+    char *pszDir,
+    char ***pppszMinVersions
+    );
+
+uint32_t
+TDNFReadFileToStringArray(
+    const char *pszFile,
+    char ***pppszArray
+    );
+
 //repo.c
 void
 TDNFFreeMetalinkUrlsList(
