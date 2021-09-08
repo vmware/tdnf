@@ -36,7 +36,7 @@ _TDNFInitPlugins(
  * without further processing.
  * Files with extension ".conf" are enumerated from the config
  * directory.
- * If a plugin is disabled by command line override,
+ * If a plugin is deactivated by command line override,
  * the config is skipped.
  * If a plugin's config file has the enabled flag set to 0,
  * the config is skipped.
@@ -430,7 +430,7 @@ _TDNFApplyPluginOverrides(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* apply command line overrides to enable/disable specific plugins */
+    /* apply command line overrides to enable/deactivate specific plugins */
     pSetOpt = pConf->pArgs->pSetOpt;
 
     while(pSetOpt)
@@ -496,7 +496,7 @@ _TDNFLoadPluginLib(
 
     /*
      * final validation for all the function pointers.
-     * if any fail to populate, plugin will be disabled.
+     * if any fail to populate, plugin will be deactivated.
     */
     if (!pPlugin->stInterface.pFnInitialize ||
         !pPlugin->stInterface.pFnEventsNeeded ||

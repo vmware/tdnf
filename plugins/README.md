@@ -5,7 +5,7 @@ plugins are a way to extend tdnf functionality.
 tdnf plugins follow the same config and command line conventions as yum.
 
 ## enable plugins
-tdnf will install with plugins disabled by default. This is because the master switch
+tdnf will install with plugins deactivated by default. This is because the primary switch
 to turn on plugins is in tdnf conf file (/etc/tdnf/tdnf.conf by default).
 To enable plugins, the config file should have
 
@@ -19,11 +19,11 @@ shared library in ```<libdir>/tdnf-plugins/<plugin>/lib<plugin>.so```.
 
 ## overriding plugin load
 tdnf allows command line overrides with ```--enableplugin=<plugin>``` to enable a plugin
-that is disabled in the corresponding plugin config file.
-Similarly, ```--disableplugin=<plugin>``` can be used to disable a plugin which is
+that is deactivated in the corresponding plugin config file.
+Similarly, ```--disableplugin=<plugin>``` can be used to deactivate a plugin which is
 otherwise enabled in it's corresponding config file.
 
-For eg: ```tdnf --disableplugin=* --enableplugin=myplugin``` will disable all plugins
-but ```myplugin``` that is subsequently enabled. The disable and enable overrides are
+For eg: ```tdnf --disableplugin=* --enableplugin=myplugin``` will deactivate all plugins
+but ```myplugin``` that is subsequently enabled. The deactivate and enable overrides are
 sequential, cumulative and support globs.
-Therefore, it does matter where you place the disable option.
+Therefore, it does matter where you place the deactivate option.

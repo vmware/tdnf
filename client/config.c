@@ -370,7 +370,7 @@ _TDNFConfigReadPluginSettings(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* if there is a command line override to disable plugins, exit early */
+    /* if there is a command line override to deactivate plugins, exit early */
     dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_NO_PLUGINS, &nPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -379,7 +379,7 @@ _TDNFConfigReadPluginSettings(
         goto cleanup;
     }
 
-    /* plugins option to enable or disable plugins. default 0 */
+    /* plugins option to enable or deactivate plugins. default 0 */
     dwError = TDNFReadKeyValueInt(
                   pSection,
                   TDNF_CONF_KEY_PLUGINS,

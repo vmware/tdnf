@@ -136,7 +136,7 @@ TDNFUpdateInfoSummary(
     PTDNF_UPDATEINFO_SUMMARY* ppSummary
     );
 
-//sanity check. displays current installed count.
+//confidence check. displays current installed count.
 //should be same as rpm -qa | wc -l
 uint32_t
 TDNFCountCommand(

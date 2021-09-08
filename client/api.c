@@ -469,7 +469,7 @@ error:
 }
 
 //Show count of installed
-//not a dnf command just sanity check
+//not a tdnf command just confidence check
 //equivalent to rpm -qa | wc -l
 uint32_t
 TDNFCountCommand(
