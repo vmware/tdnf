@@ -49,7 +49,7 @@ def test_plugin_conf(utils):
     assert(ret['retval'] == 0) #nosec
 
 #even when config file has plugins=1, --noplugins
-#in command line should disable all plugins
+#in command line should deactivate all plugins
 def test_plugin_conf_override_no_plugins(utils):
     set_plugin_flag_in_conf(utils, '1')
     ret = utils.run([ 'tdnf', 'repolist', '--noplugins' ])
@@ -67,7 +67,7 @@ def test_plugin_conf_disable_plugins_in_conf(utils):
     #command should pass
     assert(ret['retval'] == 0) #nosec
 
-#if all plugins are disabled using wildcard,
+#if all plugins are deactivated using wildcard,
 #no plugin load should be attempted even if config is set
 def test_plugin_command_line_disable_with_glob(utils):
     set_plugin_flag_in_conf(utils, '1')
@@ -97,7 +97,7 @@ def test_plugin_command_line_enable_single(utils):
     #command should pass
     assert(ret['retval'] == 0) #nosec
 
-#disable individual plugin via plugin config
+#deactivate individual plugin via plugin config
 #ensure it is not loaded
 def test_plugin_disable_via_plugin_config(utils):
     set_plugin_flag_in_conf(utils, '1')
@@ -108,7 +108,7 @@ def test_plugin_disable_via_plugin_config(utils):
     #command should pass
     assert(ret['retval'] == 0) #nosec
 
-#disable individual plugin via plugin config
+#deactivate individual plugin via plugin config
 #enable via command line
 def test_plugin_enable_disabled_plugin_via_cmdline_override(utils):
     set_plugin_flag_in_conf(utils, '1')
