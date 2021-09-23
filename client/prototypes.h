@@ -24,19 +24,12 @@
 #include <openssl/sha.h>
 #include <openssl/md5.h>
 #include <openssl/evp.h>
+#include <librepo/metalink.h>
 
-typedef struct _TDNF_METALINK_URLS_ {
-    char *url;
-    struct _TDNF_METALINK_URLS_ *next;
-} TDNF_METALINK_URLS;
-
-typedef struct _TDNF_METALINK_FILE_{
-    char *filename;
-    int   type;
-    /* raw digest value, not ascii hex digest */
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    TDNF_METALINK_URLS *urls;
-} TDNF_METALINK_FILE;
+typedef LrMetalink TDNF_METALINK_CTX;
+typedef LrMetalinkHash TDNF_METALINK_HASH;
+typedef LrMetalinkUrl TDNF_METALINK_URL;
+typedef GSList TDNF_METALINK_URL_LIST, TDNF_METALINK_HASH_LIST;
 
 //clean.c
 uint32_t
@@ -243,9 +236,21 @@ TDNFCurlErrorIsFatal(
 
 //remoterepo.c
 uint32_t
+TDNFCheckHexDigest(
+    const char *hex_digest,
+    int digest_length
+    );
+
+uint32_t
+TDNFChecksumFromHexDigest(
+    const char *hex_digest,
+    unsigned char *ppdigest
+    );
+
+uint32_t
 TDNFCheckRepoMDFileHashFromMetalink(
     char *pszFile,
-    TDNF_METALINK_FILE *ml_file
+    TDNF_METALINK_CTX *ml_ctx
     );
 
 uint32_t
@@ -253,7 +258,7 @@ TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
     const char *pszRepo,
     const char *pszFile,
-    TDNF_METALINK_FILE **ml_file
+    TDNF_METALINK_CTX *ml_ctx
     );
 
 uint32_t
@@ -575,11 +580,6 @@ TDNFConfigReplaceVars(
     );
 
 //repo.c
-void
-TDNFFreeMetalinkUrlsList(
-    TDNF_METALINK_URLS *metalink_urls
-    );
-
 uint32_t
 TDNFInitRepoFromMetadata(
     Repo *pRepo,
@@ -1032,6 +1032,11 @@ TDNFGetCmdOpt(
     PTDNF pTdnf,
     TDNF_CMDOPT_TYPE cmdType,
     PTDNF_CMD_OPT *ppOpt
+    );
+
+
+void TDNFSortListOnPreference(
+    GSList** headUrl
     );
 
 //validate.c

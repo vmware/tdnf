@@ -56,6 +56,19 @@
         }                                       \
     } while(0)
 
+#define TDNF_INIT_METALINK_CTX(ml_ctx)          \
+    {                                           \
+        ml_ctx = lr_metalink_init();            \
+    }
+
+#define TDNF_SAFE_FREE_METALINK_CTX_MEMORY(ml_ctx)   \
+    do {                                             \
+        if (ml_ctx) {                                \
+            lr_metalink_free(ml_ctx);                \
+            ml_ctx = NULL;                           \
+        }                                            \
+    } while(0)
+
 #define LOG_INFO    0
 #define LOG_ERR     1
 #define LOG_CRIT    2

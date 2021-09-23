@@ -66,8 +66,6 @@
 #include "../common/prototypes.h"
 #include "prototypes.h"
 
-#include <metalink/metalink_parser.h>
-
 // Enum in order of preference
 enum {
     TDNF_HASH_MD5 = 0,

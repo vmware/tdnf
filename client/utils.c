@@ -759,3 +759,88 @@ error:
     return dwError;
 }
 
+GSList* TDNFMergeList(GSList* listA, GSList* listB)
+{
+    uint32_t dwError = 0;
+    GSList* mergedList = NULL;
+
+    // Base cases
+    if (listA == NULL) 
+        return (listB);
+    else if (listB == NULL)
+        return (listA);
+
+    //Compare the URL Preference to sort the URL List in descending order. 
+    TDNF_METALINK_URL *urlA = listA->data;
+    TDNF_METALINK_URL *urlB = listB->data;
+
+    if((urlA == NULL) || (urlB == NULL))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (urlA->preference >= urlB->preference) 
+    {
+        mergedList = listA;
+        mergedList->next = TDNFMergeList(listA->next, listB);
+    }
+    else 
+    {
+        mergedList = listB;
+        mergedList->next = TDNFMergeList(listA, listB->next);
+    }
+
+cleanup:
+    return (mergedList);
+
+error:
+    goto cleanup;
+}
+
+void 
+TDNFFrontBackSplit(GSList* currHead,
+                   GSList** frontRef, GSList** backRef)
+{
+    if((currHead == NULL) || (currHead->next == NULL))
+    {
+        return;
+    }
+
+    GSList* slowPtr = currHead; 
+    GSList* fastPtr = currHead->next;
+
+    while (fastPtr != NULL) 
+    {
+        fastPtr = fastPtr->next;
+        if (fastPtr != NULL) 
+        {
+            slowPtr = slowPtr->next;
+            fastPtr = fastPtr->next;
+        }
+    }
+
+    *frontRef = currHead;
+    *backRef = slowPtr->next;
+    slowPtr->next = NULL;
+}
+
+void TDNFSortListOnPreference(GSList** headUrl)
+{
+    GSList* head = *headUrl;
+    GSList* listA = NULL; 
+    GSList* listB = NULL; 
+
+    if((head == NULL) || (head->next == NULL))
+    {
+        return;
+    }
+
+    TDNFFrontBackSplit(head, &listA, &listB); 
+
+    TDNFSortListOnPreference(&listA);
+    TDNFSortListOnPreference(&listB);
+
+    *headUrl = TDNFMergeList(listA, listB); 
+
+}
