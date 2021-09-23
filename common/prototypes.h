@@ -250,6 +250,10 @@ TDNFStringMatchesOneOf(
     char **ppszList,
     int *pRet);
 
+uint32_t
+TDNFJoinPath(
+    char **ppszPath, ...);
+
 //setopt.c
 uint32_t
 AddSetOpt(
