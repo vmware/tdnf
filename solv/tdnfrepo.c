@@ -564,12 +564,12 @@ SolvCreateMetaDataCache(
     }
 
     pRepo = pSolvRepoInfo->pRepo;
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszSolvCacheDir,
-                  "%s/%s/%s",
                   pSack->pszCacheDir,
                   pRepo->name,
-                  TDNF_SOLVCACHE_DIR_NAME);
+                  TDNF_SOLVCACHE_DIR_NAME,
+                  NULL);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if (access(pszSolvCacheDir, W_OK| X_OK) != 0)

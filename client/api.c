@@ -301,11 +301,11 @@ TDNFCheckLocalPackages(
         {
             continue;
         }
-        dwError = TDNFAllocateStringPrintf(
+        dwError = TDNFJoinPath(
                       &pszRPMPath,
-                      "%s/%s",
                       pszLocalPath,
-                      pEnt->d_name);
+                      pEnt->d_name,
+                      NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwPkgAdded = repo_add_rpm(
@@ -660,9 +660,10 @@ TDNFOpenHandle(
     {
         int nIsDir = 0;
 
-        dwError = TDNFAllocateStringPrintf(&pszCacheDir, "%s/%s",
-                                           pTdnf->pArgs->pszInstallRoot,
-                                           pTdnf->pConf->pszCacheDir);
+        dwError = TDNFJoinPath(&pszCacheDir,
+                               pTdnf->pArgs->pszInstallRoot,
+                               pTdnf->pConf->pszCacheDir,
+                               NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszCacheDir);
@@ -671,9 +672,10 @@ TDNFOpenHandle(
 
         if (!nHasOptReposdir)
         {
-            dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                                               pTdnf->pArgs->pszInstallRoot,
-                                               pTdnf->pConf->pszRepoDir);
+            dwError = TDNFJoinPath(&pszRepoDir,
+                                   pTdnf->pArgs->pszInstallRoot,
+                                   pTdnf->pConf->pszRepoDir,
+                                   NULL);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFIsDir(pszRepoDir, &nIsDir);
@@ -1171,9 +1173,10 @@ TDNFRepoSync(
         {
             if (!pReposyncArgs->nNoRepoPath)
             {
-                dwError = TDNFAllocateStringPrintf(&pszDir, "%s/%s",
-                            strcmp(pszRootPath, "/") ? pszRootPath : "",
-                            pPkgInfo->pszRepoName);
+                dwError = TDNFJoinPath(&pszDir,
+                                       strcmp(pszRootPath, "/") ? pszRootPath : "",
+                                       pPkgInfo->pszRepoName,
+                                       NULL);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             else
@@ -1257,9 +1260,10 @@ TDNFRepoSync(
             }
 
             /* no need to check nNoRepoPath since we wouldn't get here */
-            dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                        strcmp(pszRootPath, "/") ? pszRootPath : "",
-                        pRepo->pszId);
+            dwError = TDNFJoinPath(&pszRepoDir,
+                                   strcmp(pszRootPath, "/") ? pszRootPath : "",
+                                   pRepo->pszId,
+                                   NULL);
             BAIL_ON_TDNF_ERROR(dwError);
 
             ret = nftw(pszRepoDir, _rm_rpms, 10, FTW_DEPTH|FTW_PHYS);
@@ -1291,9 +1295,10 @@ TDNFRepoSync(
                 const char *pszBasePath = pReposyncArgs->pszMetaDataPath ?
                                 pReposyncArgs->pszMetaDataPath : pszRootPath;
 
-                dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
-                            strcmp(pszBasePath, "/") ? pszBasePath : "",
-                            pRepo->pszId);
+                dwError = TDNFJoinPath(&pszRepoDir,
+                                       strcmp(pszBasePath, "/") ? pszBasePath : "",
+                                       pRepo->pszId,
+                                       NULL);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             else

@@ -149,7 +149,7 @@ TDNFReadConfig(
     dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(&pszMinVersionsDir, "%s/minversions.d", dirname(pszConfFileCopy));
+    dwError = TDNFJoinPath(&pszMinVersionsDir, dirname(pszConfFileCopy), "minversions.d", NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadMinVersionsFiles(pszMinVersionsDir, &pConf->ppszMinVersions);
@@ -519,7 +519,8 @@ TDNFReadMinVersionsFiles(
         {
             continue;
         }
-        dwError = TDNFAllocateStringPrintf(&pszFile, "%s/%s", pszDir, pEnt->d_name);
+        dwError = TDNFAllocateStringPrintf(&pszFile, pszDir, pEnt->d_name);
+        dwError = TDNFJoinPath(&pszFile, pszDir, pEnt->d_name, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadFileToStringArray(pszFile, &pppszArrayList[i]);

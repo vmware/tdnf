@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -202,12 +202,12 @@ TDNFRepoGetRpmCacheDir(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszRpmCacheDir,
-                  "%s/%s/%s",
                   pTdnf->pConf->pszCacheDir,
                   pszRepoId,
-                  TDNF_RPM_CACHE_DIR_NAME);
+                  TDNF_RPM_CACHE_DIR_NAME,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(access(pszRpmCacheDir, F_OK))
@@ -247,12 +247,12 @@ TDNFRepoRemoveCache(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszRepoCacheDir,
-                  "%s/%s/%s",
                   pTdnf->pConf->pszCacheDir,
                   pszRepoId,
-                  TDNF_REPODATA_DIR_NAME);
+                  TDNF_REPODATA_DIR_NAME,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRecursivelyRemoveDir(pszRepoCacheDir);
@@ -345,12 +345,12 @@ TDNFRemoveLastRefreshMarker(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszLastRefreshMarker,
-                  "%s/%s/%s",
                   pTdnf->pConf->pszCacheDir,
                   pszRepoId,
-                  TDNF_REPO_METADATA_MARKER);
+                  TDNF_REPO_METADATA_MARKER,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
     if (pszLastRefreshMarker)
     {
@@ -382,12 +382,12 @@ TDNFRemoveSolvCache(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszSolvCacheDir,
-                  "%s/%s/%s",
                   pTdnf->pConf->pszCacheDir,
                   pszRepoId,
-                  TDNF_SOLVCACHE_DIR_NAME);
+                  TDNF_SOLVCACHE_DIR_NAME,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRecursivelyRemoveDir(pszSolvCacheDir);
@@ -419,11 +419,12 @@ TDNFRemoveKeysCache(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszKeysDir,
-                  "%s/%s/keys",
                   pTdnf->pConf->pszCacheDir,
-                  pszRepoId);
+                  pszRepoId,
+                  "keys",
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRecursivelyRemoveDir(pszKeysDir);

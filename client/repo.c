@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -48,18 +48,18 @@ TDNFInitRepo(
     pConf = pTdnf->pConf;
     pPool = pSack->pPool;
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszRepoCacheDir,
-                  "%s/%s",
                   pConf->pszCacheDir,
-                  pRepoData->pszId);
+                  pRepoData->pszId,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszRepoDataDir,
-                  "%s/%s",
                   pszRepoCacheDir,
-                  TDNF_REPODATA_DIR_NAME);
+                  TDNF_REPODATA_DIR_NAME,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetRepoMD(pTdnf,
@@ -100,11 +100,11 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pool_createwhatprovides(pPool);
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszLastRefreshMarker,
-                  "%s/%s",
                   pszRepoCacheDir,
-                  TDNF_REPO_METADATA_MARKER);
+                  TDNF_REPO_METADATA_MARKER,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFTouchFile(pszLastRefreshMarker);
@@ -550,11 +550,12 @@ TDNFStoreBaseURLFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(&pszBaseUrlFile,
-                                       "%s/%s/tmp/%s",
-                                       pTdnf->pConf->pszCacheDir,
-                                       pRepos->pszId,
-                                       TDNF_REPO_BASEURL_FILE_NAME);
+    dwError = TDNFJoinPath(&pszBaseUrlFile,
+                           pTdnf->pConf->pszCacheDir,
+                           pRepos->pszId,
+                           "tmp",
+                           TDNF_REPO_BASEURL_FILE_NAME,
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFCreateAndWriteToFile(pszBaseUrlFile, pszRepoMDURL);
@@ -619,10 +620,10 @@ TDNFDownloadUsingMetalinkResources(
         dwError = TDNFStoreBaseURLFromMetalink(pTdnf, pszRepo, buf);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
-                                           "%s/%s",
-                                           buf,
-                                           TDNF_REPO_METADATA_FILE_PATH);
+        dwError = TDNFJoinPath(&pszRepoMDUrl,
+                               buf,
+                               TDNF_REPO_METADATA_FILE_PATH,
+                               NULL);
         BAIL_ON_TDNF_ERROR(dwError);
         *ppszRepoMDUrl = pszRepoMDUrl;
         break;
@@ -710,16 +711,16 @@ TDNFGetRepoMD(
 
     nKeepCache = pTdnf->pConf->nKeepCache;
 
-    dwError = TDNFAllocateStringPrintf(&pszRepoMDFile,
-                                       "%s/%s",
-                                       pszRepoDataDir,
-                                       TDNF_REPO_METADATA_FILE_NAME);
+    dwError = TDNFJoinPath(&pszRepoMDFile,
+                           pszRepoDataDir,
+                           TDNF_REPO_METADATA_FILE_NAME,
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(&pszMetaLinkFile,
-                                       "%s/%s",
-                                       pszRepoDataDir,
-                                       TDNF_REPO_METALINK_FILE_NAME);
+    dwError = TDNFJoinPath(&pszMetaLinkFile,
+                           pszRepoDataDir,
+                           TDNF_REPO_METALINK_FILE_NAME,
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
@@ -728,11 +729,11 @@ TDNFGetRepoMD(
                   (void **)&pRepoMDRel);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pRepoMDRel->pszRepoCacheDir,
-                  "%s/%s",
                   pTdnf->pConf->pszCacheDir,
-                  pRepoData->pszId);
+                  pRepoData->pszId,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateString(pszRepoMDFile, &pRepoMDRel->pszRepoMD);
@@ -741,10 +742,10 @@ TDNFGetRepoMD(
     dwError = TDNFAllocateString(pRepoData->pszId, &pRepoMDRel->pszRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(&pszBaseUrlFile,
-                                       "%s/%s",
-                                       pszRepoDataDir,
-                                       TDNF_REPO_BASEURL_FILE_NAME);
+    dwError = TDNFJoinPath(&pszBaseUrlFile,
+                           pszRepoDataDir,
+                           TDNF_REPO_BASEURL_FILE_NAME,
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
     if (metalink)
     {
@@ -805,11 +806,12 @@ TDNFGetRepoMD(
     {
         pr_info("Refreshing metadata for: '%s'\n", pRepoData->pszName);
         /* always download to tmp */
-        dwError = TDNFAllocateStringPrintf(
+        dwError = TDNFJoinPath(
                       &pszTmpRepoDataDir,
-                      "%s/%s/tmp",
                       pTdnf->pConf->pszCacheDir,
-                      pRepoData->pszId);
+                      pRepoData->pszId,
+                      "tmp",
+                      NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFUtilsMakeDirs(pszTmpRepoDataDir);
@@ -819,23 +821,23 @@ TDNFGetRepoMD(
         }
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateStringPrintf(
+        dwError = TDNFJoinPath(
                       &pszTmpRepoMDFile,
-                      "%s/%s",
                       pszTmpRepoDataDir,
-                      TDNF_REPO_METADATA_FILE_NAME);
+                      TDNF_REPO_METADATA_FILE_NAME,
+                      NULL);
         BAIL_ON_TDNF_ERROR(dwError);
         if (metalink)
         {
-            dwError = TDNFAllocateStringPrintf(&pszTmpRepoMetalinkFile,
-                                               "%s/%s",
-                                               pszTmpRepoDataDir,
-                                               TDNF_REPO_METALINK_FILE_NAME);
+            dwError = TDNFJoinPath(&pszTmpRepoMetalinkFile,
+                                   pszTmpRepoDataDir,
+                                   TDNF_REPO_METALINK_FILE_NAME,
+                                   NULL);
             BAIL_ON_TDNF_ERROR(dwError);
-            dwError = TDNFAllocateStringPrintf(&pszTempBaseUrlFile,
-                                               "%s/%s",
-                                               pszTmpRepoDataDir,
-                                               TDNF_REPO_BASEURL_FILE_NAME);
+            dwError = TDNFJoinPath(&pszTempBaseUrlFile,
+                                   pszTmpRepoDataDir,
+                                   TDNF_REPO_BASEURL_FILE_NAME,
+                                   NULL);
             BAIL_ON_TDNF_ERROR(dwError);
             dwError = TDNFDownloadFile(pTdnf, pRepoData->pszId, pszRepoMetalink,
                                        pszTmpRepoMetalinkFile, pRepoData->pszId);
@@ -896,10 +898,10 @@ TDNFGetRepoMD(
         else
         {
             // as BaseURL might have been reset
-            dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
-                                              "%s/%s",
-                                              pRepoData->pszBaseUrl,
-                                              TDNF_REPO_METADATA_FILE_PATH);
+            dwError = TDNFJoinPath(&pszRepoMDUrl,
+                                   pRepoData->pszBaseUrl,
+                                   TDNF_REPO_METADATA_FILE_PATH,
+                                   NULL);
             BAIL_ON_TDNF_ERROR(dwError);
             dwError = TDNFDownloadFile(
                               pTdnf,
@@ -1378,10 +1380,10 @@ TDNFDownloadMetadata(
     Pool *pPool = NULL;
     FILE *fp = NULL;
 
-    dwError = TDNFAllocateStringPrintf(&pszRepoMDUrl,
-                                       "%s/%s",
-                                       pRepo->pszBaseUrl,
-                                       TDNF_REPO_METADATA_FILE_PATH);
+    dwError = TDNFJoinPath(&pszRepoMDUrl,
+                           pRepo->pszBaseUrl,
+                           TDNF_REPO_METADATA_FILE_PATH,
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (!nPrintOnly)
@@ -1389,15 +1391,18 @@ TDNFDownloadMetadata(
         dwError = TDNFUtilsMakeDir(pszRepoDir);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateStringPrintf(&pszRepoDataDir, "%s/repodata",
-                    pszRepoDir);
+        dwError = TDNFJoinPath(&pszRepoDataDir,
+                    pszRepoDir,
+                    "repodata",
+                    NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFUtilsMakeDir(pszRepoDataDir);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateStringPrintf(&pszRepoMDPath, "%s/%s",
-                    pszRepoDataDir, TDNF_REPO_METADATA_FILE_NAME);
+        dwError = TDNFJoinPath(&pszRepoMDPath,
+                    pszRepoDataDir, TDNF_REPO_METADATA_FILE_NAME,
+                    NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszRepoMDUrl, pszRepoMDPath, pRepo->pszId);
@@ -1406,12 +1411,12 @@ TDNFDownloadMetadata(
     else
     {
         /* if printing only we use the already downloaded repomd.xml */
-        dwError = TDNFAllocateStringPrintf(
+        dwError = TDNFJoinPath(
                   &pszRepoMDPath,
-                  "%s/%s/%s",
                   pTdnf->pConf->pszCacheDir,
                   pRepo->pszId,
-                  TDNF_REPO_METADATA_FILE_PATH);
+                  TDNF_REPO_METADATA_FILE_PATH,
+                  NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         pr_info("%s\n", pszRepoMDUrl);
@@ -1505,16 +1510,16 @@ TDNFDownloadRepoMDParts(
                           SOLVID_POS,
                           REPOSITORY_REPOMD_LOCATION);
 
-        dwError = TDNFAllocateStringPrintf(&pszPartUrl,
-                                           "%s/%s",
-                                           pRepo->pszBaseUrl,
-                                           pszPartFile);
+        dwError = TDNFJoinPath(&pszPartUrl,
+                               pRepo->pszBaseUrl,
+                               pszPartFile,
+                               NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateStringPrintf(&pszPartPath,
-                                           "%s/%s",
-                                           pszDir,
-                                           pszPartFile);
+        dwError = TDNFJoinPath(&pszPartPath,
+                               pszDir,
+                               pszPartFile,
+                               NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         if (!nPrintOnly)
