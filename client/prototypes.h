@@ -424,6 +424,12 @@ TDNFCheckProtectedPkgs(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
+uint32_t
+TDNFCheckMinVersions(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
 //goal.c
 uint32_t
 TDNFGoal(
@@ -572,6 +578,18 @@ uint32_t
 TDNFConfigReplaceVars(
     PTDNF pTdnf,
     char** pszString
+    );
+
+uint32_t
+TDNFReadMinVersionsFiles(
+    char *pszDir,
+    char ***pppszMinVersions
+    );
+
+uint32_t
+TDNFReadFileToStringArray(
+    const char *pszFile,
+    char ***pppszArray
     );
 
 //repo.c

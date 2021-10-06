@@ -64,6 +64,7 @@ extern "C" {
 #define ERROR_TDNF_SELF_ERASE               1030
 #define ERROR_TDNF_ERASE_NEEDS_INSTALL      1031
 #define ERROR_TDNF_OPERATION_ABORTED        1032
+#define ERROR_TDNF_DOWNGRADE_NOT_ALLOWED    1033
 
 // for invalid input on interactive questions
 #define ERROR_TDNF_INVALID_INPUT            1033

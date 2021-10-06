@@ -495,7 +495,32 @@ TDNFStringEndsWith(
 
 cleanup:
     return dwError;
-
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFStringArrayCount(
+    char **ppszStringArray,
+    int *pnCount
+)
+{
+    uint32_t dwError = 0;
+    int nCount;
+
+    if (!ppszStringArray || !pnCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for(nCount = 0; ppszStringArray[nCount]; nCount++);
+
+    *pnCount = nCount;
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+

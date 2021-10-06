@@ -264,6 +264,7 @@ typedef struct _TDNF_CONF
     char* pszVarReleaseVer;
     char* pszVarBaseArch;
     char** ppszExcludes;
+    char** ppszMinVersions;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_DATA
