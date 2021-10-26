@@ -357,6 +357,12 @@ TDNFGoal(
     {
         nFlags = nFlags | SOLVER_FORCEBEST;
     }
+
+    if (pTdnf->pConf->nCleanRequirementsOnRemove)
+    {
+        nFlags = nFlags | SOLVER_CLEANDEPS;
+    }
+
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
