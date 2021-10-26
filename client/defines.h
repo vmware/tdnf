@@ -127,6 +127,9 @@ typedef enum
 #define TDNF_REPO_METALINK_FILE_NAME      "metalink"
 #define TDNF_REPO_BASEURL_FILE_NAME       "baseurl"
 
+#define TDNF_AUTOINSTALLED_FILE           "autoinstalled"
+#define TDNF_DEFAULT_DATA_LOCATION        "/var/lib/tdnf"
+
 // repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"

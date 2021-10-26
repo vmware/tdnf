@@ -102,6 +102,9 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFMarkAutoInstalled(pTdnf, pSolvedInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
 cleanup:
     if(ts.pTS)
     {

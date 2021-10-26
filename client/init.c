@@ -57,6 +57,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nIPv6          = pCmdArgsIn->nIPv6;
     pCmdArgs->nDisableExcludes = pCmdArgsIn->nDisableExcludes;
     pCmdArgs->nDownloadOnly  = pCmdArgsIn->nDownloadOnly;
+    pCmdArgs->nNoAutoRemove  = pCmdArgsIn->nNoAutoRemove;
 
     dwError = TDNFAllocateString(
                   pCmdArgsIn->pszInstallRoot,

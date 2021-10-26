@@ -1580,12 +1580,6 @@ TDNFResolve(
         queue_init(&queueGoal);
     }
 
-    if(nAlterType == ALTER_AUTOERASE)
-    {
-        dwError = ERROR_TDNF_AUTOERASE_UNSUPPORTED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
     dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 

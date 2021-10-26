@@ -759,3 +759,41 @@ error:
     return dwError;
 }
 
+uint32_t
+TDNFReadAutoInstalled(
+    PTDNF pTdnf,
+    char ***pppszAutoInstalled
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszAutoInstalled = NULL;
+    char *pszAutoFile = NULL;
+
+    if (!pTdnf || !pppszAutoInstalled)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateStringPrintf(&pszAutoFile, "%s/%s/%s",
+            pTdnf->pArgs->pszInstallRoot,
+            TDNF_DEFAULT_DATA_LOCATION,
+            TDNF_AUTOINSTALLED_FILE);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadFileToStringArray(pszAutoFile, &ppszAutoInstalled);
+    if (dwError == ERROR_TDNF_SYSTEM_BASE + ENOENT)
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *pppszAutoInstalled = ppszAutoInstalled;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
+    return dwError;
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
+    goto cleanup;
+}
+

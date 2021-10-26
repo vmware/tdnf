@@ -445,6 +445,13 @@ SolvAddPkgUserInstalledJob(
     );
 
 uint32_t
+SolvAddUserInstalledToJobs(
+    Queue* pQueueJobs,
+    Pool *pPool,
+    char **ppszAutoInstalled
+    );
+
+uint32_t
 SolvGetUpdateAdvisories(
     PSolvSack pSack,
     Id dwPkgIdpkg,
