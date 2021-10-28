@@ -8,9 +8,9 @@
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-find_package(Metalink REQUIRED)
-
 find_package(OpenSSL REQUIRED)
+
+find_package(LIBXML2 REQUIRED)
 
 #make config.h with
 #PACKAGE_NAME and PACKAGE_VERSION defined
@@ -45,6 +45,8 @@ add_library(${LIB_TDNF} SHARED
     updateinfo.c
     utils.c
     validate.c
+    metalink.c
+    list.c
 )
 
 target_link_libraries(${LIB_TDNF}
@@ -55,6 +57,7 @@ target_link_libraries(${LIB_TDNF}
     ${CURL_LIBRARIES}
     ${METALINK_LIBRARIES}
     ${OPENSSL_LIBRARIES}
+    ${LIBXML2_LIBRARIES}
 )
 
 set_target_properties(${LIB_TDNF} PROPERTIES

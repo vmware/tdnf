@@ -54,6 +54,7 @@
 
 //libcurl
 #include <curl/curl.h>
+#include <libxml/parser.h>
 
 #include <tdnf.h>
 #include <tdnfplugin.h>
@@ -65,8 +66,6 @@
 #include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "prototypes.h"
-
-#include <metalink/metalink_parser.h>
 
 // Enum in order of preference
 enum {
