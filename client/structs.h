@@ -55,7 +55,7 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     int nRetries;
 
     struct _TDNF_REPO_DATA_INTERNAL_* pNext;
-}TDNF_REPO_DATA_INTERNAL, *PTDNF_REPO_DATA_INTERNAL;
+} TDNF_REPO_DATA_INTERNAL, *PTDNF_REPO_DATA_INTERNAL;
 
 typedef struct _TDNF_
 {
@@ -66,19 +66,19 @@ typedef struct _TDNF_
     Repo *pSolvCmdLineRepo;
     Queue queueCmdLinePkgs;
     PTDNF_PLUGIN pPlugins;
-}TDNF;
+} TDNF;
 
 typedef struct _TDNF_CACHED_RPM_ENTRY
 {
     char* pszFilePath;
     struct _TDNF_CACHED_RPM_ENTRY *pNext;
-}TDNF_CACHED_RPM_ENTRY, *PTDNF_CACHED_RPM_ENTRY;
+} TDNF_CACHED_RPM_ENTRY, *PTDNF_CACHED_RPM_ENTRY;
 
 typedef struct _TDNF_CACHED_RPM_LIST
 {
     int nSize;
     PTDNF_CACHED_RPM_ENTRY pHead;
-}TDNF_CACHED_RPM_LIST, *PTDNF_CACHED_RPM_LIST;
+} TDNF_CACHED_RPM_LIST, *PTDNF_CACHED_RPM_LIST;
 
 typedef struct _TDNF_RPM_TS_
 {
@@ -88,13 +88,13 @@ typedef struct _TDNF_RPM_TS_
     rpmprobFilterFlags      nProbFilterFlags;
     FD_t                    pFD;
     PTDNF_CACHED_RPM_LIST   pCachedRpmsArray;
-}TDNFRPMTS, *PTDNFRPMTS;
+} TDNFRPMTS, *PTDNFRPMTS;
 
 typedef struct _TDNF_ENV_
 {
     pthread_mutex_t mutexInitialize;
     int nInitialized;
-}TDNF_ENV, *PTDNF_ENV;
+} TDNF_ENV, *PTDNF_ENV;
 
 typedef struct _TDNF_REPO_METADATA
 {
@@ -105,7 +105,7 @@ typedef struct _TDNF_REPO_METADATA
     char *pszFileLists;
     char *pszUpdateInfo;
     char *pszOther;
-}TDNF_REPO_METADATA,*PTDNF_REPO_METADATA;
+} TDNF_REPO_METADATA,*PTDNF_REPO_METADATA;
 
 typedef struct _TDNF_EVENT_DATA_
 {
@@ -118,5 +118,38 @@ typedef struct _TDNF_EVENT_DATA_
     TDNF_EVENT_ITEM_TYPE nType;
     const char *pcszName;
     struct _TDNF_EVENT_DATA_ *pNext;
-}TDNF_EVENT_DATA, *PTDNF_EVENT_DATA;
+} TDNF_EVENT_DATA, *PTDNF_EVENT_DATA;
 
+//Metalink Structures.
+typedef struct _TDNF_ML_LIST_
+{
+    struct _TDNF_ML_LIST_ *next;
+    void* data;
+} TDNF_ML_LIST, TDNF_ML_URL_LIST, TDNF_ML_HASH_LIST;
+
+//Metalink hash info per hash type.
+typedef struct _TDNF_ML_HASH_INFO_
+{
+    char *type; 
+    char *value;   
+} TDNF_ML_HASH_INFO;
+
+//Metalink url info per hash type.
+typedef struct _TDNF_ML_URL_INFO_
+{
+    char *protocol;
+    char *type;    
+    char *location;
+    char *url;     
+    int  preference;
+} TDNF_ML_URL_INFO;
+
+//Metalink global parsed info.
+typedef struct _TDNF_ML_CTX_
+{
+    char           *filename;   
+    signed long    timestamp; 
+    signed long    size; 
+    TDNF_ML_LIST   *hashes;
+    TDNF_ML_LIST   *urls;
+} TDNF_ML_CTX;
