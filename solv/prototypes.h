@@ -11,6 +11,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define TDNF_ID_DEPENDS "tdnf:depends"
+#define TDNF_ID_REQUIRES_PRE "tdnf:requires-pre"
+
 typedef struct _SolvSack
 {
     Pool*       pPool;
@@ -43,6 +47,8 @@ typedef struct _SOLV_REPO_INFO_INTERNAL_
     unsigned char cookie[SOLV_COOKIE_LEN];
     int           nCookieSet;
 }SOLV_REPO_INFO_INTERNAL, *PSOLV_REPO_INFO_INTERNAL;
+
+extern Id allDepKeyIds[];
 
 // tdnfpackage.c
 uint32_t
@@ -266,6 +272,35 @@ SolvGetNevraFromId(
     char **ppszEVR
     );
 
+uint32_t
+SolvGetDependenciesFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    REPOQUERY_DEP_KEY depKey,
+    char ***pppszDependencies);
+
+uint32_t
+SolvGetFileListFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char ***pppszFiles);
+
+uint32_t
+SolvGetSourceFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char **ppszName,
+    char **ppszArch,
+    char **ppszEVR
+    );
+
+uint32_t
+SolvGetChangeLogFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    PTDNF_PKG_CHANGELOG_ENTRY *ppEntries
+    );
+
 // tdnfpool.c
 uint32_t
 SolvCreateSack(
@@ -429,6 +464,25 @@ SolvGetUpdateAdvisories(
     Id dwPkgIdpkg,
     PSolvPackageList* ppPkgList);
 
+uint32_t
+SolvApplyDepsFilter(
+    PSolvQuery pQuery,
+    char **ppszDeps,
+    REPOQUERY_WHAT_KEY whatKey);
+
+uint32_t
+SolvApplyExtrasFilter(
+    PSolvQuery pQuery);
+
+uint32_t
+SolvApplyDuplicatesFilter(
+    PSolvQuery pQuery);
+
+uint32_t
+SolvApplyFileProvidesFilter(
+    PSolvQuery pQuery,
+    char *pszFile);
+
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(
@@ -437,7 +491,8 @@ SolvReadYumRepo(
     const char *pszRepomd,
     const char *pszPrimary,
     const char *pszFilelists,
-    const char *pszUpdateinfo
+    const char *pszUpdateinfo,
+    const char *pszOther
     );
 
 uint32_t

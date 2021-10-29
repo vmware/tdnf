@@ -24,8 +24,11 @@
 
 typedef enum
 {
+    /* this should be a bitmask */
     DETAIL_LIST,
-    DETAIL_INFO
+    DETAIL_INFO,
+    DETAIL_CHANGELOG,
+    DETAIL_SOURCEPKG
 }TDNF_PKG_DETAIL;
 
 #define BAIL_ON_TDNF_RPM_ERROR(dwError) \
@@ -56,6 +59,7 @@ typedef enum
 #define TDNF_REPOMD_TYPE_PRIMARY          "primary"
 #define TDNF_REPOMD_TYPE_FILELISTS        "filelists"
 #define TDNF_REPOMD_TYPE_UPDATEINFO       "updateinfo"
+#define TDNF_REPOMD_TYPE_OTHER            "other"
 
 //Repo defines
 #define TDNF_REPO_EXT                     ".repo"

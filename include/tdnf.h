@@ -113,11 +113,20 @@ TDNFProvides(
     PTDNF_PKG_INFO* ppPkgInfo
     );
 
-//query repo
+//sync repo
 uint32_t
 TDNFRepoSync(
     PTDNF pTdnf,
     PTDNF_REPOSYNC_ARGS pReposyncArgs
+    );
+
+//query repo
+uint32_t
+TDNFRepoQuery(
+    PTDNF pTdnf,
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs,
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t *pdwCount
     );
 
 //Show update info for specified scope
@@ -222,6 +231,11 @@ TDNFFreePackageInfoArray(
     PTDNF_PKG_INFO pPkgInfo,
     uint32_t dwLength
     );
+
+void
+TDNFFreeChangeLogEntry(
+    PTDNF_PKG_CHANGELOG_ENTRY pEntry
+);
 
 void
 TDNFFreeRepos(

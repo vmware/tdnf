@@ -160,7 +160,8 @@ TDNFInitRepoFromMetadata(
                   pRepoMD->pszRepoMD,
                   pRepoMD->pszPrimary,
                   pRepoMD->pszFileLists,
-                  pRepoMD->pszUpdateInfo);
+                  pRepoMD->pszUpdateInfo,
+                  pRepoMD->pszOther);
 cleanup:
     return dwError;
 
@@ -942,7 +943,8 @@ TDNFGetRepoMD(
 
     if (nReplaceRepoMD)
     {
-        /* Remove the old repodata, solvcache and lastRefreshMarker before replacing the new repomd file and metalink files. */
+        /* Remove the old repodata, solvcache and lastRefreshMarker before
+           replacing the new repomd file and metalink files. */
         TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
         TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
         TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
@@ -1137,6 +1139,23 @@ TDNFEnsureRepoMDParts(
                       pRepoMD->pszUpdateInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    if(!IsNullOrEmptyString(pRepoMDRel->pszOther))
+    {
+        dwError = TDNFAppendPath(
+                      pRepoMDRel->pszRepoCacheDir,
+                      pRepoMDRel->pszOther,
+                      &pRepoMD->pszOther);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFDownloadRepoMDPart(
+                      pTdnf,
+                      pszBaseUrl,
+                      pRepoMDRel->pszRepo,
+                      pRepoMDRel->pszOther,
+                      pRepoMD->pszOther);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     *ppRepoMD = pRepoMD;
 
 cleanup:
@@ -1272,6 +1291,16 @@ TDNFParseRepoMD(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFFindRepoMDPart(
+                  pRepo,
+                  TDNF_REPOMD_TYPE_OTHER,
+                  &pRepoMD->pszOther);
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
 cleanup:
     if (fp)
     {
@@ -1306,6 +1335,7 @@ TDNFFreeRepoMetadata(
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszPrimary);
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszFileLists);
     TDNF_SAFE_FREE_MEMORY(pRepoMD->pszUpdateInfo);
+    TDNF_SAFE_FREE_MEMORY(pRepoMD->pszOther);
     TDNF_SAFE_FREE_MEMORY(pRepoMD);
 }
 

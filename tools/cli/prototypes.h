@@ -98,6 +98,14 @@ TDNFCliInvokeRepoSync(
     );
 
 uint32_t
+TDNFCliInvokeRepoQuery(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs,
+    PTDNF_PKG_INFO *ppPkgInfos,
+    uint32_t *pdwCount
+    );
+
+uint32_t
 TDNFCliInvokeResolve(
     PTDNF_CLI_CONTEXT pContext,
     TDNF_ALTERTYPE nAlterType,
@@ -312,6 +320,13 @@ uint32_t
 TDNFCliParseRepoSyncArgs(
     PTDNF_CMD_ARGS pCmdArgs,
     PTDNF_REPOSYNC_ARGS* ppReposyncArgs
+    );
+
+//parserepoqueryargs.c
+uint32_t
+TDNFCliParseRepoQueryArgs(
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_REPOQUERY_ARGS* ppRepoqueryArgs
     );
 
 //parseupdateinfo.c

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
         {"remove",             TDNFCliEraseCommand},
         {"repolist",           TDNFCliRepoListCommand},
         {"reposync",           TDNFCliRepoSyncCommand},
+        {"repoquery",          TDNFCliRepoQueryCommand},
         {"search",             TDNFCliSearchCommand},
         {"update",             TDNFCliUpgradeCommand},
         {"update-to",          TDNFCliUpgradeCommand},
@@ -104,6 +105,7 @@ int main(int argc, char* argv[])
     _context.pFnProvides = TDNFCliInvokeProvides;
     _context.pFnRepoList = TDNFCliInvokeRepoList;
     _context.pFnRepoSync = TDNFCliInvokeRepoSync;
+    _context.pFnRepoQuery = TDNFCliInvokeRepoQuery;
 
     /*
      * Alter and resolve will address commands like
@@ -453,6 +455,17 @@ TDNFCliInvokeRepoSync(
     )
 {
     return TDNFRepoSync(pContext->hTdnf, pRepoSyncArgs);
+}
+
+uint32_t
+TDNFCliInvokeRepoQuery(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_REPOQUERY_ARGS pRepoQueryArgs,
+    PTDNF_PKG_INFO *ppPkgInfos,
+    uint32_t *pdwCount
+    )
+{
+    return TDNFRepoQuery(pContext->hTdnf, pRepoQueryArgs, ppPkgInfos, pdwCount);
 }
 
 uint32_t

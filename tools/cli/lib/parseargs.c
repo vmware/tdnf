@@ -37,7 +37,36 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;"
                       "noplugins;reboot-required;security;"
                       "delete;download-metadata;gpgcheck;newest-only;norepopath;source;urls",
-                      "1"}
+                      "1"},
+    {CMDOPT_KEYVALUE, "available", "1"},
+    {CMDOPT_KEYVALUE, "installed", "1"},
+    {CMDOPT_KEYVALUE, "extras", "1"},
+    {CMDOPT_KEYVALUE, "changelogs", "1"},
+    {CMDOPT_KEYVALUE, "duplicates", "1"},
+    /* "depends" must be before "whatdepends",
+       same for the others with partial string matches */
+    {CMDOPT_KEYVALUE, "depends", "1"},
+    {CMDOPT_KEYVALUE, "provides", "1"},
+    {CMDOPT_KEYVALUE, "obsoletes", "1"},
+    {CMDOPT_KEYVALUE, "conflicts", "1"},
+    {CMDOPT_KEYVALUE, "requires", "1"},
+    {CMDOPT_KEYVALUE, "recommends", "1"},
+    {CMDOPT_KEYVALUE, "suggests", "1"},
+    {CMDOPT_KEYVALUE, "supplements", "1"},
+    {CMDOPT_KEYVALUE, "enhances", "1"},
+    {CMDOPT_KEYVALUE, "requires-pre", "1"},
+    {CMDOPT_KEYVALUE, "list", "1"},
+    {CMDOPT_KEYVALUE, "upgrades", "1"},
+    {CMDOPT_KEYVALUE, "file", NULL},
+    {CMDOPT_KEYVALUE, "whatdepends", NULL},
+    {CMDOPT_KEYVALUE, "whatprovides", NULL},
+    {CMDOPT_KEYVALUE, "whatobsoletes", NULL},
+    {CMDOPT_KEYVALUE, "whatconflicts", NULL},
+    {CMDOPT_KEYVALUE, "whatrequires", NULL},
+    {CMDOPT_KEYVALUE, "whatrecommends", NULL},
+    {CMDOPT_KEYVALUE, "whatsuggests", NULL},
+    {CMDOPT_KEYVALUE, "whatsupplements", NULL},
+    {CMDOPT_KEYVALUE, "whatenhances", NULL},
 };
 
 static TDNF_CMD_ARGS _opt = {0};
@@ -94,6 +123,36 @@ static struct option pstOptions[] =
     {"download-path", required_argument, 0, 0},
     {"source",        no_argument, 0, 0},
     {"urls",          no_argument, 0, 0},
+    // repoquery option
+    // repoquery select options
+    {"file",          required_argument, 0, 0},
+    {"whatdepends",   required_argument, 0, 0},
+    {"whatprovides",  required_argument, 0, 0},
+    {"whatobsoletes", required_argument, 0, 0},
+    {"whatconflicts", required_argument, 0, 0},
+    {"whatrequires",  required_argument, 0, 0},
+    {"whatrecommends",required_argument, 0, 0},
+    {"whatsuggests",  required_argument, 0, 0},
+    {"whatsupplements", required_argument, 0, 0},
+    {"whatenhances",  required_argument, 0, 0},
+    // repoquery query options
+    {"available",     no_argument, 0, 0},
+    {"changelogs",    no_argument, 0, 0},
+    {"installed",     no_argument, 0, 0},
+    {"extras",        no_argument, 0, 0},
+    {"duplicates",    no_argument, 0, 0},
+    {"depends",       no_argument, 0, 0},
+    {"provides",      no_argument, 0, 0},
+    {"obsoletes",     no_argument, 0, 0},
+    {"conflicts",     no_argument, 0, 0},
+    {"requires",      no_argument, 0, 0},
+    {"recommends",    no_argument, 0, 0},
+    {"suggests",      no_argument, 0, 0},
+    {"supplements",   no_argument, 0, 0},
+    {"enhances",      no_argument, 0, 0},
+    {"requires-pre",  no_argument, 0, 0},
+    {"list",          no_argument, 0, 0},
+    {"upgrades",      no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 

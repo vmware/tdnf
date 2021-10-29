@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -210,10 +210,25 @@ TDNFFreePackageInfoArray(
 }
 
 void
+TDNFFreeChangeLogEntry(
+    PTDNF_PKG_CHANGELOG_ENTRY pEntry
+)
+{
+    if (pEntry)
+    {
+        TDNF_SAFE_FREE_MEMORY(pEntry->pszAuthor);
+        TDNF_SAFE_FREE_MEMORY(pEntry->pszText);
+        TDNF_SAFE_FREE_MEMORY(pEntry);
+    }
+}
+
+void
 TDNFFreePackageInfoContents(
     PTDNF_PKG_INFO pPkgInfo
     )
 {
+    PTDNF_PKG_CHANGELOG_ENTRY pEntry, pEntryNext;
+
     if(pPkgInfo)
     {
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszName);
@@ -228,6 +243,15 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
+        TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->ppszDependencies);
+        TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->ppszFileList);
+        for (pEntry = pPkgInfo->pChangeLogEntries;
+             pEntry;
+             pEntry = pEntryNext)
+        {
+            pEntryNext = pEntry->pNext;
+            TDNFFreeChangeLogEntry(pEntry);
+        }
     }
 }
 

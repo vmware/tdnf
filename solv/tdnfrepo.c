@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -151,13 +151,51 @@ error:
 }
 
 uint32_t
+SolvLoadRepomdOther(
+    Repo* pRepo,
+    const char* pszOther
+    )
+{
+    uint32_t dwError = 0;
+    FILE *fp = NULL;
+    if( !pRepo || IsNullOrEmptyString(pszOther))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    fp = solv_xfopen(pszOther, "r");
+    if (fp == NULL)
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    if (repo_add_rpmmd(pRepo, fp, 0, REPO_EXTEND_SOLVABLES))
+    {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+cleanup:
+    if(fp != NULL)
+    {
+        fclose(fp);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+
+}
+
+uint32_t
 SolvReadYumRepo(
     Repo *pRepo,
     const char *pszRepoName,
     const char *pszRepomd,
     const char *pszPrimary,
     const char *pszFilelists,
-    const char *pszUpdateinfo
+    const char *pszUpdateinfo,
+    const char *pszOther
     )
 {
     uint32_t dwError = 0;
@@ -166,7 +204,6 @@ SolvReadYumRepo(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-
 
     dwError = SolvLoadRepomd(pRepo, pszRepomd);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -184,6 +221,12 @@ SolvReadYumRepo(
     if(pszUpdateinfo)
     {
         dwError = SolvLoadRepomdUpdateinfo(pRepo, pszUpdateinfo);
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    if(pszOther)
+    {
+        dwError = SolvLoadRepomdOther(pRepo, pszOther);
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 

@@ -152,6 +152,14 @@ typedef enum
 
 typedef struct _TDNF_ *PTDNF;
 
+typedef struct _TDNF_PKG_CHANGELOG_ENTRY
+{
+    time_t timeTime;
+    char *pszAuthor;
+    char *pszText;
+    struct _TDNF_PKG_CHANGELOG_ENTRY *pNext;
+} TDNF_PKG_CHANGELOG_ENTRY, *PTDNF_PKG_CHANGELOG_ENTRY;
+
 typedef struct _TDNF_PKG_INFO
 {
     uint32_t dwEpoch;
@@ -168,6 +176,10 @@ typedef struct _TDNF_PKG_INFO
     char* pszFormattedSize;
     char* pszRelease;
     char* pszLocation;
+    char **ppszDependencies;
+    char **ppszFileList;
+    char *pszSourcePkg;
+    PTDNF_PKG_CHANGELOG_ENTRY pChangeLogEntries;
     struct _TDNF_PKG_INFO* pNext;
 }TDNF_PKG_INFO, *PTDNF_PKG_INFO;
 
@@ -350,6 +362,54 @@ typedef struct _TDNF_REPOSYNC_ARGS
     char *pszMetaDataPath;
     char **ppszArchs;
 }TDNF_REPOSYNC_ARGS, *PTDNF_REPOSYNC_ARGS;
+
+typedef enum {
+    REPOQUERY_WHAT_KEY_PROVIDES,
+    REPOQUERY_WHAT_KEY_OBSOLETES,
+    REPOQUERY_WHAT_KEY_CONFLICTS,
+    REPOQUERY_WHAT_KEY_REQUIRES,
+    REPOQUERY_WHAT_KEY_RECOMMENDS,
+    REPOQUERY_WHAT_KEY_SUGGESTS,
+    REPOQUERY_WHAT_KEY_SUPPLEMENTS,
+    REPOQUERY_WHAT_KEY_ENHANCES,
+    REPOQUERY_WHAT_KEY_DEPENDS,
+    REPOQUERY_WHAT_KEY_COUNT
+} REPOQUERY_WHAT_KEY;
+
+typedef enum {
+    REPOQUERY_DEP_KEY_NONE = 0,
+    REPOQUERY_DEP_KEY_PROVIDES,
+    REPOQUERY_DEP_KEY_OBSOLETES,
+    REPOQUERY_DEP_KEY_CONFLICTS,
+    REPOQUERY_DEP_KEY_REQUIRES,
+    REPOQUERY_DEP_KEY_RECOMMENDS,
+    REPOQUERY_DEP_KEY_SUGGESTS,
+    REPOQUERY_DEP_KEY_SUPPLEMENTS,
+    REPOQUERY_DEP_KEY_ENHANCES,
+    REPOQUERY_DEP_KEY_DEPENDS,
+    REPOQUERY_DEP_KEY_REQUIRES_PRE,
+    REPOQUERY_DEP_KEY_COUNT
+} REPOQUERY_DEP_KEY;
+
+typedef struct _TDNF_REPOQUERY_ARGS
+{
+    char *pszSpec;
+
+    /* select options */
+    int nAvailable;        /* list what's available (default) */
+    int nDuplicates;
+    int nExtras;           /* packages that are installed but not available */
+    int nInstalled;
+    int nUpgrades;
+    char *pszFile;         /* packages that own this file */
+    char ***pppszWhatKeys;
+
+    /* query options */
+    int nChangeLogs;
+    REPOQUERY_DEP_KEY depKey; /* list dependencies of this type, 0 => unset */
+    int nList;                /* list files of packages(s) */
+    int nSource;              /* show source packages */
+}TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 
 #ifdef __cplusplus
 }

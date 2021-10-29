@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -177,6 +177,7 @@ SolvCreateQuery(
     queue_init(&pQuery->queueJob);
     queue_init(&pQuery->queueRepoFilter);
     queue_init(&pQuery->queueResult);
+
     *ppQuery = pQuery;
 
 cleanup:
@@ -724,7 +725,6 @@ SolvApplyListQuery(
         }
     }
 
-
 cleanup:
     queue_free(&queueTmp);
     return dwError;
@@ -1114,3 +1114,297 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+SolvApplyDepsFilter(
+    PSolvQuery pQuery,
+    char **ppszDeps,
+    REPOQUERY_WHAT_KEY whatKey)
+{
+    uint32_t dwError = 0;
+    Queue queueDeps = {0};
+    Queue queueFiltered = {0};
+    int i, j;
+    Id idDep;
+
+    if(!pQuery || !pQuery->pSack || !ppszDeps)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    /* convert string dep array to id queue */
+    queue_init(&queueDeps);
+    for(i = 0; ppszDeps[i] != NULL; i++)
+    {
+        idDep = pool_str2id(pQuery->pSack->pPool, ppszDeps[i], 0);
+        /* if it's not found, nothing can depend on it */
+        if (idDep)
+        {
+            queue_push(&queueDeps, idDep);
+        }
+    }
+
+    queue_init(&queueFiltered);
+    for (j = 0; j < pQuery->queueResult.count; j++)
+    {
+        Id idPkg = pQuery->queueResult.elements[j];
+        Solvable *pSolvable = pool_id2solvable(pQuery->pSack->pPool, idPkg);
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        for (i = 0; i < queueDeps.count; i++)
+        {
+            idDep = queueDeps.elements[i];
+
+            if (whatKey != REPOQUERY_WHAT_KEY_DEPENDS)
+            {
+                Id allDepKeyIds[] = {
+                    SOLVABLE_PROVIDES,
+                    SOLVABLE_OBSOLETES,
+                    SOLVABLE_CONFLICTS,
+                    SOLVABLE_REQUIRES,
+                    SOLVABLE_RECOMMENDS,
+                    SOLVABLE_SUGGESTS,
+                    SOLVABLE_SUPPLEMENTS,
+                    SOLVABLE_ENHANCES
+                };
+                /* single dependency type */
+                if (solvable_matchesdep(pSolvable, allDepKeyIds[whatKey], idDep, 0))
+                {
+                    queue_push(&queueFiltered, idPkg);
+                    break;
+                }
+            }
+            else
+            {
+                size_t k;
+                Id allDepKeys[] = {
+                    SOLVABLE_REQUIRES,
+                    SOLVABLE_RECOMMENDS,
+                    SOLVABLE_SUGGESTS,
+                    SOLVABLE_SUPPLEMENTS,
+                    SOLVABLE_ENHANCES
+                };
+
+                for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+                {
+                    if (solvable_matchesdep(pSolvable, allDepKeys[k], idDep, 0))
+                    {
+                        queue_push(&queueFiltered, idPkg);
+                        break;
+                    }
+                }
+                if (k < ARRAY_SIZE(allDepKeys))
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueFiltered;
+
+cleanup:
+    queue_free(&queueDeps);
+    return dwError;
+
+error:
+    queue_free(&queueFiltered);
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyExtrasFilter(
+    PSolvQuery pQuery)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Queue queueExtras = {0};
+    int i, j;
+
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pPool = pQuery->pSack->pPool;
+
+    queue_init(&queueExtras);
+
+    /* Outer loop iterates over all installed solvables,
+       inner loop over all solvables that are *not* installed.
+       If we don't find a match, it's an extra package */
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pSolvable->repo == pPool->installed)
+        {
+            int nFound = 0;
+            for (j = 0; j < pQuery->queueResult.count; j++)
+            {
+                if (i != j)
+                {
+                    Id idPkg2 = pQuery->queueResult.elements[j];
+                    Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+
+                    if(!pSolvable2)
+                    {
+                        dwError = ERROR_TDNF_NO_DATA;
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
+
+                    if (pSolvable2->repo == pPool->installed)
+                    {
+                        continue;
+                    }
+
+                    if (pSolvable2->name == pSolvable->name &&
+                        pSolvable2->arch == pSolvable->arch &&
+                        pSolvable2->evr == pSolvable->evr)
+                    {
+                        nFound = 1;
+                    }
+                }
+            }
+            if (!nFound)
+            {
+                queue_push(&queueExtras, idPkg);
+            }
+        }
+    }
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueExtras;
+cleanup:
+    return dwError;
+error:
+    queue_free(&queueExtras);
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyDuplicatesFilter(
+    PSolvQuery pQuery)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Queue queueDuplicates = {0};
+    int i, j;
+
+    if(!pQuery)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pPool = pQuery->pSack->pPool;
+
+    queue_init(&queueDuplicates);
+
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pSolvable->repo == pPool->installed)
+        {
+            int nFound = 0;
+            /* no need to compare b with a if we already compared b with a,
+               so we can start with j = i + 1 */
+            for (j = i + 1; j < pQuery->queueResult.count; j++)
+            {
+                Id idPkg2 = pQuery->queueResult.elements[j];
+                Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+
+                if(!pSolvable2)
+                {
+                    dwError = ERROR_TDNF_NO_DATA;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+                if (pSolvable2->repo != pPool->installed)
+                {
+                    continue;
+                }
+                if (pSolvable2->name == pSolvable->name &&
+                    pSolvable2->arch == pSolvable->arch)
+                {
+                    nFound = 1;
+                }
+            }
+            if (nFound)
+            {
+                queue_push(&queueDuplicates, idPkg);
+            }
+        }
+    }
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueDuplicates;
+cleanup:
+    return dwError;
+error:
+    queue_free(&queueDuplicates);
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyFileProvidesFilter(
+    PSolvQuery pQuery,
+    char *pszFile)
+{
+    uint32_t dwError = 0;
+    Pool *pool;
+    Queue queueFiltered = {0};
+    Dataiterator di;
+    int i;
+
+    if(!pQuery || IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pool = pQuery->pSack->pPool;
+
+    queue_init(&queueFiltered);
+
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+
+        dataiterator_init(&di, pool, NULL, idPkg, SOLVABLE_FILELIST, pszFile,
+                          SEARCH_FILES | SEARCH_STRING);
+        /* using 'if' instead of 'while' because one match is enough */
+        if (dataiterator_step(&di)) {
+            queue_push(&queueFiltered, idPkg);
+        }
+        dataiterator_free(&di);
+    }
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueFiltered;
+cleanup:
+    return dwError;
+error:
+    queue_free(&queueFiltered);
+    goto cleanup;
+}
+

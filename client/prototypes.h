@@ -430,6 +430,21 @@ TDNFCheckMinVersions(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
+uint32_t
+TDNFPopulatePkgInfoArrayDependencies(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    REPOQUERY_DEP_KEY depKey,
+    PTDNF_PKG_INFO pPkgInfos
+    );
+
+uint32_t
+TDNFPopulatePkgInfoArrayFileList(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO pPkgInfos
+    );
+
 //goal.c
 uint32_t
 TDNFGoal(
