@@ -30,6 +30,12 @@ TDNFAllocateMemory(
     );
 
 uint32_t
+TDNFReAllocateMemory(
+    size_t nSize,
+    void** ppMemory
+    );
+
+uint32_t
 TDNFAllocateString(
     const char* pszSrc,
     char** ppszDst

@@ -62,6 +62,42 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFReAllocateMemory(
+    size_t nSize,
+    void** ppMemory
+    )
+{
+    uint32_t dwError = 0;
+    void* pMemory = NULL;
+
+    if (!ppMemory || !nSize)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pMemory = realloc(*ppMemory, nSize);
+    if (!pMemory)
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    *ppMemory = pMemory;
+
+cleanup:
+    return dwError;
+
+error:
+    if (ppMemory)
+    {
+        *ppMemory = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pMemory);
+    goto cleanup;
+}
+
 void
 TDNFFreeMemory(
     void* pMemory
