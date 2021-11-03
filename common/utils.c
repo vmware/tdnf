@@ -858,3 +858,37 @@ error:
     goto cleanup;
 }
 
+/* read all lines in file pszFile and store in string array
+ * pointed to by pppszArray, one entry for each line */
+uint32_t
+TDNFReadFileToStringArray(
+    const char *pszFile,
+    char ***pppszArray
+    )
+{
+    uint32_t dwError = 0;
+    int nLength = 0;
+    char *pszText = NULL;
+    char **ppszArray = NULL;
+
+    if (!pszFile || !pppszArray)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFFileReadAllText(pszFile, &pszText, &nLength);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSplitStringToArray(pszText, "\n", &ppszArray);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *pppszArray = ppszArray;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszText);
+    return dwError;
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszArray);
+    goto cleanup;
+}
+

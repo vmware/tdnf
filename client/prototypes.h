@@ -608,12 +608,6 @@ TDNFReadConfFilesFromDir(
     char ***pppszMinVersions
     );
 
-uint32_t
-TDNFReadFileToStringArray(
-    const char *pszFile,
-    char ***pppszArray
-    );
-
 //repo.c
 uint32_t
 TDNFInitRepoFromMetadata(
