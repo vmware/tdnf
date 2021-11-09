@@ -227,6 +227,7 @@ static void TdnfExitHandler(void)
 static bool IsTdnfAlreadyRunning(void)
 {
     bool ret = false;
+    int i;
 
     glockfd = open(TDNF_INSTANCE_LOCK_FILE, O_CREAT | O_RDONLY, S_IRWXU);
     if (glockfd < 0)
@@ -235,15 +236,23 @@ static bool IsTdnfAlreadyRunning(void)
         goto end;
     }
 
-    if (flock(glockfd, LOCK_EX | LOCK_NB))
+    for (i = 0; i < TDNF_LOCK_MAX_RETRIES; i++)
     {
-        if (errno == EAGAIN)
+        if (flock(glockfd, LOCK_EX | LOCK_NB) && errno == EAGAIN)
         {
-            ret = true;
-            pr_err("ERROR: failed to acquire lock on: %s\n", TDNF_INSTANCE_LOCK_FILE);
+            pr_err("WARNING: failed to acquire lock on: %s, waiting.\n", TDNF_INSTANCE_LOCK_FILE);
+            sleep(1);
+        }
+        else
+        {
+            break;
         }
     }
-
+    if (i == TDNF_LOCK_MAX_RETRIES)
+    {
+        pr_err("ERROR: timed out waiting to acquire lock on: %s.\n", TDNF_INSTANCE_LOCK_FILE);
+        ret = true;
+    }
 end:
     /* glockfd is closed in exit handler */
     return ret;
