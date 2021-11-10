@@ -1,4 +1,4 @@
-FROM fedora:latest
+FROM fedora:34
 
 RUN dnf -q -y upgrade
 RUN dnf -q -y install gcc make cmake libcurl-devel rpm-devel rpm-build libsolv-devel \
