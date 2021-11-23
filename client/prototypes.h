@@ -754,6 +754,19 @@ TDNFCreateCmdLineRepo(
     );
 
 uint32_t
+TDNFCreateRepoFromPath(
+    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    const char *pzsId,
+    const char *pszPath
+    );
+
+uint32_t
+TDNFCreateRepo(
+    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    const char *pszId
+    );
+
+uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,

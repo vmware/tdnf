@@ -41,14 +41,6 @@ def teardown_test(utils):
     if os.path.isdir(os.path.join('/', TESTREPO)):
         shutil.rmtree(os.path.join('/', TESTREPO))
 
-# helper to create directory tree without complains when it exists:
-def makedirs(d):
-    try:
-        os.makedirs(d)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
 # helper to check a synced repo -
 # uses the local repository and compares the list of RPMs
 def check_synced_repo(utils, reponame, synced_dir):
@@ -65,24 +57,11 @@ def check_synced_repo(utils, reponame, synced_dir):
     for rpm in local_rpms:
         assert(os.path.isfile(os.path.join(synced_dir, 'RPMS', ARCH, rpm)))
 
-def create_repoconf(filename, baseurl, name):
-    templ = """
-[{name}]
-name=Test Repo
-baseurl={baseurl}
-enabled=1
-gpgcheck=0
-metadata_expire=86400
-ui_repoid_vars=basearch
-"""
-    with open(filename, "w") as f:
-        f.write(templ.format(name=name, baseurl=baseurl))
-
 # reposync with no options - sync to local directory
 def test_reposync(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -100,7 +79,7 @@ def test_reposync(utils):
 def test_reposync_download_path(utils):
     reponame = TESTREPO
     downloaddir = DOWNLOADDIR
-    makedirs(downloaddir)
+    utils.makedirs(downloaddir)
     assert(os.path.isdir(downloaddir))
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -116,7 +95,7 @@ def test_reposync_download_path(utils):
 def test_reposync_download_path_slash(utils):
     reponame = TESTREPO
     downloaddir = DOWNLOADDIR + '/'
-    makedirs(downloaddir)
+    utils.makedirs(downloaddir)
     assert(os.path.isdir(downloaddir))
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -193,7 +172,7 @@ def xxxtest_reposync_download_path_norepopath_multiple_repos(utils):
 def test_reposync_metadata(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-metadata',
@@ -213,9 +192,9 @@ def test_reposync_metadata(utils):
 def test_reposync_metadata_path(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
     mdatadir = METADATADIR
-    makedirs(mdatadir)
+    utils.makedirs(mdatadir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-metadata',
@@ -235,10 +214,10 @@ def test_reposync_metadata_path(utils):
 def test_reposync_delete(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
-    makedirs(synced_dir)
+    utils.makedirs(synced_dir)
 
     faked_rpm = os.path.join((synced_dir), 'faked-0.1.2.rpm')
     with open(faked_rpm, 'w') as f:
@@ -265,10 +244,10 @@ def test_reposync_delete(utils):
 def test_reposync_no_delete(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
-    makedirs(synced_dir)
+    utils.makedirs(synced_dir)
 
     faked_rpm = os.path.join((synced_dir), 'faked-0.1.2.rpm')
     with open(faked_rpm, 'w') as f:
@@ -294,7 +273,7 @@ def test_reposync_no_delete(utils):
 def test_reposync_gpgcheck(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -313,7 +292,7 @@ def test_reposync_gpgcheck(utils):
 def test_reposync_urls(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
@@ -328,7 +307,7 @@ def test_reposync_urls(utils):
 def test_reposync_create_repo(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-metadata',
@@ -345,7 +324,7 @@ def test_reposync_create_repo(utils):
     filename = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
     baseurl = "file://{}".format(synced_dir)
 
-    create_repoconf(filename, baseurl, "synced-repo")
+    utils.create_repoconf(filename, baseurl, "synced-repo")
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo=synced-repo',
@@ -366,7 +345,7 @@ def test_reposync_create_repo(utils):
 def test_reposync_arch(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
     if os.path.isdir(synced_dir):
@@ -390,7 +369,7 @@ def test_reposync_arch(utils):
 def test_reposync_arch_others(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     synced_dir = os.path.join(workdir, reponame)
     if os.path.isdir(synced_dir):
@@ -416,7 +395,7 @@ def test_reposync_arch_others(utils):
 def test_reposync_newest(utils):
     reponame = TESTREPO
     workdir = WORKDIR
-    makedirs(workdir)
+    utils.makedirs(workdir)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),

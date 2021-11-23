@@ -2,7 +2,7 @@
 #define __SOLV_DEFINES_H__
 
 #define SYSTEM_REPO_NAME "@System"
-#define CMDLINE_REPO_NAME "@commandline"
+#define CMDLINE_REPO_NAME "@cmdline"
 #define SOLV_COOKIE_IDENT "tdnf"
 #define TDNF_SOLVCACHE_DIR_NAME "solvcache"
 #define SOLV_COOKIE_LEN   32

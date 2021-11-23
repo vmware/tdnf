@@ -20,6 +20,9 @@
 
 #pragma once
 
+#define STRINGIFYX(N) STRINGIFY(N)
+#define STRINGIFY(N) #N
+
 #define MAX_CONFIG_LINE_LENGTH      1024
 
 #define TDNF_SAFE_FREE_PKGINFO(pPkgInfo) \

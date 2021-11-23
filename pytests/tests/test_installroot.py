@@ -28,17 +28,9 @@ def teardown_test(utils):
         shutil.rmtree(INSTALLROOT)
     pass
 
-# helper to create directory tree without complains when it exists:
-def makedirs(d):
-    try:
-        os.makedirs(d)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
 def install_root(utils, no_reposd=False):
-    makedirs(INSTALLROOT)
-    makedirs(os.path.join(INSTALLROOT, 'etc/tdnf'))
+    utils.makedirs(INSTALLROOT)
+    utils.makedirs(os.path.join(INSTALLROOT, 'etc/tdnf'))
     conffile = os.path.join(utils.config['repo_path'], 'tdnf.conf')
 
     # remove special settings for repodir and cachedir
@@ -50,10 +42,10 @@ def install_root(utils, no_reposd=False):
                     fout.write(line)
 
     if not no_reposd:
-        makedirs(os.path.join(INSTALLROOT, 'etc/yum.repos.d'))
+        utils.makedirs(os.path.join(INSTALLROOT, 'etc/yum.repos.d'))
         repofile = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
         shutil.copyfile(repofile, os.path.join(INSTALLROOT, 'etc/yum.repos.d', REPOFILENAME))
-    makedirs(os.path.join(INSTALLROOT, 'var/cache/tdnf'))
+    utils.makedirs(os.path.join(INSTALLROOT, 'var/cache/tdnf'))
     utils.run(['rpm', '--root', INSTALLROOT, '--initdb'])
 
 # local version of check_package with install root
@@ -105,26 +97,13 @@ def test_makecache(utils):
 
     shutil.rmtree(INSTALLROOT)
 
-def create_repoconf(filename, baseurl, name):
-    templ = """
-[{name}]
-name=Test Repo
-baseurl={baseurl}
-enabled=1
-gpgcheck=0
-metadata_expire=86400
-ui_repoid_vars=basearch
-"""
-    with open(filename, "w") as f:
-        f.write(templ.format(name=name, baseurl=baseurl))
-
 # --setopt=reposdir overrides any dir in install root
 def test_setopt_reposdir_with_installroot(utils):
     install_root(utils)
-    makedirs(REPODIR)
-    create_repoconf(os.path.join(REPODIR, REPOFILENAME),
-                    "http://foo.bar.com/packages",
-                    REPONAME)
+    utils.makedirs(REPODIR)
+    utils.create_repoconf(os.path.join(REPODIR, REPOFILENAME),
+                          "http://foo.bar.com/packages",
+                          REPONAME)
     ret = utils.run(['tdnf',
                      '--installroot', INSTALLROOT,
                      '--releasever=4.0',

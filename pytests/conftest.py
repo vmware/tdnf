@@ -274,6 +274,26 @@ class TestUtils(object):
         ret['retval'] = retval
         return ret
 
+    # helper to create directory tree without complains when it exists:
+    def makedirs(self, d):
+        try:
+            os.makedirs(d)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
+    def create_repoconf(self, filename, baseurl, name):
+        templ = """
+[{name}]
+name=Test Repo
+baseurl={baseurl}
+enabled=1
+gpgcheck=0
+metadata_expire=86400
+ui_repoid_vars=basearch
+"""
+        with open(filename, "w") as f:
+            f.write(templ.format(name=name, baseurl=baseurl))
 
 @pytest.fixture(scope='session')
 def utils():

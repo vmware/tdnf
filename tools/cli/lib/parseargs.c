@@ -84,6 +84,9 @@ static struct option pstOptions[] =
     {"debugsolver",   no_argument, &_opt.nDebugSolver, 1}, //--debugsolver
     {"disablerepo",   required_argument, 0, 0},            //--disablerepo
     {"enablerepo",    required_argument, 0, 0},            //--enablerepo
+    {"repo",          required_argument, 0, 0},            //--repo
+    {"repoid",        required_argument, 0, 0},            //--repoid (same as --repo)
+    {"repofrompath",  required_argument, 0, 0},            //--repofrompath
     {"errorlevel",    required_argument, 0, 'e'},          //-e --errorlevel
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
@@ -390,11 +393,21 @@ ParseOption(
     }
     else if ((!strcasecmp(pszName, "metadata-path")) ||
              (!strcasecmp(pszName, "download-path")) ||
-             (!strcasecmp(pszName, "arch")))
+             (!strcasecmp(pszName, "arch")) ||
+             (!strcasecmp(pszName, "repofrompath")))
     {
         dwError = AddSetOptWithValues(pCmdArgs,
                             CMDOPT_KEYVALUE,
                             pszName,
+                            optarg);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if ((!strcasecmp(pszName, "repoid")) ||
+             (!strcasecmp(pszName, "repo")))
+    {
+        dwError = AddSetOptWithValues(pCmdArgs,
+                            CMDOPT_KEYVALUE,
+                            "repoid",
                             optarg);
         BAIL_ON_CLI_ERROR(dwError);
     }
