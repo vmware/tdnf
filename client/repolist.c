@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -90,11 +90,11 @@ TDNFLoadRepoData(
             continue;
         }
 
-        dwError = TDNFAllocateStringPrintf(
+        dwError = TDNFJoinPath(
                       &pszRepoFilePath,
-                      "%s/%s",
                       pConf->pszRepoDir,
-                      pEnt->d_name);
+                      pEnt->d_name,
+                      NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, &pRepos);

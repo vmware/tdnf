@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -626,11 +626,11 @@ TDNFShouldSyncMetadata(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszMarkerFile,
-                  "%s/%s",
                   pszRepoDataFolder,
-                  TDNF_REPO_METADATA_MARKER);
+                  TDNF_REPO_METADATA_MARKER,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     //Look for the metadata marker file

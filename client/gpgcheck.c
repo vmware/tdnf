@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -580,22 +580,23 @@ TDNFFetchRemoteGPGKey(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszTopKeyCacheDir,
-                  "%s/%s/keys",
                   pTdnf->pConf->pszCacheDir,
-                  pszRepoName);
+                  pszRepoName,
+                  "keys",
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFNormalizePath(pszTopKeyCacheDir,
                                 &pszRealTopKeyCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(
+    dwError = TDNFJoinPath(
                   &pszFilePath,
-                  "%s/%s",
                   pszRealTopKeyCacheDir,
-                  pszKeyLocation);
+                  pszKeyLocation,
+                  NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFNormalizePath(

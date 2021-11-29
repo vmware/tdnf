@@ -784,3 +784,88 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFJoinPath(char **ppszPath, ...)
+{
+    uint32_t dwError = 0;
+    va_list ap;
+    char *pszNode = NULL;
+    int i, nCount = 0;
+    char *pszTmp, *pszNodeTmp;
+    char *pszNodeCopy = NULL;
+    char *pszResult = NULL;
+    int nLength = 0;
+    int nLengthTmp = 0;
+
+    if (!ppszPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    va_start(ap, ppszPath);
+    for(pszNode = va_arg(ap, char *); pszNode; pszNode = va_arg(ap, char *))
+    {
+        nCount++;
+    }
+    va_end(ap);
+
+    va_start(ap, ppszPath);
+    for(pszNode = va_arg(ap, char *), i = 0; pszNode; pszNode = va_arg(ap, char *), i++)
+    {
+        dwError = TDNFAllocateString(pszNode, &pszNodeCopy);
+        BAIL_ON_TDNF_ERROR(dwError);
+        pszNodeTmp = pszNodeCopy;
+	/* if the first node is an absolute path, the result should be absolute -
+	 * safe this by initializing with a '/' if absolute, otherwise with an empty string
+	 * before stripping all leading slashes */
+        if (i == 0)
+        {
+            if (*pszNodeTmp == '/')
+            {
+                dwError = TDNFAllocateString("/", &pszResult);
+                nLength++;
+            }
+            else
+            {
+                dwError = TDNFAllocateString("", &pszResult);
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+	/* now strip leading slashes */
+        while(*pszNodeTmp == '/') pszNodeTmp++;
+
+	/* strip trailing slashes */
+        nLengthTmp = strlen(pszNodeTmp);
+        pszTmp = pszNodeTmp + nLengthTmp - 1;
+        while(pszTmp >= pszNodeTmp && *pszTmp == '/')
+        {
+            *pszTmp = 0;
+            pszTmp--;
+        }
+        nLength += nLengthTmp + 2;
+
+        dwError = TDNFReAllocateMemory(nLength, (void **)&pszResult);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        strcat(pszResult, pszNodeTmp);
+	/* put new slashes between nodes, except for the end */
+        if (i != nCount-1)
+        {
+            strcat(pszResult, "/");
+        }
+
+        TDNF_SAFE_FREE_MEMORY(pszNodeCopy);
+    }
+    va_end(ap);
+
+    *ppszPath = pszResult;
+cleanup:
+    return dwError;
+error:
+    TDNF_SAFE_FREE_MEMORY(pszResult);
+    TDNF_SAFE_FREE_MEMORY(pszNodeCopy);
+    goto cleanup;
+}
+

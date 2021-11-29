@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -75,9 +75,10 @@ TDNFCloneCmdArgs(
         int nExists = 0;
 
         /* prepend installroot to tdnf.conf location */
-        dwError = TDNFAllocateStringPrintf(&pszConfFileInstallRoot, "%s/%s",
-                                           pCmdArgsIn->pszInstallRoot,
-                                           TDNF_CONF_FILE);
+        dwError = TDNFJoinPath(&pszConfFileInstallRoot,
+                               pCmdArgsIn->pszInstallRoot,
+                               TDNF_CONF_FILE,
+                               NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFIsFileOrSymlink(pszConfFileInstallRoot, &nExists);
@@ -290,11 +291,11 @@ TDNFRefreshSack(
         //Check if expired since last sync per metadata_expire
         if(pRepo->lMetadataExpire >= 0)
         {
-            dwError = TDNFAllocateStringPrintf(
+            dwError = TDNFJoinPath(
                           &pszRepoCacheDir,
-                          "%s/%s",
                           pTdnf->pConf->pszCacheDir,
-                          pRepo->pszId);
+                          pRepo->pszId,
+                          NULL);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFShouldSyncMetadata(

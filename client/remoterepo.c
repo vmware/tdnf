@@ -890,10 +890,7 @@ TDNFCreatePackageUrl(
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (pszBaseUrl) {
-        dwError = TDNFAllocateStringPrintf(&pszPackageUrl,
-                                           "%s/%s",
-                                           pszBaseUrl,
-                                           pszPackageLocation);
+        dwError = TDNFJoinPath(&pszPackageUrl, pszBaseUrl, pszPackageLocation, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else
@@ -944,10 +941,10 @@ TDNFDownloadPackage(
                                  &pszCopyOfPackageLocation);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(&pszPackageFile,
-                                       "%s/%s",
-                                       pszRpmCacheDir,
-                                       basename(pszCopyOfPackageLocation));
+    dwError = TDNFJoinPath(&pszPackageFile,
+                           pszRpmCacheDir,
+                           basename(pszCopyOfPackageLocation),
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     /* don't download if file is already there. Older versions may have left
@@ -1002,12 +999,11 @@ TDNFDownloadPackageToCache(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(
-                  &pszRpmCacheDir,
-                  "%s/%s/%s",
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoName,
-                  "rpms");
+    dwError = TDNFJoinPath(&pszRpmCacheDir,
+                           pTdnf->pConf->pszCacheDir,
+                           pszRepoName,
+                           "rpms",
+                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFNormalizePath(pszRpmCacheDir,
@@ -1033,7 +1029,7 @@ error:
  * TDNFDownloadPackageToTree()
  *
  * Download a package while preserving the directory path. For example,
- * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm, the destination will
+ * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm", the destination will
  * be downloaded under the destination directory in RPMS/x86_64/foo-1.2-3.rpm
  * (so 'RPMS/x86_64/' will be preserved).
 */
@@ -1073,11 +1069,7 @@ TDNFDownloadPackageToTree(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateStringPrintf(
-                  &pszFilePath,
-                  "%s/%s",
-                  pszNormalRpmCacheDir,
-                  pszRemotePath);
+    dwError = TDNFJoinPath(&pszFilePath, pszNormalRpmCacheDir, pszRemotePath, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFNormalizePath(
@@ -1144,7 +1136,7 @@ error:
  * TDNFDownloadPackageToDirectory()
  *
  * Download a package withou preserving the directory path. For example,
- * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm, the destination will
+ * if pszPackageLocation is "RPMS/x86_64/foo-1.2-3.rpm", the destination will
  * be downloaded under the destination directory (pszDirectory) as foo-1.2-3.rpm
  * (so RPMS/x86_64/ will be stripped).
 */
@@ -1184,11 +1176,7 @@ TDNFDownloadPackageToDirectory(
 
     pszFileName = basename(pszRemotePath);
 
-    dwError = TDNFAllocateStringPrintf(
-                  &pszFilePath,
-                  "%s/%s",
-                  pszDirectory,
-                  pszFileName);
+    TDNFJoinPath(&pszFilePath, pszDirectory, pszFileName, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
