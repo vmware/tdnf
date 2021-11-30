@@ -170,9 +170,13 @@ TDNFGetDigestForFile(
     {
         pr_err("Digest Init Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
-        /*MD5 is not approved in FIPS mode. So, overrriding
-          the dwError to show the right error to the user */
+        /* MD5 is not approved in FIPS mode. So, overrriding
+           the dwError to show the right error to the user */
+#if defined(OPENSSL_VERSION_MAJOR) && (OPENSSL_VERSION_MAJOR >= 3)
+        if (EVP_default_properties_is_fips_enabled(NULL) && !strcasecmp(hash->hash_type, "md5"))
+#else
         if (FIPS_mode() && !strcasecmp(hash->hash_type, "md5"))
+#endif
         {
             dwError = ERROR_TDNF_FIPS_MODE_FORBIDDEN;
         }
