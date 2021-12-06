@@ -595,7 +595,7 @@ TDNFConfigReplaceVars(
     );
 
 uint32_t
-TDNFReadMinVersionsFiles(
+TDNFReadConfFilesFromDir(
     char *pszDir,
     char ***pppszMinVersions
     );
