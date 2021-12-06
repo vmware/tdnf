@@ -173,7 +173,7 @@ TDNFPrepareAllPackages(
                dwError = TDNFIsFileOrSymlink(pszPkgName, &nIsFile);
                BAIL_ON_TDNF_ERROR(dwError);
 
-               if (nIsFile)
+               if (nIsFile && (fnmatch("*.rpm", pszPkgName, 0) == 0))
                {
                    continue;
                }

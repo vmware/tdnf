@@ -125,7 +125,12 @@ def test_install_as_mixed(utils):
     assert(utils.check_package(pkgname) == True)
     assert(utils.check_package(pkgname2) == True)
 
-
-
-
-
+# test installing a package that has the same name as a file
+# example: touch foo; tdnf install foo
+# (file needs to have "*.rpm" extension to qualify)
+def test_install_same_as_filname(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+    utils.run(['touch', pkgname])
+    ret = utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    assert(ret['retval']  == 0)
+    assert(utils.check_package(pkgname) == True)
