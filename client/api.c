@@ -833,12 +833,16 @@ TDNFAddCmdLinePackages(
 
     for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
     {
+        /* Add packages with URLs or filenames on the command line
+         * to our virtual @cmdline repo */
         pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
 
         dwError = TDNFIsFileOrSymlink(pszPkgName, &nIsFile);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if (nIsFile)
+        /* if it's a file and matches *.rpm it's to be installed
+         * directly as a file. No need to download. */
+        if (nIsFile && (fnmatch("*.rpm", pszPkgName, 0) == 0))
         {
             pszRPMPath = realpath(pszPkgName, NULL);
             if (pszRPMPath == NULL)
@@ -849,36 +853,38 @@ TDNFAddCmdLinePackages(
         }
         else
         {
-             dwError = TDNFUriIsRemote(pszPkgName, &nIsRemote);
-             if (dwError == ERROR_TDNF_URL_INVALID)
-             {
-                 /* not a URL => normal pkg name, nothing to do here */
-                 dwError = 0;
-                 continue;
-             }
-             BAIL_ON_TDNF_ERROR(dwError);
-             if (!nIsRemote)
-             {
-                 dwError = TDNFPathFromUri(pszPkgName, &pszRPMPath);
-                 BAIL_ON_TDNF_ERROR(dwError);
-             }
-             else
-             {
-                 dwError = TDNFAllocateString(pszPkgName,
-                                              &pszCopyOfPkgName);
-                 BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFUriIsRemote(pszPkgName, &nIsRemote);
+            if (dwError == ERROR_TDNF_URL_INVALID)
+            {
+                /* not a URL => normal pkg name, nothing to do here */
+                dwError = 0;
+                continue;
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+            if (!nIsRemote)
+            {
+                /* non-remote URL, like "file:///", no need to download */
+                dwError = TDNFPathFromUri(pszPkgName, &pszRPMPath);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                /* remote URL, we need to download */
+                dwError = TDNFAllocateString(pszPkgName,
+                                             &pszCopyOfPkgName);
+                BAIL_ON_TDNF_ERROR(dwError);
 
-                 dwError = TDNFDownloadPackageToCache(
-                               pTdnf,
-                               pszPkgName,
-                               basename(pszCopyOfPkgName),
-                               "@cmdline",
-                               &pszRPMPath
-                           );
-                 BAIL_ON_TDNF_ERROR(dwError);
+                dwError = TDNFDownloadPackageToCache(
+                              pTdnf,
+                              pszPkgName,
+                              basename(pszCopyOfPkgName),
+                              CMDLINE_REPO_NAME,
+                              &pszRPMPath
+                          );
+                BAIL_ON_TDNF_ERROR(dwError);
 
-                 TDNF_SAFE_FREE_MEMORY(pszCopyOfPkgName);
-             }
+                TDNF_SAFE_FREE_MEMORY(pszCopyOfPkgName);
+	    }
         }
         id = repo_add_rpm(pTdnf->pSolvCmdLineRepo, pszRPMPath,
             REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE|RPM_ADD_WITH_HDRID|RPM_ADD_WITH_SHA256SUM);
