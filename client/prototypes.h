@@ -536,6 +536,13 @@ TDNFPkgsToExclude(
     char***  pppszExclude
     );
 
+uint32_t
+TDNFSolvAddPkgLocks(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    );
+
 //config.c
 int
 TDNFConfGetRpmVerbosity(

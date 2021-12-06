@@ -371,6 +371,9 @@ TDNFGoal(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFSolvAddPkgLocks(pTdnf, &queueJobs, pTdnf->pSack->pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pSolv = solver_create(pTdnf->pSack->pPool);
     if(pSolv == NULL)
     {
@@ -619,3 +622,68 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFSolvAddPkgLocks(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    )
+{
+    uint32_t dwError = 0;
+    char *pszLocksDir;
+    char *pszConfFileCopy;
+    char **ppszPackages = NULL;
+    char *pszPkg = NULL;
+    Id idPkg;
+    Id p;
+    Solvable *s;
+    int i;
+    int nFound = 0;
+
+    if(!pTdnf || !pQueueJobs || !pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* We need a copy of pszConfFile because dirname() modifies its argument */
+    dwError = TDNFAllocateString(pTdnf->pArgs->pszConfFile, &pszConfFileCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszLocksDir, dirname(pszConfFileCopy), "locks.d", NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadConfFilesFromDir(pszLocksDir, &ppszPackages);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; ppszPackages && ppszPackages[i]; i++)
+    {
+        pszPkg = ppszPackages[i];
+        idPkg = pool_str2id(pPool, pszPkg, 1);
+        if (idPkg)
+        {
+            FOR_REPO_SOLVABLES(pPool->installed, p, s)
+            {
+                if (idPkg == s->name)
+                {
+                    nFound = 1;
+                    break;
+                }
+            }
+            if (nFound)
+            {
+                queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_LOCK, idPkg);
+            }
+        }
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
+    TDNF_SAFE_FREE_MEMORY(pszLocksDir);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszPackages);
+    return dwError;
+error:
+    goto cleanup;
+}
+
