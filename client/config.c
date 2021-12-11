@@ -53,6 +53,8 @@ TDNFReadConfig(
     PCONF_SECTION pSection = NULL;
     char *pszConfFileCopy = NULL;
     char *pszMinVersionsDir = NULL;
+    char *pszConfFileCopy2 = NULL;
+    char *pszPkgLocksDir = NULL;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszConfFile) ||
@@ -155,6 +157,15 @@ TDNFReadConfig(
     dwError = TDNFReadConfFilesFromDir(pszMinVersionsDir, &pConf->ppszMinVersions);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy2);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszPkgLocksDir, dirname(pszConfFileCopy2), "locks.d", NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadConfFilesFromDir(pszPkgLocksDir, &pConf->ppszPkgLocks);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pTdnf->pConf = pConf;
 
 cleanup:
@@ -163,7 +174,9 @@ cleanup:
         TDNFFreeConfigData(pData);
     }
     TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
+    TDNF_SAFE_FREE_MEMORY(pszConfFileCopy2);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
+    TDNF_SAFE_FREE_MEMORY(pszPkgLocksDir);
     return dwError;
 
 error:
@@ -314,6 +327,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszBaseArch);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
         TDNFFreeMemory(pConf);
     }
 }
