@@ -424,12 +424,6 @@ TDNFCheckProtectedPkgs(
     );
 
 uint32_t
-TDNFCheckMinVersions(
-    PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
-    );
-
-uint32_t
 TDNFPopulatePkgInfoArrayDependencies(
     PSolvSack pSack,
     PSolvPackageList pPkgList,
@@ -538,6 +532,13 @@ TDNFPkgsToExclude(
 
 uint32_t
 TDNFSolvAddPkgLocks(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    );
+
+uint32_t
+TDNFSolvAddMinVersions(
     PTDNF pTdnf,
     Queue* pQueueJobs,
     Pool *pPool
