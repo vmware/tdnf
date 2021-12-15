@@ -60,7 +60,7 @@ def test_minversions_conf(utils):
     utils.install_package(pkgname)
     ret = utils.run(['tdnf', '-y', '--nogpgcheck', 'downgrade', pkgname])
     print (ret)
-    assert(ret['retval'] == 1033)
+    assert(ret['retval'] == 1035)
 
 def test_minversions_conf_multiple(utils):
     pkgname = utils.config["mulversion_pkgname"]
@@ -68,7 +68,7 @@ def test_minversions_conf_multiple(utils):
     utils.install_package(pkgname)
     ret = utils.run(['tdnf', '-y', '--nogpgcheck', 'downgrade', pkgname])
     print (ret)
-    assert(ret['retval'] == 1033)
+    assert(ret['retval'] == 1035)
 
 def test_minversions_file(utils):
     pkgname = utils.config["mulversion_pkgname"]
@@ -76,7 +76,7 @@ def test_minversions_file(utils):
     utils.install_package(pkgname)
     ret = utils.run(['tdnf', '-y', '--nogpgcheck', 'downgrade', pkgname])
     print (ret)
-    assert(ret['retval'] == 1033)
+    assert(ret['retval'] == 1035)
 
 def test_minversions_file_multiple(utils):
     pkgname = utils.config["mulversion_pkgname"]
@@ -84,6 +84,6 @@ def test_minversions_file_multiple(utils):
     utils.install_package(pkgname)
     ret = utils.run(['tdnf', '-y', '--nogpgcheck', 'downgrade', pkgname])
     print (ret)
-    assert(ret['retval'] == 1033)
+    assert(ret['retval'] == 1035)
 
 
