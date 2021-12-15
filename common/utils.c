@@ -464,7 +464,6 @@ TDNFYesOrNo(
         opt = tolower(opt);
         if (opt != 'y' && opt != 'n')
         {
-            pr_err("Invalid input\n");
             dwError = ERROR_TDNF_INVALID_INPUT;
             BAIL_ON_TDNF_ERROR(dwError);
         }
