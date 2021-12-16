@@ -1111,19 +1111,22 @@ TDNFEnsureRepoMDParts(
                   pRepoMD->pszPrimary);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAppendPath(
-                  pRepoMDRel->pszRepoCacheDir,
-                  pRepoMDRel->pszFileLists,
-                  &pRepoMD->pszFileLists);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if(!IsNullOrEmptyString(pRepoMDRel->pszFileLists))
+    {
+        dwError = TDNFAppendPath(
+                      pRepoMDRel->pszRepoCacheDir,
+                      pRepoMDRel->pszFileLists,
+                      &pRepoMD->pszFileLists);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFDownloadRepoMDPart(
-                  pTdnf,
-                  pszBaseUrl,
-                  pRepoMDRel->pszRepo,
-                  pRepoMDRel->pszFileLists,
-                  pRepoMD->pszFileLists);
-    BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFDownloadRepoMDPart(
+                      pTdnf,
+                      pszBaseUrl,
+                      pRepoMDRel->pszRepo,
+                      pRepoMDRel->pszFileLists,
+                      pRepoMD->pszFileLists);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     if(!IsNullOrEmptyString(pRepoMDRel->pszUpdateInfo))
     {
@@ -1280,13 +1283,18 @@ TDNFParseRepoMD(
                   pRepo,
                   TDNF_REPOMD_TYPE_FILELISTS,
                   &pRepoMD->pszFileLists);
+    /* file lists can be missing (issue #273) */
+    if(dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFFindRepoMDPart(
                   pRepo,
                   TDNF_REPOMD_TYPE_UPDATEINFO,
                   &pRepoMD->pszUpdateInfo);
-    //updateinfo is not mandatory
+    /* updateinfo is not mandatory */
     if(dwError == ERROR_TDNF_NO_DATA)
     {
         dwError = 0;
