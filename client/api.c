@@ -18,21 +18,36 @@
  * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
-#include <ftw.h>
 #include "includes.h"
-#include "config.h"
 
 static TDNF_ENV gEnv = {0};
 
-uint32_t
-TDNFInit(
-    void
-    )
-{
-    uint32_t dwError = 0;
-    int nLocked = 0;
+static tdnflock instance_lock;
 
-    pthread_mutex_lock (&gEnv.mutexInitialize);
+static void TdnfExitHandler(void);
+static void IsTdnfAlreadyRunning(void);
+
+static void TdnfExitHandler(void)
+{
+    tdnflockFree(instance_lock);
+}
+
+static void IsTdnfAlreadyRunning(void)
+{
+    instance_lock = tdnflockNewAcquire(TDNF_INSTANCE_LOCK_FILE,
+                                       "tdnf_instance");
+    if (!instance_lock)
+    {
+        pr_err("Failed to acquire tdnf_instance lock\n");
+    }
+}
+
+uint32_t TDNFInit(void)
+{
+    int nLocked = 0;
+    uint32_t dwError = 0;
+
+    pthread_mutex_lock(&gEnv.mutexInitialize);
     nLocked = 1;
     if(!gEnv.nInitialized)
     {
@@ -639,6 +654,10 @@ TDNFOpenHandle(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    IsTdnfAlreadyRunning();
+
+    GlobalSetQuiet(pArgs->nQuiet);
 
     dwError = TDNFAllocateMemory(1, sizeof(TDNF), (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -1469,7 +1488,7 @@ TDNFRepoQuery(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* get results in list */ 
+    /* get results in list */
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1930,6 +1949,7 @@ TDNFCloseHandle(
         TDNFFreePlugins(pTdnf->pPlugins);
         TDNFFreeMemory(pTdnf);
     }
+    TdnfExitHandler();
 }
 
 const char*

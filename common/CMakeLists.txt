@@ -15,4 +15,5 @@ add_library(${LIB_TDNF_COMMON}
     strings.c
     utils.c
     log.c
+    lock.c
 )
