@@ -17,6 +17,9 @@
 #include <string.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <tdnftypes.h>
 #include <tdnferror.h>

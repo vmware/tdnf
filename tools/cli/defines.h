@@ -21,15 +21,6 @@
 
 #pragma once
 
-/*
- * creating this under /var/run because /var/run/lock doesn't exist
- * in fedora docker images and as a result ci fails
- */
-#define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"
-
-/* wait for lock retries, interval is 1s */
-#define TDNF_LOCK_MAX_RETRIES 300
-
 #define BAIL_ON_CLI_ERROR(unError) \
     do {                                                           \
         if (unError)                                               \
