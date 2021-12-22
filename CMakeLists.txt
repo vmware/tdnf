@@ -44,11 +44,9 @@ if(NOT SYSTEMD_DIR)
     set(SYSTEMD_DIR /lib/systemd/system)
 endif()
 
-
 ##
 ## C Flags
 ##
-
 add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
 add_c_compiler_flag(-std=gnu99)
