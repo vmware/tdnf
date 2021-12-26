@@ -1,21 +1,9 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
- */
-
-/*
- * Header : structs.h
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
 #pragma once
@@ -130,26 +118,32 @@ typedef struct _TDNF_ML_LIST_
 //Metalink hash info per hash type.
 typedef struct _TDNF_ML_HASH_INFO_
 {
-    char *type; 
-    char *value;   
+    char *type;
+    char *value;
 } TDNF_ML_HASH_INFO;
 
 //Metalink url info per hash type.
 typedef struct _TDNF_ML_URL_INFO_
 {
     char *protocol;
-    char *type;    
+    char *type;
     char *location;
-    char *url;     
+    char *url;
     int  preference;
 } TDNF_ML_URL_INFO;
 
 //Metalink global parsed info.
 typedef struct _TDNF_ML_CTX_
 {
-    char           *filename;   
-    signed long    timestamp; 
-    signed long    size; 
+    char           *filename;
+    signed long    timestamp;
+    signed long    size;
     TDNF_ML_LIST   *hashes;
     TDNF_ML_LIST   *urls;
 } TDNF_ML_CTX;
+
+typedef struct progress_cb_data {
+    time_t cur_time;
+    time_t prev_time;
+    char pszData[64];
+} pcb_data;
