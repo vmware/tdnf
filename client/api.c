@@ -682,6 +682,9 @@ TDNFOpenHandle(
     uint32_t dwError = 0;
     PTDNF pTdnf = NULL;
     PSolvSack pSack = NULL;
+    char *pszCacheDir = NULL;
+    char *pszRepoDir = NULL;
+    int nHasOptReposdir = 0;
 
     if(!pArgs || !ppTdnf)
     {
@@ -700,6 +703,53 @@ TDNFOpenHandle(
                   pTdnf->pArgs->pszConfFile,
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_SETOPT_KEY_REPOSDIR, &nHasOptReposdir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (!IsNullOrEmptyString(pTdnf->pArgs->pszInstallRoot) &&
+        strcmp(pTdnf->pArgs->pszInstallRoot, "/"))
+    {
+        int nIsDir = 0;
+
+        dwError = TDNFAllocateStringPrintf(&pszCacheDir, "%s/%s",
+                                           pTdnf->pArgs->pszInstallRoot,
+                                           pTdnf->pConf->pszCacheDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszCacheDir);
+        pTdnf->pConf->pszCacheDir = pszCacheDir;
+        pszCacheDir = NULL;
+
+        if (!nHasOptReposdir)
+        {
+            dwError = TDNFAllocateStringPrintf(&pszRepoDir, "%s/%s",
+                                               pTdnf->pArgs->pszInstallRoot,
+                                               pTdnf->pConf->pszRepoDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFIsDir(pszRepoDir, &nIsDir);
+            if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
+            {
+                nIsDir = 0;
+                dwError = 0;
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+            if (nIsDir)
+            {
+                TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszRepoDir);
+                pTdnf->pConf->pszRepoDir = pszRepoDir;
+                pszRepoDir = NULL;
+            }
+        }
+    }
+
+    if (nHasOptReposdir)
+    {
+        TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszRepoDir);
+        dwError = TDNFGetCmdOptValue(pTdnf->pArgs, TDNF_SETOPT_KEY_REPOSDIR, &pTdnf->pConf->pszRepoDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFLoadPlugins(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -726,6 +776,8 @@ TDNFOpenHandle(
     *ppTdnf = pTdnf;
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszRepoDir);
     return dwError;
 
 error:
