@@ -53,6 +53,8 @@ TDNFReadConfig(
     PCONF_SECTION pSection = NULL;
     char *pszConfFileCopy = NULL;
     char *pszMinVersionsDir = NULL;
+    char *pszConfFileCopy2 = NULL;
+    char *pszPkgLocksDir = NULL;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszConfFile) ||
@@ -152,7 +154,16 @@ TDNFReadConfig(
     dwError = TDNFJoinPath(&pszMinVersionsDir, dirname(pszConfFileCopy), "minversions.d", NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadMinVersionsFiles(pszMinVersionsDir, &pConf->ppszMinVersions);
+    dwError = TDNFReadConfFilesFromDir(pszMinVersionsDir, &pConf->ppszMinVersions);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy2);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszPkgLocksDir, dirname(pszConfFileCopy2), "locks.d", NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadConfFilesFromDir(pszPkgLocksDir, &pConf->ppszPkgLocks);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pConf = pConf;
@@ -163,7 +174,9 @@ cleanup:
         TDNFFreeConfigData(pData);
     }
     TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
+    TDNF_SAFE_FREE_MEMORY(pszConfFileCopy2);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
+    TDNF_SAFE_FREE_MEMORY(pszPkgLocksDir);
     return dwError;
 
 error:
@@ -314,6 +327,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszBaseArch);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
         TDNFFreeMemory(pConf);
     }
 }
@@ -460,27 +474,27 @@ error:
 
 /*
  * Read all minimal versions files from pszDir, and store results into
- * string array pointed to by pppszMinVersions. pppszMinVersions may already
+ * string array pointed to by pppszLines. pppszLines may already
  * have values set from the config file, which are preserved.
  */
 uint32_t
-TDNFReadMinVersionsFiles(
+TDNFReadConfFilesFromDir(
     char *pszDir,
-    char ***pppszMinVersions
+    char ***pppszLines
     )
 {
     uint32_t dwError = 0;
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
     char *pszFile = NULL;
-    char **ppszNewMinVersions = NULL;
+    char **ppszNewLines = NULL;
     char ***pppszArrayList = NULL;
     int nFileCount = 0;
     int i, j, k;
     int nLineCount = 0;
     int nTmp = 0;
 
-    if(IsNullOrEmptyString(pszDir) || !pppszMinVersions)
+    if(IsNullOrEmptyString(pszDir) || !pppszLines)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -534,7 +548,7 @@ TDNFReadMinVersionsFiles(
     pDir = NULL;
 
     /* append values that are already set */
-    pppszArrayList[i] = *pppszMinVersions;
+    pppszArrayList[i] = *pppszLines;
 
     /* each file can have multiple lines, count them */
     for (i = 0; pppszArrayList[i]; i++)
@@ -546,20 +560,20 @@ TDNFReadMinVersionsFiles(
     }
 
     /* move the lines from 2 dimensional pppszArrayList to
-     * flat pointer list ppszMinVersions */
-    dwError = TDNFAllocateMemory(nLineCount+1, sizeof(char *), (void **)&ppszNewMinVersions);
+     * flat pointer list ppszLines */
+    dwError = TDNFAllocateMemory(nLineCount+1, sizeof(char *), (void **)&ppszNewLines);
     BAIL_ON_TDNF_ERROR(dwError);
 
     for (i = 0, k = 0; pppszArrayList[i]; i++)
     {
         for (j = 0; pppszArrayList[i][j]; j++)
         {
-            ppszNewMinVersions[k++] = pppszArrayList[i][j];
+            ppszNewLines[k++] = pppszArrayList[i][j];
         }
         TDNF_SAFE_FREE_MEMORY(pppszArrayList[i]);
     }
 
-    *pppszMinVersions = ppszNewMinVersions;
+    *pppszLines = ppszNewLines;
 
 cleanup:
     if (pDir)
