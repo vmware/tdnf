@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019-2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
@@ -17,17 +17,17 @@ import socket
 import shutil
 import pytest
 import atexit
+import platform
 import requests
 import subprocess
 import configparser
-import distutils.spawn
 from OpenSSL import crypto
 from urllib.parse import urlparse
 from multiprocessing import Process
 from http.server import SimpleHTTPRequestHandler, HTTPServer
-import platform
 
-ARCH=platform.machine()
+ARCH = platform.machine()
+
 
 def StopTestRepoServer(server):
     server.terminate()
@@ -52,7 +52,7 @@ def TestRepoServer(root, port=8080, interface='', enable_https=False):
         cert.get_subject().C = 'IN'
         cert.get_subject().ST = 'Karnataka'
         cert.get_subject().L = 'Bangalore'
-        cert.get_subject().O = 'VMware'
+        cert.get_subject().O = 'VMware'  # noqa: E741
         cert.get_subject().OU = 'Photon OS'
         cert.get_subject().CN = 'pytest.tdnf.vmware.github.io'
         cert.get_subject().emailAddress = 'tdnf-devel@vmware.com'
@@ -101,9 +101,10 @@ class TestUtils(object):
             self.config.update(cli_args)
         self.config['distribution'] = os.environ.get('DIST', 'photon')
         script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
-        self.run([ 'sh', script, self.config['repo_path'] ])
+        self.run(['sh', script, self.config['repo_path']])
         self.tdnf_config = configparser.ConfigParser()
-        self.tdnf_config.read(os.path.join(self.config['repo_path'], 'tdnf.conf'))
+        self.tdnf_config.read(os.path.join(self.config['repo_path'],
+                                           'tdnf.conf'))
 
         # check execution environment and enable valgrind if suitable
         self.check_valgrind()
@@ -114,12 +115,12 @@ class TestUtils(object):
 
     def check_valgrind(self):
         self.config['valgrind_enabled'] = False
-        valgrind = distutils.spawn.find_executable('valgrind')
+        valgrind = shutil.which('valgrind')
         if not valgrind:
             self.config['valgrind_disabled_reason'] = 'valgrind not found'
             return
 
-        stream = os.popen(valgrind + ' --version') #nosec
+        stream = os.popen(valgrind + ' --version')  # nosec
         valgrind_version = stream.read()
         if not valgrind_version:
             self.config['valgrind_disabled_reason'] = 'Unable to ascertain valgrind version'
@@ -153,10 +154,10 @@ class TestUtils(object):
 
     def check_package(self, package, version=None):
         ''' Check if a package exists '''
-        ret = self.run([ 'tdnf', 'list', package ])
+        ret = self.run(['tdnf', 'list', package])
         for line in ret['stdout']:
             if package in line and '@System' in line:
-                if version == None or version in line:
+                if version is None or version in line:
                     return True
         return False
 
@@ -165,21 +166,21 @@ class TestUtils(object):
             pkg = pkgname + '-' + pkgversion
         else:
             pkg = pkgname
-        self.run([ 'tdnf', 'erase', '-y', pkg ])
-        assert(self.check_package(pkgname) == False)
+        self.run(['tdnf', 'erase', '-y', pkg])
+        assert(not self.check_package(pkgname))
 
     def install_package(utils, pkgname, pkgversion=None):
         if pkgversion:
             pkg = pkgname + '-' + pkgversion
         else:
             pkg = pkgname
-        utils.run([ 'tdnf', 'install', '-y', '--nogpgcheck', pkg ])
-        assert(utils.check_package(pkgname) == True)
+        utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkg])
+        assert(utils.check_package(pkgname))
 
     def _requests_get(self, url, verify):
         try:
             r = requests.get(url, verify=verify, stream=True, timeout=5.0)
-        except:
+        except Exception:
             return None
         return r
 
@@ -187,9 +188,9 @@ class TestUtils(object):
         # Check URL
         try:
             u = urlparse(url)
-        except:
+        except Exception:
             return False, 'Failed to parse URL'
-        if not all([ u.scheme, u.netloc ]):
+        if not all([u.scheme, u.netloc]):
             return False, 'Invalid URL'
         if enforce_https:
             if u.scheme != 'https':
@@ -203,9 +204,9 @@ class TestUtils(object):
                 port = 443
             try:
                 pem = ssl.get_server_certificate((u.netloc, port))
-                cert = load_certificate(FILETYPE_PEM, pem)
+                cert = ssl.load_certificate(crypto.FILETYPE_PEM, pem)
                 fp = cert.digest('sha1').decode()
-            except:
+            except Exception:
                 return False, 'Failed to get server certificate'
             if fingerprint != fp:
                 return False, 'Server fingerprint did not match provided. Got: ' + fp
@@ -246,14 +247,13 @@ class TestUtils(object):
     def _run(self, cmd, retvalonly=False, cwd=None):
         use_shell = not isinstance(cmd, list)
         print(cmd)
-        process = subprocess.Popen(cmd, shell=use_shell, #nosec
+        process = subprocess.Popen(cmd, shell=use_shell,  # nosec
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
                                    cwd=cwd)
-        #process.wait()
         out, err = process.communicate()
         if retvalonly:
-            return {'retval':process.returncode}
+            return {'retval': process.returncode}
 
         stdout = out.decode().strip()
         stderr = err.decode().strip()
@@ -263,14 +263,12 @@ class TestUtils(object):
             retval = int(capture.groups()[0])
 
         ret = {}
+        ret['stdout'] = []
+        ret['stderr'] = []
         if stdout:
             ret['stdout'] = stdout.split('\n')
-        else:
-            ret['stdout'] = []
         if stderr:
             ret['stderr'] = stderr.split('\n')
-        else:
-            ret['stderr'] = []
         ret['retval'] = retval
         return ret
 
@@ -294,6 +292,7 @@ ui_repoid_vars=basearch
 """
         with open(filename, "w") as f:
             f.write(templ.format(name=name, baseurl=baseurl))
+
 
 @pytest.fixture(scope='session')
 def utils():

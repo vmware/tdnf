@@ -1,26 +1,26 @@
 #
-# Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2021-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Oliver Kurth <okurth@vmware.com>
 
 import os
 import shutil
 import pytest
-import errno
 
-REPODIR='/root/repofrompath/yum.repos.d'
-REPOFILENAME='repofrompath.repo'
-REPONAME="repofrompath-test"
-WORKDIR='/root/repofrompath/workdir'
+REPODIR = '/root/repofrompath/yum.repos.d'
+REPOFILENAME = 'repofrompath.repo'
+REPONAME = "repofrompath-test"
+WORKDIR = '/root/repofrompath/workdir'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
+
 
 def teardown_test(utils):
     if os.path.isdir(REPODIR):
@@ -30,6 +30,7 @@ def teardown_test(utils):
     filename = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
     if os.path.isfile(filename):
         os.remove(filename)
+
 
 # reposync a repo and install from it
 def test_repofrompath_created_repo(utils):
@@ -60,8 +61,7 @@ def test_repofrompath_created_repo(utils):
                      '-y', '--nogpgcheck',
                      '--repofrompath=synced-repo,{}'.format(synced_dir),
                      '--repo=synced-repo',
-                     'install', pkgname ],
+                     'install', pkgname],
                     cwd=workdir)
     assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname) == True)
-
+    assert(utils.check_package(pkgname))

@@ -1,32 +1,33 @@
 #
-# Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2021-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Oliver Kurth <okurth@vmware.com>
 
 import os
 import shutil
 import pytest
-import errno
 
-REPODIR='/root/repo_missing_metadata/yum.repos.d'
-REPOFILENAME='repo_missing_metadata.repo'
-REPONAME="repo_missing_metadata-test"
-WORKDIR='/tmp/repo_missing_metadata/workdir'
+REPODIR = '/root/repo_missing_metadata/yum.repos.d'
+REPOFILENAME = 'repo_missing_metadata.repo'
+REPONAME = "repo_missing_metadata-test"
+WORKDIR = '/tmp/repo_missing_metadata/workdir'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
     if os.path.isdir(REPODIR):
         shutil.rmtree(REPODIR)
     if os.path.isdir(WORKDIR):
         shutil.rmtree(WORKDIR)
+
 
 def test_repo_no_filelists(utils):
     reponame = 'photon-test'
@@ -53,5 +54,3 @@ def test_repo_no_filelists(utils):
                      'makecache'],
                     cwd=workdir)
     assert(ret['retval'] == 0)
-
-

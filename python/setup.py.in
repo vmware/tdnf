@@ -1,13 +1,12 @@
 #
-# Copyright (C) 2019-2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
 
-import os
-from distutils.core import setup
+from setuptools import setup
 from distutils.core import Extension
 
 cflags = [
@@ -27,15 +26,15 @@ pytdnf_sources = [
 ]
 
 tdnfmodule = Extension('tdnf._tdnf',
-                       libraries = ['tdnf'],
-                       library_dirs = ['${PYTDNF_LIB_DIR}'],
-                       sources = pytdnf_sources,
-                       extra_compile_args = cflags,
-                       extra_link_args = link_args)
+                       libraries=['tdnf'],
+                       library_dirs=['${PYTDNF_LIB_DIR}'],
+                       sources=pytdnf_sources,
+                       extra_compile_args=cflags,
+                       extra_link_args=link_args)
 
-setup (name = '@PYTDNF_PACKAGE_NAME@',
-       version = '@PYTDNF_VERSION@',
-       description = 'Python bindings for @PYTDNF_PACKAGE_NAME@',
-       packages = ['@PYTDNF_PACKAGE_NAME@'],
+setup(name='@PYTDNF_PACKAGE_NAME@',
+       version='@PYTDNF_VERSION@',
+       description='Python bindings for @PYTDNF_PACKAGE_NAME@',
+       packages=['@PYTDNF_PACKAGE_NAME@'],
        url='https://github.com/vmware/tdnf',
-       ext_modules = [tdnfmodule])
+       ext_modules=[tdnfmodule])

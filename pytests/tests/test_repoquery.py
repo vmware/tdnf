@@ -1,28 +1,25 @@
 #
-# Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2021-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Oliver Kurth <okurth@vmware.com>
 
-import os
-import shutil
-import errno
 import pytest
 
 BASE_PKG = 'tdnf-repoquery-base'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
-    ret = utils.run(['tdnf',
-                     'remove', '-y',
-                     BASE_PKG])
+    utils.run(['tdnf', 'remove', '-y', BASE_PKG])
+
 
 # repoquery should list all packages that depend on BASE_PKG
 # (one of 'enhances', 'recommends', 'requires', 'suggests', 'supplements')
@@ -36,6 +33,7 @@ def test_whatdepends(utils):
     for d in ['enhances', 'recommends', 'requires', 'suggests', 'supplements']:
         assert('tdnf-repoquery-{}'.format(d) in '\n'.join(ret['stdout']))
 
+
 # repoquery should list the package that has a specific
 # relation to BASE_PKG
 def test_what_alldeps(utils):
@@ -47,9 +45,10 @@ def test_what_alldeps(utils):
                          'repoquery',
                          '--what{}'.format(dep),
                          BASE_PKG
-                        ])
+                         ])
         assert(ret['retval'] == 0)
         assert('tdnf-repoquery-{}'.format(dep) in '\n'.join(ret['stdout']))
+
 
 # repoquery should list the package that requires BASE_PKG
 # or some other package that may or may not exist. Tests multiple
@@ -60,9 +59,10 @@ def test_what_2(utils):
                      'repoquery',
                      '--whatrequires',
                      "{},{}".format('doesnotexist', BASE_PKG)
-                    ])
+                     ])
     assert(ret['retval'] == 0)
     assert('tdnf-repoquery-requires' in '\n'.join(ret['stdout']))
+
 
 # packages should have specified relation to BASE_PKG
 def test_alldeps(utils):
@@ -74,9 +74,10 @@ def test_alldeps(utils):
                          'repoquery',
                          '--{}'.format(dep),
                          'tdnf-repoquery-{}'.format(dep)
-                        ])
+                         ])
         assert(ret['retval'] == 0)
         assert(BASE_PKG in '\n'.join(ret['stdout']))
+
 
 # all these packages depend on BASE_PKG
 def test_depends(utils):
@@ -88,6 +89,7 @@ def test_depends(utils):
         assert(ret['retval'] == 0)
         assert(BASE_PKG in '\n'.join(ret['stdout']))
 
+
 # each package has a file with its name
 def test_list(utils):
     dep_types = ['conflicts', 'enhances', 'obsoletes', 'provides',
@@ -98,9 +100,10 @@ def test_list(utils):
                          'repoquery',
                          '--list',
                          'tdnf-repoquery-{}'.format(dep)
-                        ])
+                         ])
         assert(ret['retval'] == 0)
         assert('/usr/lib/repoquery/tdnf-repoquery-{}'.format(dep) in '\n'.join(ret['stdout']))
+
 
 # like test_list(), but the other way around
 def test_file(utils):
@@ -112,9 +115,10 @@ def test_file(utils):
                          'repoquery',
                          '--file',
                          '/usr/lib/repoquery/tdnf-repoquery-{}'.format(dep)
-                        ])
+                         ])
         assert(ret['retval'] == 0)
         assert('tdnf-repoquery-{}'.format(dep) in '\n'.join(ret['stdout']))
+
 
 def test_available(utils):
     ret = utils.run(['tdnf',
@@ -122,6 +126,7 @@ def test_available(utils):
                      '--available'])
     assert(ret['retval'] == 0)
     assert(BASE_PKG in '\n'.join(ret['stdout']))
+
 
 def test_installed(utils):
     ret = utils.run(['tdnf',
@@ -135,6 +140,7 @@ def test_installed(utils):
     assert(ret['retval'] == 0)
     assert(BASE_PKG in '\n'.join(ret['stdout']))
 
+
 def test_extras(utils):
     ret = utils.run(['tdnf',
                      'repoquery',
@@ -143,6 +149,7 @@ def test_extras(utils):
     # we are using just the 'photon-test repo,
     # so any real system package is 'extra'
     assert('glibc' in '\n'.join(ret['stdout']))
+
 
 def test_upgrades(utils):
     pkg_low = "{}-{}".format(utils.config["mulversion_pkgname"], utils.config["mulversion_lower"])
@@ -159,6 +166,7 @@ def test_upgrades(utils):
     assert(ret['retval'] == 0)
     assert(pkg_high in '\n'.join(ret['stdout']))
 
+
 def test_changelog(utils):
     ret = utils.run(['tdnf',
                      'repoquery',
@@ -171,6 +179,7 @@ def test_changelog(utils):
     assert("needle in a haystack" in output)
     assert("John Doe" in output)
     assert("Wed Jan 01 2020" in output)
+
 
 def test_source(utils):
     # any package should do that has
@@ -185,16 +194,15 @@ def test_source(utils):
     output = '\n'.join(ret['stdout'])
     assert(pkgname in output)
     assert('src' in output)
-    assert(not 'x86_64' in output)
+    assert('x86_64' not in output)
+
 
 # each package has a file with its name
-def test_list(utils):
-
+def test_list1(utils):
     dep = 'requires'
     ret = utils.run_memcheck(['tdnf',
                               'repoquery',
                               '--list',
                               'tdnf-repoquery-{}'.format(dep)
-                             ])
+                              ])
     assert(ret['retval'] == 0)
-
