@@ -1,29 +1,29 @@
 #
-# Copyright (C) 2019 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Oliver Kurth <okurth@vmware.com>
 
 import os
 import shutil
-import errno
 import pytest
 import platform
 
 ARCH = platform.machine()
-DOWNLOADDIR='/root/reposync/download'
-METADATADIR='/root/reposync/metadata'
-WORKDIR='/root/reposync/workdir'
-REPOFILENAME='reposync.repo'
-TESTREPO='photon-test'
+DOWNLOADDIR = '/root/reposync/download'
+METADATADIR = '/root/reposync/metadata'
+WORKDIR = '/root/reposync/workdir'
+REPOFILENAME = 'reposync.repo'
+TESTREPO = 'photon-test'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
+
 
 def teardown_test(utils):
     pkgname = utils.config["mulversion_pkgname"]
@@ -41,6 +41,7 @@ def teardown_test(utils):
     if os.path.isdir(os.path.join('/', TESTREPO)):
         shutil.rmtree(os.path.join('/', TESTREPO))
 
+
 # helper to check a synced repo -
 # uses the local repository and compares the list of RPMs
 def check_synced_repo(utils, reponame, synced_dir):
@@ -48,14 +49,15 @@ def check_synced_repo(utils, reponame, synced_dir):
     local_dir = os.path.join(utils.config['repo_path'], reponame, 'RPMS', ARCH)
 
     local_rpms = \
-        list(filter(lambda f: os.path.isfile(os.path.join(local_dir, f)) and f.endswith('.rpm'), \
-            os.listdir(local_dir)))
+        list(filter(lambda f: os.path.isfile(os.path.join(local_dir, f)) and f.endswith('.rpm'),
+                    os.listdir(local_dir)))
 
     # make sure we aren't confused which directory to check
     assert(len(local_rpms) > 0)
 
     for rpm in local_rpms:
         assert(os.path.isfile(os.path.join(synced_dir, 'RPMS', ARCH, rpm)))
+
 
 # reposync with no options - sync to local directory
 def test_reposync(utils):
@@ -66,7 +68,7 @@ def test_reposync(utils):
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     synced_dir = os.path.join(workdir, reponame)
     assert(os.path.isdir(synced_dir))
@@ -74,6 +76,7 @@ def test_reposync(utils):
     check_synced_repo(utils, reponame, synced_dir)
 
     shutil.rmtree(synced_dir)
+
 
 # reposync with download directory
 def test_reposync_download_path(utils):
@@ -89,6 +92,7 @@ def test_reposync_download_path(utils):
     assert(os.path.isdir(os.path.join(downloaddir, reponame)))
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
+
 
 # reposync with download directory with an ending slash
 # (There was a bug about this)
@@ -106,6 +110,7 @@ def test_reposync_download_path_slash(utils):
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
 
+
 # github issue #254
 def test_reposync_download_path_root(utils):
     reponame = TESTREPO
@@ -119,6 +124,7 @@ def test_reposync_download_path_root(utils):
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
 
+
 # github issue #254
 def test_reposync_workdir_root(utils):
     reponame = TESTREPO
@@ -126,11 +132,12 @@ def test_reposync_workdir_root(utils):
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     assert(os.path.isdir(os.path.join(workdir, reponame)))
 
     check_synced_repo(utils, reponame, os.path.join(workdir, reponame))
+
 
 # reposync excluding the repo name from path
 def test_reposync_download_path_norepopath(utils):
@@ -146,6 +153,7 @@ def test_reposync_download_path_norepopath(utils):
 
     check_synced_repo(utils, reponame, downloaddir)
 
+
 # reposync excluding the repo name and delete option is incompatible
 def test_reposync_download_path_norepopath_delete(utils):
     reponame = TESTREPO
@@ -158,15 +166,16 @@ def test_reposync_download_path_norepopath_delete(utils):
                      'reposync'])
     assert(ret['retval'] == 1622)
 
+
 # reposync excluding the repo name and multiple repos is incompatible
 def xxxtest_reposync_download_path_norepopath_multiple_repos(utils):
-    reponame = TESTREPO
     downloaddir = DOWNLOADDIR
     ret = utils.run(['tdnf',
                      '--download-path={}'.format(downloaddir),
                      '--norepopath',
                      'reposync'])
     assert(ret['retval'] == 1622)
+
 
 # reposync with metadata
 def test_reposync_metadata(utils):
@@ -187,6 +196,7 @@ def test_reposync_metadata(utils):
     check_synced_repo(utils, reponame, synced_dir)
 
     shutil.rmtree(synced_dir)
+
 
 # reposync with metadata
 def test_reposync_metadata_path(utils):
@@ -210,6 +220,7 @@ def test_reposync_metadata_path(utils):
 
     shutil.rmtree(synced_dir)
 
+
 # test --delete option
 def test_reposync_delete(utils):
     reponame = TESTREPO
@@ -229,7 +240,7 @@ def test_reposync_delete(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--delete',
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     assert(os.path.isdir(synced_dir))
 
@@ -239,6 +250,7 @@ def test_reposync_delete(utils):
     assert(not os.path.isfile(faked_rpm))
 
     shutil.rmtree(synced_dir)
+
 
 # test no --delete option (we should not delete files if not asked to)
 def test_reposync_no_delete(utils):
@@ -258,7 +270,7 @@ def test_reposync_no_delete(utils):
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     assert(os.path.isdir(synced_dir))
 
@@ -268,6 +280,7 @@ def test_reposync_no_delete(utils):
     assert(os.path.isfile(faked_rpm))
 
     shutil.rmtree(synced_dir)
+
 
 # reposync with gpgcheck
 def test_reposync_gpgcheck(utils):
@@ -279,7 +292,7 @@ def test_reposync_gpgcheck(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--gpgcheck',
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     synced_dir = os.path.join(workdir, reponame)
     assert(os.path.isdir(synced_dir))
@@ -287,6 +300,7 @@ def test_reposync_gpgcheck(utils):
     check_synced_repo(utils, reponame, synced_dir)
 
     shutil.rmtree(synced_dir)
+
 
 # reposync with --urls option (print only)
 def test_reposync_urls(utils):
@@ -298,10 +312,11 @@ def test_reposync_urls(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--urls',
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     synced_dir = os.path.join(workdir, reponame)
     assert(not os.path.isdir(synced_dir))
+
 
 # reposync a repo and install from it
 def test_reposync_create_repo(utils):
@@ -337,9 +352,10 @@ def test_reposync_create_repo(utils):
     ret = utils.run(['tdnf',
                      '-y', '--nogpgcheck',
                      '--disablerepo=*', '--enablerepo=synced-repo',
-                     'install', pkgname ],
+                     'install', pkgname],
                     cwd=workdir)
-    assert(utils.check_package(pkgname) == True)
+    assert(utils.check_package(pkgname))
+
 
 # reposync with arch option should not sync other archs
 def test_reposync_arch(utils):
@@ -355,7 +371,7 @@ def test_reposync_arch(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--arch', ARCH,
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     assert(os.path.isdir(synced_dir))
 
@@ -382,7 +398,7 @@ def test_reposync_arch_others(utils):
                      '--arch', 'modern',
                      '--arch', ARCH,
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     assert(os.path.isdir(synced_dir))
 
@@ -390,6 +406,7 @@ def test_reposync_arch_others(utils):
 
     assert(not os.path.isdir(os.path.join(synced_dir, 'RPMS', 'noarch')))
     shutil.rmtree(synced_dir)
+
 
 # reposync with --newest-only option - sync to local directory
 def test_reposync_newest(utils):
@@ -401,7 +418,7 @@ def test_reposync_newest(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--newest-only',
                      'reposync'],
-                     cwd=workdir)
+                    cwd=workdir)
     assert(ret['retval'] == 0)
     synced_dir = os.path.join(workdir, reponame)
     assert(os.path.isdir(synced_dir))

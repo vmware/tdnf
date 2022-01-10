@@ -1,32 +1,33 @@
 #
-# Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2021-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Oliver Kurth <okurth@vmware.com>
 
 import os
 import shutil
-import errno
 import pytest
 
-INSTALLROOT='/root/installroot'
-REPOFILENAME='photon-test.repo'
+INSTALLROOT = '/root/installroot'
+REPOFILENAME = 'photon-test.repo'
 
-REPODIR='/root/yum.repos.d'
-REPONAME='reposdir-test'
+REPODIR = '/root/yum.repos.d'
+REPONAME = 'reposdir-test'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
     if os.path.isdir(INSTALLROOT):
         shutil.rmtree(INSTALLROOT)
     pass
+
 
 def install_root(utils, no_reposd=False):
     utils.makedirs(INSTALLROOT)
@@ -48,29 +49,32 @@ def install_root(utils, no_reposd=False):
     utils.makedirs(os.path.join(INSTALLROOT, 'var/cache/tdnf'))
     utils.run(['rpm', '--root', INSTALLROOT, '--initdb'])
 
+
 # local version of check_package with install root
 def check_package(utils, package, installroot=INSTALLROOT, version=None):
     """ Check if a package exists """
-    ret = utils.run([ 'tdnf',
+    ret = utils.run(['tdnf',
                      '--installroot', installroot,
-                     '--releasever=4.0', 
-                     'list', package ])
+                     '--releasever=4.0',
+                     'list', package])
     for line in ret['stdout']:
         if package in line and '@System' in line:
-            if version == None or version in line:
+            if version is None or version in line:
                 return True
     return False
+
 
 def erase_package(utils, pkgname, installroot=INSTALLROOT, pkgversion=None):
     if pkgversion:
         pkg = pkgname + '-' + pkgversion
     else:
         pkg = pkgname
-    utils.run([ 'tdnf',
-                '--installroot', installroot,
-                '--releasever=4.0', 
-                'erase', '-y', pkg ])
-    assert(check_package(utils, pkgname) == False)
+    utils.run(['tdnf',
+               '--installroot', installroot,
+               '--releasever=4.0',
+               'erase', '-y', pkg])
+    assert(not check_package(utils, pkgname))
+
 
 def test_install(utils):
     install_root(utils)
@@ -80,22 +84,24 @@ def test_install(utils):
     ret = utils.run(['tdnf', 'install',
                      '-y', '--nogpgcheck',
                      '--installroot', INSTALLROOT,
-                     '--releasever=4.0', pkgname ], noconfig=True)
+                     '--releasever=4.0', pkgname], noconfig=True)
     assert(ret['retval'] == 0)
     assert(check_package(utils, pkgname))
 
     shutil.rmtree(INSTALLROOT)
+
 
 def test_makecache(utils):
     install_root(utils)
     ret = utils.run(['tdnf', 'makecache',
                      '-y', '--nogpgcheck',
                      '--installroot', INSTALLROOT,
-                     '--releasever=4.0' ], noconfig=True)
+                     '--releasever=4.0'], noconfig=True)
     assert(ret['retval'] == 0)
     assert(os.path.isdir(os.path.join(INSTALLROOT, 'var/cache/tdnf', 'photon-test')))
 
     shutil.rmtree(INSTALLROOT)
+
 
 # --setopt=reposdir overrides any dir in install root
 def test_setopt_reposdir_with_installroot(utils):
@@ -112,4 +118,3 @@ def test_setopt_reposdir_with_installroot(utils):
     assert(REPONAME in "\n".join(ret['stdout']))
 
     shutil.rmtree(INSTALLROOT)
-

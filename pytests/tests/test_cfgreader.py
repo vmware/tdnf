@@ -39,7 +39,7 @@ def setup_test(utils):
     create_repoconf(NEW_REPO_FN)
 
     # take backup of original repo file
-    os.rename(ORIG_REPO_FN, ORIG_REPO_FN+'.bak')
+    os.rename(ORIG_REPO_FN, ORIG_REPO_FN + '.bak')
 
     yield
 
@@ -48,7 +48,7 @@ def setup_test(utils):
 
 def teardown_test(utils):
     os.remove(NEW_REPO_FN)
-    os.rename(ORIG_REPO_FN+'.bak', ORIG_REPO_FN)
+    os.rename(ORIG_REPO_FN + '.bak', ORIG_REPO_FN)
     ret = utils.run(['tdnf', 'makecache'])
     assert(ret['retval'] == 0)
 

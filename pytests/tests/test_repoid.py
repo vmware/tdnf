@@ -1,26 +1,26 @@
 #
-# Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2021-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
 # of the License are located in the COPYING file of this distribution.
 #
-#   Author: Oliver Kurth <okurth@vmware.com>
 
 import os
 import shutil
 import pytest
-import errno
 
-REPODIR='/root/repoid/yum.repos.d'
-REPOFILENAME='repoid.repo'
-REPONAME="repoid-test"
-WORKDIR='/root/repoid/workdir'
+REPODIR = '/root/repoid/yum.repos.d'
+REPOFILENAME = 'repoid.repo'
+REPONAME = "repoid-test"
+WORKDIR = '/root/repoid/workdir'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
+
 
 def teardown_test(utils):
     if os.path.isdir(REPODIR):
@@ -31,17 +31,19 @@ def teardown_test(utils):
     if os.path.isfile(filename):
         os.remove(filename)
 
+
 def test_repoid(utils):
     utils.makedirs(REPODIR)
     utils.create_repoconf(os.path.join(REPODIR, REPOFILENAME),
                           "http://foo.bar.com/packages",
                           REPONAME)
     ret = utils.run(['tdnf',
-        '--setopt=reposdir={}'.format(REPODIR),
-        '--repoid={}'.format(REPONAME),
-        'repolist'])
+                     '--setopt=reposdir={}'.format(REPODIR),
+                     '--repoid={}'.format(REPONAME),
+                     'repolist'])
     assert(ret['retval'] == 0)
     assert(REPONAME in "\n".join(ret['stdout']))
+
 
 # reposync a repo and install from it
 def test_repoid_created_repo(utils):
@@ -75,8 +77,7 @@ def test_repoid_created_repo(utils):
     ret = utils.run(['tdnf',
                      '-y', '--nogpgcheck',
                      '--repo=synced-repo',
-                     'install', pkgname ],
+                     'install', pkgname],
                     cwd=workdir)
     assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname) == True)
-
+    assert(utils.check_package(pkgname))

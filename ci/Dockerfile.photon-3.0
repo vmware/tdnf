@@ -12,6 +12,6 @@ RUN tdnf install -q -y --enablerepo=photon-debuginfo \
                        openssl-devel zlib-devel which
 
 # python build/test dependencies
-RUN pip3 install -q requests urllib3 pyOpenSSL pytest
+RUN pip3 install -q requests urllib3 pyOpenSSL pytest flake8
 
 CMD ["/bin/bash"]

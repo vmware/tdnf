@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2020-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
@@ -22,6 +22,7 @@ repo_name = 'photon-test'
 
 ini = configparser.ConfigParser()
 
+
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
     global automatic_conf, tdnf_conf, automatic_cmd
@@ -35,39 +36,48 @@ def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
     repo_file = get_repo_file_path()
     os.system('mv ' + repo_file + '.bak' + ' ' + repo_file)
     cleanup_env(utils)
+
 
 def cleanup_env(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
     os.system('rm -f ' + tmp_auto_conf + ' ' + emit_file + '*')
 
+
 def get_repo_file_path():
     ini_load(tdnf_conf)
     return ini['main']['repodir'] + '/' + repo_name + '.repo'
+
 
 def ini_load(ini_file):
     ini.clear()
     ini.read(ini_file)
 
+
 def ini_set(sec, key, val):
     ini.set(sec, key, val)
+
 
 def ini_store(fname):
     with open(fname, 'w') as f:
         ini.write(f)
 
+
 def set_base_conf_and_store(fname):
     ini_set('base', 'tdnf_conf', tdnf_conf)
     ini_store(fname)
+
 
 def ini_load_set_store(fname, sec, key, val):
     ini_load(fname)
     ini_set(sec, key, val)
     ini_store(fname)
+
 
 def rm_all_spaces_in_file(fname):
     with open(fname, 'r') as f:
@@ -79,10 +89,12 @@ def rm_all_spaces_in_file(fname):
     with open(fname, 'w') as f:
         f.writelines(lines)
 
+
 def run_test_cmd(utils, cmd):
     return utils._run(cmd)
 
-def prepare_and_run_test_cmd(utils, opt, retval, retstr = ''):
+
+def prepare_and_run_test_cmd(utils, opt, retval, retstr=''):
     tmp = [automatic_cmd]
     if '-c' not in opt and '--config' not in opt:
         tmp += ['-c', tmp_auto_conf]
@@ -102,14 +114,18 @@ def prepare_and_run_test_cmd(utils, opt, retval, retstr = ''):
 
     assert(found)
 
+
 def test_tdnf_automatic_show_help(utils):
     prepare_and_run_test_cmd(utils, ['-h'], 0, 'tdnf-automatic help:')
+
 
 def test_tdnf_automatic_show_version(utils):
     prepare_and_run_test_cmd(utils, ['-v'], 0, 'tdnf-automatic - version:')
 
+
 def test_tdnf_automatic_invalid_arg(utils):
     prepare_and_run_test_cmd(utils, ['--invalid'], 22, 'tdnf-automatic help:')
+
 
 def test_tdnf_automatic_invalid_cfg_opt1(utils):
     ini_load(automatic_conf)
@@ -117,11 +133,13 @@ def test_tdnf_automatic_invalid_cfg_opt1(utils):
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 22, 'Invalid input')
 
+
 def test_tdnf_automatic_invalid_cfg_opt2(utils):
     ini_load(automatic_conf)
     ini_set('commands', 'upgrade_type', 'badval')
     ini_load(automatic_conf)
     prepare_and_run_test_cmd(utils, [], 22, 'Invalid entry')
+
 
 def test_tdnf_automatic_invalid_tdnf_conf(utils):
     ini_load(automatic_conf)
@@ -129,8 +147,10 @@ def test_tdnf_automatic_invalid_tdnf_conf(utils):
     ini_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 2, 'does not exist')
 
+
 def test_tdnf_automatic_invalid_automatic_conf(utils):
     prepare_and_run_test_cmd(utils, ['-c', '/badpath/badfile.conf'], 2, 'does not exist')
+
 
 def test_tdnf_automatic_rand_sleep(utils):
     ini_load(automatic_conf)
@@ -138,10 +158,12 @@ def test_tdnf_automatic_rand_sleep(utils):
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, ['-t'], 0, 'Sleep for')
 
+
 def test_tdnf_automatic_refresh_cache(utils):
     ini_load(automatic_conf)
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'RefreshCache success')
+
 
 def test_tdnf_automatic_disable_repos_retry(utils):
     repo_file = get_repo_file_path()
@@ -153,6 +175,7 @@ def test_tdnf_automatic_disable_repos_retry(utils):
     prepare_and_run_test_cmd(utils, [], 64, 'System is off-line')
     ini_load_set_store(repo_file, repo_name, 'enabled', '1')
     rm_all_spaces_in_file(repo_file)
+
 
 def test_tdnf_automatic_invalid_baseurl(utils):
     repo_file = get_repo_file_path()
@@ -167,11 +190,13 @@ def test_tdnf_automatic_invalid_baseurl(utils):
     ini_load_set_store(repo_file, repo_name, 'baseurl', original_baseurl)
     rm_all_spaces_in_file(repo_file)
 
+
 def test_emit_to_stdio(utils):
     ini_load(automatic_conf)
     ini_set('emitter', 'emit_to_stdio', 'yes')
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'System upto date')
+
 
 def test_emit_to_file(utils):
     ini_load(automatic_conf)
@@ -184,6 +209,7 @@ def test_emit_to_file(utils):
 
     prepare_and_run_test_cmd(utils, [], 0)
     glob.glob(emit_file + '*.bak')
+
 
 def test_tdnf_automatic_show_updates(utils):
     cleanup_env(utils)
@@ -201,6 +227,7 @@ def test_tdnf_automatic_show_updates(utils):
     with open(emit_file) as f:
         assert(pkgname in f.read())
 
+
 def test_tdnf_automatic_apply_updates(utils):
     cleanup_env(utils)
     pkgname = utils.config["mulversion_pkgname"]
@@ -217,6 +244,7 @@ def test_tdnf_automatic_apply_updates(utils):
     with open(emit_file) as f:
         assert(pkgname in f.read())
 
+
 def test_tdnf_automatic_same_show_apply_updates(utils):
     cleanup_env(utils)
     pkgname = utils.config["mulversion_pkgname"]
@@ -229,19 +257,19 @@ def test_tdnf_automatic_same_show_apply_updates(utils):
     ini_set('commands', 'apply_updates', 'yes')
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'The following updates are available on')
-    assert(os.path.isfile(emit_file) == False)
+    assert(not os.path.isfile(emit_file))
     ini_set('commands', 'show_updates', 'no')
     ini_set('commands', 'apply_updates', 'no')
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'The following updates are available on')
-    assert(os.path.isfile(emit_file) == False)
+    assert(not os.path.isfile(emit_file))
+
 
 def test_tdnf_automatic_hostname(utils):
     cleanup_env(utils)
     pkgname = utils.config["mulversion_pkgname"]
     pkgversion = utils.config["mulversion_lower"]
     utils.run(['tdnf', 'install', '-y', pkgname + '-' + pkgversion])
-    hostname = socket.gethostname()
     for i in [socket.gethostname(), 'test-hostname']:
         ini_set('emitter', 'emit_to_stdio', 'yes')
         ini_set('emitter', 'emit_to_file', emit_file)
