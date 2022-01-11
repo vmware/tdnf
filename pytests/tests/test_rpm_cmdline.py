@@ -65,15 +65,21 @@ def test_install_as_file(utils):
 # test something like "tdnf install ../path/to/pkg.rpm" (relative path)
 def test_install_as_file_relpath1(utils):
     pkgname = utils.config["sglversion_pkgname"]
+    tmpdir = 'rpmtmp'
     path = get_pkg_file_path(utils, pkgname)
     filename = os.path.basename(path)
-    os.mkdir('rpmtmp')
-    shutil.copy(path, 'rpmtmp')
-    relpath = os.path.join('..', 'rpmtmp', filename)
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
+    utils.makedirs(tmpdir)
+    shutil.copy(path, tmpdir)
+    relpath = os.path.join('..', tmpdir, filename)
+    cwd = os.getcwd()
+    os.chdir(tmpdir)
     ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', relpath])
     assert(ret['retval'] == 0)
     assert(utils.check_package(pkgname))
-    shutil.rmtree('rpmtmp')
+    os.chdir(cwd)
+    shutil.rmtree(tmpdir)
 
 
 # test something like "tdnf install /somepath/../path/to/pkg.rpm"
