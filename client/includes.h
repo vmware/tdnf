@@ -30,12 +30,13 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ftw.h>
 #include <time.h>
 #include <utime.h>
 #include <fnmatch.h>
 #include <libgen.h>
 #include <ctype.h>
-//
+#include <sys/file.h>
 #include <sys/utsname.h>
 
 #include <dirent.h>
@@ -66,6 +67,8 @@
 #include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "prototypes.h"
+
+#include "config.h"
 
 // Enum in order of preference
 enum {

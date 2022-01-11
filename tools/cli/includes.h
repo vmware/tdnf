@@ -33,8 +33,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
-#include <sys/file.h>
-#include <fcntl.h>
 
 #include <tdnf.h>
 #include <tdnfcli.h>

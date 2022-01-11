@@ -1,17 +1,16 @@
 FROM photon:latest
 
-MAINTAINER csiddharth@vmware.com
+RUN tdnf update  -y
+RUN tdnf remove  -y toybox
+RUN tdnf install -y --enablerepo=photon-debuginfo \
+               build-essential cmake curl-devel rpm-build \
+               libsolv-devel popt-devel sed createrepo_c glib libxml2 \
+               findutils python3 python3-pip python3-setuptools \
+               python3-devel valgrind gpgme-devel glibc-debuginfo \
+               libxml2-devel openssl-devel zlib-devel which \
+               python3-requests python3-urllib3 python3-pyOpenSSL
 
-RUN tdnf update  -q -y
-RUN tdnf remove  -q -y toybox
-RUN tdnf install -q -y --enablerepo=photon-debuginfo \
-                       build-essential cmake curl-devel rpm-build libsolv-devel \
-                       popt-devel sed createrepo_c glib libxml2 findutils \
-                       python3 python3-pip python3-setuptools python3-devel \
-                       valgrind gpgme-devel glibc-debuginfo libxml2-devel \
-                       openssl-devel zlib-devel which
-
-# python build/test dependencies
-RUN pip3 install -q requests urllib3 pyOpenSSL pytest flake8
+# this can to be removed once latest pytest gets published in photon
+RUN pip3 install -q pytest flake8
 
 CMD ["/bin/bash"]
