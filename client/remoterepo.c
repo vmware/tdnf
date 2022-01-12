@@ -1,22 +1,11 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : remoterepo.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
 #include "includes.h"
 
 typedef struct _hash_op {
@@ -62,20 +51,41 @@ progress_cb(
     curl_off_t ulNow
     )
 {
-    double dPercent;
+    uint32_t dPercent;
+    pcb_data *pData = (pcb_data *)pUserData;
 
     UNUSED(ulNow);
     UNUSED(ulTotal);
 
-    if (dlTotal <= 0) {
+    if (dlTotal <= 0)
+    {
         return 0;
     }
 
-    dPercent = ((double)dlNow / (double)dlTotal) * 100.0;
-    if (!isatty(STDOUT_FILENO)) {
-        pr_info("%s %3.0f%% %ld\n", (char *)pUserData, dPercent, dlNow);
-    } else {
-        pr_info("%-35s %10ld %5.0f%%\r", (char *)pUserData, dlNow, dPercent);
+    if (dlNow < dlTotal)
+    {
+        time(&pData->cur_time);
+        if (pData->prev_time &&
+            difftime(pData->cur_time, pData->prev_time) < 1.0)
+        {
+            return 0;
+        }
+        pData->prev_time = pData->cur_time;
+        dPercent = (uint32_t)(((double)dlNow / (double)dlTotal) * 100.0);
+    }
+    else
+    {
+        pData->prev_time = 0;
+        dPercent = 100;
+    }
+
+    if (!isatty(STDOUT_FILENO))
+    {
+        pr_info("%s %u% %ld\n", pData->pszData, dPercent, dlNow);
+    }
+    else
+    {
+        pr_info("%-35s %10ld %u%\r", pData->pszData, dlNow, dPercent);
     }
 
     fflush(stdout);
@@ -90,6 +100,7 @@ set_progress_cb(
     )
 {
     uint32_t dwError = 0;
+    static pcb_data pData;
 
     if(!pCurl || IsNullOrEmptyString(pszData))
     {
@@ -100,7 +111,9 @@ set_progress_cb(
     dwError = curl_easy_setopt(pCurl, CURLOPT_XFERINFOFUNCTION, progress_cb);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
-    dwError = curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, pszData);
+    memset(&pData, 0, sizeof(pcb_data));
+    strcpy(pData.pszData, pszData);
+    dwError = curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, &pData);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
     dwError = curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
@@ -373,19 +386,19 @@ TDNFCheckRepoMDFileHashFromMetalink(
 
         dwError = TDNFGetResourceType(currHashInfo->type, &currHashType);
         BAIL_ON_TDNF_ERROR(dwError);
-        
+
         if ((hashType > currHashType)||
            (!TDNFCheckHexDigest(currHashInfo->value, hash_ops[currHashType].length)))
         {
             continue;
         }
         hashType = currHashType;
-        hashInfo = currHashInfo;	
+        hashInfo = currHashInfo;
     }
 
     dwError = TDNFChecksumFromHexDigest(hashInfo->value, digest);
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
     dwError = TDNFCheckHash(pszFile, digest, hashType);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -531,7 +544,7 @@ TDNFParseAndGetURLFromMetalink(
         pr_err("Unable to parse metalink, ERROR: code=%d\n", dwError);
         BAIL_ON_TDNF_ERROR(dwError);
     }
- 
+
     //sort the URL's in List based on preference.
     TDNFSortListOnPreference(&ml_ctx->urls);
 
