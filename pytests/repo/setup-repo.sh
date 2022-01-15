@@ -12,19 +12,27 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
+fix_dir_perms()
+{
+  chmod 755 ${TEST_REPO_DIR}
+  find ${TEST_REPO_DIR} -type d -exec chmod 0755 {} \;
+  find ${TEST_REPO_DIR} -type f -exec chmod 0644 {} \;
+}
+
+TEST_REPO_DIR=$1
 if [ -d $1 ]; then
 	echo "Repo already exists"
+  fix_dir_perms
 	exit 0
 fi
 
 REPO_SRC_DIR=$(dirname "$0")
-TEST_REPO_DIR=$1
 BUILD_PATH=${TEST_REPO_DIR}/build
 PUBLISH_PATH=${TEST_REPO_DIR}/photon-test
 
 ARCH=$(uname -m)
 
-mkdir -p ${BUILD_PATH}/BUILD \
+mkdir -p -m 755 ${BUILD_PATH}/BUILD \
 	 ${BUILD_PATH}/SRPMS \
 	 ${BUILD_PATH}/RPMS/${ARCH} \
 	 ${BUILD_PATH}/RPMS/noarch \
@@ -111,3 +119,5 @@ cat << EOF > ${PUBLISH_PATH}/metalink
  </files>
 </metalink>
 EOF
+
+fix_dir_perms

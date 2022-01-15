@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include "tdnfclitypes.h"
 #include "tdnfclierror.h"
 

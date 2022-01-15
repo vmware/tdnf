@@ -221,7 +221,7 @@ TDNFGetDigestForFile(
     }
 
     fd = open(filename, O_RDONLY);
-    if (fd == -1)
+    if (fd < 0)
     {
         pr_err("Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
@@ -292,7 +292,7 @@ TDNFGetDigestForFile(
     dwError = 0;
 
 cleanup:
-    if (fd != -1)
+    if (fd >= 0)
     {
         close(fd);
     }
@@ -531,7 +531,7 @@ TDNFParseAndGetURLFromMetalink(
     }
 
     fd = open(pszFile, O_RDONLY);
-    if (fd == -1)
+    if (fd < 0)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
@@ -548,7 +548,7 @@ TDNFParseAndGetURLFromMetalink(
     TDNFSortListOnPreference(&ml_ctx->urls);
 
 cleanup:
-    if (fd != -1)
+    if (fd >= 0)
     {
         close(fd);
     }
@@ -692,7 +692,10 @@ TDNFDownloadFile(
     {
         dwError = rename(pszFileTmp, pszFile);
         BAIL_ON_TDNF_ERROR(dwError);
+        dwError = chmod(pszFile, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
+
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
     TDNF_SAFE_FREE_MEMORY(pszFileTmp);

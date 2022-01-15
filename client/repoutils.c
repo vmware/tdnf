@@ -142,18 +142,15 @@ TDNFRepoGetUserPass(
         dwError = ERROR_TDNF_NO_REPOS;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    pRepos = pTdnf->pRepos;
 
-    while(pRepos)
+    for (pRepos = pTdnf->pRepos; pRepos; pRepos = pRepos->pNext)
     {
-        if(!strcmp(pszRepo, pRepos->pszId))
+        if (!strcmp(pszRepo, pRepos->pszId))
         {
             break;
         }
-        pRepos = pRepos->pNext;
     }
-
-    if(!pRepos)
+    if (!pRepos)
     {
         dwError = ERROR_TDNF_REPO_NOT_FOUND;
         BAIL_ON_TDNF_ERROR(dwError);

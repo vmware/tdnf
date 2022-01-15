@@ -237,10 +237,10 @@ TDNFRefreshSack(
     int nMetadataExpired = 0;
     PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
     PTDNF_REPO_DATA_INTERNAL *ppRepoArray = NULL;
-    int i = 0;
-    int nCount = 0;
+    uint32_t nCount = 0;
+    uint32_t i = 0;
 
-    if(!pTdnf)
+    if (!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -251,12 +251,13 @@ TDNFRefreshSack(
         pTdnf->pArgs->nRefresh = 1;
     }
 
-    for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
+    for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
-        /* skip the @cmdline repo - options do not apply, and it is
-           initialized. */
-        if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
-            (!pRepo->nEnabled))
+        /*
+         * skip the @cmdline repo - options do not apply, and it is
+         * initialized.
+         */
+        if (!strcmp(pRepo->pszName, CMDLINE_REPO_NAME) || !pRepo->nEnabled)
         {
             continue;
         }
@@ -272,8 +273,7 @@ TDNFRefreshSack(
 
         for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
         {
-            if ((strcmp(pRepo->pszName, CMDLINE_REPO_NAME) == 0) ||
-                (!pRepo->nEnabled))
+            if (!strcmp(pRepo->pszName, CMDLINE_REPO_NAME) || !pRepo->nEnabled)
             {
                 continue;
             }
@@ -309,32 +309,44 @@ TDNFRefreshSack(
             pszRepoCacheDir = NULL;
         }
 
-        if(nMetadataExpired)
+        if (nMetadataExpired)
         {
+            if (gEuid)
+            {
+                if (!pTdnf->pArgs->nCacheOnly)
+                {
+                    pr_err("\ntdnf repo cache needs to be refreshed\n"
+                           "You can use one of the below methods to workaround this\n"
+                           "1. Login as root & refresh cache\n"
+                           "2. Use -c (--config) option & create repo cache where you have access\n"
+                           "3. Use -C (--cacheonly) & use existing cache in the system\n\n");
+                }
+                goto cleanup;
+            }
+
             dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
-            if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
+            if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
                 dwError = 0;//Ignore non existent folders
             }
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFRemoveSolvCache(pTdnf, pRepo->pszId);
-            if(dwError == ERROR_TDNF_FILE_NOT_FOUND)
+            if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
                 dwError = 0;//Ignore non existent folders
             }
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        if(pSack)
+        if (pSack)
         {
             dwError = TDNFInitRepo(pTdnf, pRepo, pSack);
         }
-        if(dwError && pRepo->nSkipIfUnavailable)
+        if (dwError && pRepo->nSkipIfUnavailable)
         {
             pRepo->nEnabled = 0;
-            pr_info("Disabling Repo: '%s'\n",
-                    pRepo->pszName);
+            pr_info("Disabling Repo: '%s'\n", pRepo->pszName);
             dwError = 0;
         }
         BAIL_ON_TDNF_ERROR(dwError);
@@ -357,5 +369,6 @@ TDNFRefresh(
     {
         return ERROR_TDNF_INVALID_PARAMETER;
     }
+
     return TDNFRefreshSack(pTdnf, pTdnf->pSack, pTdnf->pArgs->nRefresh);
 }

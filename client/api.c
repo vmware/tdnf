@@ -20,6 +20,8 @@
 
 #include "includes.h"
 
+uid_t gEuid;
+
 static TDNF_ENV gEnv = {0};
 
 static tdnflock instance_lock;
@@ -34,6 +36,11 @@ static void TdnfExitHandler(void)
 
 static void IsTdnfAlreadyRunning(void)
 {
+    if (gEuid)
+    {
+        return;
+    }
+
     instance_lock = tdnflockNewAcquire(TDNF_INSTANCE_LOCK_FILE,
                                        "tdnf_instance");
     if (!instance_lock)
@@ -652,6 +659,8 @@ TDNFOpenHandle(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    gEuid = geteuid();
 
     IsTdnfAlreadyRunning();
 

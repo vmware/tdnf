@@ -260,8 +260,6 @@ TDNFFreeSolvedPackageInfo(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     )
 {
-    int32_t i = 0;
-
     if (!pSolvedPkgInfo)
     {
         return;
@@ -281,25 +279,6 @@ TDNFFreeSolvedPackageInfo(
     TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsNotResolved);
     TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsUserInstall);
 
-    if(pSolvedPkgInfo->ppszPkgsNotInstalled)
-    {
-        while(pSolvedPkgInfo->ppszPkgsNotInstalled[i])
-        {
-            TDNF_SAFE_FREE_MEMORY(
-                    pSolvedPkgInfo->ppszPkgsNotInstalled[i++]);
-        }
-    }
-    TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotInstalled);
-
-    if(pSolvedPkgInfo->ppszPkgsNotResolved)
-    {
-        while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
-        {
-            TDNF_SAFE_FREE_MEMORY(
-                    pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
-        }
-    }
-    TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
     TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }
 
