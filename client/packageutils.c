@@ -1,24 +1,11 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : packageutils.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
-#define _GNU_SOURCE 1
 #include "includes.h"
 
 uint32_t

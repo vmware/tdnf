@@ -2,7 +2,6 @@
 
 ## file:    build-tdnf-rpms.sh
 ## brief:   Build tdnf rpms using tdnf.spec
-## author:  Shreenidhi Shedi <sshedi@vmware.com>
 
 if [ ${EUID} -ne 0 ]; then
   echo "Script must be run as root..." 1>&2

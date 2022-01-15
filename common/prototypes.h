@@ -1,21 +1,9 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
- */
-
-/*
- * Header   : prototypes.h
- *
- * Abstract :
- *
- *            commonlib
- *
- *            common library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
 #ifndef __COMMON_PROTOTYPES_H__

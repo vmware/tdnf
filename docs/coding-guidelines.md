@@ -32,7 +32,7 @@ Each component must have the following file format.
 1. Create a single header named includes.h that is the only header included in all the source files. This header may be pre-compiled. The order of headers in this header must be as follows.
    1. config.h (from auto-tools if relevant)
    1. single project level global headers
-   1. any system headers that are specific to current component 
+   1. any system headers that are specific to current component
    1. any headers from component dependencies
    1. defines.h
    1. structs.h
@@ -71,7 +71,7 @@ Note:
 6. Use goto in a forward invocation pattern as much as possible. Avoid using goto to create loops.
 7. Memory cleanup patterns
    1. Using error label to control single point of exit from function
-   
+
 ```
 uint32_t
 CreateResource(

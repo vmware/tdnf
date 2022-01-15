@@ -9,6 +9,7 @@
 #ifndef __CLIENT_INCLUDES_H__
 #define __CLIENT_INCLUDES_H__
 
+#define _GNU_SOURCE 1
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -27,6 +28,7 @@
 #include <sys/file.h>
 #include <time.h>
 #include <sys/utsname.h>
+#include <dlfcn.h>
 
 #include <dirent.h>
 #include <pthread.h>

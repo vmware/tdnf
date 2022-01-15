@@ -1,21 +1,9 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
- */
-
-/*
- * Header   : prototypes.h
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
 #ifndef __CLIENT_PROTOTYPES_H__
@@ -1194,7 +1182,7 @@ TDNFParseUrlTag(
     );
 
 // list.c
-void 
+void
 TDNFSortListOnPreference(
     TDNF_ML_LIST** headUrl
 );
@@ -1205,7 +1193,7 @@ TDNFAppendList(
     void *new_data
 );
 
-void 
+void
 TDNFDeleteList(
     TDNF_ML_LIST** head_ref,
     TDNF_ML_FREE_FUNC free_func

@@ -1,21 +1,9 @@
 /*
- * Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2021-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
- */
-
-/*
- * Module   : metalink.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Nitesh Kumar (kunitesh@vmware.com)
  */
 
 #include "includes.h"
@@ -86,7 +74,7 @@ TDNFParseFileTag(
     }
 
     xmlPropValue = xmlGetProp(node, ATTR_NAME);
-    if (!xmlPropValue) 
+    if (!xmlPropValue)
     {
         pr_err("%s: Missing attribute \"name\" of file element", __func__);
         dwError = ERROR_TDNF_ML_PARSER_MISSING_FILE_ATTR;
@@ -94,16 +82,16 @@ TDNFParseFileTag(
     }
 
     name = (const char*)xmlPropValue;
-    if (strcmp(name, filename)) 
+    if (strcmp(name, filename))
     {
         pr_err("%s: Invalid filename from metalink file:%s", __func__, name);
         dwError = ERROR_TDNF_ML_PARSER_INVALID_FILE_NAME;
         BAIL_ON_TDNF_ERROR(dwError);
-    } 
-    
+    }
+
     dwError = TDNFAllocateString(name, &(ml_ctx->filename));
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
 cleanup:
     if(xmlPropValue)
     {
@@ -134,9 +122,9 @@ TDNFParseHashTag(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Get Hash Properties. 
+    //Get Hash Properties.
     xmlPropValue = xmlGetProp(node, ATTR_TYPE);
-    if (!xmlPropValue) 
+    if (!xmlPropValue)
     {
         dwError = ERROR_TDNF_ML_PARSER_MISSING_HASH_ATTR;
         pr_err("XML Parser Error:HASH element doesn't have attribute \"type\"");
@@ -147,10 +135,10 @@ TDNFParseHashTag(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_ML_HASH_INFO),
                                  (void**)&ml_hash_info);
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
     dwError = TDNFAllocateString(type, &(ml_hash_info->type));
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
     //Get Hash Content.
     xmlContValue = xmlNodeGetContent(node);
     if(!xmlContValue)
@@ -167,7 +155,7 @@ TDNFParseHashTag(
     //Append hash info in ml_ctx hash list.
     dwError = TDNFAppendList(&(ml_ctx->hashes), ml_hash_info);
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
 cleanup:
     if(xmlPropValue)
     {
@@ -203,7 +191,7 @@ TDNFParseUrlTag(
     const char *value = NULL;
     int prefValue = 0;
     TDNF_ML_URL_INFO *ml_url_info = NULL;
-    
+
     if(!ml_ctx || !node)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -213,7 +201,7 @@ TDNFParseUrlTag(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_ML_URL_INFO),
                                  (void**)&ml_url_info);
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
     if ((xmlPropValue = xmlGetProp(node, ATTR_PROTOCOL)))
     {
         value = (const char*)xmlPropValue;
@@ -253,14 +241,14 @@ TDNFParseUrlTag(
         xmlFree(xmlPropValue);
         xmlPropValue = NULL;
 
-        if (prefValue < 0 || prefValue > 100) 
+        if (prefValue < 0 || prefValue > 100)
         {
             dwError = ERROR_TDNF_ML_PARSER_MISSING_URL_ATTR;
             pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\""
                    "attribute in url element (should be in range 0-100)", value);
             BAIL_ON_TDNF_ERROR(dwError);
-        } 
-        else 
+        }
+        else
         {
             ml_url_info->preference = prefValue;
         }
@@ -279,7 +267,7 @@ TDNFParseUrlTag(
     value = (const char*)xmlContValue;
     dwError = TDNFAllocateString(value, &(ml_url_info->url));
     BAIL_ON_TDNF_ERROR(dwError);
-    
+
     //Append url info in ml_ctx url list.
     dwError = TDNFAppendList(&(ml_ctx->urls), ml_url_info);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -288,13 +276,13 @@ cleanup:
     if(xmlPropValue)
     {
         xmlFree(xmlPropValue);
-        xmlPropValue = NULL;  
+        xmlPropValue = NULL;
     }
 
     if(xmlContValue)
     {
         xmlFree(xmlContValue);
-        xmlContValue = NULL;  
+        xmlContValue = NULL;
     }
     return dwError;
 
@@ -328,14 +316,14 @@ TDNFXmlParseData(
     while(node)
     {
         if(node->type == XML_ELEMENT_NODE)
-        {                                                       
+        {
             if(!strcmp((const char*)node->name, TAG_NAME_FILE))
-            {                     
+            {
                 dwError = TDNFParseFileTag(ml_ctx, node, filename);
                 BAIL_ON_TDNF_ERROR(dwError);
-            }                     
+            }
             else if(!strcmp((const char*)node->name, TAG_NAME_SIZE))
-            {                     
+            {
                 //Get File Size.
                 xmlContValue = xmlNodeGetContent(node);
                 if(!xmlContValue)
@@ -349,20 +337,20 @@ TDNFXmlParseData(
                 {
                     dwError = ERROR_TDNF_INVALID_PARAMETER;
                     pr_err("XML Parser Warning: size is invalid value: %s\n", size);
-                    BAIL_ON_TDNF_ERROR(dwError); 
-                } 
-            }                     
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
             else if(!strcmp((const char*)node->name, TAG_NAME_HASH))
-            {                     
+            {
                 dwError = TDNFParseHashTag(ml_ctx, node);
                 BAIL_ON_TDNF_ERROR(dwError);
-            }                     
+            }
             else if(!strcmp((const char*)node->name, TAG_NAME_URL))
-            {                                                     
+            {
                 dwError = TDNFParseUrlTag(ml_ctx, node);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-        }                       
+        }
         TDNFXmlParseData(ml_ctx, node->children, filename);
         node = node->next;
     }
@@ -371,7 +359,7 @@ cleanup:
     if(xmlContValue)
     {
         xmlFree(xmlContValue);
-        xmlContValue = NULL;  
+        xmlContValue = NULL;
     }
     return dwError;
 error:
@@ -394,11 +382,11 @@ TDNFMetalinkParseFile(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    
+
     //Read The File and get the doc object.
     doc = xmlReadFd(fd, NULL, NULL, 0);
-    
-    if (doc == NULL) 
+
+    if (doc == NULL)
     {
         pr_err("%s: Error while reading xml from fd:%d \n", __func__, fd);
         dwError = ERROR_TDNF_ML_PARSER_INVALID_DOC_OBJECT;
@@ -407,8 +395,8 @@ TDNFMetalinkParseFile(
 
     //Get the root element from parsed xml tree.
     root_element = xmlDocGetRootElement(doc);
-   
-    if (root_element == NULL) 
+
+    if (root_element == NULL)
     {
         pr_err("%s: Error to fetch root element of xml tree\n", __func__);
         dwError = ERROR_TDNF_ML_PARSER_INVALID_ROOT_ELEMENT;
