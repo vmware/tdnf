@@ -21,48 +21,47 @@
 
 #include "includes.h"
 
-TDNF_CLI_CONTEXT _context = {0};
+static TDNF_CLI_CONTEXT _context = {0};
 
-int main(int argc, char* argv[])
+static TDNF_CLI_CMD_MAP arCmdMap[] =
 {
-    uint32_t dwError = 0;
-    PTDNF_CMD_ARGS pCmdArgs = NULL;
-    TDNF_CLI_CMD_MAP arCmdMap[] =
-    {
-        {"autoerase",          TDNFCliAutoEraseCommand},
-        {"autoremove",         TDNFCliAutoEraseCommand},
-        {"check",              TDNFCliCheckCommand},
-        {"check-local",        TDNFCliCheckLocalCommand},
-        {"check-update",       TDNFCliCheckUpdateCommand},
-        {"clean",              TDNFCliCleanCommand},
-        {"count",              TDNFCliCountCommand},
-        {"distro-sync",        TDNFCliDistroSyncCommand},
-        {"downgrade",          TDNFCliDowngradeCommand},
-        {"erase",              TDNFCliEraseCommand},
-        {"help",               TDNFCliHelpCommand},
-        {"info",               TDNFCliInfoCommand},
-        {"install",            TDNFCliInstallCommand},
-        {"list",               TDNFCliListCommand},
-        {"makecache",          TDNFCliMakeCacheCommand},
-        {"provides",           TDNFCliProvidesCommand},
-        {"whatprovides",       TDNFCliProvidesCommand},
-        {"reinstall",          TDNFCliReinstallCommand},
-        {"remove",             TDNFCliEraseCommand},
-        {"repolist",           TDNFCliRepoListCommand},
-        {"reposync",           TDNFCliRepoSyncCommand},
-        {"repoquery",          TDNFCliRepoQueryCommand},
-        {"search",             TDNFCliSearchCommand},
-        {"update",             TDNFCliUpgradeCommand},
-        {"update-to",          TDNFCliUpgradeCommand},
-        {"upgrade",            TDNFCliUpgradeCommand},
-        {"upgrade-to",         TDNFCliUpgradeCommand},
-        {"updateinfo",         TDNFCliUpdateInfoCommand},
-    };
+    {"autoerase",          TDNFCliAutoEraseCommand},
+    {"autoremove",         TDNFCliAutoEraseCommand},
+    {"check",              TDNFCliCheckCommand},
+    {"check-local",        TDNFCliCheckLocalCommand},
+    {"check-update",       TDNFCliCheckUpdateCommand},
+    {"clean",              TDNFCliCleanCommand},
+    {"count",              TDNFCliCountCommand},
+    {"distro-sync",        TDNFCliDistroSyncCommand},
+    {"downgrade",          TDNFCliDowngradeCommand},
+    {"erase",              TDNFCliEraseCommand},
+    {"help",               TDNFCliHelpCommand},
+    {"info",               TDNFCliInfoCommand},
+    {"install",            TDNFCliInstallCommand},
+    {"list",               TDNFCliListCommand},
+    {"makecache",          TDNFCliMakeCacheCommand},
+    {"provides",           TDNFCliProvidesCommand},
+    {"whatprovides",       TDNFCliProvidesCommand},
+    {"reinstall",          TDNFCliReinstallCommand},
+    {"remove",             TDNFCliEraseCommand},
+    {"repolist",           TDNFCliRepoListCommand},
+    {"reposync",           TDNFCliRepoSyncCommand},
+    {"repoquery",          TDNFCliRepoQueryCommand},
+    {"search",             TDNFCliSearchCommand},
+    {"update",             TDNFCliUpgradeCommand},
+    {"update-to",          TDNFCliUpgradeCommand},
+    {"upgrade",            TDNFCliUpgradeCommand},
+    {"upgrade-to",         TDNFCliUpgradeCommand},
+    {"updateinfo",         TDNFCliUpdateInfoCommand},
+};
 
-    int nCommandCount = ARRAY_SIZE(arCmdMap);
-    const char* pszCmd = NULL;
-    PTDNF pTdnf = NULL;
+int main(int argc, char **argv)
+{
     int nFound = 0;
+    uint32_t dwError = 0;
+    PTDNF pTdnf = NULL;
+    const char *pszCmd = NULL;
+    PTDNF_CMD_ARGS pCmdArgs = NULL;
 
     /*
      * granular permissions for non root users are pending.
@@ -112,9 +111,10 @@ int main(int argc, char* argv[])
     else if(pCmdArgs->nCmdCount > 0)
     {
         pszCmd = pCmdArgs->ppszCmds[0];
-        while(nCommandCount > 0)
+        for (int nCommandCount = ARRAY_SIZE(arCmdMap);
+                nCommandCount;
+                nCmdCount--)
         {
-            --nCommandCount;
             if(!strcmp(pszCmd, arCmdMap[nCommandCount].pszCmdName))
             {
                 nFound = 1;
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 
                 break;
             }
-        };
+        }
         if(!nFound)
         {
             TDNFCliShowNoSuchCommand(pszCmd);

@@ -35,8 +35,8 @@ TDNFCliParseInfoArgs(
 uint32_t
 TDNFCliParsePackageArgs(
     PTDNF_CMD_ARGS pCmdArgs,
-    char*** pppszPackageArgs,
-    int* pnPackageCount
+    char ***pppszPackageArgs,
+    const int *pnPackageCount
     )
 {
     uint32_t dwError = 0;

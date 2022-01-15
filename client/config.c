@@ -534,6 +534,7 @@ TDNFReadConfFilesFromDir(
             continue;
         }
         dwError = TDNFAllocateStringPrintf(&pszFile, pszDir, pEnt->d_name);
+        BAIL_ON_TDNF_ERROR(dwError);
         dwError = TDNFJoinPath(&pszFile, pszDir, pEnt->d_name, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 

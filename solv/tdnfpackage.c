@@ -1147,7 +1147,6 @@ SolvGetTransResultsWithType(
     )
 {
     uint32_t  dwError = 0;
-    Id dwPkg = 0;
     Id dwPkgType = 0;
     PSolvPackageList pPkgList = NULL;
     Queue queueSolvedPackages = {0};
@@ -1162,7 +1161,7 @@ SolvGetTransResultsWithType(
 
     for (int i = 0; i < pTrans->steps.count; ++i)
     {
-        dwPkg = pTrans->steps.elements[i];
+        Id dwPkg = pTrans->steps.elements[i];
 
         switch (dwType)
         {
@@ -1332,7 +1331,6 @@ SolvFindHighestOrLowestInstalled(
     )
 {
     uint32_t dwError = 0;
-    int dwPkgIndex = 0;
     int dwEvrCompare = 0;
     Id  dwInstalledId = 0;
     Id  dwHighestOrLowestInstalled = 0;
@@ -1362,7 +1360,7 @@ SolvFindHighestOrLowestInstalled(
         dwError = SolvGetPackageListSize(pInstalledPkgList, &dwCount);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        for(dwPkgIndex = 1; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+        for(uint32_t dwPkgIndex = 1; dwPkgIndex < dwCount; dwPkgIndex++)
         {
             dwError = SolvGetPackageId(
                           pInstalledPkgList,
@@ -1405,7 +1403,7 @@ error:
 
 uint32_t
 SolvSplitEvr(
-    PSolvSack pSack,
+    const PSolvSack pSack,
     const char *pszEVRstring,
     char **ppszEpoch,
     char **ppszVersion,
@@ -1527,7 +1525,6 @@ SkipBasedOnType(
     )
 {
     bool result = false;
-    Solvable *s;
 
     if (dwSkipProblem & SKIPPROBLEM_CONFLICTS)
     {
@@ -1551,7 +1548,7 @@ SkipBasedOnType(
          */
         if (type == SOLVER_RULE_PKG_NOT_INSTALLABLE)
         {
-            s = pSolv->pool->solvables + dwSource;
+            Solvable *s = pSolv->pool->solvables + dwSource;
             if (pool_disabled_solvable(pSolv->pool, s)) {
                 result = true;
             }
@@ -1632,7 +1629,6 @@ SolvReportProblems(
     Id dwDep = 0;
     Id dwSource = 0;
     Id dwTarget = 0;
-    Id dwProblemId = 0;
     SolverRuleinfo type;
     uint32_t dwError = 0;
     uint32_t total_prblms = 0;
@@ -1648,7 +1644,7 @@ SolvReportProblems(
     {
         const char *pszProblem = NULL;
 
-        dwProblemId = solver_findproblemrule(pSolv, nCount);
+        Id dwProblemId = solver_findproblemrule(pSolv, nCount);
 
         type = solver_ruleinfo(pSolv, dwProblemId,
                                &dwSource, &dwTarget, &dwDep);
@@ -1739,7 +1735,6 @@ SolvDataIterator(
 {
     Dataiterator di;
     Id keyname = SOLVABLE_NAME;
-    int flags = 0;
     char **ppszPackagesTemp = NULL;
     uint32_t dwError = 0;
 
@@ -1752,7 +1747,7 @@ SolvDataIterator(
     ppszPackagesTemp = ppszExcludes;
     while(ppszPackagesTemp && *ppszPackagesTemp)
     {
-          flags = SEARCH_STRING;
+          int flags = SEARCH_STRING;
           if (SolvIsGlob(*ppszPackagesTemp))
           {
               flags = SEARCH_GLOB;
@@ -1977,7 +1972,7 @@ SolvGetDependenciesFromId(
     }
     else
     {
-        Id allDepKeyIds[] = {
+        Id _allDepKeyIds[] = {
             ID_NULL,
             SOLVABLE_PROVIDES,
             SOLVABLE_OBSOLETES,
@@ -1988,7 +1983,7 @@ SolvGetDependenciesFromId(
             SOLVABLE_SUPPLEMENTS,
             SOLVABLE_ENHANCES
         };
-        solvable_lookup_deparray(pSolv, allDepKeyIds[depKey], &queueDeps, -1);
+        solvable_lookup_deparray(pSolv, _allDepKeyIds[depKey], &queueDeps, -1);
     }
     nNumDeps = queueDeps.count;
 

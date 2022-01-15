@@ -26,7 +26,6 @@ TDNFMergeList(
     TDNF_ML_LIST* listB
     )
 {
-    uint32_t dwError = 0;
     TDNF_ML_LIST* mergedList = NULL;
     TDNF_ML_URL_INFO *urlA = NULL;
     TDNF_ML_URL_INFO *urlB = NULL;
@@ -69,9 +68,6 @@ TDNFMergeList(
     }
 
     return mergedList;
-
-error:
-    return NULL;
 }
 
 /* This function is used to split the nodes of the given

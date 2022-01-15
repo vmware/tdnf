@@ -321,7 +321,6 @@ doCheck(PTDNFRPMTS pTS)
     rpmProblem prob = NULL;
     nResult = rpmtsCheck(pTS->pTS);
     char *pErrorStr = NULL;
-    uint32_t dwError = 0;
 
     rpmps ps = rpmtsProblems(pTS->pTS);
     if(ps)
@@ -345,6 +344,7 @@ doCheck(PTDNFRPMTS pTS)
                     pr_crit("%s\n", msg);
                     if (rpmProblemGetType(prob) == RPMPROB_REQUIRES)
                     {
+                        uint32_t dwError = 0;
                         dwError = TDNFAllocateString(rpmProblemGetStr(prob), &pErrorStr);
                         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -362,6 +362,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pErrorStr);
     return nResult;
 error:
+    nResult = ERROR_TDNF_RPM_CHECK;
     goto cleanup;
 }
 
@@ -684,7 +685,6 @@ TDNFTransAddErasePkg(
     uint32_t dwError = 0;
     Header pRpmHeader = NULL;
     rpmdbMatchIterator pIterator = NULL;
-    unsigned int nOffset = 0;
 
     if(!pTS || IsNullOrEmptyString(pkgName))
     {
@@ -695,7 +695,7 @@ TDNFTransAddErasePkg(
     pIterator = rpmtsInitIterator(pTS->pTS, (rpmTag)RPMDBI_LABEL, pkgName, 0);
     while ((pRpmHeader = rpmdbNextIterator(pIterator)) != NULL)
     {
-        nOffset = rpmdbGetIteratorOffset(pIterator);
+        uint32_t nOffset = rpmdbGetIteratorOffset(pIterator);
         if(nOffset)
         {
             dwError = rpmtsAddEraseElement(pTS->pTS, pRpmHeader, nOffset);
@@ -835,7 +835,6 @@ cleanup:
 
 error:
     goto cleanup;
-    return 1;
 }
 
 void

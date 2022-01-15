@@ -55,7 +55,7 @@ TDNFCliParseRepoSyncArgs(
                         (void **)&pReposyncArgs->ppszArchs);
                     BAIL_ON_CLI_ERROR(dwError);
                 }
-                for (i = 0; pReposyncArgs->ppszArchs[i] && i < TDNF_REPOSYNC_MAXARCHS; i++);
+                for (i = 0; i < TDNF_REPOSYNC_MAXARCHS && pReposyncArgs->ppszArchs[i]; i++);
                 if (i < TDNF_REPOSYNC_MAXARCHS)
                 {
                     dwError = TDNFAllocateString(

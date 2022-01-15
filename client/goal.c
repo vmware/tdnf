@@ -311,8 +311,6 @@ TDNFGoal(
     Queue queueJobs = {0};
 
     int nFlags = 0;
-    int i = 0;
-    Id  dwId = 0;
     int nProblems = 0;
     char** ppszExcludes = NULL;
     uint32_t dwExcludeCount = 0;
@@ -346,9 +344,9 @@ TDNFGoal(
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        for (i = 0; i < pQueuePkgList->count; i++)
+        for (int i = 0; i < pQueuePkgList->count; i++)
         {
-            dwId = pQueuePkgList->elements[i];
+            Id dwId = pQueuePkgList->elements[i];
             TDNFAddGoal(pTdnf, nAlterType, &queueJobs, dwId,
                         dwExcludeCount, ppszExcludes);
         }

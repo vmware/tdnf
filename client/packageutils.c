@@ -540,7 +540,6 @@ TDNFGetGlobPackages(
     )
 {
     uint32_t dwError = 0;
-    int dwPkgIndex = 0;
     PSolvPackageList pSolvPkgList = NULL;
 
     if(!pSack || IsNullOrEmptyString(pszPkgGlob) || !pQueueGoal)
@@ -557,7 +556,7 @@ TDNFGetGlobPackages(
 
     if(pSolvPkgList->queuePackages.count > 0)
     {
-        for(dwPkgIndex = 0;
+        for(int dwPkgIndex = 0;
             dwPkgIndex < pSolvPkgList->queuePackages.count;
             dwPkgIndex++)
         {

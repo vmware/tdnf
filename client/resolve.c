@@ -60,7 +60,6 @@ TDNFPrepareAllPackages(
 {
     uint32_t dwError = 0;
     PTDNF_CMD_ARGS pCmdArgs = NULL;
-    int nCmdIndex = 0;
     int nPkgIndex = 0;
     int nIsFile = 0;
     int nDummy = 0;
@@ -127,7 +126,7 @@ TDNFPrepareAllPackages(
     }
     else
     {
-       for(nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
+       for(int nCmdIndex = 1; nCmdIndex < pCmdArgs->nCmdCount; ++nCmdIndex)
        {
            pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
 

@@ -47,7 +47,6 @@ TDNFCloneCmdArgs(
     pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
     pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;
     pCmdArgs->nRefresh       = pCmdArgsIn->nRefresh;
-    pCmdArgs->nCacheOnly     = pCmdArgsIn->nCacheOnly;
     pCmdArgs->nRpmVerbosity  = pCmdArgsIn->nRpmVerbosity;
     pCmdArgs->nShowDuplicates= pCmdArgsIn->nShowDuplicates;
     pCmdArgs->nShowHelp      = pCmdArgsIn->nShowHelp;
@@ -354,11 +353,9 @@ uint32_t
 TDNFRefresh(
     PTDNF pTdnf)
 {
-    uint32_t dwError = 0;
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pArgs)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        return dwError;
+        return ERROR_TDNF_INVALID_PARAMETER;
     }
     return TDNFRefreshSack(pTdnf, pTdnf->pSack, pTdnf->pArgs->nRefresh);
 }

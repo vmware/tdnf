@@ -1218,7 +1218,7 @@ SolvApplyDepsFilter(
 
             if (whatKey != REPOQUERY_WHAT_KEY_DEPENDS)
             {
-                Id allDepKeyIds[] = {
+                Id _allDepKeyIds[] = {
                     SOLVABLE_PROVIDES,
                     SOLVABLE_OBSOLETES,
                     SOLVABLE_CONFLICTS,
@@ -1229,7 +1229,7 @@ SolvApplyDepsFilter(
                     SOLVABLE_ENHANCES
                 };
                 /* single dependency type */
-                if (solvable_matchesdep(pSolvable, allDepKeyIds[whatKey], idDep, 0))
+                if (solvable_matchesdep(pSolvable, _allDepKeyIds[whatKey], idDep, 0))
                 {
                     queue_push(&queueFiltered, idPkg);
                     break;

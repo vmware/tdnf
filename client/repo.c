@@ -156,7 +156,6 @@ cleanup:
 
 error:
     goto cleanup;
-    return dwError;
 }
 
 uint32_t

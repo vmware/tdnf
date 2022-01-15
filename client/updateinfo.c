@@ -277,7 +277,6 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
 {
     uint32_t dwError = 0;
 
-    time_t dwUpdated = 0;
     const char *pszType = 0;
     PTDNF_UPDATEINFO pInfo = NULL;
     const char* pszTemp = NULL;
@@ -330,6 +329,8 @@ TDNFPopulateUpdateInfoOfOneAdvisory(
 
     if (dwKeepEntry)
     {
+        time_t dwUpdated = 0;
+
         dwError = TDNFAllocateMemory(
                       1,
                       sizeof(TDNF_UPDATEINFO),

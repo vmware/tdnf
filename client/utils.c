@@ -32,7 +32,6 @@ TDNFGetErrorString(
     const char* pszCurlError = NULL;
     int i = 0;
     int nCount = 0;
-    uint32_t dwActualError = 0;
 
     //Allow mapped error strings to override
     TDNF_ERROR_DESC arErrorDesc[] = TDNF_ERROR_TABLE;
@@ -52,7 +51,7 @@ TDNFGetErrorString(
     //Get system error
     if(!pszError && TDNFIsSystemError(dwErrorCode))
     {
-        dwActualError = TDNFGetSystemError(dwErrorCode);
+        uint32_t dwActualError = TDNFGetSystemError(dwErrorCode);
         pszSystemError = strerror(dwActualError);
         if(pszSystemError)
         {

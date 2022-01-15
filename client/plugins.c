@@ -285,7 +285,6 @@ _TDNFLoadPluginConfigs(
     uint32_t dwError = 0;
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
-    int nLen = 0;
     int nExtLen = TDNF_PLUGIN_CONF_EXT_LEN;
     PTDNF_PLUGIN pPlugin = NULL;
     PTDNF_PLUGIN pPlugins = NULL;
@@ -307,7 +306,7 @@ _TDNFLoadPluginConfigs(
 
     while((pEnt = readdir(pDir)) != NULL)
     {
-        nLen = strlen(pEnt->d_name);
+        int nLen = strlen(pEnt->d_name);
         if (nLen <= nExtLen ||
             strcmp(pEnt->d_name + nLen - nExtLen, TDNF_PLUGIN_CONF_EXT))
         {
@@ -365,7 +364,6 @@ _TDNFAlterPluginState(
     )
 {
     uint32_t dwError = 0;
-    int nMatch = 0;
     int nIsGlob = 0;
     PTDNF_PLUGIN pPlugin = NULL;
 
@@ -379,7 +377,7 @@ _TDNFAlterPluginState(
 
     for(pPlugin = pPlugins; pPlugin; pPlugin = pPlugin->pNext)
     {
-        nMatch = 0;
+        int nMatch = 0;
         if(nIsGlob)
         {
             if(!fnmatch(pszName, pPlugin->pszName, 0))

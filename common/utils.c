@@ -260,22 +260,46 @@ TDNFFreeSolvedPackageInfo(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     )
 {
-    if(pSolvedPkgInfo)
-    {
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsExisting);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToInstall);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToUpgrade);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToDowngrade);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToRemove);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
-        TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
+    int32_t i = 0;
 
-        TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsNotResolved);
-        TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsUserInstall);
+    if (!pSolvedPkgInfo)
+    {
+        return;
     }
+
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsExisting);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToInstall);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToUpgrade);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToDowngrade);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToRemove);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsUnNeeded);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
+
+    TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsNotResolved);
+    TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsUserInstall);
+
+    if(pSolvedPkgInfo->ppszPkgsNotInstalled)
+    {
+        while(pSolvedPkgInfo->ppszPkgsNotInstalled[i])
+        {
+            TDNF_SAFE_FREE_MEMORY(
+                    pSolvedPkgInfo->ppszPkgsNotInstalled[i++]);
+        }
+    }
+    TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotInstalled);
+
+    if(pSolvedPkgInfo->ppszPkgsNotResolved)
+    {
+        while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
+        {
+            TDNF_SAFE_FREE_MEMORY(
+                    pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
+        }
+    }
+    TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
     TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }
 
@@ -369,25 +393,27 @@ TDNFFreeCmdArgs(
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
-    int nIndex = 0;
-    if(pCmdArgs)
+    if (!pCmdArgs)
     {
-        for(nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
-        {
-            TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
-        }
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszDownloadDir);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
-
-        if(pCmdArgs->pSetOpt)
-        {
-            TDNFFreeCmdOpt(pCmdArgs->pSetOpt);
-        }
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs);
+        return;
     }
+
+    for(int nIndex = 0; nIndex < pCmdArgs->nCmdCount; ++nIndex)
+    {
+        TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
+    }
+
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszDownloadDir);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszReleaseVer);
+
+    if(pCmdArgs->pSetOpt)
+    {
+        TDNFFreeCmdOpt(pCmdArgs->pSetOpt);
+    }
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 
 void
@@ -777,7 +803,6 @@ TDNFJoinPath(char **ppszPath, ...)
     char *pszNodeCopy = NULL;
     char *pszResult = NULL;
     int nLength = 0;
-    int nLengthTmp = 0;
 
     if (!ppszPath)
     {
@@ -795,6 +820,7 @@ TDNFJoinPath(char **ppszPath, ...)
     va_start(ap, ppszPath);
     for(pszNode = va_arg(ap, char *), i = 0; pszNode; pszNode = va_arg(ap, char *), i++)
     {
+        int nLengthTmp = 0;
         dwError = TDNFAllocateString(pszNode, &pszNodeCopy);
         BAIL_ON_TDNF_ERROR(dwError);
         pszNodeTmp = pszNodeCopy;

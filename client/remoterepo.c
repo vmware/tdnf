@@ -362,9 +362,8 @@ TDNFCheckRepoMDFileHashFromMetalink(
     TDNF_ML_HASH_LIST *hashList = NULL;
     TDNF_ML_HASH_INFO *hashInfo = NULL;
     unsigned char digest[EVP_MAX_MD_SIZE] = {0};
-    int hashType = -1;
+    int hash_Type = -1;
     TDNF_ML_HASH_INFO *currHashInfo = NULL;
-    int currHashType = TDNF_HASH_SENTINEL;
 
     if(IsNullOrEmptyString(pszFile) ||
        !ml_ctx)
@@ -375,7 +374,7 @@ TDNFCheckRepoMDFileHashFromMetalink(
 
     for(hashList = ml_ctx->hashes; hashList; hashList = hashList->next)
     {
-        currHashType = TDNF_HASH_SENTINEL;
+        int currHashType = TDNF_HASH_SENTINEL;
         currHashInfo = hashList->data;
 
         if(currHashInfo == NULL)
@@ -387,19 +386,19 @@ TDNFCheckRepoMDFileHashFromMetalink(
         dwError = TDNFGetResourceType(currHashInfo->type, &currHashType);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if ((hashType > currHashType)||
+        if ((hash_Type > currHashType)||
            (!TDNFCheckHexDigest(currHashInfo->value, hash_ops[currHashType].length)))
         {
             continue;
         }
-        hashType = currHashType;
+        hash_Type = currHashType;
         hashInfo = currHashInfo;
     }
 
     dwError = TDNFChecksumFromHexDigest(hashInfo->value, digest);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFCheckHash(pszFile, digest, hashType);
+    dwError = TDNFCheckHash(pszFile, digest, hash_Type);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
