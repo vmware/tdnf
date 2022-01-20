@@ -1,21 +1,9 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
- */
-
-/*
- * Module   : api.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
  */
 
 #include <ftw.h>
@@ -24,15 +12,32 @@
 
 static TDNF_ENV gEnv = {0};
 
-uint32_t
-TDNFInit(
-    void
-    )
-{
-    uint32_t dwError = 0;
-    int nLocked = 0;
+static tdnflock instance_lock;
 
-    pthread_mutex_lock (&gEnv.mutexInitialize);
+static void TdnfExitHandler(void);
+static void IsTdnfAlreadyRunning(void);
+
+static void TdnfExitHandler(void)
+{
+ tdnflockFree(instance_lock);
+}
+
+static void IsTdnfAlreadyRunning(void)
+{
+ instance_lock = tdnflockNewAcquire(TDNF_INSTANCE_LOCK_FILE,
+                                    "tdnf_instance");
+ if (!instance_lock)
+ {
+     pr_err("Failed to acquire tdnf_instance lock\n");
+ }
+}
+
+uint32_t TDNFInit(void)
+{
+    int nLocked = 0;
+    uint32_t dwError = 0;
+
+    pthread_mutex_lock(&gEnv.mutexInitialize);
     nLocked = 1;
     if(!gEnv.nInitialized)
     {
@@ -61,7 +66,6 @@ TDNFIsInitialized(
     uint32_t dwError = 0;
     int nInitialized = 0;
     int nLocked = 0;
-
 
     if(!pnInitialized)
     {
@@ -686,11 +690,15 @@ TDNFOpenHandle(
     char *pszRepoDir = NULL;
     int nHasOptReposdir = 0;
 
-    if(!pArgs || !ppTdnf)
+    if (!pArgs || !ppTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    IsTdnfAlreadyRunning();
+
+    GlobalSetQuiet(pArgs->nQuiet);
 
     dwError = TDNFAllocateMemory(1, sizeof(TDNF), (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -1266,7 +1274,7 @@ TDNFRepoSync(
             if (pReposyncArgs->nDelete && dwError == 0)
             {
                 /* if "delete" option is given, create a marker file to protect
-                   what we just downloaded. Later all *.rpm files that do not 
+                   what we just downloaded. Later all *.rpm files that do not
                    have a marker file will be deleted */
                 dwError = TDNFAllocateStringPrintf(&pszKeepFile, "%s.reposync-keep", pszFilePath);
                 BAIL_ON_TDNF_ERROR(dwError);
@@ -1389,7 +1397,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     return dwError;
-error: 
+error:
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
         dwError = ERROR_TDNF_NO_DATA;
@@ -1782,7 +1790,7 @@ TDNFCloseHandle(
     PTDNF pTdnf
     )
 {
-    if(pTdnf)
+    if (pTdnf)
     {
         if(pTdnf->pRepos)
         {
@@ -1803,6 +1811,7 @@ TDNFCloseHandle(
         TDNFFreePlugins(pTdnf->pPlugins);
         TDNFFreeMemory(pTdnf);
     }
+    TdnfExitHandler();
 }
 
 const char*

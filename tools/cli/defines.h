@@ -1,31 +1,12 @@
 /*
- * Copyright (C) 2015 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Header : defines.h
- *
- * Abstract :
- *
- *            tdnf
- *
- *            command line tool
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- *
- */
-
 #pragma once
-
-/*
- * creating this under /var/run because /var/run/lock doesn't exist
- * in fedora docker images and as a result ci fails
- */
-#define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"
 
 #define BAIL_ON_CLI_ERROR(unError) \
     do {                                                           \
