@@ -385,8 +385,12 @@ TDNFPrepareSinglePkg(
                       pszPkgName);
         if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
         {
+            /* the package may have been already installed as a dependency,
+               but now the user wants it on its own */
             dwError = TDNFMarkAutoInstalledSinglePkg(pTdnf, pszPkgName);
             BAIL_ON_TDNF_ERROR(dwError);
+            /* if TDNFMarkAutoInstalledSinglePkg() was successful, restore
+               the original error */
             dwError = ERROR_TDNF_ALREADY_INSTALLED;
         }
         BAIL_ON_TDNF_ERROR(dwError);

@@ -26,9 +26,5 @@ touch %_topdir/%buildroot/lib/cleanreq/required
 /lib/cleanreq/required
 
 %changelog
-*   Thu Nov 04 2021 Oliver Kurth <okurth@vmware.com> 1.0.1-3
+*   Thu Nov 04 2021 Oliver Kurth <okurth@vmware.com> 1.0.1-1
 -   clean req test
-*   Tue Nov 15 2016 Xiaolin Li <xiaolinl@vmware.com> 1.0.1-2
--   Add a service file for whatprovides test.
-*   Tue Dec 15 2015 Priyesh Padmavilasom <ppadmavilasom@vmware.com> 1.0
--   Initial build.  First version

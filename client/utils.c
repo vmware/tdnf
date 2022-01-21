@@ -775,10 +775,11 @@ TDNFReadAutoInstalled(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(&pszAutoFile, "%s/%s/%s",
+    dwError = TDNFJoinPath(&pszAutoFile,
             pTdnf->pArgs->pszInstallRoot,
             TDNF_DEFAULT_DATA_LOCATION,
-            TDNF_AUTOINSTALLED_FILE);
+            TDNF_AUTOINSTALLED_FILE,
+            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadFileToStringArray(pszAutoFile, &ppszAutoInstalled);

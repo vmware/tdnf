@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
@@ -11,7 +11,9 @@ import os
 import shutil
 import pytest
 
-CONFDIR='/root/cleanreq'
+
+CONFDIR = '/tmp/cleanreq'
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
@@ -19,26 +21,29 @@ def setup_test(utils):
     yield
     teardown_test(utils)
 
+
 def teardown_test(utils):
     utils.erase_package('tdnf-test-cleanreq-leaf1')
     utils.erase_package('tdnf-test-cleanreq-leaf2')
     utils.erase_package('tdnf-test-cleanreq-required')
     shutil.rmtree(CONFDIR)
 
+
 def generate_config_cleanreq(utils, newconfig, value):
     orig_conffile = os.path.join(utils.config['repo_path'], 'tdnf.conf')
 
     with open(orig_conffile, 'r') as fin:
         with open(newconfig, 'w') as fout:
-            for l in fin:
-                if not l.startswith('clean_requirements_on_remove'):
-                    fout.write(l)
+            for line in fin:
+                if not line.startswith('clean_requirements_on_remove'):
+                    fout.write(line)
                 else:
                     fout.write('clean_requirements_on_remove={}\n'.format('1' if value else '0'))
 
     with open(newconfig, 'r') as fin:
-        for l in fin:
-            print(l)
+        for line in fin:
+            print(line)
+
 
 # leaf1 pulls in a dependency, this should be removed when leaf1 is
 # autoremoved
@@ -54,6 +59,7 @@ def test_autoremove(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(not utils.check_package(pkgname_req))
+
 
 # When the required package is installed first, removing the
 # leaf should not uninstall it.
@@ -72,6 +78,7 @@ def test_autoremove_req_is_user_installed(utils):
     # actual test:
     assert(utils.check_package(pkgname_req))
 
+
 # When the required package has been installed as a dependency
 # an attempt to install it (although it already is) should
 # mark it has user installed, and removing leaf should not uninstall it.
@@ -89,6 +96,7 @@ def test_autoremove_req_is_user_installed2(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(utils.check_package(pkgname_req))
+
 
 # leaf1 pulls in a dependency. leaf2 has the same dependency.
 # The required package should not be removed when leaf1 is uninstalled
@@ -112,6 +120,7 @@ def test_autoremove2(utils):
     # actual test:
     assert(not utils.check_package(pkgname_req))
 
+
 # like autoremove, but in config file
 def test_autoremove_conf_true(utils):
     conffile = os.path.join(CONFDIR, 'tdnf.conf')
@@ -128,6 +137,7 @@ def test_autoremove_conf_true(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(not utils.check_package(pkgname_req))
+
 
 # autoremove disabled in config file
 def test_autoremove_conf_false(utils):
@@ -146,6 +156,7 @@ def test_autoremove_conf_false(utils):
     # actual test:
     assert(utils.check_package(pkgname_req))
 
+
 # autoremove enabled in config file, but --noautoremove in cmd line
 def test_autoremove_conf_noautoremove(utils):
     conffile = os.path.join(CONFDIR, 'tdnf.conf')
@@ -162,6 +173,7 @@ def test_autoremove_conf_noautoremove(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(utils.check_package(pkgname_req))
+
 
 # autoremove disabled in config file, 'autoremove' should still
 # do the clean up
@@ -180,4 +192,3 @@ def test_autoremove_conf_false_autoremove(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(not utils.check_package(pkgname_req))
-

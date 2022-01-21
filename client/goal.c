@@ -420,7 +420,7 @@ TDNFGoal(
 
         if (nAlterType == ALTER_UPGRADE && dwExcludeCount != 0 && ppszExcludes)
         {
-            /* if we had packages to exclude, then we'd have disabled ones too */
+            /* if we had packages to exclude, then we'd have inactive ones too */
             dwSkipProblem |= SKIPPROBLEM_DISABLED;
         }
 
@@ -671,17 +671,16 @@ TDNFMarkAutoInstalled(
             fprintf(fp, "%s\n", ppszAutoInstalled[i]);
         }
     }
-    fclose(fp);
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
-    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
-    return dwError;
-error:
     if (fp)
     {
         fclose(fp);
     }
+    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
+    return dwError;
+error:
     goto cleanup;
 }
 
