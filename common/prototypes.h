@@ -259,6 +259,12 @@ uint32_t
 TDNFJoinPath(
     char **ppszPath, ...);
 
+uint32_t
+TDNFReadFileToStringArray(
+    const char *pszFile,
+    char ***pppszArray
+    );
+
 //setopt.c
 uint32_t
 AddSetOpt(

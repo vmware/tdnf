@@ -84,10 +84,9 @@ TDNFPrepareAllPackages(
     pCmdArgs = pTdnf->pArgs;
     nAlterType = *pAlterType;
 
-    if(nAlterType == ALTER_DOWNGRADEALL ||
-       nAlterType == ALTER_AUTOERASE)
+    if(nAlterType == ALTER_DOWNGRADEALL)
     {
-        dwError =  TDNFFilterPackages(
+        dwError = TDNFFilterPackages(
                        pTdnf,
                        nAlterType,
                        ppszPkgsNotResolved,
@@ -384,6 +383,16 @@ TDNFPrepareSinglePkg(
                       pSack,
                       queueGoal,
                       pszPkgName);
+        if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
+        {
+            /* the package may have been already installed as a dependency,
+               but now the user wants it on its own */
+            dwError = TDNFMarkAutoInstalledSinglePkg(pTdnf, pszPkgName);
+            BAIL_ON_TDNF_ERROR(dwError);
+            /* if TDNFMarkAutoInstalledSinglePkg() was successful, restore
+               the original error */
+            dwError = ERROR_TDNF_ALREADY_INSTALLED;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else if (nAlterType == ALTER_UPGRADE)

@@ -316,6 +316,7 @@ TDNFGoal(
     int nProblems = 0;
     char** ppszExcludes = NULL;
     uint32_t dwExcludeCount = 0;
+    char **ppszAutoInstalled = NULL;
 
     if(!pTdnf || !ppInfo || !pQueuePkgList)
     {
@@ -357,6 +358,13 @@ TDNFGoal(
     {
         nFlags = nFlags | SOLVER_FORCEBEST;
     }
+    if ((pTdnf->pConf->nCleanRequirementsOnRemove &&
+         !pTdnf->pArgs->nNoAutoRemove) ||
+        nAlterType == ALTER_AUTOERASE)
+    {
+        nFlags = nFlags | SOLVER_CLEANDEPS;
+    }
+
     dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -388,6 +396,12 @@ TDNFGoal(
        nAlterType == ALTER_ERASE ||
        nAlterType == ALTER_AUTOERASE)
     {
+        dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvAddUserInstalledToJobs(&queueJobs, pTdnf->pSack->pPool, ppszAutoInstalled);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
     }
     solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
@@ -406,7 +420,7 @@ TDNFGoal(
 
         if (nAlterType == ALTER_UPGRADE && dwExcludeCount != 0 && ppszExcludes)
         {
-            /* if we had packages to exclude, then we'd have diabled ones too */
+            /* if we had packages to exclude, then we'd have inactive ones too */
             dwSkipProblem |= SKIPPROBLEM_DISABLED;
         }
 
@@ -428,16 +442,22 @@ TDNFGoal(
     }
 
     dwError = TDNFGoalGetAllResultsIgnoreNoData(
-                  nAlterType,
                   pTrans,
                   pSolv,
                   &pInfoTemp,
                   pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    if (nAlterType == ALTER_INSTALL)
+    {
+        dwError = TDNFAddUserInstall(pTdnf, pQueuePkgList, pInfoTemp);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     *ppInfo = pInfoTemp;
 
 cleanup:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
     queue_free(&queueJobs);
     if(pTrans)
@@ -459,6 +479,210 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFAddUserInstall(
+    PTDNF pTdnf,
+    Queue* pQueueGoal,
+    PTDNF_SOLVED_PKG_INFO ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    int i;
+    char **ppszPkgsUserInstall = NULL;
+
+    if (!pTdnf || !pQueueGoal || !ppInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(pQueueGoal->count + 1,
+                                 sizeof(char **),
+                                 (void **)&ppszPkgsUserInstall);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; i < pQueueGoal->count; i++)
+    {
+        dwError = SolvGetPkgNameFromId(
+                       pTdnf->pSack,
+                       pQueueGoal->elements[i],
+                       &ppszPkgsUserInstall[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppInfo->ppszPkgsUserInstall = ppszPkgsUserInstall;
+cleanup:
+    return dwError;
+error:
+    TDNF_SAFE_FREE_MEMORY(ppszPkgsUserInstall);
+    goto cleanup;
+}
+
+uint32_t
+TDNFMarkAutoInstalledSinglePkg(
+    PTDNF pTdnf,
+    const char *pszPkgName
+)
+{
+    uint32_t dwError = 0;
+    char **ppszAutoInstalled = NULL;
+    char *pszAutoFile = NULL;
+    int i;
+    FILE *fp = NULL;
+
+    if (!pTdnf || !pszPkgName)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszAutoFile,
+                           pTdnf->pArgs->pszInstallRoot,
+                           TDNF_DEFAULT_DATA_LOCATION,
+                           TDNF_AUTOINSTALLED_FILE,
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    fp = fopen(pszAutoFile, "w");
+    if(!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    for (i = 0; ppszAutoInstalled[i]; i++)
+    {
+        if (strcmp(ppszAutoInstalled[i], pszPkgName) == 0)
+        {
+            pr_info("marking %s as user installed\n", pszPkgName);
+            continue;
+        }
+        fprintf(fp, "%s\n", ppszAutoInstalled[i]);
+    }
+    fclose(fp);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
+    return dwError;
+error:
+    if (fp)
+    {
+        fclose(fp);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFMarkAutoInstalled(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    char **ppszAutoInstalled = NULL;
+    int i, j;
+    int nCount = 0;
+    int nCountOld = 0;
+    FILE *fp = NULL;
+    char *pszAutoFile = NULL;
+    char *pszDataDir = NULL;
+
+    if (!pTdnf || !ppInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (ppszAutoInstalled != NULL)
+    {
+        dwError = TDNFStringArrayCount(ppszAutoInstalled, &nCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nCountOld = nCount;
+    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        nCount++;
+    }
+
+    dwError = TDNFReAllocateMemory((nCount+1) * sizeof(char **), (void **)&ppszAutoInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+    ppszAutoInstalled[nCount] = NULL;
+
+    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        dwError = TDNFAllocateString(pPkgInfo->pszName, &ppszAutoInstalled[nCountOld++]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFStringArraySort(ppszAutoInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszDataDir,
+                           pTdnf->pArgs->pszInstallRoot,
+                           TDNF_DEFAULT_DATA_LOCATION,
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFUtilsMakeDir(pszDataDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszAutoFile,
+                           pTdnf->pArgs->pszInstallRoot,
+                           TDNF_DEFAULT_DATA_LOCATION,
+                           TDNF_AUTOINSTALLED_FILE,
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    fp = fopen(pszAutoFile, "w");
+    if(!fp)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    for (i = 0; ppszAutoInstalled[i]; i++)
+    {
+        if (i > 0 && strcmp(ppszAutoInstalled[i-1], ppszAutoInstalled[i]) == 0)
+        {
+            continue;
+        }
+        if (ppInfo->ppszPkgsUserInstall)
+        {
+            for (j = 0; ppInfo->ppszPkgsUserInstall[j]; j++)
+            {
+                if (strcmp(ppszAutoInstalled[i],
+                           ppInfo->ppszPkgsUserInstall[j]) == 0)
+                {
+                    break;
+                }
+            }
+        }
+        if (!ppInfo->ppszPkgsUserInstall || ppInfo->ppszPkgsUserInstall[j] == NULL)
+        {
+            fprintf(fp, "%s\n", ppszAutoInstalled[i]);
+        }
+    }
+
+cleanup:
+    if (fp)
+    {
+        fclose(fp);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
+    return dwError;
+error:
+    goto cleanup;
+}
 
 uint32_t
 TDNFAddGoal(
@@ -515,6 +739,7 @@ TDNFAddGoal(
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         case ALTER_ERASE:
+        case ALTER_AUTOERASE:
             dwError = SolvAddPkgEraseJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
@@ -522,10 +747,6 @@ TDNFAddGoal(
         case ALTER_INSTALL:
         case ALTER_UPGRADE:
             dwError = SolvAddPkgInstallJob(pQueueJobs, dwId);
-            BAIL_ON_TDNF_ERROR(dwError);
-            break;
-        case ALTER_AUTOERASE:
-            dwError = SolvAddPkgUserInstalledJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
         default:
@@ -543,7 +764,6 @@ error:
 
 uint32_t
 TDNFGoalGetAllResultsIgnoreNoData(
-    int nResolveFor,
     Transaction* pTrans,
     Solver* pSolv,
     PTDNF_SOLVED_PKG_INFO* ppInfo,
@@ -590,14 +810,6 @@ TDNFGoalGetAllResultsIgnoreNoData(
                   &pInfo->pPkgsToRemove);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(nResolveFor == ALTER_AUTOERASE)
-    {
-        dwError = TDNFGetUnneededPackages(
-                      pSolv,
-                      pTdnf,
-                      &pInfo->pPkgsUnNeeded);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
     dwError = TDNFGetReinstallPackages(
                   pTrans,
                   pTdnf,

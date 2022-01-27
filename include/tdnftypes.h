@@ -199,7 +199,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsObsoleted;
     PTDNF_PKG_INFO pPkgsRemovedByDowngrade;
     char** ppszPkgsNotResolved;
-    char** ppszPkgsNotInstalled;
+    char** ppszPkgsUserInstall;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
 /*
@@ -250,6 +250,7 @@ typedef struct _TDNF_CMD_ARGS
     int nIPv6;             //resolve to IPv6 addresses only
     int nDisableExcludes;  //disable excludes from tdnf.conf
     int nDownloadOnly;     //download packages only, no install
+    int nNoAutoRemove;     //overide clean_requirements_on_remove config option
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location

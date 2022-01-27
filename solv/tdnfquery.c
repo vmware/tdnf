@@ -77,6 +77,61 @@ error:
 }
 
 uint32_t
+SolvAddUserInstalledToJobs(
+    Queue* pQueueJobs,
+    Pool *pPool,
+    char **ppszAutoInstalled
+    )
+{
+    uint32_t dwError = 0;
+    Id p;
+    Solvable *s;
+    Queue queueAutoInstalled = {0};
+    Id idAuto;
+    int i;
+
+    if(!pQueueJobs || !pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    queue_init(&queueAutoInstalled);
+    if (ppszAutoInstalled)
+    {
+        for(i = 0; ppszAutoInstalled[i] != NULL; i++)
+        {
+            idAuto = pool_str2id(pPool, ppszAutoInstalled[i], 0);
+            if (idAuto)
+            {
+                queue_push(&queueAutoInstalled, idAuto);
+            }
+        }
+    }
+
+    FOR_REPO_SOLVABLES(pPool->installed, p, s)
+    {
+        for (i = 0; i < queueAutoInstalled.count; i++)
+        {
+            if (queueAutoInstalled.elements[i] == s->name)
+            {
+                break;
+            }
+        }
+        if (i >= queueAutoInstalled.count)
+        {
+            queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_USERINSTALLED, s->name);
+        }
+    }
+cleanup:
+    queue_free(&queueAutoInstalled);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 SolvAddPkgInstallJob(
     Queue*  pQueueJobs,
     Id      dwId

@@ -115,6 +115,7 @@ static struct option pstOptions[] =
     {"disableexcludes", no_argument, &_opt.nDisableExcludes, 1}, //--disableexcludes
     {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
     {"downloaddir",   required_argument, 0, 0},            //--downloaddir
+    {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
     // reposync options
     {"arch",          required_argument, 0, 0},
     {"delete",        no_argument, 0, 0},
@@ -344,6 +345,7 @@ TDNFCopyOptions(
     pArgs->nIPv6          = pOptionArgs->nIPv6;
     pArgs->nDisableExcludes = pOptionArgs->nDisableExcludes;
     pArgs->nDownloadOnly  = pOptionArgs->nDownloadOnly;
+    pArgs->nNoAutoRemove  = pOptionArgs->nNoAutoRemove;
 
 cleanup:
     return dwError;

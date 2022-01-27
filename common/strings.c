@@ -99,7 +99,7 @@ TDNFStringSepCount(
     uint32_t dwError = 0;
     const char *pszTemp = NULL;
 
-    if (IsNullOrEmptyString(pszBuf) || IsNullOrEmptyString(pszSep))
+    if (!pszBuf || IsNullOrEmptyString(pszSep))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -143,7 +143,7 @@ TDNFSplitStringToArray(
     size_t nCount = 0;
     size_t nIndex = 0;
 
-    if (IsNullOrEmptyString(pszBuf) || IsNullOrEmptyString(pszSep))
+    if (!pszBuf || IsNullOrEmptyString(pszSep))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -538,7 +538,7 @@ TDNFStringArraySort(
     uint32_t dwError = 0;
     int nCount;
 
-    if (IsNullOrEmptyString(ppszArray))
+    if (!ppszArray)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

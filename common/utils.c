@@ -260,7 +260,6 @@ TDNFFreeSolvedPackageInfo(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     )
 {
-    int i = 0;
     if(pSolvedPkgInfo)
     {
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsNotAvailable);
@@ -274,25 +273,8 @@ TDNFFreeSolvedPackageInfo(
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
         TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
 
-        if(pSolvedPkgInfo->ppszPkgsNotInstalled)
-        {
-            while(pSolvedPkgInfo->ppszPkgsNotInstalled[i])
-            {
-                TDNF_SAFE_FREE_MEMORY(
-                    pSolvedPkgInfo->ppszPkgsNotInstalled[i++]);
-            }
-        }
-        TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotInstalled);
-
-        if(pSolvedPkgInfo->ppszPkgsNotResolved)
-        {
-            while(pSolvedPkgInfo->ppszPkgsNotResolved[i])
-            {
-                TDNF_SAFE_FREE_MEMORY(
-                    pSolvedPkgInfo->ppszPkgsNotResolved[i++]);
-            }
-        }
-        TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo->ppszPkgsNotResolved);
+        TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsNotResolved);
+        TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsUserInstall);
     }
     TDNF_SAFE_FREE_MEMORY(pSolvedPkgInfo);
 }
@@ -865,6 +847,40 @@ cleanup:
 error:
     TDNF_SAFE_FREE_MEMORY(pszResult);
     TDNF_SAFE_FREE_MEMORY(pszNodeCopy);
+    goto cleanup;
+}
+
+/* read all lines in file pszFile and store in string array
+ * pointed to by pppszArray, one entry for each line */
+uint32_t
+TDNFReadFileToStringArray(
+    const char *pszFile,
+    char ***pppszArray
+    )
+{
+    uint32_t dwError = 0;
+    int nLength = 0;
+    char *pszText = NULL;
+    char **ppszArray = NULL;
+
+    if (!pszFile || !pppszArray)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFFileReadAllText(pszFile, &pszText, &nLength);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSplitStringToArray(pszText, "\n", &ppszArray);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *pppszArray = ppszArray;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszText);
+    return dwError;
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszArray);
     goto cleanup;
 }
 

@@ -448,6 +448,25 @@ TDNFGoal(
     );
 
 uint32_t
+TDNFAddUserInstall(
+    PTDNF pTdnf,
+    Queue* pQueueGoal,
+    PTDNF_SOLVED_PKG_INFO ppInfo
+    );
+
+uint32_t
+TDNFMarkAutoInstalledSinglePkg(
+    PTDNF pTdnf,
+    const char *pszPkgName
+);
+
+uint32_t
+TDNFMarkAutoInstalled(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO ppInfo
+    );
+
+uint32_t
 TDNFAddGoal(
     PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,
@@ -459,7 +478,6 @@ TDNFAddGoal(
 
 uint32_t
 TDNFGoalGetAllResultsIgnoreNoData(
-    int nResolveFor,
     Transaction* pTrans,
     Solver* pSolv,
     PTDNF_SOLVED_PKG_INFO* ppInfo,
@@ -606,12 +624,6 @@ uint32_t
 TDNFReadConfFilesFromDir(
     char *pszDir,
     char ***pppszMinVersions
-    );
-
-uint32_t
-TDNFReadFileToStringArray(
-    const char *pszFile,
-    char ***pppszArray
     );
 
 //repo.c
@@ -1080,6 +1092,12 @@ TDNFGetCmdOpt(
     PTDNF pTdnf,
     TDNF_CMDOPT_TYPE cmdType,
     PTDNF_CMD_OPT *ppOpt
+    );
+
+uint32_t
+TDNFReadAutoInstalled(
+    PTDNF pTdnf,
+    char ***pppszAutoInstalled
     );
 
 //validate.c
