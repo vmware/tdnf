@@ -1721,11 +1721,8 @@ SolvAddExcludes(
          map_grow(pPool->considered, pPool->nsolvables);
      }
      map_setall(pPool->considered);
+     map_subtract(pPool->considered, pExcludes);
 
-     if (pExcludes)
-     {
-         map_subtract(pPool->considered, pExcludes);
-     }
 cleanup:
     TDNFFreeMemory(pExcludes);
     return dwError;

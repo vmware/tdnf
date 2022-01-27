@@ -374,6 +374,9 @@ TDNFGoal(
     dwError = TDNFSolvAddPkgLocks(pTdnf, &queueJobs, pTdnf->pSack->pPool);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFSolvAddMinVersions(pTdnf, &queueJobs, pTdnf->pSack->pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pSolv = solver_create(pTdnf->pSack->pPool);
     if(pSolv == NULL)
     {
@@ -662,6 +665,92 @@ TDNFSolvAddPkgLocks(
     }
 
 cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFSolvAddMinVersions(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszPackages = NULL;
+    char **ppszTokens = NULL;
+    Map *pMapMinVersions = NULL;
+    char *pszTmp = NULL;
+
+    if(!pTdnf || !pQueueJobs || !pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppszPackages = pTdnf->pConf->ppszMinVersions;
+    if (!ppszPackages)
+    {
+        goto cleanup;
+    }
+
+    dwError = TDNFAllocateMemory(
+                          1,
+                          sizeof(Map),
+                          (void**)&pMapMinVersions);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    map_init(pMapMinVersions, pPool->nsolvables);
+
+    for (int i = 0; ppszPackages && ppszPackages[i]; i++)
+    {
+        char *pszPkg = ppszPackages[i];
+
+        dwError = TDNFAllocateString(pszPkg, &pszTmp);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFSplitStringToArray(pszTmp, "=", &ppszTokens);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (ppszTokens[0] && ppszTokens[1]) {
+            Dataiterator di;
+
+            dwError = dataiterator_init(&di, pPool, 0, 0, SOLVABLE_NAME, ppszTokens[0], SEARCH_STRING);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            while (dataiterator_step(&di))
+            {
+                Solvable *pSolv = pool_id2solvable(pPool, di.solvid);
+                const char *pszEvr = solvable_lookup_str(pSolv, SOLVABLE_EVR);
+                if (pool_evrcmp_str( pPool, pszEvr, ppszTokens[1], EVRCMP_COMPARE) < 0)
+                {
+                    MAPSET(pMapMinVersions, di.solvid);
+                }
+            }
+            dataiterator_free(&di);
+        }
+    }
+
+    if (!pPool->considered)
+    {
+        dwError = TDNFAllocateMemory(
+                             1,
+                             sizeof(Map),
+                             (void**)&pPool->considered);
+        map_init(pPool->considered, pPool->nsolvables);
+    }
+    else
+    {
+        map_grow(pPool->considered, pPool->nsolvables);
+    }
+
+    map_setall(pPool->considered);
+    map_subtract(pPool->considered, pMapMinVersions);
+cleanup:
+    TDNFFreeMemory(pMapMinVersions);
+    TDNF_SAFE_FREE_MEMORY(pszTmp);
+    TDNF_SAFE_FREE_STRINGARRAY(ppszTokens);
     return dwError;
 error:
     goto cleanup;
