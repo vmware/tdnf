@@ -8,9 +8,9 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(tdnf VERSION 3.2.3 LANGUAGES C)
+project(tdnf VERSION 3.2.4 LANGUAGES C)
 set(VERSION ${PROJECT_VERSION})
-set(PROJECT_YEAR 2021)
+set(PROJECT_YEAR 2022)
 
 # needed for spec file
 execute_process (
