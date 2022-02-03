@@ -33,3 +33,16 @@ typedef uint32_t
     const char *pszValue
     );
 
+typedef struct tdnflock_s {
+    int fd;
+    int openmode;
+    char *path;
+    char *descr;
+    int fdrefs;
+} *tdnflock;
+
+enum {
+    TDNFLOCK_READ   = 1 << 0,
+    TDNFLOCK_WRITE  = 1 << 1,
+    TDNFLOCK_WAIT   = 1 << 2,
+};

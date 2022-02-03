@@ -328,4 +328,22 @@ log_console(
     ...
     );
 
+int tdnflockAcquire(tdnflock lock);
+
+void tdnflockRelease(tdnflock lock);
+
+tdnflock tdnflockFree(tdnflock lock);
+
+tdnflock
+tdnflockNew(
+    const char *lock_path,
+    const char *descr
+    );
+
+tdnflock
+tdnflockNewAcquire(
+    const char *lock_path,
+    const char *descr
+    );
+
 #endif /* __COMMON_PROTOTYPES_H__ */

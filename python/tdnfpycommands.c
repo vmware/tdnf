@@ -152,7 +152,6 @@ _TDNFPyGetAlterArgs(TDNF_ALTERTYPE type, PyObject *args,
 
     pCmdArgs->nRefresh = pyRefresh ? PyObject_IsTrue(pyRefresh) : 0;
     pCmdArgs->nQuiet = pyQuiet ? PyObject_IsTrue(pyQuiet) : 0;
-    GlobalSetQuiet(pCmdArgs->nQuiet);
     pCmdArgs->nCmdCount = nPkgCount;
 
 error:
