@@ -278,6 +278,9 @@ TDNFCreateRepo(
     pRepo->nMinrate = TDNF_REPO_DEFAULT_MINRATE;
     pRepo->nThrottle = TDNF_REPO_DEFAULT_THROTTLE;
     pRepo->nRetries = TDNF_REPO_DEFAULT_RETRIES;
+    pRepo->nSkipMDFileLists = TDNF_REPO_DEFAULT_SKIP_MD_FILELISTS;
+    pRepo->nSkipMDUpdateInfo = TDNF_REPO_DEFAULT_SKIP_MD_UPDATEINFO;
+    pRepo->nSkipMDOther = TDNF_REPO_DEFAULT_SKIP_MD_OTHER;
 
     *ppRepo = pRepo;
 cleanup:
@@ -539,6 +542,27 @@ TDNFLoadReposFromFile(
 
         TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
         pszMetadataExpire = NULL;
+
+        dwError = TDNFReadKeyValueBoolean(
+                      pSections,
+                      TDNF_REPO_KEY_SKIP_MD_FILELISTS,
+                      TDNF_REPO_DEFAULT_SKIP_MD_FILELISTS,
+                      &pRepo->nSkipMDFileLists);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadKeyValueBoolean(
+                      pSections,
+                      TDNF_REPO_KEY_SKIP_MD_UPDATEINFO,
+                      TDNF_REPO_DEFAULT_SKIP_MD_UPDATEINFO,
+                      &pRepo->nSkipMDUpdateInfo);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFReadKeyValueBoolean(
+                      pSections,
+                      TDNF_REPO_KEY_SKIP_MD_OTHER,
+                      TDNF_REPO_DEFAULT_SKIP_MD_OTHER,
+                      &pRepo->nSkipMDOther);
+        BAIL_ON_TDNF_ERROR(dwError);
 
         /* plugin event repo readconfig end */
         dwError = TDNFEventRepoReadConfigEnd(pTdnf, pSections);
