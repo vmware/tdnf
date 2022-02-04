@@ -709,7 +709,7 @@ TDNFFreeRepoMetadata(
 uint32_t
 TDNFEnsureRepoMDParts(
     PTDNF pTdnf,
-    const char *pszBaseUrl,
+    PTDNF_REPO_DATA_INTERNAL pRepo,
     PTDNF_REPO_METADATA pRepoMDRel,
     PTDNF_REPO_METADATA *ppRepoMD
     );

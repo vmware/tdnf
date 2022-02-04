@@ -41,7 +41,9 @@ typedef struct _TDNF_REPO_DATA_INTERNAL_
     int nMinrate;
     int nThrottle;
     int nRetries;
-
+    int nSkipMDFileLists;
+    int nSkipMDUpdateInfo;
+    int nSkipMDOther;
     struct _TDNF_REPO_DATA_INTERNAL_* pNext;
 } TDNF_REPO_DATA_INTERNAL, *PTDNF_REPO_DATA_INTERNAL;
 
