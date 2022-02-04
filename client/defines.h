@@ -96,6 +96,8 @@ typedef enum
 #define TDNF_REPO_KEY_SSL_CA_CERT         "sslcacert"
 #define TDNF_REPO_KEY_SSL_CLI_CERT        "sslclientcert"
 #define TDNF_REPO_KEY_SSL_CLI_KEY         "sslclientkey"
+#define TDNF_REPO_KEY_SKIP_MD_FILELISTS   "skip_md_filelists"
+#define TDNF_REPO_KEY_SKIP_MD_UPDATEINFO  "skip_md_updateinfo"
 
 //setopt keys
 #define TDNF_SETOPT_KEY_REPOSDIR          "reposdir"
@@ -128,6 +130,8 @@ typedef enum
 #define TDNF_REPO_DEFAULT_RETRIES         10
 #define TDNF_REPO_DEFAULT_PRIORITY        50
 #define TDNF_REPO_DEFAULT_METADATA_EXPIRE "172800" // 48 hours in seconds
+#define TDNF_REPO_DEFAULT_SKIP_MD_FILELISTS  0
+#define TDNF_REPO_DEFAULT_SKIP_MD_UPDATEINFO 0
 
 // var names
 #define TDNF_VAR_RELEASEVER               "$releasever"
