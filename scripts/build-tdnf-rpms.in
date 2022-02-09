@@ -5,7 +5,7 @@
 ## author:  Shreenidhi Shedi <sshedi@vmware.com>
 
 if [ ${EUID} -ne 0 ]; then
-  echo "Script must be run as root..." 1>&2
+  echo "Script must be run as root." 1>&2
   exit 1
 fi
 
@@ -15,35 +15,30 @@ project_dir="@CMAKE_SOURCE_DIR@"
 
 cd "${project_dir}"
 project_version="@PROJECT_VERSION@"
-rpm_build_path="${project_dir}/.rpms"
+rpm_build_path="${project_dir}/rpmbuild"
 full_name="${project_name}-${project_version}"
-
-cleanup()
-{
-  rm -rf "${rpm_build_path}"
-}
-trap cleanup EXIT
 
 build_tools=(git tar gzip file)
 if ! rpm -q ${build_tools[@]} > /dev/null; then
   echo "Installing required build tools..."
   if grep -w ID /etc/os-release | grep -i photon > /dev/null; then
-    tdnf install -qy ${build_tools[@]}
+    tdnf install -y ${build_tools[@]}
   elif grep -w ID /etc/os-release | grep -i fedora > /dev/null; then
-    dnf install -qy ${build_tools[@]}
+    dnf install -y ${build_tools[@]}
   fi
 fi
 
 echo "Building ${full_name} RPMs"
-git archive --prefix="${full_name}"/ --format=tar.gz -o "${full_name}".tar.gz HEAD
+tar zcf ${full_name}.tar.gz --transform "s,^,${full_name}/," $(git ls-files)
 
 rm -rf "${rpm_build_path}"
 mkdir -p "${rpm_build_path}"/{SOURCES,BUILD,RPMS/"${arch}"}
 
 mv -f "${full_name}".tar.gz "${rpm_build_path}"/SOURCES
 
-rpmbuild --quiet --nodeps -D "_topdir ${rpm_build_path}" -D "with_check 0" -bb "${project_name}".spec
+rpmbuild --nodeps -D "_topdir ${rpm_build_path}" -bb "${project_name}".spec
 
-mkdir -p "${full_name}-rpms"
-mv -f "${rpm_build_path}"/RPMS/"${arch}"/*.rpm "${full_name}-rpms"
-echo -e "\n\n--- tdnf rpms are available at $(realpath "${full_name}-rpms") ---\n\n"
+rpmdir="rpms"
+mkdir -p ${rpmdir}
+mv -f "${rpm_build_path}"/RPMS/"${arch}"/*.rpm ${rpmdir}
+echo -e "\n\n--- tdnf rpms are available at $(realpath ${rpmdir}) ---\n\n"
