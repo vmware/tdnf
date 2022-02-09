@@ -74,6 +74,8 @@ static TDNF_CMD_ARGS _opt = {0};
 //options - incomplete
 static struct option pstOptions[] =
 {
+    {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
+    {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
     {"allowerasing",  no_argument, &_opt.nAllowErasing, 1},//--allowerasing
     {"assumeno",      no_argument, &_opt.nAssumeNo, 1},    //--assumeno
     {"assumeyes",     no_argument, 0, 'y'},                //--assumeyes
@@ -82,49 +84,45 @@ static struct option pstOptions[] =
     {"config",        required_argument, 0, 'c'},          //-c, --config
     {"debuglevel",    required_argument, 0, 'd'},          //-d, --debuglevel
     {"debugsolver",   no_argument, &_opt.nDebugSolver, 1}, //--debugsolver
+    {"disableexcludes", no_argument, &_opt.nDisableExcludes, 1}, //--disableexcludes
+    {"disableplugin", required_argument, 0, 0},            //--disableplugin
     {"disablerepo",   required_argument, 0, 0},            //--disablerepo
+    {"downloaddir",   required_argument, 0, 0},            //--downloaddir
+    {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
+    {"enableplugin",  required_argument, 0, 0},            //--enableplugin
     {"enablerepo",    required_argument, 0, 0},            //--enablerepo
-    {"repo",          required_argument, 0, 0},            //--repo
-    {"repoid",        required_argument, 0, 0},            //--repoid (same as --repo)
-    {"repofrompath",  required_argument, 0, 0},            //--repofrompath
-    {"errorlevel",    required_argument, 0, 'e'},          //-e --errorlevel
+    {"exclude",       required_argument, 0, 0},            //--exclude
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
+    {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
+    {"noplugins",     no_argument, 0, 0},                  //--noplugins
     {"quiet",         no_argument, &_opt.nQuiet, 1},       //--nogpgcheck
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh
     {"releasever",    required_argument, 0, 0},            //--releasever
-    {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
-    {"setopt",        required_argument, 0, 0},            //--set or override options
-    {"showduplicates",required_argument, 0, 0},            //--showduplicates
-    {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
-    {"verbose",       no_argument, 0, 'v'},                //-v --verbose
-    {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
-    {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
-    {"exclude",       required_argument, 0, 0},            //--exclude
-    {"security",      no_argument, 0, 0},                  //--security
-    {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {"reboot-required", no_argument, 0, 0},                //--reboot-required
+    {"repo",          required_argument, 0, 0},            //--repo
+    {"repofrompath",  required_argument, 0, 0},            //--repofrompath
+    {"repoid",        required_argument, 0, 0},            //--repoid (same as --repo)
+    {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
+    {"sec-severity",  required_argument, 0, 0},            //--sec-severity
+    {"security",      no_argument, 0, 0},                  //--security
+    {"setopt",        required_argument, 0, 0},            //--set or override options
     {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
+    {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
-    {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
-    {"noplugins",     no_argument, 0, 0},                  //--noplugins
-    {"disableplugin", required_argument, 0, 0},            //--disableplugin
-    {"enableplugin",  required_argument, 0, 0},            //--enableplugin
-    {"disableexcludes", no_argument, &_opt.nDisableExcludes, 1}, //--disableexcludes
-    {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
-    {"downloaddir",   required_argument, 0, 0},            //--downloaddir
-    {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
+    {"verbose",       no_argument, 0, 'v'},                //-v --verbose
+    {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
     // reposync options
     {"arch",          required_argument, 0, 0},
     {"delete",        no_argument, 0, 0},
     {"download-metadata", no_argument, 0, 0},
+    {"download-path", required_argument, 0, 0},
     {"gpgcheck", no_argument, 0, 0},
     {"metadata-path", required_argument, 0, 0},
     {"newest-only",   no_argument, 0, 0},
     {"norepopath",    no_argument, 0, 0},
-    {"download-path", required_argument, 0, 0},
     {"source",        no_argument, 0, 0},
     {"urls",          no_argument, 0, 0},
     // repoquery option
@@ -142,20 +140,20 @@ static struct option pstOptions[] =
     // repoquery query options
     {"available",     no_argument, 0, 0},
     {"changelogs",    no_argument, 0, 0},
-    {"installed",     no_argument, 0, 0},
-    {"extras",        no_argument, 0, 0},
-    {"duplicates",    no_argument, 0, 0},
-    {"depends",       no_argument, 0, 0},
-    {"provides",      no_argument, 0, 0},
-    {"obsoletes",     no_argument, 0, 0},
     {"conflicts",     no_argument, 0, 0},
-    {"requires",      no_argument, 0, 0},
+    {"depends",       no_argument, 0, 0},
+    {"duplicates",    no_argument, 0, 0},
+    {"enhances",      no_argument, 0, 0},
+    {"extras",        no_argument, 0, 0},
+    {"installed",     no_argument, 0, 0},
+    {"list",          no_argument, 0, 0},
+    {"obsoletes",     no_argument, 0, 0},
+    {"provides",      no_argument, 0, 0},
     {"recommends",    no_argument, 0, 0},
+    {"requires",      no_argument, 0, 0},
+    {"requires-pre",  no_argument, 0, 0},
     {"suggests",      no_argument, 0, 0},
     {"supplements",   no_argument, 0, 0},
-    {"enhances",      no_argument, 0, 0},
-    {"requires-pre",  no_argument, 0, 0},
-    {"list",          no_argument, 0, 0},
     {"upgrades",      no_argument, 0, 0},
     {0, 0, 0, 0}
 };
