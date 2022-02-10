@@ -15,6 +15,9 @@ import glob
 REPOFILENAME = "photon-skip.repo"
 REPOID = "photon-skip"
 
+pkg0 = "tdnf-conflict-file0"
+pkg1 = "tdnf-conflict-file1"
+
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
@@ -24,7 +27,8 @@ def setup_test(utils):
 
 def teardown_test(utils):
     os.remove(os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME))
-    pass
+    utils.run(['tdnf', 'erase', '-y', pkg0])
+    utils.run(['tdnf', 'erase', '-y', pkg1])
 
 
 def generate_repofile_skip_md(utils, newconfig, repoid, mdpart, value):
@@ -68,9 +72,33 @@ def check_skip_md_part(utils, mdpart, skipped):
     assert((len(glob.glob('{}/*{}*'.format(md_dir, mdpart))) == 0) == skipped)
 
 
-def test_skip_md_filelists(utils):
+def test_skip_md_parts(utils):
     # we do not generate updateinfo in our tests
     #    for mdpart in ['filelists', 'updateinfo', 'other']:
     for mdpart in ['filelists', 'other']:
         check_skip_md_part(utils, mdpart, True)
         check_skip_md_part(utils, mdpart, False)
+
+
+# even with filelists dropped, trying to install packages with conflicting files
+# should still fail
+def test_install_conflict_file(utils):
+    repoconf = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
+    generate_repofile_skip_md(utils, repoconf, REPOID, 'filelists', True)
+
+    ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'install', '-y', '--nogpgcheck', pkg0])
+    print(ret)
+    assert(utils.check_package(pkg0))
+
+    ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'install', '-y', '--nogpgcheck', pkg1])
+    print(ret)
+    assert(ret['retval'] == 1525)
+
+
+def test_install_conflict_file_atonce(utils):
+    repoconf = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
+    generate_repofile_skip_md(utils, repoconf, REPOID, 'filelists', True)
+
+    ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'install', '-y', '--nogpgcheck', pkg0, pkg1])
+    print(ret)
+    assert(ret['retval'] == 1525)
