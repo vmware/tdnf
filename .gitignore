@@ -96,3 +96,7 @@ core*
 
 # vi backup
 *.swp
+
+# Apple forks
+._*
+
