@@ -35,7 +35,7 @@
 #include <fnmatch.h>
 #include <libgen.h>
 #include <ctype.h>
-//
+#include <sys/file.h>
 #include <sys/utsname.h>
 
 #include <dirent.h>
@@ -65,6 +65,8 @@
 #include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "prototypes.h"
+
+#include "config.h"
 
 #include <metalink/metalink_parser.h>
 

@@ -1,33 +1,14 @@
 /*
- * Copyright (C) 2015-2018 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : main.c
- *
- * Abstract :
- *
- *            tdnf
- *
- *            command line tool
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- *
- */
-
 #include "includes.h"
 
 TDNF_CLI_CONTEXT _context = {0};
-
-/* glockfd used in exit handler nad inst*/
-static int32_t glockfd = 0;
-
-static void TdnfExitHandler(void);
-static bool IsTdnfAlreadyRunning(void);
 
 int main(int argc, char* argv[])
 {
@@ -80,19 +61,8 @@ int main(int argc, char* argv[])
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    if (IsTdnfAlreadyRunning())
-    {
-        pr_err("An instance of tdnf is already running, wait for it to finish\n");
-        dwError = ERROR_TDNF_ACCESS_DENIED;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-
-    /* exit handler for normal exit */
-    if (atexit(TdnfExitHandler))
-    {
-        dwError = errno;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
+    dwError = TDNFCliParseArgs(argc, argv, &pCmdArgs);
+    BAIL_ON_CLI_ERROR(dwError);
 
     _context.pFnCheck = TDNFCliInvokeCheck;
     _context.pFnCheckLocal = TDNFCliInvokeCheckLocal;
@@ -114,11 +84,6 @@ int main(int argc, char* argv[])
     _context.pFnSearch = TDNFCliInvokeSearch;
     _context.pFnUpdateInfo = TDNFCliInvokeUpdateInfo;
     _context.pFnUpdateInfoSummary = TDNFCliInvokeUpdateInfoSummary;
-
-    dwError = TDNFCliParseArgs(argc, argv, &pCmdArgs);
-    BAIL_ON_CLI_ERROR(dwError);
-
-    GlobalSetQuiet(pCmdArgs->nQuiet);
 
     //If --version, show version and exit
     if(pCmdArgs->nShowVersion)
@@ -198,53 +163,6 @@ error:
     }
 
     goto cleanup;
-}
-
-static void TdnfExitHandler(void)
-{
-    if (glockfd < 0)
-    {
-        return;
-    }
-
-    if (flock(glockfd, LOCK_UN))
-    {
-        pr_err("ERROR: Failed to unlock lock file\n");
-    }
-
-    close(glockfd);
-
-    if (remove(TDNF_INSTANCE_LOCK_FILE))
-    {
-        pr_err("ERROR: Unable to remove lockfile(%s) "
-                "Try removing it manually and run tdnf again\n",
-                TDNF_INSTANCE_LOCK_FILE);
-    }
-}
-
-static bool IsTdnfAlreadyRunning(void)
-{
-    bool ret = false;
-
-    glockfd = open(TDNF_INSTANCE_LOCK_FILE, O_CREAT | O_RDONLY, S_IRWXU);
-    if (glockfd < 0)
-    {
-        pr_err("ERROR: failed to create instance lock file\n");
-        goto end;
-    }
-
-    if (flock(glockfd, LOCK_EX | LOCK_NB))
-    {
-        if (errno == EAGAIN)
-        {
-            ret = true;
-            pr_err("ERROR: failed to acquire lock on: %s\n", TDNF_INSTANCE_LOCK_FILE);
-        }
-    }
-
-end:
-    /* glockfd is closed in exit handler */
-    return ret;
 }
 
 uint32_t
