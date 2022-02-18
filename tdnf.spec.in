@@ -8,8 +8,6 @@
 # tdnf spec file
 #
 
-%define dist @DIST@
-
 Summary:        dnf/yum equivalent using C libs
 Name:           @PROJECT_NAME@
 Version:        @PROJECT_VERSION@

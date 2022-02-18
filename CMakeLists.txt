@@ -10,14 +10,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
 project(tdnf VERSION 3.3.0 LANGUAGES C)
 set(VERSION ${PROJECT_VERSION})
-set(PROJECT_YEAR 2021)
-
-# needed for spec file
-execute_process (
-    COMMAND bash -c "uname -r | cut -d'.' -f4"
-    OUTPUT_VARIABLE dist
-)
-set(DIST .${dist})
+set(PROJECT_YEAR 2022)
 
 # Ensure correct directory paths are used for installation
 include(GNUInstallDirs)

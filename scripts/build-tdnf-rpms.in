@@ -36,7 +36,8 @@ mkdir -p "${rpm_build_path}"/{SOURCES,BUILD,RPMS/"${arch}"}
 
 mv -f "${full_name}".tar.gz "${rpm_build_path}"/SOURCES
 
-rpmbuild --nodeps -D "_topdir ${rpm_build_path}" -bb "${project_name}".spec
+dist=$(rpm -q glibc | cut -d'.' -f3)
+rpmbuild --nodeps -D "dist .${dist}" -D "_topdir ${rpm_build_path}" -bb "${project_name}".spec
 
 rpmdir="rpms"
 mkdir -p ${rpmdir}
