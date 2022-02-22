@@ -42,5 +42,6 @@
 #include "prototypes.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"
+#include "../jsondump/jsondump.h"
 
 #endif /* __CLI_INCLUDES_H__ */

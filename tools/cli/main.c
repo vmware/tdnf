@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
     if(pCmdArgs->nShowVersion)
     {
-        TDNFCliShowVersion();
+        TDNFCliShowVersion(pCmdArgs);
     }
     else if(pCmdArgs->nShowHelp)
     {
@@ -142,14 +142,20 @@ int main(int argc, char **argv)
         }
         else
         {
-            TDNFCliShowNoSuchCommand(pszCmd);
+            if (!pCmdArgs->nJsonOutput)
+            {
+                TDNFCliShowNoSuchCommand(pszCmd);
+            }
             dwError = ERROR_TDNF_CLI_NO_SUCH_CMD;
             BAIL_ON_CLI_ERROR(dwError);
         }
     }
     else
     {
-        TDNFCliShowUsage();
+        if (!pCmdArgs->nJsonOutput)
+        {
+            TDNFCliShowUsage();
+        }
     }
 
 cleanup:
@@ -165,7 +171,7 @@ cleanup:
     return dwError;
 
 error:
-    TDNFCliPrintError(dwError);
+    TDNFCliPrintError(dwError, pCmdArgs ? pCmdArgs->nJsonOutput : 0);
     if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO ||
         dwError == ERROR_TDNF_NO_DATA)
     {
@@ -178,11 +184,13 @@ error:
 
 uint32_t
 TDNFCliPrintError(
-    uint32_t dwErrorCode
+    uint32_t dwErrorCode,
+    int doJson
     )
 {
     uint32_t dwError = 0;
     char* pszError = NULL;
+    struct json_dump *jd = NULL;
 
     if (!dwErrorCode)
     {
@@ -205,16 +213,34 @@ TDNFCliPrintError(
         dwErrorCode = 0;
     }
 
-    if (dwErrorCode)
+    if (doJson)
     {
-        pr_err("Error(%u) : %s\n", dwErrorCode, pszError);
+        if (dwErrorCode)
+        {
+            jd = jd_create(0);
+            CHECK_JD_NULL(jd);
+
+            CHECK_JD_RC(jd_map_start(jd));
+            CHECK_JD_RC(jd_map_add_int(jd, "Error", dwErrorCode));
+            CHECK_JD_RC(jd_map_add_string(jd, "ErrorMessage", pszError));
+            
+            pr_json(jd->buf);
+        }
     }
     else
     {
-        pr_err("%s\n", pszError);
+        if (dwErrorCode)
+        {
+            pr_err("Error(%u) : %s\n", dwErrorCode, pszError);
+        }
+        else
+        {
+            pr_err("%s\n", pszError);
+        }
     }
 
 cleanup:
+    JD_SAFE_DESTROY(jd);
     TDNF_CLI_SAFE_FREE_MEMORY(pszError);
     return dwError;
 
@@ -227,10 +253,22 @@ error:
 
 void
 TDNFCliShowVersion(
-    void
+    PTDNF_CMD_ARGS pCmdArgs
     )
 {
-    pr_info("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());
+    if (pCmdArgs->nJsonOutput)
+    {
+        struct json_dump *jd = jd_create(0);
+        jd_map_start(jd);
+        jd_map_add_string(jd, "Name", TDNFGetPackageName());
+        jd_map_add_string(jd, "Version", TDNFGetVersion());
+        pr_json(jd->buf);
+        jd_destroy(jd);
+    }
+    else
+    {
+        pr_info("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());
+    }
 }
 
 uint32_t

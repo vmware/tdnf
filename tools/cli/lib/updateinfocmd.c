@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -70,17 +70,16 @@ TDNFCliUpdateInfoCommand(
                       pContext,
                       pInfoArgs,
                       &pUpdateInfo);
+        if (dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+        }
         BAIL_ON_CLI_ERROR(dwError);
-        if(pInfoArgs->nMode == OUTPUT_LIST)
-        {
-            dwError = TDNFCliUpdateInfoList(pUpdateInfo);
-            BAIL_ON_CLI_ERROR(dwError);
-        }
-        else if(pInfoArgs->nMode == OUTPUT_INFO)
-        {
-            dwError = TDNFCliUpdateInfoInfo(pUpdateInfo);
-            BAIL_ON_CLI_ERROR(dwError);
-        }
+
+        dwError = pCmdArgs->nJsonOutput ?
+            TDNFCliUpdateInfoOutputJson(pUpdateInfo, pInfoArgs->nMode) :
+            TDNFCliUpdateInfoOutput(pUpdateInfo, pInfoArgs->nMode);
+        BAIL_ON_CLI_ERROR(dwError);
     }
 cleanup:
     if(pInfoArgs)
@@ -120,23 +119,36 @@ TDNFCliUpdateInfoSummary(
                   &pSummary);
     BAIL_ON_CLI_ERROR(dwError);
 
-    for(i = UPDATE_UNKNOWN; i <= UPDATE_ENHANCEMENT; ++i)
+    if (pCmdArgs->nJsonOutput)
     {
-        if(pSummary[i].nCount > 0)
+        struct json_dump *jd = jd_create(0);
+        jd_map_start(jd);
+        for(i = UPDATE_UNKNOWN; i <= UPDATE_ENHANCEMENT; ++i)
         {
-            nCount++;
-            pr_crit(
-                "%d %s notice(s)\n",
-                pSummary[i].nCount,
-                TDNFGetUpdateInfoType(pSummary[i].nType));
+            jd_map_add_int(jd, TDNFGetUpdateInfoType(pSummary[i].nType), pSummary[i].nCount);
         }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
     }
-    if (nCount == 0)
+    else
     {
-        pr_crit(
-            "\n%d updates.\n", nCount);
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_CLI_ERROR(dwError);
+        for(i = UPDATE_UNKNOWN; i <= UPDATE_ENHANCEMENT; i++)
+        {
+            if(pSummary[i].nCount > 0)
+            {
+                nCount++;
+                pr_crit(
+                    "%d %s notice(s)\n",
+                    pSummary[i].nCount,
+                    TDNFGetUpdateInfoType(pSummary[i].nType));
+            }
+        }
+        if (nCount == 0)
+        {
+            pr_crit("\n%d updates.\n", nCount);
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
     }
 
 cleanup:
@@ -151,80 +163,93 @@ error:
 }
 
 uint32_t
-TDNFCliUpdateInfoList(
-    PTDNF_UPDATEINFO pInfo
+TDNFCliUpdateInfoOutput(
+    PTDNF_UPDATEINFO pInfo,
+    TDNF_UPDATEINFO_OUTPUT mode
     )
 {
     uint32_t dwError = 0;
     PTDNF_UPDATEINFO_PKG pPkg = NULL;
 
-    if(!pInfo)
+    for(; pInfo; pInfo = pInfo->pNext)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-
-    while(pInfo)
-    {
-        pPkg = pInfo->pPackages;
-        while(pPkg)
+        for(pPkg = pInfo->pPackages; pPkg; pPkg = pPkg->pNext)
         {
-            pr_crit("%s %s %s\n", pInfo->pszID,
-                    TDNFGetUpdateInfoType(pInfo->nType),
-                    pPkg->pszFileName);
-
-            pPkg = pPkg->pNext;
+            if (mode == OUTPUT_INFO)
+            {
+                pr_crit("       Name : %s\n"
+                        "  Update ID : %s\n"
+                        "       Type : %s\n"
+                        "    Updated : %s\n"
+                        "Needs Reboot: %d\n"
+                        "Description : %s\n",
+                            pPkg->pszFileName,
+                            pInfo->pszID,
+                            TDNFGetUpdateInfoType(pInfo->nType),
+                            pInfo->pszDate,
+                            pInfo->nRebootRequired,
+                            pInfo->pszDescription);
+            }
+            else if (mode == OUTPUT_LIST)
+            {
+                pr_crit("%s %s %s\n", pInfo->pszID,
+                        TDNFGetUpdateInfoType(pInfo->nType),
+                        pPkg->pszFileName);
+            }
         }
-        pInfo = pInfo->pNext;
     }
-
-cleanup:
     return dwError;
-
-error:
-    goto cleanup;
 }
 
 uint32_t
-TDNFCliUpdateInfoInfo(
-    PTDNF_UPDATEINFO pInfo
+TDNFCliUpdateInfoOutputJson(
+    PTDNF_UPDATEINFO pInfo,
+    TDNF_UPDATEINFO_OUTPUT mode
     )
 {
     uint32_t dwError = 0;
     PTDNF_UPDATEINFO_PKG pPkg = NULL;
+    struct json_dump *jd = jd_create(0);
+    struct json_dump *jd_info = NULL;
+    struct json_dump *jd_pkgs = NULL;
 
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
+    CHECK_JD_NULL(jd);
+    CHECK_JD_RC(jd_list_start(jd));
 
-    while(pInfo)
+    for(; pInfo; pInfo = pInfo->pNext)
     {
-        pPkg = pInfo->pPackages;
-        while(pPkg)
+        jd_info = jd_create(0);
+        CHECK_JD_NULL(jd_info);
+        jd_pkgs = jd_create(0);
+        CHECK_JD_NULL(jd_pkgs);
+
+        CHECK_JD_RC(jd_map_start(jd_info));
+
+        CHECK_JD_RC(jd_map_add_string(jd_info, "Type", TDNFGetUpdateInfoType(pInfo->nType)));
+        CHECK_JD_RC(jd_map_add_string(jd_info, "UpdateID", pInfo->pszID));
+        if (mode == OUTPUT_INFO)
         {
-            pr_crit("       Name : %s\n"
-                   "  Update ID : %s\n"
-                   "       Type : %s\n"
-                   "    Updated : %s\n"
-                   "Needs Reboot: %d\n"
-                   "Description : %s\n",
-                        pPkg->pszFileName,
-                        pInfo->pszID,
-                        TDNFGetUpdateInfoType(pInfo->nType),
-                        pInfo->pszDate,
-                        pInfo->nRebootRequired,
-                        pInfo->pszDescription);
-
-            pPkg = pPkg->pNext;
+            CHECK_JD_RC(jd_map_add_string(jd_info, "Updated", pInfo->pszDate));
+            CHECK_JD_RC(jd_map_add_bool(jd_info, "NeedsReboot", pInfo->nRebootRequired));
+            CHECK_JD_RC(jd_map_add_string(jd_info, "Description", pInfo->pszDescription));
         }
-        pInfo = pInfo->pNext;
-    }
+        CHECK_JD_RC(jd_list_start(jd_pkgs));
 
-cleanup:
-    return dwError;
+        for(pPkg = pInfo->pPackages; pPkg; pPkg = pPkg->pNext)
+        {
+            CHECK_JD_RC(jd_list_add_string(jd_pkgs, pPkg->pszFileName));
+        }
+        CHECK_JD_RC(jd_map_add_child(jd_info, "Packages", jd_pkgs));
+        JD_SAFE_DESTROY(jd_pkgs);
+        CHECK_JD_RC(jd_list_add_child(jd, jd_info));
+        JD_SAFE_DESTROY(jd_info);
+    }
+    pr_json(jd->buf);
+    JD_SAFE_DESTROY(jd);
 
 error:
-    goto cleanup;
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_info);
+    JD_SAFE_DESTROY(jd_pkgs);
+    return dwError;
 }

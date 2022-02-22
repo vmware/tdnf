@@ -67,8 +67,15 @@ TDNFCliUpdateInfoSummary(
     );
 
 uint32_t
-TDNFCliUpdateInfoInfo(
-    PTDNF_UPDATEINFO pInfo
+TDNFCliUpdateInfoOutput(
+    PTDNF_UPDATEINFO pInfo,
+    TDNF_UPDATEINFO_OUTPUT mode
+    );
+
+uint32_t
+TDNFCliUpdateInfoOutputJson(
+    PTDNF_UPDATEINFO pInfo,
+    TDNF_UPDATEINFO_OUTPUT mode
     );
 
 //help.c

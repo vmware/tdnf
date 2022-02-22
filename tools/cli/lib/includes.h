@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2017-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -41,5 +41,6 @@
 #include "prototypes.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"
+#include "../jsondump/jsondump.h"
 
 #endif /* __CLI_LIB_INCLUDES_H__ */

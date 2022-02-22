@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2017-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -118,7 +118,12 @@ TDNFCliCountCommand(
     dwError = pContext->pFnCount(pContext, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
-    pr_crit("Package count = %u\n", dwCount);
+    if (pCmdArgs->nJsonOutput)
+    {
+        pr_jsonf("%u", dwCount);
+    } else {
+        pr_crit("Package count = %u\n", dwCount);        
+    }
 
 cleanup:
     return dwError;
@@ -139,6 +144,8 @@ TDNFCliListCommand(
     uint32_t dwCount = 0;
     uint32_t dwIndex = 0;
     PTDNF_LIST_ARGS pListArgs = NULL;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_pkg = NULL;
 
     #define MAX_COL_LEN 256
     char szNameAndArch[MAX_COL_LEN] = {0};
@@ -159,47 +166,80 @@ TDNFCliListCommand(
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = pContext->pFnList(pContext, pListArgs, &pPkgInfo, &dwCount);
-    BAIL_ON_CLI_ERROR(dwError);
-
-    dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
-    BAIL_ON_CLI_ERROR(dwError);
-
-    for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_MATCH)
     {
-        pPkg = &pPkgInfo[dwIndex];
+        dwError = 0;
+    }
+    BAIL_ON_CLI_ERROR(dwError);
 
-        memset(szNameAndArch, 0, MAX_COL_LEN);
-        if(snprintf(
-            szNameAndArch,
-            MAX_COL_LEN,
-            "%s.%s",
-            pPkg->pszName,
-            pPkg->pszArch) < 0)
+    if (pCmdArgs->nJsonOutput)
+    {
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+
+        jd_list_start(jd);
+
+    	for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
         {
-            dwError = errno;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
+            jd_pkg = jd_create(0);
+            CHECK_JD_NULL(jd_pkg);
 
-        memset(szVersionAndRelease, 0, MAX_COL_LEN);
-        if(snprintf(
-            szVersionAndRelease,
-            MAX_COL_LEN,
-            "%s-%s",
-            pPkg->pszVersion,
-            pPkg->pszRelease) < 0)
+            CHECK_JD_RC(jd_map_start(jd_pkg));
+            pPkg = &pPkgInfo[dwIndex];
+
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
+            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
+            JD_SAFE_DESTROY(jd_pkg);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }
+    else
+    {
+        dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
         {
-            dwError = errno;
-            BAIL_ON_CLI_ERROR(dwError);
-        }
+            pPkg = &pPkgInfo[dwIndex];
 
-        pr_crit(
-            "%-*s%-*s%*s\n",
-            nColWidths[0],
-            szNameAndArch,
-            nColWidths[1],
-            szVersionAndRelease,
-            nColWidths[2],
-            pPkg->pszRepoName);
+     	    memset(szNameAndArch, 0, MAX_COL_LEN);
+            if(snprintf(
+                szNameAndArch,
+                MAX_COL_LEN,
+                "%s.%s",
+                pPkg->pszName,
+                pPkg->pszArch) < 0)
+            {
+                dwError = errno;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
+            memset(szVersionAndRelease, 0, MAX_COL_LEN);
+            if(snprintf(
+                szVersionAndRelease,
+                MAX_COL_LEN,
+                "%s-%s",
+                pPkg->pszVersion,
+                pPkg->pszRelease) < 0)
+            {
+                dwError = errno;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
+            pr_crit(
+                "%-*s%-*s%*s\n",
+                nColWidths[0],
+                szNameAndArch,
+                nColWidths[1],
+                szVersionAndRelease,
+                nColWidths[2],
+                pPkg->pszRepoName);
+        }
     }
 
 cleanup:
@@ -214,6 +254,8 @@ cleanup:
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
 
@@ -235,6 +277,9 @@ TDNFCliInfoCommand(
     uint32_t dwIndex = 0;
     uint64_t dwTotalSize = 0;
 
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_pkg = NULL;
+
     if(!pContext || !pContext->hTdnf || !pContext->pFnInfo)
     {
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
@@ -245,35 +290,73 @@ TDNFCliInfoCommand(
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = pContext->pFnInfo(pContext, pInfoArgs, &pPkgInfo, &dwCount);
-    BAIL_ON_CLI_ERROR(dwError);
-
-    for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_MATCH)
     {
-        pPkg = &pPkgInfo[dwIndex];
-
-        pr_crit("Name          : %s\n", pPkg->pszName);
-        pr_crit("Arch          : %s\n", pPkg->pszArch);
-        pr_crit("Epoch         : %d\n", pPkg->dwEpoch);
-        pr_crit("Version       : %s\n", pPkg->pszVersion);
-        pr_crit("Release       : %s\n", pPkg->pszRelease);
-        pr_crit("Install Size  : %s (%u)\n", pPkg->pszFormattedSize, pPkg->dwInstallSizeBytes);
-        pr_crit("Repo          : %s\n", pPkg->pszRepoName);
-        pr_crit("Summary       : %s\n", pPkg->pszSummary);
-        pr_crit("URL           : %s\n", pPkg->pszURL);
-        pr_crit("License       : %s\n", pPkg->pszLicense);
-        pr_crit("Description   : %s\n", pPkg->pszDescription);
-
-        pr_crit("\n");
-
-        dwTotalSize += pPkg->dwInstallSizeBytes;
+        dwError = 0;
     }
-
-    dwError = TDNFUtilsFormatSize(dwTotalSize, &pszFormattedSize);
     BAIL_ON_CLI_ERROR(dwError);
 
-    if(dwCount > 0)
+    if (pCmdArgs->nJsonOutput)
     {
-        pr_crit("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
+        jd = jd_create(1024);
+        CHECK_JD_NULL(jd);
+
+        CHECK_JD_RC(jd_list_start(jd));
+
+        for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+        {
+            jd_pkg = jd_create(0);
+            CHECK_JD_NULL(jd_pkg);
+
+            CHECK_JD_RC(jd_map_start(jd_pkg));
+            pPkg = &pPkgInfo[dwIndex];
+
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
+            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Url", pPkg->pszURL));
+            CHECK_JD_RC(jd_map_add_int(jd_pkg, "InstallSize", pPkg->dwInstallSizeBytes));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Summary", pPkg->pszSummary));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "License", pPkg->pszLicense));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Description", pPkg->pszDescription));
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
+            JD_SAFE_DESTROY(jd_pkg);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }
+    else
+    {
+        for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+        {
+            pPkg = &pPkgInfo[dwIndex];
+
+            pr_crit("Name          : %s\n", pPkg->pszName);
+            pr_crit("Arch          : %s\n", pPkg->pszArch);
+            pr_crit("Epoch         : %d\n", pPkg->dwEpoch);
+            pr_crit("Version       : %s\n", pPkg->pszVersion);
+            pr_crit("Release       : %s\n", pPkg->pszRelease);
+            pr_crit("Install Size  : %s (%u)\n", pPkg->pszFormattedSize, pPkg->dwInstallSizeBytes);
+            pr_crit("Repo          : %s\n", pPkg->pszRepoName);
+            pr_crit("Summary       : %s\n", pPkg->pszSummary);
+            pr_crit("URL           : %s\n", pPkg->pszURL);
+            pr_crit("License       : %s\n", pPkg->pszLicense);
+            pr_crit("Description   : %s\n", pPkg->pszDescription);
+
+            pr_crit("\n");
+
+            dwTotalSize += pPkg->dwInstallSizeBytes;
+        }
+
+        dwError = TDNFUtilsFormatSize(dwTotalSize, &pszFormattedSize);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        if(dwCount > 0)
+        {
+            pr_crit("\nTotal Size: %s (%lu)\n", pszFormattedSize, dwTotalSize);
+        }
     }
 
 cleanup:
@@ -289,6 +372,8 @@ cleanup:
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
 
@@ -299,9 +384,11 @@ TDNFCliRepoListCommand(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA pRepos = NULL;
-    PTDNF_REPO_DATA pReposTemp = NULL;
+    PTDNF_REPO_DATA pRepoList = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     TDNF_REPOLISTFILTER nFilter = REPOLISTFILTER_ENABLED;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_repo = NULL;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnRepoList)
     {
@@ -312,29 +399,55 @@ TDNFCliRepoListCommand(
     dwError = TDNFCliParseRepoListArgs(pCmdArgs, &nFilter);
     BAIL_ON_CLI_ERROR(dwError);
 
-    dwError = pContext->pFnRepoList(pContext, nFilter, &pRepos);
+    dwError = pContext->pFnRepoList(pContext, nFilter, &pRepoList);
     BAIL_ON_CLI_ERROR(dwError);
 
-    pReposTemp = pRepos;
-    if(pReposTemp)
+    if (pCmdArgs->nJsonOutput)
     {
-        pr_crit("%-20s%-40s%-10s\n", "repo id", "repo name", "status");
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+
+        jd_list_start(jd);
+
+        for(pRepo = pRepoList; pRepo; pRepo = pRepo->pNext)
+        {
+            jd_repo = jd_create(0);
+            CHECK_JD_NULL(jd_repo);
+            CHECK_JD_RC(jd_map_start(jd_repo));
+
+            CHECK_JD_RC(jd_map_add_string(jd_repo, "Repo", pRepo->pszId));
+            CHECK_JD_RC(jd_map_add_string(jd_repo, "RepoName", pRepo->pszName));
+            CHECK_JD_RC(jd_map_add_bool(jd_repo, "Enabled", pRepo->nEnabled));
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_repo));
+            JD_SAFE_DESTROY(jd_repo);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
     }
-    while(pReposTemp)
+    else
     {
-        pr_crit(
-            "%-20s%-40s%-10s\n",
-            pReposTemp->pszId,
-            pReposTemp->pszName,
-            pReposTemp->nEnabled ? "enabled" : "disabled");
-        pReposTemp = pReposTemp->pNext;
+        if(pRepoList)
+        {
+            pr_crit("%-20s%-40s%-10s\n", "repo id", "repo name", "status");
+        }
+        for(pRepo = pRepoList; pRepo; pRepo = pRepo->pNext)
+        {
+            pr_crit(
+                "%-20s%-40s%-10s\n",
+                pRepo->pszId,
+                pRepo->pszName,
+                pRepo->nEnabled ? "enabled" : "disabled");
+        }
     }
 
 cleanup:
-    TDNFFreeRepos(pRepos);
+    TDNFFreeRepos(pRepoList);
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_repo);
     goto cleanup;
 }
 
@@ -349,6 +462,8 @@ TDNFCliSearchCommand(
     uint32_t dwIndex = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PTDNF_PKG_INFO pPkg = NULL;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_pkg = NULL;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnSearch)
     {
@@ -357,12 +472,44 @@ TDNFCliSearchCommand(
     }
 
     dwError = pContext->pFnSearch(pContext, pCmdArgs, &pPkgInfo, &dwCount);
+    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
+    {
+        dwError = 0;
+    }
     BAIL_ON_CLI_ERROR(dwError);
 
-    for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+    if (pCmdArgs->nJsonOutput)
     {
-        pPkg = &pPkgInfo[dwIndex];
-        pr_crit("%s : %s\n", pPkg->pszName, pPkg->pszSummary);
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+
+        jd_list_start(jd);
+
+        for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+        {
+            jd_pkg = jd_create(0);
+            CHECK_JD_NULL(jd_pkg);
+
+            CHECK_JD_RC(jd_map_start(jd_pkg));
+
+            pPkg = &pPkgInfo[dwIndex];
+
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Summary", pPkg->pszSummary));
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
+            JD_SAFE_DESTROY(jd_pkg);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }
+    else
+    {
+        for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+        {
+            pPkg = &pPkgInfo[dwIndex];
+            pr_crit("%s : %s\n", pPkg->pszName, pPkg->pszSummary);
+        }
     }
 
 cleanup:
@@ -370,6 +517,8 @@ cleanup:
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
 
@@ -412,8 +561,10 @@ TDNFCliProvidesCommand(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_PKG_INFO pPkg = NULL;
     PTDNF_PKG_INFO pPkgInfos = NULL;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_pkg = NULL;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnProvides)
     {
@@ -432,19 +583,44 @@ TDNFCliProvidesCommand(
                                     &pPkgInfos);
     BAIL_ON_CLI_ERROR(dwError);
 
-    pPkgInfo = pPkgInfos;
-    while(pPkgInfo)
+    if (pCmdArgs->nJsonOutput)
     {
-        pr_crit("%s-%s-%s.%s : %s\n",
-            pPkgInfo->pszName,
-            pPkgInfo->pszVersion,
-            pPkgInfo->pszRelease,
-            pPkgInfo->pszArch,
-            pPkgInfo->pszSummary);
-        pr_crit("Repo\t : %s\n", pPkgInfo->pszRepoName);
-        pPkgInfo = pPkgInfo->pNext;
-    }
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
 
+        jd_list_start(jd);
+
+        for(pPkg = pPkgInfos; pPkg; pPkg = pPkg->pNext)
+        {
+            jd_pkg = jd_create(0);
+            CHECK_JD_NULL(jd_pkg);
+
+            CHECK_JD_RC(jd_map_start(jd_pkg));
+
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
+            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Summary", pPkg->pszSummary));
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
+            JD_SAFE_DESTROY(jd_pkg);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }
+    else
+    {
+        for(pPkg = pPkgInfos; pPkg; pPkg = pPkg->pNext)
+        {
+            pr_crit("%s-%s-%s.%s : %s\n",
+                pPkg->pszName,
+                pPkg->pszVersion,
+                pPkg->pszRelease,
+                pPkg->pszArch,
+                pPkg->pszSummary);
+            pr_crit("Repo\t : %s\n", pPkg->pszRepoName);
+        }        
+    }
 cleanup:
     if(pPkgInfos)
     {
@@ -453,6 +629,8 @@ cleanup:
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
 
@@ -498,6 +676,10 @@ TDNFCliRepoQueryCommand(
     PTDNF_PKG_INFO pPkgInfos = NULL;
     int nCount = 0, i, j, k;
     char **ppszLines = NULL;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_pkg = NULL;
+    struct json_dump *jd_list = NULL;
+    struct json_dump *jd_entry = NULL;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoQuery)
     {
@@ -510,86 +692,192 @@ TDNFCliRepoQueryCommand(
 
     dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos, &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
-    for (i = 0; i < (int)dwCount; i++)
-    {
-        pPkgInfo = &pPkgInfos[i];
 
-        if (pPkgInfo->ppszDependencies)
+    if (pCmdArgs->nJsonOutput)
+    {
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+
+        jd_list_start(jd);
+
+        for (i = 0; i < (int)dwCount; i++)
         {
-            for (j = 0; pPkgInfo->ppszDependencies[j]; j++);
-            nCount += j;
-        }
-        else if (pPkgInfo->ppszFileList)
-        {
-            for (j = 0; pPkgInfo->ppszFileList[j]; j++);
-            nCount += j;
-        }
-        else if (pPkgInfo->pChangeLogEntries)
-        {
-            PTDNF_PKG_CHANGELOG_ENTRY pEntry;
-            for (pEntry = pPkgInfo->pChangeLogEntries; pEntry; pEntry = pEntry->pNext)
+            int j;
+            jd_pkg = jd_create(0);
+            CHECK_JD_NULL(jd_pkg);
+
+            CHECK_JD_RC(jd_map_start(jd_pkg));
+
+            pPkgInfo = &pPkgInfos[i];
+
+            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Nevra", "%s-%s-%s.%s",
+                                       pPkgInfo->pszName,
+                                       pPkgInfo->pszVersion,
+                                       pPkgInfo->pszRelease,
+                                       pPkgInfo->pszArch));
+
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkgInfo->pszName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkgInfo->pszArch));
+            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkgInfo->pszVersion, pPkgInfo->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkgInfo->pszRepoName));
+
+            if (pPkgInfo->ppszFileList)
             {
-                char szTime[20] = {0};
-                if (strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime)))
-                {
-                    pr_crit("%s %s\n%s\n",
-                        szTime,
-                        pEntry->pszAuthor,
-                        pEntry->pszText);
-                }
-                else
-                {
-                    dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
-                    BAIL_ON_CLI_ERROR(dwError);
-                }
-            }
-        }
-        else if (pPkgInfo->pszSourcePkg)
-        {
-            pr_crit("%s\n", pPkgInfo->pszSourcePkg);
-        }
-        else
-        {
-            pr_crit("%s-%s-%s.%s\n",
-                pPkgInfo->pszName,
-                pPkgInfo->pszVersion,
-                pPkgInfo->pszRelease,
-                pPkgInfo->pszArch);
-        }
-    }
+                jd_list = jd_create(0);
+                CHECK_JD_NULL(jd_list);
 
-    if (nCount > 0)
+                CHECK_JD_RC(jd_list_start(jd_list));
+
+                for (j = 0; pPkgInfo->ppszFileList[j]; j++)
+                {
+                    CHECK_JD_RC(jd_list_add_string(jd_list, pPkgInfo->ppszFileList[j]));
+                }
+                CHECK_JD_RC(jd_map_add_child(jd_pkg, "Files", jd_list));
+                JD_SAFE_DESTROY(jd_list);
+            }
+            if (pPkgInfo->ppszDependencies)
+            {
+                char *strDepKeys[] = {"Provides", "Obsoletes", "Conflicts",
+                                      "Requires", "Recommends", "Suggests",
+                                      "Supplements", "Enhances", "Depends",
+                                      "RequiresPre"};
+
+                jd_list = jd_create(0);
+                CHECK_JD_NULL(jd_list);
+
+                jd_list_start(jd_list);
+
+                for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
+                {
+                    CHECK_JD_RC(jd_list_add_string(jd_list, pPkgInfo->ppszDependencies[j]));
+                }
+                CHECK_JD_RC(jd_map_add_child(jd_pkg, strDepKeys[pRepoqueryArgs->depKey-1], jd_list));
+                JD_SAFE_DESTROY(jd_list);
+            }
+            if (pPkgInfo->pChangeLogEntries)
+            {
+                jd_list = jd_create(0);
+                CHECK_JD_NULL(jd_list);
+
+                CHECK_JD_RC(jd_list_start(jd_list));
+
+                PTDNF_PKG_CHANGELOG_ENTRY pEntry;
+                for (pEntry = pPkgInfo->pChangeLogEntries; pEntry; pEntry = pEntry->pNext)
+                {
+                    jd_entry = jd_create(0);
+                    CHECK_JD_NULL(jd_entry);
+
+                    char szTime[20] = {0};
+
+                    jd_map_start(jd_entry);
+
+                    if (strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime)))
+                    {
+                        jd_map_add_string(jd_entry, "Time", szTime);
+                    }
+                    CHECK_JD_RC(jd_map_add_string(jd_entry, "Author", pEntry->pszAuthor));
+                    CHECK_JD_RC(jd_map_add_string(jd_entry, "Text", pEntry->pszText));
+
+                    CHECK_JD_RC(jd_list_add_child(jd_list, jd_entry));
+                    JD_SAFE_DESTROY(jd_entry);
+                }
+                CHECK_JD_RC(jd_map_add_child(jd_pkg, "ChangeLogs", jd_list));
+                JD_SAFE_DESTROY(jd_list);
+            }
+            if (pPkgInfo->pszSourcePkg)
+            {
+                CHECK_JD_RC(jd_map_add_string(jd_pkg, "Source", pPkgInfo->pszSourcePkg));
+            }
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
+            JD_SAFE_DESTROY(jd_pkg);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }
+    else
     {
-        dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszLines);
-        BAIL_ON_CLI_ERROR(dwError);
-        for (k = 0, i = 0; i < (int)dwCount; i++)
+        for (i = 0; i < (int)dwCount; i++)
         {
             pPkgInfo = &pPkgInfos[i];
 
             if (pPkgInfo->ppszDependencies)
             {
-                for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
-                {
-                    ppszLines[k++] = pPkgInfo->ppszDependencies[j];
-                }
+                for (j = 0; pPkgInfo->ppszDependencies[j]; j++);
+                nCount += j;
             }
             else if (pPkgInfo->ppszFileList)
             {
-                for (j = 0; pPkgInfo->ppszFileList[j]; j++)
+                for (j = 0; pPkgInfo->ppszFileList[j]; j++);
+                nCount += j;
+            }
+            else if (pPkgInfo->pChangeLogEntries)
+            {
+                PTDNF_PKG_CHANGELOG_ENTRY pEntry;
+                for (pEntry = pPkgInfo->pChangeLogEntries; pEntry; pEntry = pEntry->pNext)
                 {
-                    ppszLines[k++] = pPkgInfo->ppszFileList[j];
+                    char szTime[20] = {0};
+                    if (strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime)))
+                    {
+                        pr_crit("%s %s\n%s\n",
+                            szTime,
+                            pEntry->pszAuthor,
+                            pEntry->pszText);
+                    }
+                    else
+                    {
+                        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+                        BAIL_ON_CLI_ERROR(dwError);
+                    }
                 }
+            }
+            else if (pPkgInfo->pszSourcePkg)
+            {
+                pr_crit("%s\n", pPkgInfo->pszSourcePkg);
+            }
+            else
+            {
+                pr_crit("%s-%s-%s.%s\n",
+                    pPkgInfo->pszName,
+                    pPkgInfo->pszVersion,
+                    pPkgInfo->pszRelease,
+                    pPkgInfo->pszArch);
             }
         }
 
-        dwError = TDNFStringArraySort(ppszLines);
-        BAIL_ON_CLI_ERROR(dwError);
-
-        for (j = 0; ppszLines[j]; j++)
+        if (nCount > 0)
         {
-            if (j == 0 || strcmp(ppszLines[j], ppszLines[j-1]))
+            dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszLines);
+            BAIL_ON_CLI_ERROR(dwError);
+            for (k = 0, i = 0; i < (int)dwCount; i++)
             {
-                pr_crit("%s\n", ppszLines[j]);
+                pPkgInfo = &pPkgInfos[i];
+
+                if (pPkgInfo->ppszDependencies)
+                {
+                    for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
+                    {
+                        ppszLines[k++] = pPkgInfo->ppszDependencies[j];
+                    }
+                }
+                else if (pPkgInfo->ppszFileList)
+                {
+                    for (j = 0; pPkgInfo->ppszFileList[j]; j++)
+                    {
+                        ppszLines[k++] = pPkgInfo->ppszFileList[j];
+                    }
+                }
+            }
+
+            dwError = TDNFStringArraySort(ppszLines);
+            BAIL_ON_CLI_ERROR(dwError);
+
+            for (j = 0; ppszLines[j]; j++)
+            {
+                if (j == 0 || strcmp(ppszLines[j], ppszLines[j-1]))
+                {
+                    pr_crit("%s\n", ppszLines[j]);
+                }
             }
         }
     }
@@ -604,6 +892,10 @@ cleanup:
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
+    JD_SAFE_DESTROY(jd_list);
+    JD_SAFE_DESTROY(jd_entry);
     goto cleanup;
 }
 
@@ -620,6 +912,8 @@ TDNFCliCheckUpdateCommand(
     uint32_t dwIndex = 0;
     char** ppszPackageArgs = NULL;
     int nPackageCount = 0;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_pkg = NULL;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnCheckUpdate)
     {
@@ -639,13 +933,42 @@ TDNFCliCheckUpdateCommand(
                                        &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
-    for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+    if (pCmdArgs->nJsonOutput)
     {
-        pPkg = &pPkgInfo[dwIndex];
-        pr_crit("%*s\r", 80, pPkg->pszRepoName);
-        pr_crit("%*s-%s\r", 50, pPkg->pszVersion, pPkg->pszRelease);
-        pr_crit("%s.%s", pPkg->pszName, pPkg->pszArch);
-        pr_crit("\n");
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+
+        CHECK_JD_RC(jd_list_start(jd));
+
+    	for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+        {
+            jd_pkg = jd_create(0);
+            CHECK_JD_NULL(jd_pkg);
+
+            jd_map_start(jd_pkg);
+            pPkg = &pPkgInfo[dwIndex];
+
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
+            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
+
+            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
+            JD_SAFE_DESTROY(jd_pkg);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }    
+    else
+    {
+        for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
+        {
+            pPkg = &pPkgInfo[dwIndex];
+            pr_crit("%*s\r", 80, pPkg->pszRepoName);
+            pr_crit("%*s-%s\r", 50, pPkg->pszVersion, pPkg->pszRelease);
+            pr_crit("%s.%s", pPkg->pszName, pPkg->pszArch);
+            pr_crit("\n");
+        }
     }
 
 cleanup:
@@ -657,6 +980,8 @@ cleanup:
     return dwError;
 
 error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
 

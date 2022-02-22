@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -154,6 +154,11 @@ PrintSolvedInfo(
     );
 
 uint32_t
+    PrintSolvedInfoJson(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+uint32_t
 PrintNotAvailable(
     char** ppszPkgsNotAvailable
     );
@@ -181,7 +186,7 @@ TDNFCliInvokeUpdateInfoSummary(
 //main.c
 void
 TDNFCliShowVersion(
-    void
+    PTDNF_CMD_ARGS pCmdArgs
     );
 
 uint32_t

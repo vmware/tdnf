@@ -45,6 +45,7 @@ static struct option pstOptions[] =
     {"exclude",       required_argument, 0, 0},            //--exclude
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
+    {"json",          no_argument, &_opt.nJsonOutput, 1},
     {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"noplugins",     no_argument, 0, 0},                  //--noplugins
@@ -302,6 +303,7 @@ TDNFCopyOptions(
     pArgs->nDisableExcludes = pOptionArgs->nDisableExcludes;
     pArgs->nDownloadOnly  = pOptionArgs->nDownloadOnly;
     pArgs->nNoAutoRemove  = pOptionArgs->nNoAutoRemove;
+    pArgs->nJsonOutput    = pOptionArgs->nJsonOutput;
 
 cleanup:
     return dwError;

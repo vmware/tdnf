@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2021 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2020-2022 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
@@ -46,6 +46,7 @@ add_library(${LIB_TDNF} SHARED
 
 target_link_libraries(${LIB_TDNF}
     ${LIB_TDNF_COMMON}
+    ${LIB_TDNF_JSONDUMP}
     ${LIB_TDNF_SOLV}
     ${RPM_LIBRARIES}
     ${LibSolv_LIBRARIES}
