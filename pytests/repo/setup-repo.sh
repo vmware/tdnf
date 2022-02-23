@@ -82,6 +82,7 @@ baseurl=http://localhost:8080/photon-test
 gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
 gpgcheck=0
 enabled=1
+skip_md_filelists=1
 EOF
 
 cat << EOF > ${TEST_REPO_DIR}/tdnf.conf
