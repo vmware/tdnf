@@ -1,0 +1,24 @@
+name: tdnf CI
+
+on: [pull_request, push, workflow_dispatch]
+
+jobs:
+    photon-rpms:
+        env:
+            DIST: photon
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: build container
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker build -t ${DIST}/tdnf-build -f ci/Dockerfile.${DIST} .
+            - name: build rpms in container
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker run --rm -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/build-rpms.sh
+            - name: upload RPMs
+              uses: actions/upload-artifact@v2
+              with:
+                  name: tdnf-rpms
+                  path: rpms
