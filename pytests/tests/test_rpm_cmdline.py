@@ -156,3 +156,21 @@ def test_install_same_as_filname(utils):
     ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
     assert(ret['retval'] == 0)
     assert(utils.check_package(pkgname))
+
+
+# test "tdnf reinstall /path/to/pkg.rpm". See PR #300.
+def test_reinstall_as_file(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+    path = get_pkg_file_path(utils, pkgname)
+
+    # prepare by installing package
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', path])
+    assert(ret['retval'] == 0)
+    assert(utils.check_package(pkgname))
+
+    # actual test
+    ret = utils.run(['tdnf', 'reinstall', '-y', '--nogpgcheck', path])
+    assert(ret['retval'] == 0)
+    assert(utils.check_package(pkgname))
+    assert("Nothing to do" not in "\n".join(ret['stderr']))
+    assert("Reinstalling" in "\n".join(ret['stdout']))

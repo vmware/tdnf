@@ -1571,7 +1571,7 @@ TDNFResolve(
     dwError = TDNFRefresh(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(nAlterType == ALTER_INSTALL)
+    if(nAlterType == ALTER_INSTALL || nAlterType == ALTER_REINSTALL)
     {
         queue_init_clone(&queueGoal, &pTdnf->queueCmdLinePkgs);
     }
