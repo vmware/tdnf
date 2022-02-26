@@ -108,6 +108,7 @@ TDNFCliParseListArgs(
     BAIL_ON_CLI_ERROR(dwError);
 
     //Should have scope argument (tdnf list <scope> <pkgnamespecs>)
+    pListArgs->nScope = SCOPE_ALL;
     if(pCmdArgs->nCmdCount > 1)
     {
         nStartIndex = 2;
@@ -115,7 +116,6 @@ TDNFCliParseListArgs(
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
         {
             dwError = 0;
-            pListArgs->nScope = SCOPE_ALL;
             nStartIndex = 1;
         }
     }
@@ -198,10 +198,6 @@ cleanup:
     return dwError;
 
 error:
-    if(pnScope)
-    {
-        *pnScope = SCOPE_ALL;//Default
-    }
     goto cleanup;
 }
 

@@ -67,6 +67,8 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "whatsuggests", NULL},
     {CMDOPT_KEYVALUE, "whatsupplements", NULL},
     {CMDOPT_KEYVALUE, "whatenhances", NULL},
+    {CMDOPT_KEYVALUE, "info", "1"},
+    {CMDOPT_KEYVALUE, "summary", "1"},
 };
 
 static TDNF_CMD_ARGS _opt = {0};
@@ -155,6 +157,9 @@ static struct option pstOptions[] =
     {"suggests",      no_argument, 0, 0},
     {"supplements",   no_argument, 0, 0},
     {"upgrades",      no_argument, 0, 0},
+    // update-info mode options (also 'list' from above)
+    {"info",          no_argument, 0, 0},
+    {"summary",       no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 
