@@ -69,6 +69,9 @@ static SetOptArgs OptValTable[] = {
     {CMDOPT_KEYVALUE, "whatenhances", NULL},
     {CMDOPT_KEYVALUE, "info", "1"},
     {CMDOPT_KEYVALUE, "summary", "1"},
+    {CMDOPT_KEYVALUE, "recent", "1"},
+    {CMDOPT_KEYVALUE, "updates", "1"},
+    {CMDOPT_KEYVALUE, "downgrades", "1"},
 };
 
 static TDNF_CMD_ARGS _opt = {0};
@@ -160,6 +163,10 @@ static struct option pstOptions[] =
     // update-info mode options (also 'list' from above)
     {"info",          no_argument, 0, 0},
     {"summary",       no_argument, 0, 0},
+    // scope options for list and update-info
+    {"recent",       no_argument, 0, 0},
+    {"updates",       no_argument, 0, 0},
+    {"downgrades",    no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 
