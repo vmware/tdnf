@@ -289,8 +289,9 @@ TDNFRefreshSack(
         pRepo = ppRepoArray[i];
 
         nMetadataExpired = 0;
-        //Check if expired since last sync per metadata_expire
-        if(pRepo->lMetadataExpire >= 0)
+        /* Check if expired since last sync per metadata_expire
+           unless requested to ignore. lMetadataExpire < 0 means never expire. */
+        if(pRepo->lMetadataExpire >= 0 && !pTdnf->pArgs->nCacheOnly)
         {
             dwError = TDNFJoinPath(
                           &pszRepoCacheDir,
