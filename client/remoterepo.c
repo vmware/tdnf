@@ -221,7 +221,7 @@ TDNFGetDigestForFile(
     }
 
     fd = open(filename, O_RDONLY);
-    if (fd == -1)
+    if (fd < 0)
     {
         pr_err("Metalink: validating (%s) FAILED\n", filename);
         dwError = errno;
@@ -292,7 +292,7 @@ TDNFGetDigestForFile(
     dwError = 0;
 
 cleanup:
-    if (fd != -1)
+    if (fd >= 0)
     {
         close(fd);
     }
@@ -362,9 +362,8 @@ TDNFCheckRepoMDFileHashFromMetalink(
     TDNF_ML_HASH_LIST *hashList = NULL;
     TDNF_ML_HASH_INFO *hashInfo = NULL;
     unsigned char digest[EVP_MAX_MD_SIZE] = {0};
-    int hashType = -1;
+    int hash_Type = -1;
     TDNF_ML_HASH_INFO *currHashInfo = NULL;
-    int currHashType = TDNF_HASH_SENTINEL;
 
     if(IsNullOrEmptyString(pszFile) ||
        !ml_ctx)
@@ -375,7 +374,7 @@ TDNFCheckRepoMDFileHashFromMetalink(
 
     for(hashList = ml_ctx->hashes; hashList; hashList = hashList->next)
     {
-        currHashType = TDNF_HASH_SENTINEL;
+        int currHashType = TDNF_HASH_SENTINEL;
         currHashInfo = hashList->data;
 
         if(currHashInfo == NULL)
@@ -387,19 +386,19 @@ TDNFCheckRepoMDFileHashFromMetalink(
         dwError = TDNFGetResourceType(currHashInfo->type, &currHashType);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if ((hashType > currHashType)||
+        if ((hash_Type > currHashType)||
            (!TDNFCheckHexDigest(currHashInfo->value, hash_ops[currHashType].length)))
         {
             continue;
         }
-        hashType = currHashType;
+        hash_Type = currHashType;
         hashInfo = currHashInfo;
     }
 
     dwError = TDNFChecksumFromHexDigest(hashInfo->value, digest);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFCheckHash(pszFile, digest, hashType);
+    dwError = TDNFCheckHash(pszFile, digest, hash_Type);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -532,7 +531,7 @@ TDNFParseAndGetURLFromMetalink(
     }
 
     fd = open(pszFile, O_RDONLY);
-    if (fd == -1)
+    if (fd < 0)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
@@ -549,7 +548,7 @@ TDNFParseAndGetURLFromMetalink(
     TDNFSortListOnPreference(&ml_ctx->urls);
 
 cleanup:
-    if (fd != -1)
+    if (fd >= 0)
     {
         close(fd);
     }
@@ -693,7 +692,10 @@ TDNFDownloadFile(
     {
         dwError = rename(pszFileTmp, pszFile);
         BAIL_ON_TDNF_ERROR(dwError);
+        dwError = chmod(pszFile, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
+
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszUserPass);
     TDNF_SAFE_FREE_MEMORY(pszFileTmp);

@@ -167,6 +167,12 @@ _TDNFPyAlter(TDNF_ALTERTYPE alterType, PyObject *self, PyObject *args, PyObject 
     PTDNF pTDNF = NULL;
     PTDNF_SOLVED_PKG_INFO pSolvedInfo = NULL;
 
+    if (geteuid())
+    {
+        dwError = ERROR_TDNF_PERM;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     cmdArgs.pszInstallRoot = "/";
 
     dwError = _TDNFPyGetAlterArgs(alterType, args, kwds, &cmdArgs);
@@ -197,8 +203,17 @@ cleanup:
         TDNFCloseHandle(pTDNF);
     }
     return Py_BuildValue("i", dwError);
+
 error:
-    TDNFPyRaiseException(self, dwError);
+    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO ||
+        dwError == ERROR_TDNF_NO_DATA)
+    {
+        dwError = 0;
+    }
+    else
+    {
+        TDNFPyRaiseException(self, dwError);
+    }
     goto cleanup;
 }
 

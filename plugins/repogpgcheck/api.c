@@ -116,7 +116,7 @@ FreePluginHandle(
 */
 uint32_t
 TDNFRepoGPGCheckEventsNeeded(
-    PTDNF_PLUGIN_HANDLE pHandle,
+    const PTDNF_PLUGIN_HANDLE pHandle,
     TDNF_PLUGIN_EVENT_TYPE *pnEvents
     )
 {
@@ -216,7 +216,6 @@ TDNFRepoGPGCheckGetErrorString(
     char *pszError = NULL;
     char *pszErrorPre = NULL;
     const char *pszGPGError = NULL;
-    size_t i = 0;
     TDNF_ERROR_DESC arErrorDesc[] = REPOGPGCHECK_ERROR_TABLE;
 
     if (!pHandle || !ppszError)
@@ -227,7 +226,7 @@ TDNFRepoGPGCheckGetErrorString(
 
     if (nErrorCode > ERROR_TDNF_GPG_BASE_START && nErrorCode < ERROR_TDNF_GPGME_START)
     {
-        for(i = 0; i < ARRAY_SIZE(arErrorDesc); ++i)
+        for(size_t i = 0; i < ARRAY_SIZE(arErrorDesc); ++i)
         {
             if (nErrorCode == (uint32_t)arErrorDesc[i].nCode)
             {

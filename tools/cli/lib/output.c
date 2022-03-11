@@ -36,8 +36,8 @@ ShowConsoleProps(
 uint32_t
 GetColumnWidths(
     int nCount,
-    int* pnColPercents,
-    int* pnColWidths
+    const int *pnColPercents,
+    int *pnColWidths
     )
 {
     uint32_t dwError = 0;

@@ -26,6 +26,7 @@ typedef struct _TDNF_CLI_CMD_MAP
 {
     char* pszCmdName;
     PFN_CMD pFnCmd;
+    bool ReqRoot;
 }TDNF_CLI_CMD_MAP, *PTDNF_CLI_CMD_MAP;
 
 typedef struct _TDNF_LIST_ARGS

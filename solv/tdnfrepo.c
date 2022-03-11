@@ -572,7 +572,7 @@ SolvCreateMetaDataCache(
                   NULL);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
-    if (access(pszSolvCacheDir, W_OK| X_OK) != 0)
+    if (access(pszSolvCacheDir, W_OK | X_OK))
     {
         if(errno != ENOENT)
         {
@@ -597,7 +597,7 @@ SolvCreateMetaDataCache(
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    fchmod (fd, 0444);
+    fchmod(fd, 0444);
     fp = fdopen(fd, "w");
     if (fp == NULL)
     {

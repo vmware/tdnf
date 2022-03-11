@@ -38,7 +38,7 @@ TDNFInitRepo(
     int nUseMetaDataCache = 0;
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || !pRepoData || !pSack || !pSack->pPool)
+    if (!pTdnf || !pTdnf->pConf || !pRepoData || !pSack || !pSack->pPool)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -156,7 +156,6 @@ cleanup:
 
 error:
     goto cleanup;
-    return dwError;
 }
 
 uint32_t
@@ -780,7 +779,7 @@ TDNFGetRepoMD(
     }
 
     /* download repomd.xml to tmp */
-    if(nNeedDownload && !pTdnf->pArgs->nCacheOnly)
+    if (nNeedDownload && !pTdnf->pArgs->nCacheOnly)
     {
         pr_info("Refreshing metadata for: '%s'\n", pRepoData->pszName);
         /* always download to tmp */
@@ -824,7 +823,7 @@ TDNFGetRepoMD(
             dwError = TDNFAllocateMemory(1, sizeof(TDNF_ML_CTX),
                                          (void **)&ml_ctx);
             BAIL_ON_TDNF_ERROR(dwError);
-	    
+
             dwError = TDNFParseAndGetURLFromMetalink(pTdnf,
                         pRepoData->pszId, pszTmpRepoMetalinkFile, ml_ctx);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -982,7 +981,8 @@ cleanup:
         if((TDNFRemoveTmpRepodata(pszTmpRepoDataDir)) &&
            (dwError == ERROR_TDNF_CHECKSUM_VALIDATION_FAILED))
 	{
-	    pr_crit("Downloaded repomd shasum mismatch, failed to remove %s file.  please remove.", pszTmpRepoDataDir);
+	    pr_crit("Downloaded repomd shasum mismatch, failed to remove %s file. Please remove it manually\n.",
+                pszTmpRepoDataDir);
 	}
     }
     TDNFFreeRepoMetadata(pRepoMDRel);

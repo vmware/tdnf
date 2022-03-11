@@ -11,6 +11,7 @@
 #include <Python.h>
 #include <structmember.h>
 #include <tdnf.h>
+#include <tdnfcli.h>
 #include <tdnf-common-defines.h>
 
 #include "../common/defines.h"

@@ -13,6 +13,7 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include "tdnfclitypes.h"
 #include "tdnfclierror.h"
 
@@ -98,8 +99,8 @@ TDNFCliParseUpdateInfoArgs(
 uint32_t
 TDNFCliParsePackageArgs(
     PTDNF_CMD_ARGS pCmdArgs,
-    char*** pppszPackageArgs,
-    int* pnPackageCount
+    char ***pppszPackageArgs,
+    const int *pnPackageCount
     );
 
 uint32_t
@@ -328,8 +329,8 @@ CalculateColumnWidth(
 uint32_t
 GetColumnWidths(
     int nCount,
-    int* pnColPercents,
-    int* pnColWidths
+    const int *pnColPercents,
+    int *pnColWidths
     );
 
 void

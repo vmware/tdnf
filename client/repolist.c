@@ -37,8 +37,6 @@ TDNFLoadRepoData(
     PTDNF_CMD_OPT pSetOpt = NULL;
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
-    int nLen = 0;
-    int nLenRepoExt = 0;
     char **ppszUrlIdTuple = NULL;
 
     if(!pTdnf || !pTdnf->pConf || !pTdnf->pArgs || !ppReposAll)
@@ -82,8 +80,8 @@ TDNFLoadRepoData(
 
     while ((pEnt = readdir (pDir)) != NULL )
     {
-        nLen = strlen(pEnt->d_name);
-        nLenRepoExt = strlen(TDNF_REPO_EXT);
+        int nLen = strlen(pEnt->d_name);
+        int nLenRepoExt = strlen(TDNF_REPO_EXT);
         if (nLen <= nLenRepoExt ||
             strcmp(pEnt->d_name + nLen - nLenRepoExt, TDNF_REPO_EXT))
         {
@@ -687,7 +685,6 @@ TDNFAlterRepoState(
     )
 {
     uint32_t dwError = 0;
-    int nMatch = 0;
     int nIsGlob = 0;
     if(!pRepos && IsNullOrEmptyString(pszId))
     {
@@ -697,9 +694,8 @@ TDNFAlterRepoState(
 
     nIsGlob = TDNFIsGlob(pszId);
 
-    while(pRepos)
+    for (int nMatch = 0; pRepos; pRepos = pRepos->pNext)
     {
-        nMatch = 0;
         if(nIsGlob)
         {
             if(!fnmatch(pszId, pRepos->pszId, 0))
@@ -719,7 +715,6 @@ TDNFAlterRepoState(
                 break;
             }
         }
-        pRepos = pRepos->pNext;
     }
 cleanup:
     return dwError;

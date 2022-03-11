@@ -21,86 +21,47 @@
 
 #include "includes.h"
 
-TDNF_CLI_CONTEXT _context = {0};
+static TDNF_CLI_CMD_MAP arCmdMap[] =
+{
+    {"autoerase",          TDNFCliAutoEraseCommand, true},
+    {"autoremove",         TDNFCliAutoEraseCommand, true},
+    {"check",              TDNFCliCheckCommand, false},
+    {"check-local",        TDNFCliCheckLocalCommand, false},
+    {"check-update",       TDNFCliCheckUpdateCommand, false},
+    {"clean",              TDNFCliCleanCommand, true},
+    {"count",              TDNFCliCountCommand, false},
+    {"distro-sync",        TDNFCliDistroSyncCommand, true},
+    {"downgrade",          TDNFCliDowngradeCommand, true},
+    {"erase",              TDNFCliEraseCommand, true},
+    {"help",               TDNFCliHelpCommand, false},
+    {"info",               TDNFCliInfoCommand, false},
+    {"install",            TDNFCliInstallCommand, true},
+    {"list",               TDNFCliListCommand, false},
+    {"makecache",          TDNFCliMakeCacheCommand, true},
+    {"provides",           TDNFCliProvidesCommand, false},
+    {"whatprovides",       TDNFCliProvidesCommand, false},
+    {"reinstall",          TDNFCliReinstallCommand, true},
+    {"remove",             TDNFCliEraseCommand, true},
+    {"repolist",           TDNFCliRepoListCommand, false},
+    {"reposync",           TDNFCliRepoSyncCommand, false},
+    {"repoquery",          TDNFCliRepoQueryCommand, false},
+    {"search",             TDNFCliSearchCommand, false},
+    {"update",             TDNFCliUpgradeCommand, true},
+    {"update-to",          TDNFCliUpgradeCommand, true},
+    {"upgrade",            TDNFCliUpgradeCommand, true},
+    {"upgrade-to",         TDNFCliUpgradeCommand, true},
+    {"updateinfo",         TDNFCliUpdateInfoCommand, false},
+};
 
-int main(int argc, char* argv[])
+int main(int argc, char **argv)
 {
     uint32_t dwError = 0;
-    PTDNF_CMD_ARGS pCmdArgs = NULL;
-    TDNF_CLI_CMD_MAP arCmdMap[] =
-    {
-        {"autoerase",          TDNFCliAutoEraseCommand},
-        {"autoremove",         TDNFCliAutoEraseCommand},
-        {"check",              TDNFCliCheckCommand},
-        {"check-local",        TDNFCliCheckLocalCommand},
-        {"check-update",       TDNFCliCheckUpdateCommand},
-        {"clean",              TDNFCliCleanCommand},
-        {"count",              TDNFCliCountCommand},
-        {"distro-sync",        TDNFCliDistroSyncCommand},
-        {"downgrade",          TDNFCliDowngradeCommand},
-        {"erase",              TDNFCliEraseCommand},
-        {"help",               TDNFCliHelpCommand},
-        {"info",               TDNFCliInfoCommand},
-        {"install",            TDNFCliInstallCommand},
-        {"list",               TDNFCliListCommand},
-        {"makecache",          TDNFCliMakeCacheCommand},
-        {"provides",           TDNFCliProvidesCommand},
-        {"whatprovides",       TDNFCliProvidesCommand},
-        {"reinstall",          TDNFCliReinstallCommand},
-        {"remove",             TDNFCliEraseCommand},
-        {"repolist",           TDNFCliRepoListCommand},
-        {"reposync",           TDNFCliRepoSyncCommand},
-        {"repoquery",          TDNFCliRepoQueryCommand},
-        {"search",             TDNFCliSearchCommand},
-        {"update",             TDNFCliUpgradeCommand},
-        {"update-to",          TDNFCliUpgradeCommand},
-        {"upgrade",            TDNFCliUpgradeCommand},
-        {"upgrade-to",         TDNFCliUpgradeCommand},
-        {"updateinfo",         TDNFCliUpdateInfoCommand},
-    };
-
-    int nCommandCount = ARRAY_SIZE(arCmdMap);
-    const char* pszCmd = NULL;
     PTDNF pTdnf = NULL;
-    int nFound = 0;
-
-    /*
-     * granular permissions for non root users are pending.
-     * blocking all operations for non root and show the
-     * right error to avoid confusion
-     */
-    if (geteuid())
-    {
-        dwError = ERROR_TDNF_PERM;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
+    PTDNF_CMD_ARGS pCmdArgs = NULL;
 
     dwError = TDNFCliParseArgs(argc, argv, &pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
-    _context.pFnCheck = TDNFCliInvokeCheck;
-    _context.pFnCheckLocal = TDNFCliInvokeCheckLocal;
-    _context.pFnCheckUpdate = TDNFCliInvokeCheckUpdate;
-    _context.pFnClean = TDNFCliInvokeClean;
-    _context.pFnCount = TDNFCliInvokeCount;
-    _context.pFnInfo = TDNFCliInvokeInfo;
-    _context.pFnList = TDNFCliInvokeList;
-    _context.pFnProvides = TDNFCliInvokeProvides;
-    _context.pFnRepoList = TDNFCliInvokeRepoList;
-    _context.pFnRepoSync = TDNFCliInvokeRepoSync;
-    _context.pFnRepoQuery = TDNFCliInvokeRepoQuery;
-
-    /*
-     * Alter and resolve will address commands like
-     * install, upgrade, erase, downgrade, distrosync
-     */
-    _context.pFnAlter = TDNFCliInvokeAlter;
-    _context.pFnResolve = TDNFCliInvokeResolve;
-    _context.pFnSearch = TDNFCliInvokeSearch;
-    _context.pFnUpdateInfo = TDNFCliInvokeUpdateInfo;
-    _context.pFnUpdateInfoSummary = TDNFCliInvokeUpdateInfoSummary;
-
-    //If --version, show version and exit
     if(pCmdArgs->nShowVersion)
     {
         TDNFCliShowVersion();
@@ -111,40 +72,73 @@ int main(int argc, char* argv[])
     }
     else if(pCmdArgs->nCmdCount > 0)
     {
+        const char *pszCmd = NULL;
+        TDNF_CLI_CONTEXT _context;
+
+        memset(&_context, 0, sizeof(TDNF_CLI_CONTEXT));
+
+        _context.pFnCheck = TDNFCliInvokeCheck;
+        _context.pFnCheckLocal = TDNFCliInvokeCheckLocal;
+        _context.pFnCheckUpdate = TDNFCliInvokeCheckUpdate;
+        _context.pFnClean = TDNFCliInvokeClean;
+        _context.pFnCount = TDNFCliInvokeCount;
+        _context.pFnInfo = TDNFCliInvokeInfo;
+        _context.pFnList = TDNFCliInvokeList;
+        _context.pFnProvides = TDNFCliInvokeProvides;
+        _context.pFnRepoList = TDNFCliInvokeRepoList;
+        _context.pFnRepoSync = TDNFCliInvokeRepoSync;
+        _context.pFnRepoQuery = TDNFCliInvokeRepoQuery;
+
+        /*
+         * Alter and resolve will address commands like
+         * install, upgrade, erase, downgrade, distrosync
+         */
+        _context.pFnAlter = TDNFCliInvokeAlter;
+        _context.pFnResolve = TDNFCliInvokeResolve;
+        _context.pFnSearch = TDNFCliInvokeSearch;
+        _context.pFnUpdateInfo = TDNFCliInvokeUpdateInfo;
+        _context.pFnUpdateInfoSummary = TDNFCliInvokeUpdateInfoSummary;
+
         pszCmd = pCmdArgs->ppszCmds[0];
-        while(nCommandCount > 0)
+
+        for (uint32_t nCommandCount = ARRAY_SIZE(arCmdMap) - 1; nCommandCount; nCommandCount--)
         {
-            --nCommandCount;
-            if(!strcmp(pszCmd, arCmdMap[nCommandCount].pszCmdName))
+            if (strcmp(pszCmd, arCmdMap[nCommandCount].pszCmdName))
             {
-                nFound = 1;
-
-                if(!strcmp(pszCmd, "makecache"))
-                {
-                    pCmdArgs->nRefresh = 1;
-                }
-
-                dwError = TDNFInit();
-                BAIL_ON_CLI_ERROR(dwError);
-
-                dwError = TDNFOpenHandle(pCmdArgs, &pTdnf);
-                BAIL_ON_CLI_ERROR(dwError);
-
-                _context.hTdnf = pTdnf;
-
-                if(pCmdArgs->nVerbose)
-                {
-                    dwError = TDNFCliVerboseShowEnv(pCmdArgs);
-                    BAIL_ON_CLI_ERROR(dwError);
-                }
-
-                dwError = arCmdMap[nCommandCount].pFnCmd(&_context, pCmdArgs);
-                BAIL_ON_CLI_ERROR(dwError);
-
-                break;
+                continue;
             }
-        };
-        if(!nFound)
+
+            if (arCmdMap[nCommandCount].ReqRoot && geteuid())
+            {
+                dwError = ERROR_TDNF_PERM;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
+            if (!strcmp(pszCmd, "makecache"))
+            {
+                pCmdArgs->nRefresh = 1;
+            }
+
+            dwError = TDNFInit();
+            BAIL_ON_CLI_ERROR(dwError);
+
+            dwError = TDNFOpenHandle(pCmdArgs, &pTdnf);
+            BAIL_ON_CLI_ERROR(dwError);
+
+            _context.hTdnf = pTdnf;
+
+            if (pCmdArgs->nVerbose)
+            {
+                dwError = TDNFCliVerboseShowEnv(pCmdArgs);
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
+            dwError = arCmdMap[nCommandCount].pFnCmd(&_context, pCmdArgs);
+            BAIL_ON_CLI_ERROR(dwError);
+
+            break;
+        }
+        if (!_context.hTdnf)
         {
             TDNFCliShowNoSuchCommand(pszCmd);
             dwError = ERROR_TDNF_CLI_NO_SUCH_CMD;

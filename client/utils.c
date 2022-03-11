@@ -30,8 +30,7 @@ TDNFGetErrorString(
     char* pszError = NULL;
     char* pszSystemError = NULL;
     const char* pszCurlError = NULL;
-    int i = 0;
-    int nCount = 0;
+    uint32_t nCount = 0;
     uint32_t dwActualError = 0;
 
     //Allow mapped error strings to override
@@ -39,7 +38,7 @@ TDNFGetErrorString(
 
     nCount = ARRAY_SIZE(arErrorDesc);
 
-    for(i = 0; i < nCount; i++)
+    for(uint32_t i = 0; i < nCount; i++)
     {
         if (dwErrorCode == (uint32_t)arErrorDesc[i].nCode)
         {
@@ -138,23 +137,19 @@ TDNFGetCurlError(
 
 int
 TDNFIsGlob(
-    const char* pszString
+    const char *pszString
     )
 {
-    int nResult = 0;
-    while(*pszString)
+    for ( ; pszString && *pszString; pszString++)
     {
         char ch = *pszString;
-
-        if(ch == '*' || ch == '?' || ch == '[')
+        if (ch == '*' || ch == '?' || ch == '[')
         {
-            nResult = 1;
-            break;
+            return 1;
         }
-
-        pszString++;
     }
-    return nResult;
+
+    return 0;
 }
 
 uint32_t
@@ -162,17 +157,19 @@ TDNFUtilsMakeDir(
     const char* pszDir
     )
 {
+    mode_t old_mask;
     uint32_t dwError = 0;
 
-    if(IsNullOrEmptyString(pszDir))
+    if (IsNullOrEmptyString(pszDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(mkdir(pszDir, 0755))
+    old_mask = umask(022);
+    if (mkdir(pszDir, 0755))
     {
-        if(errno != EEXIST)
+        if (errno != EEXIST)
         {
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -180,6 +177,10 @@ TDNFUtilsMakeDir(
     }
 
 cleanup:
+    if (dwError != ERROR_TDNF_INVALID_PARAMETER)
+    {
+        umask(old_mask);
+    }
     return dwError;
 
 error:
@@ -364,32 +365,34 @@ error:
     goto cleanup;
 }
 
-//update time if file exists
-//create if not
+/* update time if file exists, create if not */
 uint32_t
 TDNFTouchFile(
     const char* pszFile
     )
 {
+    int32_t fd = 0;
+    mode_t old_mask;
     uint32_t dwError = 0;
-    struct stat st = {0};
-    int fd = -1;
-    struct utimbuf times = {0};
 
-    if(IsNullOrEmptyString(pszFile))
+    if (IsNullOrEmptyString(pszFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    old_mask = umask(022);
     fd = creat(pszFile, S_IRUSR | S_IRGRP | S_IROTH);
-    if(fd == -1)
+    if (fd < 0)
     {
-        if(errno == EEXIST)
+        if (errno == EEXIST)
         {
+            struct stat st = {0};
+            struct utimbuf times = {0};
+
             times.actime = st.st_atime;
             times.modtime = time(NULL);
-            if(utime(pszFile, &times))
+            if (utime(pszFile, &times))
             {
                 dwError = errno;
                 BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
@@ -403,7 +406,11 @@ TDNFTouchFile(
     }
 
 cleanup:
-    if(fd != -1)
+    if (dwError != ERROR_TDNF_INVALID_PARAMETER)
+    {
+        umask(old_mask);
+    }
+    if (fd >= 0)
     {
         close(fd);
     }
@@ -728,26 +735,22 @@ TDNFGetCmdOpt(
 {
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pOpt = NULL;
-    int nFound = 0;
 
-    if(!pTdnf || !pTdnf->pArgs)
+    if (!pTdnf || !pTdnf->pArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (pOpt = pTdnf->pArgs->pSetOpt;
-         pOpt;
-         pOpt = pOpt->pNext)
+    for (pOpt = pTdnf->pArgs->pSetOpt; pOpt; pOpt = pOpt->pNext)
     {
         if (pOpt->nType == optType)
         {
-            nFound = 1;
             break;
         }
     }
 
-    if (!nFound)
+    if (!pOpt)
     {
         dwError = ERROR_TDNF_OPT_NOT_FOUND;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -797,4 +800,3 @@ error:
     TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     goto cleanup;
 }
-

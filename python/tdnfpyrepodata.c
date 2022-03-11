@@ -27,41 +27,22 @@ TDNFPyRepoDataNew(
     PyObject *args,
     PyObject *kwds)
 {
-    uint32_t dwError = 0;
     PPY_TDNF_REPODATA self = NULL;
 
     self = (PPY_TDNF_REPODATA)type->tp_alloc(type, 0);
-    if (self != NULL)
+    if (self)
     {
-        if(!(self->id = PyBytes_FromString("")))
+        if (!(self->id = PyBytes_FromString("")) ||
+           !(self->name = PyBytes_FromString("")) ||
+           !(self->baseurl = PyBytes_FromString("")) ||
+           !(self->baseurl = PyBytes_FromString("")))
         {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        if(!(self->name = PyBytes_FromString("")))
-        {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        if(!(self->baseurl = PyBytes_FromString("")))
-        {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        if(!(self->metalink = PyBytes_FromString("")))
-        {
-            dwError = ERROR_TDNF_OUT_OF_MEMORY;
-            BAIL_ON_TDNF_ERROR(dwError);
+            Py_DECREF(self);
+            self = NULL;
         }
     }
 
-cleanup:
     return (PyObject *)self;
-
-error:
-    Py_DECREF(self);
-    self = NULL;
-    goto cleanup;
 }
 
 static int

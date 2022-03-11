@@ -30,7 +30,7 @@ TDNFRepoGPGCheckInitialize(
 
 uint32_t
 TDNFRepoGPGCheckEventsNeeded(
-    PTDNF_PLUGIN_HANDLE pHandle,
+    const PTDNF_PLUGIN_HANDLE pHandle,
     TDNF_PLUGIN_EVENT_TYPE *pnEvents
     );
 

@@ -6,20 +6,102 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : help.c
- *
- * Abstract :
- *
- *            tdnf
- *
- *            command line tool
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- *
- */
-
 #include "includes.h"
+
+static const char *help_msg =
+ "Usage: tdnf [options] COMMAND\n\n"
+ "common options:\n"
+ "           [--assumeno]\n"
+ "           [-y, --assumeyes]\n"
+ "           [-C, --cacheonly]\n"
+ "           [-c [config file]]\n"
+ "           [--debugsolver]\n"
+ "           [--disableexcludes]\n"
+ "           [--disableplugin=<plugin_name>]\n"
+ "           [--disablerepo=<repoid>]\n"
+ "           [--downloaddir=<directory>]\n"
+ "           [--downloadonly]\n"
+ "           [--enablerepo=<repoid>]\n"
+ "           [--enableplugin=<plugin_name>]\n"
+ "           [--exclude [file1,file2,...]]\n"
+ "           [--installroot [path]]\n"
+ "           [--noautoremove]\n"
+ "           [--nogpgcheck]\n"
+ "           [--noplugins]\n"
+ "           [-q, --quiet]\n"
+ "           [--reboot-required]\n"
+ "           [--refresh]\n"
+ "           [--releasever RELEASEVER]\n"
+ "           [--rpmverbosity [debug level name]]\n"
+ "           [--security]\n"
+ "           [--sec-severity CVSS_v3.0_Severity]\n"
+ "           [--setopt SETOPTS]\n"
+ "           [--skipconflicts]\n"
+ "           [--skipdigest]\n"
+ "           [--skipsignature]\n"
+ "           [--skipobsoletes]\n"
+ "           [--version]\n\n"
+ "repoquery select options:\n"
+ "           [--available]\n"
+ "           [--duplicates]\n"
+ "           [--extras]\n"
+ "           [--file <file>]\n"
+ "           [--installed]\n"
+ "           [--whatdepends <capability1>[,<capability2>[..]]]\n"
+ "           [--whatrequires <capability1>[,<capability2>[..]]]\n"
+ "           [--whatenhances <capability1>[,<capability2>[..]]]\n"
+ "           [--whatobsoletes <capability1>[,<capability2>[..]]]\n"
+ "           [--whatprovides <capability1>[,<capability2>[..]]]\n"
+ "           [--whatrecommends <capability1>[,<capability2>[..]]]\n"
+ "           [--whatrequires <capability1>[,<capability2>[..]]]\n"
+ "           [--whatsuggests <capability1>[,<capability2>[..]]]\n"
+ "           [--whatsupplements <capability1>[,<capability2>[..]]]\n\n"
+ "repoquery query options:\n"
+ "           [--depends]\n"
+ "           [--enhances]\n"
+ "           [--list]\n"
+ "           [--obsoletes]\n"
+ "           [--provides]\n"
+ "           [--recommends]\n"
+ "           [--requires]\n"
+ "           [--requires-pre]\n"
+ "           [--suggests]\n"
+ "           [--supplements]\n\n"
+ "reposync options:\n"
+ "           [--arch=<arch> [--arch=<arch> [..]]\n"
+ "           [--delete]\n"
+ "           [--download-path=<directory>]\n"
+ "           [--download-metadata]\n"
+ "           [--gpgcheck]\n"
+ "           [--metadata-path=<directory>]\n"
+ "           [--newest-only]\n"
+ "           [--norepopath]\n"
+ "           [--source]\n"
+ "           [--urls]\n\n"
+ "List of Main Commands\n\n"
+ "autoremove         Remove a package and its automatic dependencies\n"
+ "check-local        Checks local rpm folder for problems\n"
+ "check-update       Check for available package upgrades\n"
+ "clean              Remove cached data\n"
+ "distro-sync        Synchronize installed packages to the latest available versions\n"
+ "downgrade          Downgrade a package\n"
+ "erase              Remove a package or packages from your system\n"
+ "help               Display a helpful usage message\n"
+ "info               Display details about a package or group of packages\n"
+ "install            Install a package or packages on your system\n"
+ "list               List a package or groups of packages\n"
+ "makecache          Generate the metadata cache\n"
+ "provides           Find what package provides the given value\n"
+ "remove             Remove a package or packages from your system\n"
+ "reinstall          Reinstall a package\n"
+ "repolist           Display the configured software repositories\n"
+ "repoquery          Query repositories\n"
+ "reposync           Download all packages from one or more repositories to a directory\n"
+ "search             Search package details for the given string\n"
+ "update             Upgrade a package or packages on your system (same as 'upgrade')\n"
+ "updateinfo         Display advisories about packages\n"
+ "upgrade            Upgrade a package or packages on your system\n"
+ "upgrade-to         Upgrade a package on your system to the specified version\n";
 
 void
 TDNFCliShowUsage(
@@ -35,108 +117,7 @@ TDNFCliShowHelp(
     void
     )
 {
-    pr_crit("usage: tdnf [options] COMMAND\n");
-    pr_crit("\n");
-
-    pr_crit("common options:\n");
-    pr_crit("           [--assumeno]\n");
-    pr_crit("           [-y, --assumeyes]\n");
-    pr_crit("           [-C, --cacheonly]\n");
-    pr_crit("           [-c [config file]]\n");
-    pr_crit("           [--debugsolver]\n");
-    pr_crit("           [--disableexcludes]\n");
-    pr_crit("           [--disableplugin=<plugin_name>]\n");
-    pr_crit("           [--disablerepo=<repoid>]\n");
-    pr_crit("           [--downloaddir=<directory>]\n");
-    pr_crit("           [--downloadonly]\n");
-    pr_crit("           [--enablerepo=<repoid>]\n");
-    pr_crit("           [--enableplugin=<plugin_name>]\n");
-    pr_crit("           [--exclude [file1,file2,...]]\n");
-    pr_crit("           [--installroot [path]]\n");
-    pr_crit("           [--noautoremove]\n");
-    pr_crit("           [--nogpgcheck]\n");
-    pr_crit("           [--noplugins]\n");
-    pr_crit("           [-q, --quiet]\n");
-    pr_crit("           [--reboot-required]\n");
-    pr_crit("           [--refresh]\n");
-    pr_crit("           [--releasever RELEASEVER]\n");
-    pr_crit("           [--rpmverbosity [debug level name]]\n");
-    pr_crit("           [--security]\n");
-    pr_crit("           [--sec-severity CVSS_v3.0_Severity]\n");
-    pr_crit("           [--setopt SETOPTS]\n");
-    pr_crit("           [--skipconflicts]\n");
-    pr_crit("           [--skipdigest]\n");
-    pr_crit("           [--skipsignature]\n");
-    pr_crit("           [--skipobsoletes]\n");
-    pr_crit("           [--version]\n");
-    pr_crit("\n");
-    pr_crit("repoquery select options:\n");
-    pr_crit("           [--available]\n");
-    pr_crit("           [--duplicates]\n");
-    pr_crit("           [--extras]\n");
-    pr_crit("           [--file <file>]\n");
-    pr_crit("           [--installed]\n");
-    pr_crit("           [--whatdepends <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatrequires <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatenhances <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatobsoletes <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatprovides <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatrecommends <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatrequires <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatsuggests <capability1>[,<capability2>[..]]]\n");
-    pr_crit("           [--whatsupplements <capability1>[,<capability2>[..]]]\n");
-    pr_crit("\n");
-    pr_crit("repoquery query options:\n");
-    pr_crit("           [--depends]\n");
-    pr_crit("           [--enhances]\n");
-    pr_crit("           [--list]\n");
-    pr_crit("           [--obsoletes]\n");
-    pr_crit("           [--provides]\n");
-    pr_crit("           [--recommends]\n");
-    pr_crit("           [--requires]\n");
-    pr_crit("           [--requires-pre]\n");
-    pr_crit("           [--suggests]\n");
-    pr_crit("           [--supplements]\n");
-    pr_crit("\n");
-    pr_crit("reposync options:\n");
-    pr_crit("           [--arch=<arch> [--arch=<arch> [..]]\n");
-    pr_crit("           [--delete]\n");
-    pr_crit("           [--download-path=<directory>]\n");
-    pr_crit("           [--download-metadata]\n");
-    pr_crit("           [--gpgcheck]\n");
-    pr_crit("           [--metadata-path=<directory>]\n");
-    pr_crit("           [--newest-only]\n");
-    pr_crit("           [--norepopath]\n");
-    pr_crit("           [--source]\n");
-    pr_crit("           [--urls]\n");
-    pr_crit("\n");
-
-    pr_crit("List of Main Commands\n");
-    pr_crit("\n");
-
-    pr_crit("autoremove                Remove a package and its automatic dependencies\n");
-    pr_crit("check-local               Checks local rpm folder for problems\n");
-    pr_crit("check-update              Check for available package upgrades\n");
-    pr_crit("clean                     Remove cached data\n");
-    pr_crit("distro-sync               Synchronize installed packages to the latest available versions\n");
-    pr_crit("downgrade                 downgrade a package\n");
-    pr_crit("erase                     Remove a package or packages from your system\n");
-    pr_crit("help                      Display a helpful usage message\n");
-    pr_crit("info                      Display details about a package or group of packages\n");
-    pr_crit("install                   Install a package or packages on your system\n");
-    pr_crit("list                      List a package or groups of packages\n");
-    pr_crit("makecache                 Generate the metadata cache\n");
-    pr_crit("provides                  Find what package provides the given value\n");
-    pr_crit("remove                    Remove a package or packages from your system\n");
-    pr_crit("reinstall                 reinstall a package\n");
-    pr_crit("repolist                  Display the configured software repositories\n");
-    pr_crit("repoquery                 Query repositories\n");
-    pr_crit("reposync                  Download all packages from one or more repositories to a directory\n");
-    pr_crit("search                    Search package details for the given string\n");
-    pr_crit("update                    Upgrade a package or packages on your system (same as 'upgrade')\n");
-    pr_crit("updateinfo                Display advisories about packages\n");
-    pr_crit("upgrade                   Upgrade a package or packages on your system\n");
-    pr_crit("upgrade-to                Upgrade a package on your system to the specified version\n");
+    pr_crit("%s\n", help_msg);
 }
 
 void

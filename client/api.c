@@ -20,6 +20,8 @@
 
 #include "includes.h"
 
+uid_t gEuid;
+
 static TDNF_ENV gEnv = {0};
 
 static tdnflock instance_lock;
@@ -34,6 +36,11 @@ static void TdnfExitHandler(void)
 
 static void IsTdnfAlreadyRunning(void)
 {
+    if (gEuid)
+    {
+        return;
+    }
+
     instance_lock = tdnflockNewAcquire(TDNF_INSTANCE_LOCK_FILE,
                                        "tdnf_instance");
     if (!instance_lock)
@@ -277,8 +284,6 @@ TDNFCheckLocalPackages(
     Queue queueJobs = {0};
     Solver *pSolv = NULL;
     uint32_t dwPackagesFound = 0;
-    int nLen = 0;
-    int nLenRpmExt = 0;
     Pool *pCmdLinePool = NULL;
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
 
@@ -309,8 +314,8 @@ TDNFCheckLocalPackages(
 
     while ((pEnt = readdir (pDir)) != NULL )
     {
-        nLenRpmExt = strlen(TDNF_RPM_EXT);
-        nLen = strlen(pEnt->d_name);
+        int nLenRpmExt = strlen(TDNF_RPM_EXT);
+        int nLen = strlen(pEnt->d_name);
         if (nLen <= nLenRpmExt ||
             strcmp(pEnt->d_name + nLen - nLenRpmExt, TDNF_RPM_EXT))
         {
@@ -655,6 +660,8 @@ TDNFOpenHandle(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    gEuid = geteuid();
+
     IsTdnfAlreadyRunning();
 
     GlobalSetQuiet(pArgs->nQuiet);
@@ -942,7 +949,6 @@ TDNFRepoList(
     PTDNF_REPO_DATA pRepoCurrent = NULL;
 
     PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
-    int nAdd = 0;
 
     if(!pTdnf || !pTdnf->pRepos || !ppReposAll)
     {
@@ -954,7 +960,7 @@ TDNFRepoList(
 
     while(pRepos)
     {
-        nAdd = 0;
+        int nAdd = 0;
         if(nFilter == REPOLISTFILTER_ALL)
         {
             nAdd = 1;

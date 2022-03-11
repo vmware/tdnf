@@ -146,7 +146,6 @@ AddKeyFileToKeyring(
     )
 {
     uint32_t dwError = 0;
-    pgpArmor nArmor = PGPARMOR_NONE;
     uint8_t* pPkt = NULL;
     size_t nPktLen = 0;
     char* pszKeyData = NULL;
@@ -165,7 +164,7 @@ AddKeyFileToKeyring(
 
     while (nOffset < nKeyDataSize)
     {
-        nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
+        pgpArmor nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
         if(nArmor == PGPARMOR_PUBKEY)
         {
             dwError = AddKeyPktToKeyring(pKeyring, pPkt, nPktLen);
@@ -348,7 +347,6 @@ TDNFImportGPGKeyFile(
     )
 {
     uint32_t dwError = 0;
-    pgpArmor nArmor = PGPARMOR_NONE;
     uint8_t* pPkt = NULL;
     size_t nPktLen = 0;
     char* pszKeyData = NULL;
@@ -367,7 +365,7 @@ TDNFImportGPGKeyFile(
 
     while (nOffset < nKeyDataSize)
     {
-        nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
+        pgpArmor nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
         if(nArmor == PGPARMOR_PUBKEY)
         {
             dwError = rpmtsImportPubkey(pTS, pPkt, nPktLen);

@@ -61,10 +61,8 @@ TDNFMetalinkFree(
         return;
 
     TDNF_SAFE_FREE_MEMORY(ml_ctx->filename);
-    TDNFDeleteList(&ml_ctx->hashes,
-                      (TDNF_ML_FREE_FUNC)TDNFMetalinkHashFree);
-    TDNFDeleteList(&ml_ctx->urls,
-                      (TDNF_ML_FREE_FUNC)TDNFMetalinkUrlFree);
+    TDNFDeleteList(&ml_ctx->hashes, (TDNF_ML_FREE_FUNC)TDNFMetalinkHashFree);
+    TDNFDeleteList(&ml_ctx->urls, (TDNF_ML_FREE_FUNC)TDNFMetalinkUrlFree);
     TDNF_SAFE_FREE_MEMORY(ml_ctx);
 }
 

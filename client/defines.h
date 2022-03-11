@@ -28,9 +28,6 @@
  */
 #define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"
 
-/* wait for lock retries, interval is 1s */
-#define TDNF_LOCK_MAX_RETRIES 300
-
 typedef enum
 {
     /* this should be a bitmask */

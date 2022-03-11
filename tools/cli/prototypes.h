@@ -238,8 +238,8 @@ CalculateColumnWidth(
 uint32_t
 GetColumnWidths(
     int nCount,
-    int* pnColPercents,
-    int* pnColWidths
+    const int *pnColPercents,
+    int *pnColWidths
     );
 
 //parseargs.c

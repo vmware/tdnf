@@ -132,7 +132,7 @@ SolvGetPkgNevrFromId(
 
 uint32_t
 SolvSplitEvr(
-    PSolvSack pSack,
+    const PSolvSack pSack,
     const char *pEVRstring,
     char **ppEpoch,
     char **ppVersion,
