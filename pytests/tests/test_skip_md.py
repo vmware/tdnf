@@ -39,7 +39,7 @@ def generate_repofile_skip_md(utils, newconfig, repoid, mdpart, value):
         with open(newconfig, 'w') as fout:
             for line in fin:
                 if line.startswith('['):
-                    fout.write("[{}]".format(repoid))
+                    fout.write("[{}]\n".format(repoid))
                 elif line.startswith('enabled'):
                     # we will enable this with the --repoid option
                     fout.write('enabled=0\n')
