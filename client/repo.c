@@ -29,9 +29,8 @@ TDNFInitRepo(
     )
 {
     uint32_t dwError = 0;
-    char* pszRepoCacheDir = NULL;
     char* pszRepoDataDir = NULL;
-    char* pszLastRefreshMarker = NULL;
+    char* pszRepoCacheDir = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
     PTDNF_CONF pConf = NULL;
     Repo* pRepo = NULL;
@@ -100,19 +99,9 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pool_createwhatprovides(pPool);
-    dwError = TDNFJoinPath(
-                  &pszLastRefreshMarker,
-                  pszRepoCacheDir,
-                  TDNF_REPO_METADATA_MARKER,
-                  NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFTouchFile(pszLastRefreshMarker);
-    BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
     TDNFFreeRepoMetadata(pRepoMD);
-    TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
     TDNF_SAFE_FREE_MEMORY(pszRepoDataDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     TDNF_SAFE_FREE_MEMORY(pSolvRepoInfo);
@@ -663,6 +652,7 @@ TDNFGetRepoMD(
     char *pszTempBaseUrlFile = NULL;
     char *pszRepoMetalink = NULL;
     char *pszTmpRepoMetalinkFile = NULL;
+    char* pszLastRefreshMarker = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
     unsigned char pszCookie[SOLV_COOKIE_LEN] = {0};
@@ -924,7 +914,6 @@ TDNFGetRepoMD(
                           pszTmpRepoMDFile);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-
     }
 
     if (metalink && !nReplacebaseURL && !access(pszBaseUrlFile, F_OK))
@@ -951,6 +940,20 @@ TDNFGetRepoMD(
         dwError = TDNFReplaceFile(pszTmpRepoMDFile, pszRepoMDFile);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    if (nNewRepoMDFile)
+    {
+        dwError = TDNFJoinPath(
+                    &pszLastRefreshMarker,
+                    pTdnf->pConf->pszCacheDir,
+                    pRepoData->pszId,
+                    TDNF_REPO_METADATA_MARKER,
+                    NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFTouchFile(pszLastRefreshMarker);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     if (metalink && nReplacebaseURL)
     {
         dwError = TDNFReplaceFile(pszTmpRepoMetalinkFile, pszMetaLinkFile);
@@ -993,6 +996,8 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszError);
+    TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
+
     if (ml_ctx)
     {
         TDNFMetalinkFree(ml_ctx);
