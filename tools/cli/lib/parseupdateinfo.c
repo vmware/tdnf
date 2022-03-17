@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -29,6 +29,7 @@ TDNFCliParseUpdateInfoArgs(
 {
     uint32_t dwError = 0;
     PTDNF_UPDATEINFO_ARGS pUpdateInfoArgs = NULL;
+    PTDNF_CMD_OPT pSetOpt = NULL;
     int nStartIndex = 1;
     int nPackageCount = 0;
     int nIndex = 0;
@@ -45,6 +46,39 @@ TDNFCliParseUpdateInfoArgs(
                   (void**)&pUpdateInfoArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
+    pUpdateInfoArgs->nMode = OUTPUT_SUMMARY;
+    pUpdateInfoArgs->nScope = SCOPE_AVAILABLE;
+
+    /* scope and mode can be given as options */
+    for (pSetOpt = pCmdArgs->pSetOpt;
+         pSetOpt;
+         pSetOpt = pSetOpt->pNext)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE)
+        {
+            dwError = TDNFCliParseScope(
+                          pSetOpt->pszOptName,
+                          &pUpdateInfoArgs->nScope);
+            if (dwError == 0)
+            {
+                continue;
+            }
+            if(dwError == ERROR_TDNF_CLI_NO_MATCH)
+            {
+                dwError = 0;
+            }
+            BAIL_ON_CLI_ERROR(dwError);
+            dwError = TDNFCliParseMode(
+                          pSetOpt->pszOptName,
+                          &pUpdateInfoArgs->nMode);
+            if(dwError == ERROR_TDNF_CLI_NO_MATCH)
+            {
+                dwError = 0;
+            }
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+    }
+
     //Assume first arg as mode
     //(tdnf updateinfo <mode> <availability> <type> <pkgnamespecs>)
     if(pCmdArgs->nCmdCount > nStartIndex)
@@ -55,7 +89,6 @@ TDNFCliParseUpdateInfoArgs(
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
         {
             dwError = 0;
-            pUpdateInfoArgs->nMode = OUTPUT_SUMMARY;
             //There was no valid mode. Let the next arg start here.
             --nStartIndex;
         }
@@ -71,7 +104,6 @@ TDNFCliParseUpdateInfoArgs(
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
         {
             dwError = 0;
-            pUpdateInfoArgs->nScope = SCOPE_AVAILABLE;
             //There was no valid availability. Let the next arg start here.
             --nStartIndex;
         }
@@ -159,10 +191,6 @@ cleanup:
     return dwError;
 
 error:
-    if(pnMode)
-    {
-        *pnMode = OUTPUT_SUMMARY;//Default
-    }
     goto cleanup;
 }
 

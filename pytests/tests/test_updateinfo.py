@@ -21,70 +21,55 @@ def teardown_test(utils):
     utils.run(['tdnf', 'erase', '-y', mpkg, spkg])
 
 
-def helper_test_list_sub_cmd(utils, sub_cmd):
-    ret = utils.run(['tdnf', 'list', sub_cmd])
+def helper_test_updateinfo_sub_cmd(utils, sub_cmd):
+    ret = utils.run(['tdnf', 'updateinfo', sub_cmd])
     assert(ret['retval'] == 0)
-    ret = utils.run(['tdnf', 'list', sub_cmd, utils.config["sglversion_pkgname"]])
+    ret = utils.run(['tdnf', 'updateinfo', sub_cmd, utils.config["sglversion_pkgname"]])
     assert(ret['retval'] == 0)
-    ret = utils.run(['tdnf', 'list', sub_cmd, 'invalid_package'])
+    ret = utils.run(['tdnf', 'updateinfo', sub_cmd, 'invalid_package'])
     assert(ret['retval'] == 1011)
 
 
-def test_list_top(utils):
+def test_updateinfo_top(utils):
     spkg = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', spkg])
     assert(ret['retval'] == 0)
 
-    ret = utils.run(['tdnf', 'list'])
+    ret = utils.run(['tdnf', 'updateinfo'])
     assert(ret['retval'] == 0)
-    ret = utils.run(['tdnf', 'list', utils.config["sglversion_pkgname"]])
+    ret = utils.run(['tdnf', 'updateinfo', utils.config["sglversion_pkgname"]])
     assert(ret['retval'] == 0)
-    ret = utils.run(['tdnf', 'list', 'invalid_package'])
+    ret = utils.run(['tdnf', 'updateinfo', 'invalid_package'])
     assert(ret['retval'] == 1011)
 
 
-def test_list_sub_cmd(utils):
+def test_updateinfo_sub_cmd(utils):
     spkg = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', spkg])
     assert(ret['retval'] == 0)
 
-    helper_test_list_sub_cmd(utils, 'all')
-    helper_test_list_sub_cmd(utils, 'installed')
-    helper_test_list_sub_cmd(utils, 'available')
-    helper_test_list_sub_cmd(utils, 'obsoletes')
-    helper_test_list_sub_cmd(utils, 'extras')
-    helper_test_list_sub_cmd(utils, 'recent')
+    for arg in ['all', 'installed', 'available', 'obsoletes', 'extras', 'recent',
+                'summary', 'list', 'info']:
+        helper_test_updateinfo_sub_cmd(utils, arg)
+        helper_test_updateinfo_sub_cmd(utils, '--' + arg)
 
 
-def test_list_options(utils):
-    spkg = utils.config["sglversion_pkgname"]
-    ret = utils.run(['tdnf', 'install', '-y', spkg])
-    assert(ret['retval'] == 0)
-
-    helper_test_list_sub_cmd(utils, '--all')
-    helper_test_list_sub_cmd(utils, '--installed')
-    helper_test_list_sub_cmd(utils, '--available')
-    helper_test_list_sub_cmd(utils, '--obsoletes')
-    helper_test_list_sub_cmd(utils, '--extras')
-    helper_test_list_sub_cmd(utils, '--recent')
-
-
-def test_list_notinstalled(utils):
+def test_updateinfo_notinstalled(utils):
     mpkg = utils.config["mulversion_pkgname"]
     mpkg_version = utils.config["mulversion_lower"]
     spkg = utils.config["sglversion_pkgname"]
 
-    ret = utils.run(['tdnf', 'list', 'upgrades'])
+    ret = utils.run(['tdnf', 'updateinfo', 'upgrades'])
     assert(ret['retval'] == 0)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', mpkg + '-' + mpkg_version])
-    ret = utils.run(['tdnf', 'list', 'upgrades', mpkg])
+    ret = utils.run(['tdnf', 'updateinfo', 'upgrades', mpkg])
     assert(len(ret['stdout']) == 1)
 
     for cmd in ['updates', 'upgrades', 'downgrades', '--updates', '--upgrades', '--downgrades']:
-        ret = utils.run(['tdnf', 'list', cmd, 'invalid_package'])
+        ret = utils.run(['tdnf', 'updateinfo', cmd, 'invalid_package'])
         assert(ret['retval'] == 1011)
 
         # spkg is not installed, expect error
-        ret = utils.run(['tdnf', 'list', cmd, spkg])
+        ret = utils.run(['tdnf', 'updateinfo', cmd, spkg])
         assert(ret['retval'] == 1011)

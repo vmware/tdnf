@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -92,6 +92,7 @@ TDNFCliParseListArgs(
 {
     uint32_t dwError = 0;
     PTDNF_LIST_ARGS pListArgs = NULL;
+    PTDNF_CMD_OPT pSetOpt = NULL;
     int nStartIndex = 1;
     int nPackageCount = 0;
     int nIndex = 0;
@@ -107,7 +108,27 @@ TDNFCliParseListArgs(
                   (void**)&pListArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
-    //Should have scope argument (tdnf list <scope> <pkgnamespecs>)
+    pListArgs->nScope = SCOPE_ALL;
+
+    /* scope can be given as an option */
+    for (pSetOpt = pCmdArgs->pSetOpt;
+         pSetOpt;
+         pSetOpt = pSetOpt->pNext)
+    {
+        if(pSetOpt->nType == CMDOPT_KEYVALUE)
+        {
+            dwError = TDNFCliParseScope(
+                          pSetOpt->pszOptName,
+                          &pListArgs->nScope);
+            if(dwError == ERROR_TDNF_CLI_NO_MATCH)
+            {
+                dwError = 0;
+            }
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+    }
+
+    /* scope can also be given as an argument */
     if(pCmdArgs->nCmdCount > 1)
     {
         nStartIndex = 2;
@@ -115,7 +136,6 @@ TDNFCliParseListArgs(
         if(dwError == ERROR_TDNF_CLI_NO_MATCH)
         {
             dwError = 0;
-            pListArgs->nScope = SCOPE_ALL;
             nStartIndex = 1;
         }
     }
@@ -166,6 +186,9 @@ TDNFCliParseScope(
         char* pszTypeName;
         int nType;
     };
+
+    /* Note: "extras", "obsoletes" and "recent"
+       have no effect */
     struct stTemp  stScopes[] =
     {
         {"all",       SCOPE_ALL},
@@ -198,10 +221,6 @@ cleanup:
     return dwError;
 
 error:
-    if(pnScope)
-    {
-        *pnScope = SCOPE_ALL;//Default
-    }
     goto cleanup;
 }
 
