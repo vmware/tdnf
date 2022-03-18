@@ -948,7 +948,7 @@ TDNFRepoList(
     PTDNF_REPO_DATA pRepoTemp = NULL;
     PTDNF_REPO_DATA pRepoCurrent = NULL;
 
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
 
     if(!pTdnf || !pTdnf->pRepos || !ppReposAll)
     {
@@ -1074,7 +1074,7 @@ TDNFRepoSync(
     int ret;
     PTDNF_PKG_INFO pPkgInfos = NULL;
     PTDNF_PKG_INFO pPkgInfo = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     char *pszRepoDir = NULL;
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;

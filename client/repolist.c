@@ -25,14 +25,14 @@ uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
-    PTDNF_REPO_DATA_INTERNAL* ppReposAll
+    PTDNF_REPO_DATA* ppReposAll
     )
 {
     uint32_t dwError = 0;
     char* pszRepoFilePath = NULL;
-    PTDNF_REPO_DATA_INTERNAL pReposAll = NULL;
-    PTDNF_REPO_DATA_INTERNAL pReposTemp = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pReposAll = NULL;
+    PTDNF_REPO_DATA pReposTemp = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_CONF pConf = NULL;
     PTDNF_CMD_OPT pSetOpt = NULL;
     DIR *pDir = NULL;
@@ -150,11 +150,11 @@ error:
 
 uint32_t
 TDNFCreateCmdLineRepo(
-    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    PTDNF_REPO_DATA* ppRepo
     )
 {
     uint32_t dwError;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if(!ppRepo)
     {
@@ -181,13 +181,13 @@ error:
 
 uint32_t
 TDNFCreateRepoFromPath(
-    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    PTDNF_REPO_DATA* ppRepo,
     const char *pszId,
     const char *pszPath
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     int nIsDir = 0;
     int nDummy = 0;
 
@@ -244,12 +244,12 @@ error:
 
 uint32_t
 TDNFCreateRepo(
-    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    PTDNF_REPO_DATA* ppRepo,
     const char *pszId
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if(!ppRepo || !pszId)
     {
@@ -259,7 +259,7 @@ TDNFCreateRepo(
 
     dwError = TDNFAllocateMemory(
                   1,
-                  sizeof(TDNF_REPO_DATA_INTERNAL),
+                  sizeof(TDNF_REPO_DATA),
                   (void**)&pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -367,15 +367,15 @@ uint32_t
 TDNFLoadReposFromFile(
     PTDNF pTdnf,
     char* pszRepoFile,
-    PTDNF_REPO_DATA_INTERNAL* ppRepos
+    PTDNF_REPO_DATA* ppRepos
     )
 {
     char *pszRepo = NULL;
     uint32_t dwError = 0;
     char *pszMetadataExpire = NULL;
 
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     PCONF_DATA pData = NULL;
     PCONF_SECTION pSections = NULL;
@@ -394,7 +394,7 @@ TDNFLoadReposFromFile(
 
         dwError = TDNFAllocateMemory(
                       1,
-                      sizeof(TDNF_REPO_DATA_INTERNAL),
+                      sizeof(TDNF_REPO_DATA),
                       (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -600,7 +600,7 @@ TDNFRepoListFinalize(
 {
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pSetOpt = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     int nRepoidSeen = 0;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pRepos)
@@ -679,7 +679,7 @@ error:
 
 uint32_t
 TDNFAlterRepoState(
-    PTDNF_REPO_DATA_INTERNAL pRepos,
+    PTDNF_REPO_DATA pRepos,
     int nEnable,
     const char* pszId
     )
@@ -725,7 +725,7 @@ error:
 
 uint32_t
 TDNFCloneRepo(
-    PTDNF_REPO_DATA_INTERNAL pRepoIn,
+    PTDNF_REPO_DATA pRepoIn,
     PTDNF_REPO_DATA* ppRepo
     )
 {
@@ -741,6 +741,7 @@ TDNFCloneRepo(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_REPO_DATA), (void**)&pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /* cli needs just nEnabled, pszId, pszName */
     pRepo->nEnabled = pRepoIn->nEnabled;
 
     dwError = TDNFSafeAllocateString(pRepoIn->pszId, &pRepo->pszId);
@@ -749,6 +750,7 @@ TDNFCloneRepo(
     dwError = TDNFSafeAllocateString(pRepoIn->pszName, &pRepo->pszName);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /* python needs also pszBaseUrl and pszMetaLink */
     dwError = TDNFSafeAllocateString(pRepoIn->pszBaseUrl, &pRepo->pszBaseUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -756,13 +758,6 @@ TDNFCloneRepo(
                   pRepoIn->pszMetaLink,
                   &pRepo->pszMetaLink);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    if (pRepoIn->ppszUrlGPGKeys) {
-        dwError = TDNFAllocateStringArray(
-                      pRepoIn->ppszUrlGPGKeys,
-                      &pRepo->ppszUrlGPGKeys);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     *ppRepo = pRepo;
 
@@ -783,10 +778,10 @@ error:
 
 void
 TDNFFreeReposInternal(
-    PTDNF_REPO_DATA_INTERNAL pRepos
+    PTDNF_REPO_DATA pRepos
     )
 {
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     while(pRepos)
     {
         pRepo = pRepos;

@@ -24,7 +24,7 @@
 uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepoData,
+    PTDNF_REPO_DATA pRepoData,
     PSolvSack pSack
     )
 {
@@ -222,7 +222,7 @@ TDNFGetGPGCheck(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     int nGPGCheck = 0;
 
     if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pnGPGCheck)
@@ -342,7 +342,7 @@ TDNFGetGPGSignatureCheck(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
     int nGPGSigCheck = 0;
     uint32_t dwSkipSignature = 0;
     char** ppszUrlGPGKeys = NULL;
@@ -405,12 +405,12 @@ uint32_t
 TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszId,
-    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    PTDNF_REPO_DATA* ppRepo
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszId) || !ppRepo)
     {
@@ -506,7 +506,7 @@ TDNFStoreBaseURLFromMetalink(
 {
     uint32_t dwError = 0;
     char *pszBaseUrlFile = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
 
     if (!pTdnf ||
         !pTdnf->pConf ||
@@ -636,7 +636,7 @@ error:
 uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepoData,
+    PTDNF_REPO_DATA pRepoData,
     const char *pszRepoDataDir,
     PTDNF_REPO_METADATA *ppRepoMD
     )
@@ -1070,7 +1070,7 @@ error:
 uint32_t
 TDNFEnsureRepoMDParts(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     PTDNF_REPO_METADATA pRepoMDRel,
     PTDNF_REPO_METADATA *ppRepoMD
     )
@@ -1374,7 +1374,7 @@ error:
 uint32_t
 TDNFDownloadMetadata(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszRepoDir,
     int nPrintOnly
     )
@@ -1475,7 +1475,7 @@ uint32_t
 TDNFDownloadRepoMDParts(
     PTDNF pTdnf,
     Repo *pSolvRepo,
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszDir,
     int nPrintOnly
     )

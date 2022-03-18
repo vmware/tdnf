@@ -31,7 +31,7 @@ extern uid_t gEuid;
 //clean.c
 uint32_t
 TDNFCopyEnabledRepos(
-    PTDNF_REPO_DATA_INTERNAL pRepoData,
+    PTDNF_REPO_DATA pRepoData,
     char*** pppszReposUsed
     );
 
@@ -116,7 +116,7 @@ uint32_t
 TDNFRefreshRepo(
     PTDNF pTdnf,
     int nCleanMetadata,
-    PTDNF_REPO_DATA_INTERNAL pRepo
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
@@ -148,7 +148,7 @@ TDNFRepoGetBaseUrl(
 uint32_t
 TDNFRepoSetBaseUrl(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pszRepo,
+    PTDNF_REPO_DATA pszRepo,
     const char *pszBaseUrlFile
     );
 
@@ -203,7 +203,7 @@ TDNFRemoveKeysCache(
 
 uint32_t
 TDNFRepoApplyDownloadSettings(
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     CURL *pCurl
     );
 
@@ -215,7 +215,7 @@ TDNFRepoApplyProxySettings(
 
 uint32_t
 TDNFRepoApplySSLSettings(
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     CURL *pCurl
     );
 
@@ -223,7 +223,7 @@ uint32_t
 TDNFFindRepoById(
     PTDNF pTdnf,
     const char* pszRepo,
-    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    PTDNF_REPO_DATA* ppRepo
     );
 
 uint32_t
@@ -640,7 +640,7 @@ TDNFInitRepoFromMetadata(
 uint32_t
 TDNFInitRepo(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepoData,
+    PTDNF_REPO_DATA pRepoData,
     PSolvSack pSack
     );
 
@@ -681,13 +681,13 @@ uint32_t
 TDNFGetRepoById(
     PTDNF pTdnf,
     const char* pszName,
-    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    PTDNF_REPO_DATA* ppRepo
     );
 
 uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepoData,
+    PTDNF_REPO_DATA pRepoData,
     const char *pszRepoDataDir,
     PTDNF_REPO_METADATA *ppRepoMD
     );
@@ -712,7 +712,7 @@ TDNFFreeRepoMetadata(
 uint32_t
 TDNFEnsureRepoMDParts(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     PTDNF_REPO_METADATA pRepoMDRel,
     PTDNF_REPO_METADATA *ppRepoMD
     );
@@ -743,7 +743,7 @@ TDNFReplaceFile(
 uint32_t
 TDNFDownloadMetadata(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszRepoDir,
     int nPrintOnly
     );
@@ -752,7 +752,7 @@ uint32_t
 TDNFDownloadRepoMDParts(
     PTDNF pTdnf,
     Repo *pSolvRepo,
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszDir,
     int nPrintOnly
     );
@@ -762,24 +762,24 @@ uint32_t
 TDNFLoadReposFromFile(
     PTDNF pTdnf,
     char* pszRepoFile,
-    PTDNF_REPO_DATA_INTERNAL* ppRepos
+    PTDNF_REPO_DATA* ppRepos
     );
 
 uint32_t
 TDNFCreateCmdLineRepo(
-    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    PTDNF_REPO_DATA* ppRepo
     );
 
 uint32_t
 TDNFCreateRepoFromPath(
-    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    PTDNF_REPO_DATA* ppRepo,
     const char *pzsId,
     const char *pszPath
     );
 
 uint32_t
 TDNFCreateRepo(
-    PTDNF_REPO_DATA_INTERNAL* ppRepo,
+    PTDNF_REPO_DATA* ppRepo,
     const char *pszId
     );
 
@@ -787,7 +787,7 @@ uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
     TDNF_REPOLISTFILTER nFilter,
-    PTDNF_REPO_DATA_INTERNAL* ppReposAll
+    PTDNF_REPO_DATA* ppReposAll
     );
 
 uint32_t
@@ -797,20 +797,20 @@ TDNFRepoListFinalize(
 
 uint32_t
 TDNFAlterRepoState(
-    PTDNF_REPO_DATA_INTERNAL pRepos,
+    PTDNF_REPO_DATA pRepos,
     int nEnable,
     const char* pszId
     );
 
 uint32_t
 TDNFCloneRepo(
-    PTDNF_REPO_DATA_INTERNAL pRepoIn,
+    PTDNF_REPO_DATA pRepoIn,
     PTDNF_REPO_DATA* ppRepo
     );
 
 void
 TDNFFreeReposInternal(
-    PTDNF_REPO_DATA_INTERNAL pRepos
+    PTDNF_REPO_DATA pRepos
     );
 
 //resolve.c

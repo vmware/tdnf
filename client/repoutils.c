@@ -42,7 +42,7 @@ error:
 uint32_t
 TDNFRepoSetBaseUrl(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA_INTERNAL pszRepo,
+    PTDNF_REPO_DATA pszRepo,
     const char *pszBaseUrlFile
     )
 {
@@ -77,7 +77,7 @@ TDNFRepoGetBaseUrl(
 {
     uint32_t dwError = 0;
     char* pszBaseUrl = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszBaseUrl)
     {
@@ -130,7 +130,7 @@ TDNFRepoGetUserPass(
 {
     uint32_t dwError = 0;
     char* pszUserPass = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszUserPass)
     {
@@ -483,7 +483,7 @@ error:
 
 uint32_t
 TDNFRepoApplyDownloadSettings(
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     CURL *pCurl
     )
 {
@@ -540,7 +540,7 @@ error:
 
 uint32_t
 TDNFRepoApplySSLSettings(
-    PTDNF_REPO_DATA_INTERNAL pRepo,
+    PTDNF_REPO_DATA pRepo,
     CURL *pCurl
     )
 {
@@ -617,11 +617,11 @@ uint32_t
 TDNFFindRepoById(
     PTDNF pTdnf,
     const char* pszRepo,
-    PTDNF_REPO_DATA_INTERNAL* ppRepo
+    PTDNF_REPO_DATA* ppRepo
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepos = NULL;
+    PTDNF_REPO_DATA pRepos = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszRepo))
     {

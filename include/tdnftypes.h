@@ -292,6 +292,20 @@ typedef struct _TDNF_REPO_DATA
     char* pszBaseUrl;
     char* pszMetaLink;
     char** ppszUrlGPGKeys;
+    int nSSLVerify;
+    char* pszSSLCaCert;
+    char* pszSSLClientCert;
+    char* pszSSLClientKey;
+    char* pszUser;
+    char* pszPass;
+    int nPriority;
+    int nTimeout;
+    int nMinrate;
+    int nThrottle;
+    int nRetries;
+    int nSkipMDFileLists;
+    int nSkipMDUpdateInfo;
+    int nSkipMDOther;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;

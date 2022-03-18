@@ -19,40 +19,12 @@ typedef struct _TDNF_PLUGIN_
     struct _TDNF_PLUGIN_ *pNext;
 } TDNF_PLUGIN, *PTDNF_PLUGIN;
 
-typedef struct _TDNF_REPO_DATA_INTERNAL_
-{
-    int nEnabled;
-    int nSkipIfUnavailable;
-    int nGPGCheck;
-    int nSSLVerify;
-    long lMetadataExpire;
-    char* pszId;
-    char* pszName;
-    char* pszBaseUrl;
-    char* pszMetaLink;
-    char* pszSSLCaCert;
-    char* pszSSLClientCert;
-    char* pszSSLClientKey;
-    char** ppszUrlGPGKeys;
-    char* pszUser;
-    char* pszPass;
-    int nPriority;
-    int nTimeout;
-    int nMinrate;
-    int nThrottle;
-    int nRetries;
-    int nSkipMDFileLists;
-    int nSkipMDUpdateInfo;
-    int nSkipMDOther;
-    struct _TDNF_REPO_DATA_INTERNAL_* pNext;
-} TDNF_REPO_DATA_INTERNAL, *PTDNF_REPO_DATA_INTERNAL;
-
 typedef struct _TDNF_
 {
     PSolvSack pSack;
     PTDNF_CMD_ARGS pArgs;
     PTDNF_CONF pConf;
-    PTDNF_REPO_DATA_INTERNAL pRepos;
+    PTDNF_REPO_DATA pRepos;
     Repo *pSolvCmdLineRepo;
     Queue queueCmdLinePkgs;
     PTDNF_PLUGIN pPlugins;
