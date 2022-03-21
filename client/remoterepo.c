@@ -573,7 +573,7 @@ TDNFDownloadFile(
     char *pszFileTmp = NULL;
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo;
+    PTDNF_REPO_DATA pRepo;
     int i;
 
     /* TDNFFetchRemoteGPGKey sends pszProgressData as NULL */

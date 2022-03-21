@@ -221,8 +221,8 @@ error:
 static
 int _repo_compare(const void *ppRepo1, const void *ppRepo2)
 {
-    return (*(PTDNF_REPO_DATA_INTERNAL*)(ppRepo1))->nPriority -
-           (*(PTDNF_REPO_DATA_INTERNAL*)(ppRepo2))->nPriority;
+    return (*(PTDNF_REPO_DATA*)(ppRepo1))->nPriority -
+           (*(PTDNF_REPO_DATA*)(ppRepo2))->nPriority;
 }
 
 uint32_t
@@ -235,8 +235,8 @@ TDNFRefreshSack(
     uint32_t dwError = 0;
     char* pszRepoCacheDir = NULL;
     int nMetadataExpired = 0;
-    PTDNF_REPO_DATA_INTERNAL pRepo = NULL;
-    PTDNF_REPO_DATA_INTERNAL *ppRepoArray = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
+    PTDNF_REPO_DATA *ppRepoArray = NULL;
     uint32_t nCount = 0;
     uint32_t i = 0;
 
@@ -267,7 +267,7 @@ TDNFRefreshSack(
     /* nCount may be 0 if --disablerepo=* is used */
     if (nCount > 0)
     {
-        dwError = TDNFAllocateMemory(nCount, sizeof(PTDNF_REPO_DATA_INTERNAL),
+        dwError = TDNFAllocateMemory(nCount, sizeof(PTDNF_REPO_DATA),
                                      (void **)&ppRepoArray);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -280,7 +280,7 @@ TDNFRefreshSack(
             ppRepoArray[i++] = pRepo;
         }
 
-        qsort(ppRepoArray, nCount, sizeof(PTDNF_REPO_DATA_INTERNAL), _repo_compare);
+        qsort(ppRepoArray, nCount, sizeof(PTDNF_REPO_DATA), _repo_compare);
     }
 
     for (i = 0; i < nCount; i++)

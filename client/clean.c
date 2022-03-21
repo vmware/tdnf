@@ -22,13 +22,13 @@
 
 uint32_t
 TDNFCopyEnabledRepos(
-    PTDNF_REPO_DATA_INTERNAL pRepoData,
+    PTDNF_REPO_DATA pRepoData,
     char*** pppszReposUsed
     )
 {
     uint32_t dwError = 0;
     char** ppszReposUsed = NULL;
-    PTDNF_REPO_DATA_INTERNAL pRepoTemp = NULL;
+    PTDNF_REPO_DATA pRepoTemp = NULL;
     int nCount = 0;
 
     if(!pRepoData || !pppszReposUsed)
