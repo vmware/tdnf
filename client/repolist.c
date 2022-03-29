@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -609,20 +609,23 @@ TDNFRepoListFinalize(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //There could be overrides to enable/disable
-    //repo such as cmdline args, api overrides
-    pSetOpt = pTdnf->pArgs->pSetOpt;
-
-    while(pSetOpt)
+    /* There could be overrides to enable/disable
+       repo such as cmdline args, api overrides */
+    for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
-        if(pSetOpt->nType == CMDOPT_ENABLEREPO ||
-           pSetOpt->nType == CMDOPT_DISABLEREPO)
+        if(strcmp(pSetOpt->pszOptName, "enablerepo") == 0)
         {
             dwError = TDNFAlterRepoState(
                           pTdnf->pRepos,
-                          pSetOpt->nType == CMDOPT_ENABLEREPO,
+                          1,
                           pSetOpt->pszOptValue);
-            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if(strcmp(pSetOpt->pszOptName, "disablerepo") == 0)
+        {
+            dwError = TDNFAlterRepoState(
+                          pTdnf->pRepos,
+                          0,
+                          pSetOpt->pszOptValue);
         }
         else if(strcmp(pSetOpt->pszOptName, "repoid") == 0)
         {
@@ -637,15 +640,13 @@ TDNFRepoListFinalize(
                           pTdnf->pRepos,
                           1,
                           pSetOpt->pszOptValue);
-            BAIL_ON_TDNF_ERROR(dwError);
         }
-        pSetOpt = pSetOpt->pNext;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Now that the overrides are applied, replace config vars
-    //for the repos that are enabled.
-    pRepo = pTdnf->pRepos;
-    while(pRepo)
+    /* Now that the overrides are applied, replace config vars
+       for the repos that are enabled. */
+    for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
         if(pRepo->nEnabled)
         {
@@ -654,25 +655,20 @@ TDNFRepoListFinalize(
                 dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszName);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-
             if(pRepo->pszBaseUrl)
             {
                 dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-
             if(pRepo->pszMetaLink)
             {
                 dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
-        pRepo = pRepo->pNext;
     }
-
 cleanup:
     return dwError;
-
 error:
     goto cleanup;
 }

@@ -54,29 +54,26 @@ TDNFCliParseUpdateInfoArgs(
          pSetOpt;
          pSetOpt = pSetOpt->pNext)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE)
+        dwError = TDNFCliParseScope(
+                      pSetOpt->pszOptName,
+                      &pUpdateInfoArgs->nScope);
+        if (dwError == 0)
         {
-            dwError = TDNFCliParseScope(
-                          pSetOpt->pszOptName,
-                          &pUpdateInfoArgs->nScope);
-            if (dwError == 0)
-            {
-                continue;
-            }
-            if(dwError == ERROR_TDNF_CLI_NO_MATCH)
-            {
-                dwError = 0;
-            }
-            BAIL_ON_CLI_ERROR(dwError);
-            dwError = TDNFCliParseMode(
-                          pSetOpt->pszOptName,
-                          &pUpdateInfoArgs->nMode);
-            if(dwError == ERROR_TDNF_CLI_NO_MATCH)
-            {
-                dwError = 0;
-            }
-            BAIL_ON_CLI_ERROR(dwError);
+            continue;
         }
+        if(dwError == ERROR_TDNF_CLI_NO_MATCH)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_CLI_ERROR(dwError);
+        dwError = TDNFCliParseMode(
+                      pSetOpt->pszOptName,
+                      &pUpdateInfoArgs->nMode);
+        if(dwError == ERROR_TDNF_CLI_NO_MATCH)
+        {
+            dwError = 0;
+        }
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
     //Assume first arg as mode

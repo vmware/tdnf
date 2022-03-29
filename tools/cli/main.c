@@ -58,6 +58,7 @@ int main(int argc, char **argv)
     uint32_t dwError = 0;
     PTDNF pTdnf = NULL;
     PTDNF_CMD_ARGS pCmdArgs = NULL;
+    TDNF_CLI_CMD_MAP *pCmd = NULL;
 
     dwError = TDNFCliParseArgs(argc, argv, &pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
@@ -101,14 +102,17 @@ int main(int argc, char **argv)
 
         pszCmd = pCmdArgs->ppszCmds[0];
 
-        for (uint32_t nCommandCount = ARRAY_SIZE(arCmdMap) - 1; nCommandCount; nCommandCount--)
+        for (int i = 0; i < (int)ARRAY_SIZE(arCmdMap); i++)
         {
-            if (strcmp(pszCmd, arCmdMap[nCommandCount].pszCmdName))
+            if (strcmp(pszCmd, arCmdMap[i].pszCmdName) == 0)
             {
-                continue;
+                pCmd = &arCmdMap[i];
             }
+        }
 
-            if (arCmdMap[nCommandCount].ReqRoot && geteuid())
+        if (pCmd)
+        {
+            if (pCmd->ReqRoot && geteuid())
             {
                 dwError = ERROR_TDNF_PERM;
                 BAIL_ON_CLI_ERROR(dwError);
@@ -133,12 +137,10 @@ int main(int argc, char **argv)
                 BAIL_ON_CLI_ERROR(dwError);
             }
 
-            dwError = arCmdMap[nCommandCount].pFnCmd(&_context, pCmdArgs);
+            dwError = pCmd->pFnCmd(&_context, pCmdArgs);
             BAIL_ON_CLI_ERROR(dwError);
-
-            break;
         }
-        if (!_context.hTdnf)
+        else
         {
             TDNFCliShowNoSuchCommand(pszCmd);
             dwError = ERROR_TDNF_CLI_NO_SUCH_CMD;

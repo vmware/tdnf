@@ -1091,13 +1091,6 @@ TDNFAppendPath(
     );
 
 uint32_t
-TDNFGetCmdOpt(
-    PTDNF pTdnf,
-    TDNF_CMDOPT_TYPE cmdType,
-    PTDNF_CMD_OPT *ppOpt
-    );
-
-uint32_t
 TDNFReadAutoInstalled(
     PTDNF pTdnf,
     char ***pppszAutoInstalled

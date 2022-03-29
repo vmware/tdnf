@@ -275,7 +275,6 @@ AddSetOpt(
 uint32_t
 AddSetOptWithValues(
     PTDNF_CMD_ARGS pCmdArgs,
-    int nType,
     const char* pszOptArg,
     const char* pszOptValue
     );

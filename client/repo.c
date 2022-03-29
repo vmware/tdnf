@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -273,8 +273,7 @@ TDNFGetSkipSignatureOption(
 
     while(pSetOpt)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-          !strcasecmp(pSetOpt->pszOptName, "skipsignature"))
+        if(!strcasecmp(pSetOpt->pszOptName, "skipsignature"))
         {
             dwSkipSignature = 1;
             break;
@@ -313,8 +312,7 @@ TDNFGetSkipDigestOption(
 
     while(pSetOpt)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-          !strcasecmp(pSetOpt->pszOptName, "skipdigest"))
+        if(!strcasecmp(pSetOpt->pszOptName, "skipdigest"))
         {
             dwSkipDigest = 1;
             break;
