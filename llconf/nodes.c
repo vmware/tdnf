@@ -295,6 +295,10 @@ int compare_cnftree(const struct cnfnode *cn_root1, const struct cnfnode *cn_roo
 				return 3;
 		}
 	}
+    /* Coverity false positive 'Dereferencing null pointer "cn1".':
+       if cn1 xor cn2 is NULL, compare_cnftree will
+       return != 0, exiting the loop */
+    /* coverity[var_deref_op] */
 	for(cn1 = cn_root1->first_child, cn2 = cn_root2->first_child; cn1 || cn2; cn1 = cn1->next, cn2 = cn2->next){
 		if((ret = compare_cnftree(cn1, cn2)) != 0)
 			return ret;

@@ -9,6 +9,11 @@
 #include "includes.h"
 #include <dlfcn.h>
 
+#include "../llconf/nodes.h"
+#include "../llconf/modules.h"
+#include "../llconf/entry.h"
+#include "../llconf/ini.h"
+
 struct plugin_config
 {
     PTDNF_CMD_ARGS pArgs;
@@ -218,6 +223,12 @@ _TDNFFreePlugin(
     }
 }
 
+static
+int isTrue(const char *str)
+{
+    return strcasecmp(str, "true") == 0 || atoi(str) != 0;
+}
+
 /* read config file */
 static
 uint32_t
@@ -228,8 +239,8 @@ _TDNFLoadPluginConfig(
 {
     uint32_t dwError = 0;
     PTDNF_PLUGIN pPlugin = NULL;
-    PCONF_DATA pData = NULL;
-    PCONF_SECTION pSection = NULL;
+    struct cnfnode *cn_conf, *cn_section, *cn;
+    struct cnfmodule *mod_ini;
 
     if(IsNullOrEmptyString(pszConfigFile) || !ppPlugin)
     {
@@ -237,34 +248,53 @@ _TDNFLoadPluginConfig(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFReadConfigFile(pszConfigFile, 0, &pData);
-    BAIL_ON_TDNF_ERROR(dwError);
+    mod_ini = find_cnfmodule("ini");
+    if (mod_ini == NULL) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    cn_conf = cnfmodule_parse_file(mod_ini, pszConfigFile);
+    if (cn_conf == NULL)
+    {
+        if (errno != 0)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        else
+        {
+            dwError = ERROR_TDNF_CONF_FILE_LOAD;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
     dwError = TDNFAllocateMemory(1, sizeof(*pPlugin), (void **)&pPlugin);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    for(pSection = pData->pSections; pSection; pSection = pSection->pNext)
+    /* cn_conf == NULL => we will not reach here */
+    /* coverity[var_deref_op] */
+    for(cn_section = cn_conf->first_child; cn_section; cn_section = cn_section->next)
     {
-        /* look for main section only */
-        if (strcmp(pSection->pszName, TDNF_PLUGIN_CONF_MAIN_SECTION) != 0)
-        {
+        if (cn_section->name[0] == '.')
             continue;
+
+        if (strcmp(cn_section->name, TDNF_PLUGIN_CONF_MAIN_SECTION) == 0)
+        {
+            for(cn = cn_section->first_child; cn; cn = cn->next)
+            {
+                if ((cn->name[0] == '.') || (cn->value == NULL))
+                    continue;
+
+                if (strcmp(cn->name, TDNF_PLUGIN_CONF_KEY_ENABLED) == 0)
+                {
+                    pPlugin->nEnabled = isTrue(cn->value);
+                }
+            }
         }
-        dwError = TDNFReadKeyValueBoolean(
-                      pSection,
-                      TDNF_PLUGIN_CONF_KEY_ENABLED,
-                      0,
-                      &pPlugin->nEnabled);
-        BAIL_ON_TDNF_ERROR(dwError);
     }
-
     *ppPlugin = pPlugin;
-
 cleanup:
-    if(pData)
-    {
-        TDNFFreeConfigData(pData);
-    }
     return dwError;
 
 error:

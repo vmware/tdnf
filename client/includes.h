@@ -56,6 +56,7 @@
 
 #include "defines.h"
 #include "structs.h"
+#include "../common/config.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"
 #include "prototypes.h"

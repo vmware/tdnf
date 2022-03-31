@@ -66,6 +66,8 @@ void unlink_node(struct cnfnode *cn);
    and returns 1st node with matching name */
 struct cnfnode *find_node(struct cnfnode *cn_list, const char *name);
 
+#define find_child(cn_parent, name) find_node(cn_parent->first_child, name)
+
 int compare_cnfnode(const struct cnfnode *cn1, const struct cnfnode *cn2);
 int compare_cnftree(const struct cnfnode *cn_root1, const struct cnfnode *cn_root2);
 int compare_cnftree_children(const struct cnfnode *cn_root1, const struct cnfnode *cn_root2);

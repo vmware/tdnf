@@ -262,7 +262,7 @@ struct confline *unparse_ini_subsection(struct cnfnode *cn, struct confline *cl_
 	struct cnfnode *cn_line;
 	unsigned int i;
 
-	for(i = 0; (i < level*8) && (i < sizeof(buf)-1); i++){
+	for(i = 0; (i < level*8) && (i < sizeof(ident)-1); i++){
 		ident[i] = ' ';
 	}
 	ident[i] = 0;

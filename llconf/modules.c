@@ -277,10 +277,13 @@ int cnfmodule_register_plugin(const char *name, const char *path, struct cnfnode
 		if((dlerr = dlerror()) == NULL)
 			fe_reg_func(opt_root);
 		else{
+            dlclose(dlh);
 			return -2;
 		}
 	}else{
 		return -1;
 	}
+    /* Technically correct coverity issue (dlh is leaked), but low impact */
+    /* coverity[leaked_storage] */
 	return 0;
 }

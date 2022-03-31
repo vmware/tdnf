@@ -143,62 +143,6 @@ TDNFStringArraySort(
     char **ppszArray
     );
 
-//configreader.c
-void
-TDNFPrintConfigData(
-    PCONF_DATA pData
-    );
-
-uint32_t
-TDNFReadConfigFile(
-    const char *pszFile,
-    const int nMaxLineLength,
-    PCONF_DATA *ppData
-    );
-
-uint32_t
-TDNFConfigGetSection(
-    PCONF_DATA pData,
-    const char *pszGroup,
-    PCONF_SECTION *ppSection
-    );
-
-uint32_t
-TDNFReadKeyValue(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    const char* pszDefault,
-    char** ppszValue
-    );
-
-uint32_t
-TDNFReadKeyValueBoolean(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    int nDefault,
-    int* pnValue
-    );
-
-uint32_t
-TDNFReadKeyValueInt(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    int nDefault,
-    int* pnValue
-    );
-
-uint32_t
-TDNFReadKeyValueStringArray(
-    PCONF_SECTION pSection,
-    const char* pszKeyName,
-    char*** pppszValueList
-    );
-
-void
-TDNFFreeConfigData(
-    PCONF_DATA pData
-    );
-
 //utils.c
 uint32_t
 TDNFCreateAndWriteToFile(

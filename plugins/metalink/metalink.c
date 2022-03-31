@@ -8,6 +8,8 @@
 
 #include "includes.h"
 
+#include "../../llconf/nodes.h"
+
 static
 uint32_t
 TDNFHasRepo(
@@ -49,7 +51,7 @@ TDNFMetalinkReadConfig(
 {
     uint32_t dwError = 0;
     char *pszMetalink = NULL;
-    PCONF_SECTION pSection = NULL;
+    struct cnfnode *cn_section = NULL, *cn;
     PTDNF_METALINK_DATA pData = NULL;
 
     if (!pHandle || !pHandle->pTdnf || !pContext)
@@ -62,15 +64,19 @@ TDNFMetalinkReadConfig(
     dwError = TDNFEventContextGetItemPtr(
                   pContext,
                   TDNF_EVENT_ITEM_REPO_SECTION,
-                  (const void **)&pSection);
+                  (const void **)&cn_section);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_REPO_CONFIG_METALINK_KEY,
-                  NULL,
-                  &pszMetalink);
-    BAIL_ON_TDNF_ERROR(dwError);
+    for(cn = cn_section->first_child; cn; cn = cn->next)
+    {
+        if ((cn->name[0] == '.') || (cn->value == NULL))
+            continue;
+
+        if (strcmp(cn->name, TDNF_REPO_CONFIG_METALINK_KEY) == 0)
+        {
+            pszMetalink = strdup(cn->value);
+        }
+    }
 
     /*
      * if metalink is set, keep this repo id
@@ -81,7 +87,7 @@ TDNFMetalinkReadConfig(
         dwError = TDNFAllocateMemory(sizeof(*pData), 1, (void **)&pData);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateString(pSection->pszName, &pData->pszRepoId);
+        dwError = TDNFAllocateString(cn_section->name, &pData->pszRepoId);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAllocateString(pszMetalink, &pData->pszMetalink);

@@ -20,12 +20,10 @@
 
 #include "includes.h"
 
-static
-uint32_t
-_TDNFConfigReadPluginSettings(
-    PCONF_SECTION pSection,
-    PTDNF pTdnf
-    );
+#include "../llconf/nodes.h"
+#include "../llconf/modules.h"
+#include "../llconf/entry.h"
+#include "../llconf/ini.h"
 
 int
 TDNFConfGetRpmVerbosity(
@@ -40,6 +38,12 @@ TDNFConfGetRpmVerbosity(
     return nLogLevel;
 }
 
+static
+int isTrue(const char *str)
+{
+    return strcasecmp(str, "true") == 0 || atoi(str) != 0;
+}
+
 uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,
@@ -49,12 +53,18 @@ TDNFReadConfig(
 {
     uint32_t dwError = 0;
     PTDNF_CONF pConf = NULL;
-    PCONF_DATA pData = NULL;
-    PCONF_SECTION pSection = NULL;
     char *pszConfFileCopy = NULL;
     char *pszMinVersionsDir = NULL;
     char *pszConfFileCopy2 = NULL;
     char *pszPkgLocksDir = NULL;
+
+    const char *pszProxyUser = NULL;
+    const char *pszProxyPass = NULL;
+
+    struct cnfnode *cn_conf, *cn_top, *cn;
+    struct cnfmodule *mod_ini;
+
+    int nPluginSet = 0;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszConfFile) ||
@@ -64,116 +74,169 @@ TDNFReadConfig(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFReadConfigFile(pszConfFile, 0, &pData);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     dwError = TDNFAllocateMemory(
                   1,
                   sizeof(TDNF_CONF),
                   (void**)&pConf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFConfigGetSection(pData, pszGroup, &pSection);
-    BAIL_ON_TDNF_ERROR(dwError);
+    /* defaults */
+    pConf->nGPGCheck = 0;
+    pConf->nInstallOnlyLimit = 1;
+    pConf->nCleanRequirementsOnRemove = 0;
+    pConf->nKeepCache = 0;
+    pConf->nOpenMax = TDNF_DEFAULT_OPENMAX;
 
-    dwError = TDNFReadKeyValueInt(
-                  pSection,
-                  TDNF_CONF_KEY_INSTALLONLY_LIMIT,
-                  1,
-                  &pConf->nInstallOnlyLimit);
-    BAIL_ON_TDNF_ERROR(dwError);
+    register_ini(NULL);
+    mod_ini = find_cnfmodule("ini");
+    if (mod_ini == NULL) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
-    dwError = TDNFReadKeyValueBoolean(
-                  pSection,
-                  TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE,
-                  0,
-                  &pConf->nCleanRequirementsOnRemove);
-    BAIL_ON_TDNF_ERROR(dwError);
+    cn_conf = cnfmodule_parse_file(mod_ini, pszConfFile);
+    if (cn_conf == NULL)
+    {
+        if (errno != 0)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        else
+        {
+            dwError = ERROR_TDNF_CONF_FILE_LOAD;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
-    dwError = TDNFReadKeyValueBoolean(
-                  pSection,
-                  TDNF_CONF_KEY_GPGCHECK,
-                  0,
-                  &pConf->nGPGCheck);
-    BAIL_ON_TDNF_ERROR(dwError);
+    /* cn_conf == NULL => we will not reach here */
+    /* coverity[var_deref_op] */
+    cn_top = cn_conf->first_child;
 
-    dwError = TDNFReadKeyValueBoolean(
-                  pSection,
-                  TDNF_CONF_KEY_KEEP_CACHE,
-                  0,
-                  &pConf->nKeepCache);
-    BAIL_ON_TDNF_ERROR(dwError);
+    for(cn = cn_top->first_child; cn; cn = cn->next)
+    {
+        if ((cn->name[0] == '.') || (cn->value == NULL))
+            continue;
 
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_REPODIR,
-                  TDNF_DEFAULT_REPO_LOCATION,
-                  &pConf->pszRepoDir);
-    BAIL_ON_TDNF_ERROR(dwError);
+        if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLY_LIMIT) == 0)
+        {
+            pConf->nInstallOnlyLimit = atoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
+        {
+            pConf->nCleanRequirementsOnRemove = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_GPGCHECK) == 0)
+        {
+            pConf->nGPGCheck = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
+        {
+            pConf->nKeepCache = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
+        {
+            pConf->pszRepoDir = strdup(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CACHEDIR) == 0)
+        {
+            pConf->pszCacheDir = strdup(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PERSISTDIR) == 0)
+        {
+            pConf->pszPersistDir = strdup(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKG) == 0)
+        {
+            pConf->pszDistroVerPkg = strdup(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_EXCLUDE) == 0)
+        {
+            dwError = TDNFSplitStringToArray(cn->value,
+                                             " ", &pConf->ppszExcludes);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_MINVERSIONS) == 0)
+        {
+            dwError = TDNFSplitStringToArray(cn->value,
+                                             " ", &pConf->ppszMinVersions);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
+        {
+            pConf->nOpenMax = atoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
+        {
+            pConf->nCheckUpdateCompat = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED) == 0)
+        {
+            pConf->nDistroSyncReinstallChanged = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY) == 0)
+        {
+            pConf->pszProxy = strdup(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_USER) == 0)
+        {
+            pszProxyUser = cn->value;
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_PASS) == 0)
+        {
+            pszProxyPass = cn->value;
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
+        {
+            /* presence of option disables plugins, no matter the value */
+            if(!isTrue(cn->value)) {
+                dwError = TDNFSetOpt(
+                              pTdnf->pArgs,
+                              TDNF_CONF_KEY_NO_PLUGINS, "1");
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            nPluginSet = 1;
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
+        {
+            dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_CONF_PATH, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
+        {
+            dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_PATH, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_CACHEDIR,
-                  TDNF_DEFAULT_CACHE_LOCATION,
-                  &pConf->pszCacheDir);
-    BAIL_ON_TDNF_ERROR(dwError);
+    /* if plugins are not enabled explicitely,
+       we have to disable them because it's the default */
+    if (!nPluginSet) {
+        /* no plugins by default */
+        dwError = TDNFSetOpt(
+                      pTdnf->pArgs,
+                      TDNF_CONF_KEY_NO_PLUGINS, "1");
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_PERSISTDIR,
-                  TDNF_DEFAULT_DB_LOCATION,
-                  &pConf->pszPersistDir);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pszProxyUser && pszProxyPass)
+    {
+        dwError = TDNFAllocateStringPrintf(
+                      &pConf->pszProxyUserPass,
+                      "%s:%s",
+                      pszProxyUser,
+                      pszProxyPass);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_DISTROVERPKG,
-                  TDNF_DEFAULT_DISTROVERPKG,
-                  &pConf->pszDistroVerPkg);
-    BAIL_ON_TDNF_ERROR(dwError);
+    destroy_cnftree(cn_conf);
 
-    dwError = TDNFReadKeyValueStringArray(
-                  pSection,
-                  TDNF_CONF_KEY_EXCLUDE,
-                  &pConf->ppszExcludes);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFReadKeyValueStringArray(
-                  pSection,
-                  TDNF_CONF_KEY_MINVERSIONS,
-                  &pConf->ppszMinVersions);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFReadKeyValueInt(
-                  pSection,
-                  TDNF_CONF_KEY_OPENMAX,
-                  TDNF_DEFAULT_OPENMAX,
-                  &pConf->nOpenMax);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFReadKeyValueBoolean(
-                  pSection,
-                  TDNF_CONF_KEY_CHECK_UPDATE_COMPAT,
-                  0,
-                  &pConf->nCheckUpdateCompat);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFReadKeyValueBoolean(
-                  pSection,
-                  TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED,
-                  0,
-                  &pConf->nDistroSyncReinstallChanged);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFConfigReadProxySettings(
-                  pSection,
-                  pConf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = _TDNFConfigReadPluginSettings(
-                  pSection,
-                  pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pConf->pszRepoDir == NULL)
+        pConf->pszRepoDir = strdup(TDNF_DEFAULT_REPO_LOCATION);
+    if (pConf->pszCacheDir == NULL)
+        pConf->pszCacheDir = strdup(TDNF_DEFAULT_CACHE_LOCATION);
+    if (pConf->pszDistroVerPkg == NULL)
+        pConf->pszDistroVerPkg = strdup(TDNF_DEFAULT_DISTROVERPKG);
 
     /* We need a copy of pszConfFile because dirname() modifies its argument */
     dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy);
@@ -197,10 +260,6 @@ TDNFReadConfig(
     pTdnf->pConf = pConf;
 
 cleanup:
-    if(pData)
-    {
-        TDNFFreeConfigData(pData);
-    }
     TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
     TDNF_SAFE_FREE_MEMORY(pszConfFileCopy2);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
@@ -259,79 +318,6 @@ TDNFConfigExpandVars(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFConfigReadProxySettings(
-    PCONF_SECTION pSection,
-    PTDNF_CONF pConf)
-{
-    uint32_t dwError = 0;
-    char* pszProxyUser = NULL;
-    char* pszProxyPass = NULL;
-
-    if(!pSection || !pConf)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    //optional proxy server
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_PROXY,
-                  NULL,
-                  &pConf->pszProxy);
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if(!IsNullOrEmptyString(pConf->pszProxy))
-    {
-        //optional proxy user
-        dwError = TDNFReadKeyValue(
-                      pSection,
-                      TDNF_CONF_KEY_PROXY_USER,
-                      NULL,
-                      &pszProxyUser);
-        if(dwError == ERROR_TDNF_NO_DATA)
-        {
-            dwError = 0;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        //optional proxy pass
-        dwError = TDNFReadKeyValue(
-                      pSection,
-                      TDNF_CONF_KEY_PROXY_PASS,
-                      NULL,
-                      &pszProxyPass);
-        if(dwError == ERROR_TDNF_NO_DATA)
-        {
-            dwError = 0;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        if(!IsNullOrEmptyString(pszProxyUser) &&
-           !IsNullOrEmptyString(pszProxyPass))
-        {
-            dwError = TDNFAllocateStringPrintf(
-                          &pConf->pszProxyUserPass,
-                          "%s:%s",
-                          pszProxyUser,
-                          pszProxyPass);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszProxyUser);
-    TDNF_SAFE_FREE_MEMORY(pszProxyPass);
     return dwError;
 
 error:
@@ -410,94 +396,6 @@ cleanup:
 
 error:
     TDNF_SAFE_FREE_MEMORY(pszDst);
-    goto cleanup;
-}
-
-/*
- * Read the following settings from tdnf.conf
- * plugins - 0/1. 0 = no plugins. default is 0
- * pluginpath - path to look for plugin libraries. default /usr/lib/tdnf-plugins
- * pluginconfpath - path to look for plugin config files. default /etc/tdnf/pluginconf.d
-*/
-static
-uint32_t
-_TDNFConfigReadPluginSettings(
-    PCONF_SECTION pSection,
-    PTDNF pTdnf
-    )
-{
-    uint32_t dwError = 0;
-    char *pszValue = NULL;
-    int nPlugins = 0;
-
-    if(!pSection || !pTdnf)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    /* if there is a command line override to deactivate plugins, exit early */
-    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_NO_PLUGINS, &nPlugins);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (nPlugins)
-    {
-        goto cleanup;
-    }
-
-    /* plugins option to enable or deactivate plugins. default 0 */
-    dwError = TDNFReadKeyValueInt(
-                  pSection,
-                  TDNF_CONF_KEY_PLUGINS,
-                  TDNF_DEFAULT_PLUGINS_ENABLED,
-                  &nPlugins);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    /*
-     * config file having a plugins=0 setting is the same as
-     * --noplugins from cmd line
-    */
-    if (nPlugins == 0)
-    {
-        dwError = TDNFSetOpt(
-                      pTdnf->pArgs,
-                      TDNF_CONF_KEY_NO_PLUGINS, "1");
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        /* no further reads required */
-        goto cleanup;
-    }
-
-    /* plugin conf path - default to /etc/tdnf/pluginconf.d */
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_PLUGIN_CONF_PATH,
-                  TDNF_DEFAULT_PLUGIN_CONF_PATH,
-                  &pszValue);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_CONF_PATH, pszValue);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    TDNFFreeMemory(pszValue);
-    pszValue = NULL;
-
-    /* plugin path - default to /usr/lib/tdnf-plugins */
-    dwError = TDNFReadKeyValue(
-                  pSection,
-                  TDNF_CONF_KEY_PLUGIN_PATH,
-                  TDNF_DEFAULT_PLUGIN_PATH,
-                  &pszValue);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_PATH, pszValue);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszValue);
-    return dwError;
-
-error:
     goto cleanup;
 }
 
