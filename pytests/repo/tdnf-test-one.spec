@@ -22,7 +22,7 @@ Part of tdnf test spec. Basic install/remove/upgrade test
 mkdir -p %_topdir/%buildroot/lib/systemd/system/
 cat << EOF >> %_topdir/%buildroot/lib/systemd/system/tdnf-test-one.service
 [Unit]
-Description=tdnf-test-one.service for whatprovides test. 
+Description=tdnf-test-one.service for whatprovides test.
 
 EOF
 

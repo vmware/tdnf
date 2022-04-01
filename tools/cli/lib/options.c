@@ -141,7 +141,7 @@ _TDNFCliGetOptionByName(
         {
             pOption = pKnownOptions;
             break;
-        } 
+        }
         ++pKnownOptions;
     }
     if(!pOption)
