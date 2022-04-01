@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -52,7 +52,7 @@ AddSetOpt(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = AddSetOptWithValues(pCmdArgs, CMDOPT_KEYVALUE, pCmdOpt->pszOptName, pCmdOpt->pszOptValue);
+    dwError = AddSetOptWithValues(pCmdArgs, pCmdOpt->pszOptName, pCmdOpt->pszOptValue);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -70,7 +70,6 @@ error:
 uint32_t
 AddSetOptWithValues(
     PTDNF_CMD_ARGS pCmdArgs,
-    int nType,
     const char *pszOptArg,
     const char *pszOptValue
     )
@@ -80,8 +79,7 @@ AddSetOptWithValues(
     PTDNF_CMD_OPT pSetOptTemp = NULL;
 
     if(!pCmdArgs ||
-       IsNullOrEmptyString(pszOptArg) ||
-       IsNullOrEmptyString(pszOptValue) || nType == CMDOPT_CURL_INIT_CB)
+       IsNullOrEmptyString(pszOptArg))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -90,13 +88,14 @@ AddSetOptWithValues(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void **)&pCmdOpt);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pCmdOpt->nType = nType;
-
     dwError = TDNFAllocateString(pszOptArg, &pCmdOpt->pszOptName);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateString(pszOptValue, &pCmdOpt->pszOptValue);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pszOptValue)
+    {
+        dwError = TDNFAllocateString(pszOptValue, &pCmdOpt->pszOptValue);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pSetOptTemp = pCmdArgs->pSetOpt;
     if (pSetOptTemp)
@@ -151,14 +150,12 @@ GetOptionAndValue(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_CMD_OPT), (void**)&pCmdOpt);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pCmdOpt->nType = CMDOPT_KEYVALUE;
     dwError = TDNFAllocateString(pszOptArg, &pCmdOpt->pszOptName);
     BAIL_ON_TDNF_ERROR(dwError);
 
     nEqualsPos = pszIndex - pszOptArg;
     pCmdOpt->pszOptName[nEqualsPos] = '\0';
 
-    pCmdOpt->nType = CMDOPT_KEYVALUE;
     dwError = TDNFAllocateString(pszOptArg+nEqualsPos+1,
                                  &pCmdOpt->pszOptValue);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -195,8 +192,7 @@ _TDNFGetCmdOpt(
          pOpt;
          pOpt = pOpt->pNext)
     {
-        if (pOpt->nType == CMDOPT_KEYVALUE &&
-            !strcmp(pOpt->pszOptName, pszOptName))
+        if (!strcmp(pOpt->pszOptName, pszOptName))
         {
             nHasOpt = 1;
             break;
@@ -352,7 +348,7 @@ TDNFSetOpt(
     }
     else
     {
-        dwError = AddSetOptWithValues(pArgs, CMDOPT_KEYVALUE, pszOptName, pszOptValue);
+        dwError = AddSetOptWithValues(pArgs, pszOptName, pszOptValue);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

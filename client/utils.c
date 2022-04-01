@@ -727,42 +727,6 @@ error:
 }
 
 uint32_t
-TDNFGetCmdOpt(
-    PTDNF pTdnf,
-    TDNF_CMDOPT_TYPE optType,
-    PTDNF_CMD_OPT *ppOpt
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CMD_OPT pOpt = NULL;
-
-    if (!pTdnf || !pTdnf->pArgs)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    for (pOpt = pTdnf->pArgs->pSetOpt; pOpt; pOpt = pOpt->pNext)
-    {
-        if (pOpt->nType == optType)
-        {
-            break;
-        }
-    }
-
-    if (!pOpt)
-    {
-        dwError = ERROR_TDNF_OPT_NOT_FOUND;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    *ppOpt = pOpt;
-
-error:
-    return dwError;
-}
-
-uint32_t
 TDNFReadAutoInstalled(
     PTDNF pTdnf,
     char ***pppszAutoInstalled

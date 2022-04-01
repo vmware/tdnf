@@ -70,8 +70,7 @@ TDNFRpmExecTransaction(
     ts.nTransFlags = RPMTRANS_FLAG_NONE;
     for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
-        if (pSetOpt->nType != CMDOPT_KEYVALUE  ||
-            strcasecmp(pSetOpt->pszOptName, "tsflags"))
+        if (strcasecmp(pSetOpt->pszOptName, "tsflags"))
         {
             continue;
         }

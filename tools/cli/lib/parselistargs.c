@@ -115,17 +115,14 @@ TDNFCliParseListArgs(
          pSetOpt;
          pSetOpt = pSetOpt->pNext)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE)
+        dwError = TDNFCliParseScope(
+                      pSetOpt->pszOptName,
+                      &pListArgs->nScope);
+        if(dwError == ERROR_TDNF_CLI_NO_MATCH)
         {
-            dwError = TDNFCliParseScope(
-                          pSetOpt->pszOptName,
-                          &pListArgs->nScope);
-            if(dwError == ERROR_TDNF_CLI_NO_MATCH)
-            {
-                dwError = 0;
-            }
-            BAIL_ON_CLI_ERROR(dwError);
+            dwError = 0;
         }
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
     /* scope can also be given as an argument */

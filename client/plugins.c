@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2020-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -429,20 +429,18 @@ _TDNFApplyPluginOverrides(
     }
 
     /* apply command line overrides to enable/deactivate specific plugins */
-    pSetOpt = pConf->pArgs->pSetOpt;
-
-    while(pSetOpt)
+    for (pSetOpt = pConf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
-        if(pSetOpt->nType == CMDOPT_ENABLEPLUGIN ||
-           pSetOpt->nType == CMDOPT_DISABLEPLUGIN)
+        if (strcmp(pSetOpt->pszOptName, "enableplugin") == 0)
         {
-            dwError = _TDNFAlterPluginState(
-                          pPlugins,
-                          pSetOpt->nType == CMDOPT_ENABLEPLUGIN,
-                          pSetOpt->pszOptValue);
+            dwError = _TDNFAlterPluginState(pPlugins, 1, pSetOpt->pszOptValue);
             BAIL_ON_TDNF_ERROR(dwError);
-         }
-         pSetOpt = pSetOpt->pNext;
+        }
+        else if (strcmp(pSetOpt->pszOptName, "disableplugin") == 0)
+        {
+            dwError = _TDNFAlterPluginState(pPlugins, 0, pSetOpt->pszOptValue);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 error:
     return dwError;

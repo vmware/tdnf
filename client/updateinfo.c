@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -436,14 +436,12 @@ TDNFGetSecuritySeverityOption(
 
     while(pSetOpt)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-           !strcasecmp(pSetOpt->pszOptName, "sec-severity"))
+        if(!strcasecmp(pSetOpt->pszOptName, "sec-severity"))
         {
             dwError = TDNFAllocateString(pSetOpt->pszOptValue, &pszSeverity);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-           !strcasecmp(pSetOpt->pszOptName, "security"))
+        if(!strcasecmp(pSetOpt->pszOptName, "security"))
         {
             dwSecurity = 1;
         }
@@ -600,8 +598,7 @@ TDNFGetRebootRequiredOption(
 
     while(pSetOpt)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-          !strcasecmp(pSetOpt->pszOptName, "reboot-required"))
+        if(!strcasecmp(pSetOpt->pszOptName, "reboot-required"))
         {
             dwRebootRequired = 1;
             break;

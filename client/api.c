@@ -241,11 +241,6 @@ TDNFGetSkipProblemOption(
 
     for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
-        if (pSetOpt->nType != CMDOPT_KEYVALUE)
-        {
-            continue;
-        }
-
         if (!strcasecmp(pSetOpt->pszOptName, "skipconflicts"))
         {
             *pdwSkipProblem |= SKIPPROBLEM_CONFLICTS;

@@ -93,8 +93,7 @@ TDNFPkgsToExclude(
     pSetOpt = pTdnf->pArgs->pSetOpt;
     while(pSetOpt)
     {
-        if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-           !strcasecmp(pSetOpt->pszOptName, "exclude"))
+        if(!strcasecmp(pSetOpt->pszOptName, "exclude"))
         {
             dwCount++;
         }
@@ -125,8 +124,7 @@ TDNFPkgsToExclude(
         pSetOpt = pTdnf->pArgs->pSetOpt;
         while(pSetOpt)
         {
-            if(pSetOpt->nType == CMDOPT_KEYVALUE &&
-               !strcasecmp(pSetOpt->pszOptName, "exclude"))
+            if(!strcasecmp(pSetOpt->pszOptName, "exclude"))
             {
                 dwError = TDNFAllocateString(
                       pSetOpt->pszOptValue,

@@ -129,18 +129,6 @@ typedef enum
     REPOLISTFILTER_DISABLED
 }TDNF_REPOLISTFILTER;
 
-//CmdOpt Types
-typedef enum
-{
-    CMDOPT_NONE = -1,
-    CMDOPT_KEYVALUE,
-    CMDOPT_ENABLEREPO,
-    CMDOPT_DISABLEREPO,
-    CMDOPT_CURL_INIT_CB,
-    CMDOPT_ENABLEPLUGIN,
-    CMDOPT_DISABLEPLUGIN,
-}TDNF_CMDOPT_TYPE;
-
 // skip problem type mask
 typedef enum
 {
@@ -202,27 +190,10 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     char** ppszPkgsUserInstall;
 }TDNF_SOLVED_PKG_INFO, *PTDNF_SOLVED_PKG_INFO;
 
-/*
- * api clients can set this callback via setopts
- * once set, tdnf curl calls will call this function
- * before any curl options are set. this can be used
- * to modify curl opts outside the ones tdnf uses.
-*/
-typedef uint32_t
-(*PFN_CURL_CONFIG_CB)(
-    CURL *pCurl,
-    const char *pszUrl
-    );
-
 typedef struct _TDNF_CMD_OPT
 {
-    int nType;
     char* pszOptName;
-    union
-    {
-        char* pszOptValue;
-        PFN_CURL_CONFIG_CB pfnCurlConfigCB;
-    };
+    char* pszOptValue;
     struct _TDNF_CMD_OPT* pNext;
 }TDNF_CMD_OPT, *PTDNF_CMD_OPT;
 

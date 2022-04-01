@@ -141,7 +141,6 @@ TDNFCloneCmdArgs(
     {
         dwError = AddSetOptWithValues(
                       pCmdArgs,
-                      CMDOPT_KEYVALUE,
                       TDNF_SETOPT_NAME_DUMMY,
                       TDNF_SETOPT_VALUE_DUMMY);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -179,8 +178,7 @@ TDNFCloneSetOpts(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ppCmdOptCurrent = &pCmdOpt;
-    while(pCmdOptIn)
+    for (ppCmdOptCurrent = &pCmdOpt; pCmdOptIn; pCmdOptIn = pCmdOptIn->pNext)
     {
         dwError = TDNFAllocateMemory(1,
                                      sizeof(TDNF_CMD_OPT),
@@ -189,25 +187,15 @@ TDNFCloneSetOpts(
 
         pCmdOptCurrent = *ppCmdOptCurrent;
 
-        pCmdOptCurrent->nType = pCmdOptIn->nType;
-
         dwError = TDNFAllocateString(pCmdOptIn->pszOptName,
                                      &pCmdOptCurrent->pszOptName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if (pCmdOptCurrent->nType != CMDOPT_CURL_INIT_CB)
-        {
-           dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
-                                        &pCmdOptCurrent->pszOptValue);
-           BAIL_ON_TDNF_ERROR(dwError);
-        }
-        else
-        {
-           pCmdOptCurrent->pfnCurlConfigCB = pCmdOptIn->pfnCurlConfigCB;
-        }
+        dwError = TDNFAllocateString(pCmdOptIn->pszOptValue,
+                                    &pCmdOptCurrent->pszOptValue);
+        BAIL_ON_TDNF_ERROR(dwError);
 
         ppCmdOptCurrent = &(pCmdOptCurrent->pNext);
-        pCmdOptIn = pCmdOptIn->pNext;
     }
 
     *ppCmdOpt = pCmdOpt;

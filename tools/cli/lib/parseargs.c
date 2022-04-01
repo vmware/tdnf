@@ -21,62 +21,8 @@
 
 #include "includes.h"
 
-typedef struct _SetOptArgs
-{
-    TDNF_CMDOPT_TYPE Type;
-    const char *OptName;
-    const char *OptVal;
-} SetOptArgs;
-
-static SetOptArgs OptValTable[] = {
-    {CMDOPT_KEYVALUE, "sec-severity", NULL},
-    {CMDOPT_ENABLEREPO, "enablerepo", NULL},
-    {CMDOPT_DISABLEREPO, "disablerepo", NULL},
-    {CMDOPT_ENABLEPLUGIN, "enableplugin", NULL},
-    {CMDOPT_DISABLEPLUGIN, "disableplugin", NULL},
-    {CMDOPT_KEYVALUE, "skipconflicts;skipobsoletes;skipsignature;skipdigest;"
-                      "noplugins;reboot-required;security;"
-                      "delete;download-metadata;gpgcheck;newest-only;norepopath;source;urls",
-                      "1"},
-    {CMDOPT_KEYVALUE, "available", "1"},
-    {CMDOPT_KEYVALUE, "installed", "1"},
-    {CMDOPT_KEYVALUE, "extras", "1"},
-    {CMDOPT_KEYVALUE, "changelogs", "1"},
-    {CMDOPT_KEYVALUE, "duplicates", "1"},
-    /* "depends" must be before "whatdepends",
-       same for the others with partial string matches */
-    {CMDOPT_KEYVALUE, "depends", "1"},
-    {CMDOPT_KEYVALUE, "provides", "1"},
-    {CMDOPT_KEYVALUE, "obsoletes", "1"},
-    {CMDOPT_KEYVALUE, "conflicts", "1"},
-    {CMDOPT_KEYVALUE, "requires", "1"},
-    {CMDOPT_KEYVALUE, "recommends", "1"},
-    {CMDOPT_KEYVALUE, "suggests", "1"},
-    {CMDOPT_KEYVALUE, "supplements", "1"},
-    {CMDOPT_KEYVALUE, "enhances", "1"},
-    {CMDOPT_KEYVALUE, "requires-pre", "1"},
-    {CMDOPT_KEYVALUE, "list", "1"},
-    {CMDOPT_KEYVALUE, "upgrades", "1"},
-    {CMDOPT_KEYVALUE, "file", NULL},
-    {CMDOPT_KEYVALUE, "whatdepends", NULL},
-    {CMDOPT_KEYVALUE, "whatprovides", NULL},
-    {CMDOPT_KEYVALUE, "whatobsoletes", NULL},
-    {CMDOPT_KEYVALUE, "whatconflicts", NULL},
-    {CMDOPT_KEYVALUE, "whatrequires", NULL},
-    {CMDOPT_KEYVALUE, "whatrecommends", NULL},
-    {CMDOPT_KEYVALUE, "whatsuggests", NULL},
-    {CMDOPT_KEYVALUE, "whatsupplements", NULL},
-    {CMDOPT_KEYVALUE, "whatenhances", NULL},
-    {CMDOPT_KEYVALUE, "info", "1"},
-    {CMDOPT_KEYVALUE, "summary", "1"},
-    {CMDOPT_KEYVALUE, "recent", "1"},
-    {CMDOPT_KEYVALUE, "updates", "1"},
-    {CMDOPT_KEYVALUE, "downgrades", "1"},
-};
-
 static TDNF_CMD_ARGS _opt = {0};
 
-//options - incomplete
 static struct option pstOptions[] =
 {
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
@@ -85,7 +31,7 @@ static struct option pstOptions[] =
     {"assumeno",      no_argument, &_opt.nAssumeNo, 1},    //--assumeno
     {"assumeyes",     no_argument, 0, 'y'},                //--assumeyes
     {"best",          no_argument, &_opt.nBest, 1},        //--best
-    {"cacheonly",     no_argument, &_opt.nCacheOnly, 'C'}, //-C, --cacheonly
+    {"cacheonly",     no_argument, &_opt.nCacheOnly, 1}, //-C, --cacheonly
     {"config",        required_argument, 0, 'c'},          //-c, --config
     {"debuglevel",    required_argument, 0, 'd'},          //-d, --debuglevel
     {"debugsolver",   no_argument, &_opt.nDebugSolver, 1}, //--debugsolver
@@ -117,7 +63,7 @@ static struct option pstOptions[] =
     {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
-    {"verbose",       no_argument, 0, 'v'},                //-v --verbose
+    {"verbose",       no_argument, &_opt.nVerbose, 1},                //-v --verbose
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
     // reposync options
     {"arch",          required_argument, 0, 0},
@@ -403,26 +349,6 @@ ParseOption(
     {
         dwError = TDNFAllocateString(optarg, &pCmdArgs->pszReleaseVer);
     }
-    else if ((!strcasecmp(pszName, "metadata-path")) ||
-             (!strcasecmp(pszName, "download-path")) ||
-             (!strcasecmp(pszName, "arch")) ||
-             (!strcasecmp(pszName, "repofrompath")))
-    {
-        dwError = AddSetOptWithValues(pCmdArgs,
-                            CMDOPT_KEYVALUE,
-                            pszName,
-                            optarg);
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-    else if ((!strcasecmp(pszName, "repoid")) ||
-             (!strcasecmp(pszName, "repo")))
-    {
-        dwError = AddSetOptWithValues(pCmdArgs,
-                            CMDOPT_KEYVALUE,
-                            "repoid",
-                            optarg);
-        BAIL_ON_CLI_ERROR(dwError);
-    }
     else if (!strcasecmp(pszName, "setopt"))
     {
         if (!optarg)
@@ -450,7 +376,6 @@ ParseOption(
         while ((pszToken = strsep(&pszCopyArgs, ",:")))
         {
             dwError = AddSetOptWithValues(pCmdArgs,
-                                CMDOPT_KEYVALUE,
                                 pszName,
                                 pszToken);
             BAIL_ON_CLI_ERROR((dwError && (pszCopyArgs = ToFree)));
@@ -460,27 +385,17 @@ ParseOption(
     }
     else
     {
-        uint32_t i = 0;
-
-        for (i = 0; i < ARRAY_SIZE(OptValTable); i++)
+        for (int i = 0; i < (int)ARRAY_SIZE(pstOptions); i++)
         {
-            const char *OptVal = NULL;
-
-            if (!strstr(OptValTable[i].OptName, pszName))
+            if (strcasecmp(pstOptions[i].name, pszName) == 0)
             {
-                continue;
+                dwError = AddSetOptWithValues(pCmdArgs,
+                                    pszName,
+                                    optarg ? optarg : "1");
+                break;
             }
-
-            OptVal = !OptValTable[i].OptVal ? optarg : OptValTable[i].OptVal;
-
-            dwError = AddSetOptWithValues(pCmdArgs,
-                                OptValTable[i].Type,
-                                pszName,
-                                OptVal);
-            break;
         }
     }
-
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:
