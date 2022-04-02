@@ -36,7 +36,7 @@ TDNFValidateCmdArgs(
     pCmdArgs = pTdnf->pArgs;
 
     //TODO: make a better mechanism to handle requirements per cmd
-    //For now, check if at least one argument exists for install 
+    //For now, check if at least one argument exists for install
     if(!strcmp(pCmdArgs->ppszCmds[0], CMD_INSTALL))
     {
         if(pCmdArgs->nCmdCount <= 1)

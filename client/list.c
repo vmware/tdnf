@@ -20,7 +20,7 @@
 
 #include "includes.h"
 
-TDNF_ML_LIST* 
+TDNF_ML_LIST*
 TDNFMergeList(
     TDNF_ML_LIST* listA,
     TDNF_ML_LIST* listB
@@ -41,13 +41,13 @@ TDNFMergeList(
     {
         return (listB);
     }
-    
+
     if (listB == NULL)
     {
         return (listA);
     }
 
-    //Compare the URL Preference to sort the URL List in descending order. 
+    //Compare the URL Preference to sort the URL List in descending order.
     urlA = listA->data;
     urlB = listB->data;
 
@@ -57,12 +57,12 @@ TDNFMergeList(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (urlA->preference >= urlB->preference) 
+    if (urlA->preference >= urlB->preference)
     {
         mergedList = listA;
         mergedList->next = TDNFMergeList(listA->next, listB);
     }
-    else 
+    else
     {
         mergedList = listB;
         mergedList->next = TDNFMergeList(listA, listB->next);
@@ -79,7 +79,7 @@ error:
  * and backRef. If the length is odd, the extra node should
  * go in the front list.
  */
-void 
+void
 TDNFFrontBackSplit(
     TDNF_ML_LIST* currHead,
     TDNF_ML_LIST** frontRef,
@@ -88,20 +88,20 @@ TDNFFrontBackSplit(
 {
     TDNF_ML_LIST* slowPtr = NULL;
     TDNF_ML_LIST* fastPtr = NULL;
-    
+
     if (!currHead || !currHead->next ||
         !frontRef || !backRef)
     {
         return;
     }
 
-    slowPtr = currHead; 
+    slowPtr = currHead;
     fastPtr = currHead->next;
 
-    while (fastPtr != NULL) 
+    while (fastPtr != NULL)
     {
         fastPtr = fastPtr->next;
-        if (fastPtr != NULL) 
+        if (fastPtr != NULL)
         {
             slowPtr = slowPtr->next;
             fastPtr = fastPtr->next;
@@ -113,14 +113,14 @@ TDNFFrontBackSplit(
     slowPtr->next = NULL;
 }
 
-void 
+void
 TDNFSortListOnPreference(
     TDNF_ML_LIST** headUrl
     )
 {
     TDNF_ML_LIST* head = NULL;
-    TDNF_ML_LIST* listA = NULL; 
-    TDNF_ML_LIST* listB = NULL; 
+    TDNF_ML_LIST* listA = NULL;
+    TDNF_ML_LIST* listB = NULL;
 
     if (!headUrl)
     {
@@ -133,16 +133,16 @@ TDNFSortListOnPreference(
         return;
     }
 
-    TDNFFrontBackSplit(head, &listA, &listB); 
+    TDNFFrontBackSplit(head, &listA, &listB);
 
     TDNFSortListOnPreference(&listA);
     TDNFSortListOnPreference(&listB);
 
-    *headUrl = TDNFMergeList(listA, listB); 
+    *headUrl = TDNFMergeList(listA, listB);
 
 }
-  
-/* This function is used to append the list with 
+
+/* This function is used to append the list with
  * new node at last.
  */
 uint32_t TDNFAppendList(
@@ -161,9 +161,9 @@ uint32_t TDNFAppendList(
 
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_ML_LIST), (void**)&new_node);
     BAIL_ON_TDNF_ERROR(dwError);
-  
+
     new_node->data  = new_data;
- 
+
     if (*head_ref == NULL)
     {
         *head_ref = new_node;
@@ -176,7 +176,7 @@ uint32_t TDNFAppendList(
             last_node = last_node->next;
         }
         last_node->next = new_node;
-    } 
+    }
 
 cleanup:
     return dwError;
@@ -190,7 +190,7 @@ error:
  * Also call the respective free function to free the
  * data ptr.
  */
-void 
+void
 TDNFDeleteList(
     TDNF_ML_LIST** head_ref,
     TDNF_ML_FREE_FUNC free_func

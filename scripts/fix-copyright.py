@@ -24,7 +24,7 @@ from datetime import datetime
 class Commit:
     def __init__(self, id):
         self.id = id
-        
+
 
 def get_files():
     files = []

@@ -1209,7 +1209,7 @@ TDNFParseUrlTag(
     );
 
 // list.c
-void 
+void
 TDNFSortListOnPreference(
     TDNF_ML_LIST** headUrl
 );
@@ -1220,7 +1220,7 @@ TDNFAppendList(
     void *new_data
 );
 
-void 
+void
 TDNFDeleteList(
     TDNF_ML_LIST** head_ref,
     TDNF_ML_FREE_FUNC free_func
