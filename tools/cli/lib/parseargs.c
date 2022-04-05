@@ -143,6 +143,20 @@ TDNFCliParseArgs(
                   (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
+    /*
+     * when invoked as 'tdnfj', act as if invoked with with '-j' and '-y'
+    * for json output and non-interactive
+    */
+    if (strlen(argv[0]) >= 5)
+    {
+        const char *arg0 = argv[0];
+        if (strcmp(&arg0[strlen(arg0) - 5], "tdnfj") == 0)
+        {
+            _opt.nJsonOutput = 1;
+            _opt.nAssumeYes = 1;
+        }
+    }
+
     opterr = 0;//tell getopt to not print errors
     while (1)
     {

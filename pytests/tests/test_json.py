@@ -13,6 +13,9 @@ import os
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
+    tdnfj = os.path.join(utils.config['build_dir'], 'bin/tdnfj')
+    if not os.path.lexists(tdnfj):
+        os.symlink('tdnf', tdnfj)
     yield
     teardown_test(utils)
 
@@ -24,6 +27,19 @@ def teardown_test(utils):
 
 def test_list(utils):
     ret = utils.run(['tdnf', '-j', 'list'])
+    infolist = json.loads("\n".join(ret['stdout']))
+
+    glibc_found = False
+    for info in infolist:
+        if info['Name'] == "glibc":
+            glibc_found = True
+            break
+    assert(glibc_found)
+
+
+def test_list_tdnfj(utils):
+    tdnfj = os.path.join(utils.config['build_dir'], 'bin/tdnfj')
+    ret = utils.run([tdnfj, 'list'])
     infolist = json.loads("\n".join(ret['stdout']))
 
     glibc_found = False
