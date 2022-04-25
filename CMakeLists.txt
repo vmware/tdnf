@@ -57,6 +57,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 ### External dependency: rpm-devel
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(RPM REQUIRED rpm)
+find_package(OpenSSL REQUIRED)
 pkg_check_modules(LIBXML2 REQUIRED libxml-2.0)
 include_directories(${RPM_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIRS})
