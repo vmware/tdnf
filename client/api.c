@@ -847,7 +847,7 @@ TDNFAddCmdLinePackages(
                 BAIL_ON_TDNF_ERROR(dwError);
 
                 TDNF_SAFE_FREE_MEMORY(pszCopyOfPkgName);
-	    }
+           }
         }
         id = repo_add_rpm(pTdnf->pSolvCmdLineRepo, pszRPMPath,
             REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE|RPM_ADD_WITH_HDRID|RPM_ADD_WITH_SHA256SUM);
@@ -1603,18 +1603,6 @@ TDNFResolve(
                   &pSolvedPkgInfo,
                   nAlterType);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    pPkgInfo = pSolvedPkgInfo->pPkgsToRemove;
-    while(pPkgInfo != NULL)
-    {
-        if(pPkgInfo->pszName != NULL &&
-           strcmp(pPkgInfo->pszName, TDNF_NAME) == 0)
-        {
-            dwError = ERROR_TDNF_SELF_ERASE;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        pPkgInfo = pPkgInfo->pNext;
-    }
 
     dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
