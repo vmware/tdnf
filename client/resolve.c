@@ -115,7 +115,7 @@ TDNFPrepareAllPackages(
         BAIL_ON_TDNF_ERROR(dwError);
         for(nPkgIndex = 0; (uint32_t)nPkgIndex < dwCount; ++nPkgIndex)
         {
-            dwError = TDNFPrepareAndAddPkg(
+            dwError = TDNFPrepareSinglePkg(
                           pTdnf,
                           ppszPkgArray[nPkgIndex],
                           *pAlterType,
@@ -154,7 +154,7 @@ TDNFPrepareAllPackages(
                                      &pszName);
                        BAIL_ON_TDNF_ERROR(dwError);
 
-                       dwError = TDNFPrepareAndAddPkg(
+                       dwError = TDNFPrepareSinglePkg(
                                      pTdnf,
                                      pszName,
                                      nAlterType,
@@ -189,7 +189,7 @@ TDNFPrepareAllPackages(
                }
                BAIL_ON_TDNF_ERROR(dwError);
 
-               dwError = TDNFPrepareAndAddPkg(
+               dwError = TDNFPrepareSinglePkg(
                              pTdnf,
                              pszPkgName,
                              nAlterType,
@@ -252,7 +252,7 @@ TDNFFilterPackages(
                       &pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFPrepareAndAddPkg(
+        dwError = TDNFPrepareSinglePkg(
                       pTdnf,
                       pszName,
                       nAlterType,
@@ -271,39 +271,6 @@ cleanup:
     }
     return dwError;
 
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFPrepareAndAddPkg(
-    PTDNF pTdnf,
-    const char* pszPkgName,
-    TDNF_ALTERTYPE nAlterType,
-    char** ppszPkgsNotResolved,
-    Queue* queueGoal
-    )
-{
-    uint32_t dwError = 0;
-    if( !pTdnf ||
-        IsNullOrEmptyString(pszPkgName) ||
-        !ppszPkgsNotResolved ||
-        !queueGoal)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFPrepareSinglePkg(
-                  pTdnf,
-                  pszPkgName,
-                  nAlterType,
-                  ppszPkgsNotResolved,
-                  queueGoal);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-cleanup:
-    return dwError;
 error:
     goto cleanup;
 }
