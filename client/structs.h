@@ -26,7 +26,6 @@ typedef struct _TDNF_
     PTDNF_CONF pConf;
     PTDNF_REPO_DATA pRepos;
     Repo *pSolvCmdLineRepo;
-    Queue queueCmdLinePkgs;
     PTDNF_PLUGIN pPlugins;
 } TDNF;
 
