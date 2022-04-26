@@ -21,7 +21,7 @@ def teardown_test(utils):
 
 def test_erase_no_arg(utils):
     ret = utils.run(['tdnf', 'erase'])
-    assert(ret['stderr'][0] == 'Nothing to do.')
+    assert(ret['retval'] == 1001)
 
 
 def test_erase_invalid_package(utils):

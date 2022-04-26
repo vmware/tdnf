@@ -1563,6 +1563,17 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (nAlterType == ALTER_INSTALL ||
+        nAlterType == ALTER_REINSTALL ||
+        nAlterType == ALTER_ERASE)
+    {
+        if(pTdnf->pArgs->nCmdCount <= 1)
+        {
+            dwError = ERROR_TDNF_PACKAGE_REQUIRED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
     queue_init(&queueGoal);
 
     if(nAlterType == ALTER_INSTALL || nAlterType == ALTER_REINSTALL)
@@ -1572,9 +1583,6 @@ TDNFResolve(
     }
 
     dwError = TDNFRefresh(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFValidateCmdArgs(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
