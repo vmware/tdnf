@@ -8,10 +8,6 @@
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-find_package(OpenSSL REQUIRED)
-
-find_package(LIBXML2 REQUIRED)
-
 #make config.h with
 #PACKAGE_NAME and PACKAGE_VERSION defined
 configure_file(
