@@ -8,6 +8,7 @@
 
 import pytest
 import json
+import os
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -116,3 +117,15 @@ def test_updateinfo_info(utils):
     ret = utils.run(['tdnf', '-j', 'updateinfo', '--info'])
     d = json.loads("\n".join(ret['stdout']))
     assert(type(d) == list)
+
+
+def test_jsondump(utils):
+    cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
+    ret = utils.run([cmd])
+    assert("FAIL" not in "\n".join(ret['stdout']))
+
+
+def test_jsondump_memcheck(utils):
+    cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
+    ret = utils.run_memcheck([cmd])
+    assert(ret['retval'] == 0)
