@@ -769,7 +769,8 @@ error:
 
 uint32_t
 TDNFAddCmdLinePackages(
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    Queue *pQueueGoal
 )
 {
     uint32_t dwError = 0;
@@ -788,8 +789,6 @@ TDNFAddCmdLinePackages(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    queue_init(&pTdnf->queueCmdLinePkgs);
 
     pCmdArgs = pTdnf->pArgs;
     pSack = pTdnf->pSack;
@@ -847,7 +846,7 @@ TDNFAddCmdLinePackages(
                 BAIL_ON_TDNF_ERROR(dwError);
 
                 TDNF_SAFE_FREE_MEMORY(pszCopyOfPkgName);
-	    }
+           }
         }
         id = repo_add_rpm(pTdnf->pSolvCmdLineRepo, pszRPMPath,
             REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE|RPM_ADD_WITH_HDRID|RPM_ADD_WITH_SHA256SUM);
@@ -857,7 +856,7 @@ TDNFAddCmdLinePackages(
             dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        queue_push(&pTdnf->queueCmdLinePkgs, id);
+        queue_push(pQueueGoal, id);
     }
     pool_createwhatprovides(pSack->pPool);
     repo_internalize(pTdnf->pSolvCmdLineRepo);
@@ -1556,9 +1555,7 @@ TDNFResolve(
     uint32_t dwError = 0;
     Queue queueGoal = {0};
     char** ppszPkgsNotResolved = NULL;
-
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
 
     if(!pTdnf || !ppSolvedPkgInfo)
     {
@@ -1566,22 +1563,26 @@ TDNFResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAddCmdLinePackages(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (nAlterType == ALTER_INSTALL ||
+        nAlterType == ALTER_REINSTALL ||
+        nAlterType == ALTER_ERASE)
+    {
+        if(pTdnf->pArgs->nCmdCount <= 1)
+        {
+            dwError = ERROR_TDNF_PACKAGE_REQUIRED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
-    dwError = TDNFRefresh(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
+    queue_init(&queueGoal);
 
     if(nAlterType == ALTER_INSTALL || nAlterType == ALTER_REINSTALL)
     {
-        queue_init_clone(&queueGoal, &pTdnf->queueCmdLinePkgs);
-    }
-    else
-    {
-        queue_init(&queueGoal);
+        dwError = TDNFAddCmdLinePackages(pTdnf, &queueGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFValidateCmdArgs(pTdnf);
+    dwError = TDNFRefresh(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateMemory(
@@ -1603,18 +1604,6 @@ TDNFResolve(
                   &pSolvedPkgInfo,
                   nAlterType);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    pPkgInfo = pSolvedPkgInfo->pPkgsToRemove;
-    while(pPkgInfo != NULL)
-    {
-        if(pPkgInfo->pszName != NULL &&
-           strcmp(pPkgInfo->pszName, TDNF_NAME) == 0)
-        {
-            dwError = ERROR_TDNF_SELF_ERASE;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        pPkgInfo = pPkgInfo->pNext;
-    }
 
     dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);

@@ -37,11 +37,6 @@ TDNFRefresh(
     PTDNF pTdnf
     );
 
-uint32_t
-TDNFAddCmdLinePackages(
-    PTDNF pTdnf
-);
-
 //check for updates
 uint32_t
 TDNFCheckUpdates(
