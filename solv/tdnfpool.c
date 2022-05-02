@@ -48,6 +48,12 @@ SolvFreeSack(
         Pool* pPool = pSack->pPool;
         if(pPool)
         {
+            if (pPool->considered)
+            {
+                /* shouldn't this be owned by pPool? */
+                map_free(pPool->considered);
+                TDNF_SAFE_FREE_MEMORY(pPool->considered);
+            }
             pool_free(pPool);
         }
         TDNF_SAFE_FREE_MEMORY(pSack->pszCacheDir);

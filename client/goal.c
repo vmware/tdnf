@@ -959,7 +959,11 @@ TDNFSolvAddMinVersions(
     map_setall(pPool->considered);
     map_subtract(pPool->considered, pMapMinVersions);
 cleanup:
-    TDNFFreeMemory(pMapMinVersions);
+    if(pMapMinVersions)
+    {
+        map_free(pMapMinVersions);
+        TDNFFreeMemory(pMapMinVersions);
+    }
     TDNF_SAFE_FREE_MEMORY(pszTmp);
     TDNF_SAFE_FREE_STRINGARRAY(ppszTokens);
     return dwError;
