@@ -675,6 +675,7 @@ cleanup:
     {
         fclose(fp);
     }
+    TDNF_SAFE_FREE_MEMORY(pszDataDir);
     TDNF_SAFE_FREE_MEMORY(pszAutoFile);
     TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     return dwError;
