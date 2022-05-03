@@ -44,3 +44,11 @@ def test_erase_package_without_version_suffix(utils):
 
     utils.run(['tdnf', 'erase', '-y', pkgname])
     assert(not utils.check_package(pkgname))
+
+
+def test_erase_memcheck(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.install_package(pkgname)
+
+    utils.run_memcheck(['tdnf', 'erase', '-y', pkgname])
+    assert(not utils.check_package(pkgname))

@@ -675,6 +675,7 @@ cleanup:
     {
         fclose(fp);
     }
+    TDNF_SAFE_FREE_MEMORY(pszDataDir);
     TDNF_SAFE_FREE_MEMORY(pszAutoFile);
     TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     return dwError;
@@ -958,7 +959,11 @@ TDNFSolvAddMinVersions(
     map_setall(pPool->considered);
     map_subtract(pPool->considered, pMapMinVersions);
 cleanup:
-    TDNFFreeMemory(pMapMinVersions);
+    if(pMapMinVersions)
+    {
+        map_free(pMapMinVersions);
+        TDNFFreeMemory(pMapMinVersions);
+    }
     TDNF_SAFE_FREE_MEMORY(pszTmp);
     TDNF_SAFE_FREE_STRINGARRAY(ppszTokens);
     return dwError;
