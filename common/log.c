@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2020 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2019-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -9,12 +9,21 @@
 #include "includes.h"
 
 static bool isQuiet = false;
+static bool isJson = false;
 
 void GlobalSetQuiet(int32_t val)
 {
     if (val > 0)
     {
         isQuiet = true;
+    }
+}
+
+void GlobalSetJson(int32_t val)
+{
+    if (val > 0)
+    {
+        isJson = true;
     }
 }
 
@@ -34,6 +43,10 @@ void log_console(int32_t loglevel, const char *format, ...)
     {
     case LOG_INFO:
     case LOG_CRIT:
+        if (isJson)
+        {
+            goto end;
+        }
         if (loglevel == LOG_INFO && isQuiet)
         {
             goto end;

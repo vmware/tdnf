@@ -45,6 +45,7 @@ static struct option pstOptions[] =
     {"exclude",       required_argument, 0, 0},            //--exclude
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
+    {"json",          no_argument, &_opt.nJsonOutput, 1},
     {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"noplugins",     no_argument, 0, 0},                  //--noplugins
@@ -141,6 +142,20 @@ TDNFCliParseArgs(
                   sizeof(TDNF_CMD_ARGS),
                   (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
+
+    /*
+     * when invoked as 'tdnfj', act as if invoked with with '-j' and '-y'
+    * for json output and non-interactive
+    */
+    if (strlen(argv[0]) >= 5)
+    {
+        const char *arg0 = argv[0];
+        if (strcmp(&arg0[strlen(arg0) - 5], "tdnfj") == 0)
+        {
+            _opt.nJsonOutput = 1;
+            _opt.nAssumeYes = 1;
+        }
+    }
 
     opterr = 0;//tell getopt to not print errors
     while (1)
@@ -302,6 +317,7 @@ TDNFCopyOptions(
     pArgs->nDisableExcludes = pOptionArgs->nDisableExcludes;
     pArgs->nDownloadOnly  = pOptionArgs->nDownloadOnly;
     pArgs->nNoAutoRemove  = pOptionArgs->nNoAutoRemove;
+    pArgs->nJsonOutput    = pOptionArgs->nJsonOutput;
 
 cleanup:
     return dwError;

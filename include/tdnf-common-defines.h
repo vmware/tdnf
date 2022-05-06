@@ -33,11 +33,35 @@
         }                                                   \
     } while(0)
 
-#define BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError)                  \
-    do {                                                    \
-        dwError = ERROR_TDNF_SYSTEM_BASE + dwError;     \
-        goto error;                                     \
+#define BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError)   \
+    do {                                            \
+        dwError = ERROR_TDNF_SYSTEM_BASE + dwError; \
+        goto error;                                 \
     } while(0)
+
+#define CHECK_JD_RC(rc)                \
+{                                      \
+    if ((rc) != 0) {                   \
+        dwError = ERROR_TDNF_JSONDUMP; \
+        BAIL_ON_CLI_ERROR(dwError);    \
+    }                                  \
+}
+
+#define CHECK_JD_NULL(jd)              \
+{                                      \
+    if ((jd) == NULL) {                \
+        dwError = ERROR_TDNF_JSONDUMP; \
+        BAIL_ON_CLI_ERROR(dwError);    \
+    }                                  \
+}
+
+#define JD_SAFE_DESTROY(jd) \
+{                           \
+    if (jd) {               \
+        jd_destroy(jd);     \
+        jd = NULL;          \
+    }                       \
+}
 
 #define TDNF_SAFE_FREE_MEMORY(pMemory)          \
     do {                                        \
@@ -65,6 +89,12 @@
 
 #define pr_err(fmt, ...) \
     log_console(LOG_ERR, fmt, ##__VA_ARGS__)
+
+#define pr_json(str) \
+    fputs(str, stdout)
+
+#define pr_jsonf(fmt, ...) \
+    fprintf(stdout, fmt, ##__VA_ARGS__)
 
 /*
  * If something needs to be printed (a prompt for example)

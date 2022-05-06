@@ -327,6 +327,11 @@ GlobalSetQuiet(
     );
 
 void
+GlobalSetJson(
+    int32_t val
+    );
+
+void
 log_console(
     int32_t loglevel,
     const char *format,

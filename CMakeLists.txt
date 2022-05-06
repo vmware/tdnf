@@ -73,10 +73,12 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_IN
 set(LIB_TDNF "tdnf")
 set(LIB_TDNF_SOLV "tdnfsolv")
 set(LIB_TDNF_COMMON "common")
+set(LIB_TDNF_JSONDUMP "jsondump")
 set(LIB_TDNF_CLI tdnfcli)
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/common")
 add_subdirectory("${PROJECT_SOURCE_DIR}/client")
+add_subdirectory("${PROJECT_SOURCE_DIR}/jsondump")
 add_subdirectory("${PROJECT_SOURCE_DIR}/plugins")
 add_subdirectory("${PROJECT_SOURCE_DIR}/python")
 add_subdirectory("${PROJECT_SOURCE_DIR}/etc")

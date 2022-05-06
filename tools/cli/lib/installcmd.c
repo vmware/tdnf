@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU General Public License v2 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -212,7 +212,12 @@ TDNFCliAlterCommand(
 
     if(!nSilent)
     {
-        dwError = PrintSolvedInfo(pSolvedPkgInfo);
+        if (pCmdArgs->nJsonOutput)
+        {
+            dwError = PrintSolvedInfoJson(pSolvedPkgInfo);
+        } else {
+            dwError = PrintSolvedInfo(pSolvedPkgInfo);
+        }
         if (pCmdArgs->nDownloadOnly)
         {
             pr_info("tdnf will only download packages needed for the transaction\n");
@@ -256,8 +261,11 @@ TDNFCliAlterCommand(
         }
         else
         {
-            dwError = ERROR_TDNF_OPERATION_ABORTED;
-            BAIL_ON_CLI_ERROR(dwError);
+            if (!pCmdArgs->nJsonOutput)
+            {
+                dwError = ERROR_TDNF_OPERATION_ABORTED;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
         }
     }
 
@@ -272,6 +280,126 @@ error:
         dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
     }
 
+    goto cleanup;
+}
+
+uint32_t
+JDPkgList(
+    PTDNF_PKG_INFO pPkgInfos,
+    struct json_dump **ppJDList
+)
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfo;
+    struct json_dump *jd_list = jd_create(0);
+    CHECK_JD_NULL(jd_list);
+
+    jd_list_start(jd_list);
+    for(pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        struct json_dump *jd_pkg = jd_create(0);
+        CHECK_JD_NULL(jd_pkg);
+
+        CHECK_JD_RC(jd_map_start(jd_pkg));
+
+        CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkgInfo->pszName));
+        CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkgInfo->pszArch));
+        CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkgInfo->pszVersion, pPkgInfo->pszRelease));
+        CHECK_JD_RC(jd_map_add_int(jd_pkg, "InstallSize", pPkgInfo->dwInstallSizeBytes));
+
+        CHECK_JD_RC(jd_list_add_child(jd_list, jd_pkg));
+        JD_SAFE_DESTROY(jd_pkg);
+    }
+    *ppJDList = jd_list;
+cleanup:
+    return dwError;
+error:
+    JD_SAFE_DESTROY(jd_list);
+    goto cleanup;
+}
+
+uint32_t
+PrintSolvedInfoJson(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    )
+{
+    uint32_t dwError = 0;
+    struct json_dump *jd = jd_create(1024);
+    struct json_dump *jd_list = NULL;
+
+    CHECK_JD_NULL(jd);
+
+    if(!pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    CHECK_JD_RC(jd_map_start(jd));
+
+    if(pSolvedPkgInfo->pPkgsExisting)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsExisting, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Exist", jd_list));
+        JD_SAFE_DESTROY(jd);
+    }
+    if(pSolvedPkgInfo->pPkgsNotAvailable)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsNotAvailable, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Unavailable", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsToInstall)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsToInstall, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Install", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsToUpgrade)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsToUpgrade, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Upgrade", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsToDowngrade)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsToDowngrade, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Downgrade", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsToRemove)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsToRemove, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Remove", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsUnNeeded)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsUnNeeded, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "UnNeeded", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsToReinstall)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsToReinstall, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Reinstall", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    if(pSolvedPkgInfo->pPkgsObsoleted)
+    {
+        dwError = JDPkgList(pSolvedPkgInfo->pPkgsObsoleted, &jd_list);
+        CHECK_JD_RC(jd_map_add_child(jd, "Obsolete", jd_list));
+        JD_SAFE_DESTROY(jd_list);
+    }
+    pr_json(jd->buf);
+    JD_SAFE_DESTROY(jd);
+
+cleanup:
+    return dwError;
+
+error:
+    JD_SAFE_DESTROY(jd_list);
+    JD_SAFE_DESTROY(jd);
     goto cleanup;
 }
 

@@ -660,6 +660,7 @@ TDNFOpenHandle(
     IsTdnfAlreadyRunning();
 
     GlobalSetQuiet(pArgs->nQuiet);
+    GlobalSetJson(pArgs->nJsonOutput);
 
     dwError = TDNFAllocateMemory(1, sizeof(TDNF), (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);

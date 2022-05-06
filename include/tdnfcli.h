@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2021 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2017-2022 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -105,7 +105,8 @@ TDNFCliParsePackageArgs(
 
 uint32_t
 TDNFCliPrintError(
-    uint32_t dwErrorCode
+    uint32_t dwErrorCode,
+    int doJson
     );
 
 uint32_t
@@ -282,6 +283,11 @@ TDNFCliAlterCommand(
 
 uint32_t
 PrintSolvedInfo(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+uint32_t
+PrintSolvedInfoJson(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
