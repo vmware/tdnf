@@ -524,6 +524,7 @@ TDNFMarkAutoInstalledSinglePkg(
 {
     uint32_t dwError = 0;
     char **ppszAutoInstalled = NULL;
+    char *pszDataDir = NULL;
     char *pszAutoFile = NULL;
     int i;
     FILE *fp = NULL;
@@ -537,9 +538,17 @@ TDNFMarkAutoInstalledSinglePkg(
     dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFJoinPath(&pszAutoFile,
+    dwError = TDNFJoinPath(&pszDataDir,
                            pTdnf->pArgs->pszInstallRoot,
                            TDNF_DEFAULT_DATA_LOCATION,
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFUtilsMakeDir(pszDataDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszAutoFile,
+                           pszDataDir,
                            TDNF_AUTOINSTALLED_FILE,
                            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -551,7 +560,9 @@ TDNFMarkAutoInstalledSinglePkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    for (i = 0; ppszAutoInstalled[i]; i++)
+    /* ppszAutoInstalled may be NULL, in which case
+       we just effectively touched the file */
+    for (i = 0; ppszAutoInstalled && ppszAutoInstalled[i]; i++)
     {
         if (strcmp(ppszAutoInstalled[i], pszPkgName) == 0)
         {
@@ -564,6 +575,7 @@ TDNFMarkAutoInstalledSinglePkg(
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszAutoFile);
+    TDNF_SAFE_FREE_MEMORY(pszDataDir);
     TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     return dwError;
 error:
@@ -634,8 +646,7 @@ TDNFMarkAutoInstalled(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFJoinPath(&pszAutoFile,
-                           pTdnf->pArgs->pszInstallRoot,
-                           TDNF_DEFAULT_DATA_LOCATION,
+                           pszDataDir,
                            TDNF_AUTOINSTALLED_FILE,
                            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
