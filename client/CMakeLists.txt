@@ -46,7 +46,6 @@ add_library(${LIB_TDNF} SHARED
 
 target_link_libraries(${LIB_TDNF}
     ${LIB_TDNF_COMMON}
-    ${LIB_TDNF_JSONDUMP}
     ${LIB_TDNF_SOLV}
     ${RPM_LIBRARIES}
     ${LibSolv_LIBRARIES}
