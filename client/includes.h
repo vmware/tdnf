@@ -46,6 +46,8 @@
 #include <curl/curl.h>
 #include <libxml/parser.h>
 
+#include "../history/history.h"
+
 #include <tdnf.h>
 #include <tdnfplugin.h>
 #include <tdnfplugineventmap.h>

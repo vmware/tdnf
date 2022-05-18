@@ -55,7 +55,7 @@ int split_nevra(char *nevra, char **name, char **evr, char **arch)
 }
 
 /* Find packages by nevra as specified with ids. Must be either installed
-   or not as set by the 'installed' flag. Returns results in a queue, can
+   or not as set by the 'installed' flag. Adds result to qresult, can
    be multiples if package is in multiple repos. */
 uint32_t
 SolvFindSolvablesByNevraId(

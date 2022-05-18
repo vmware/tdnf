@@ -147,27 +147,41 @@ typedef uint32_t
     PTDNF_UPDATEINFO_ARGS,
     PTDNF_UPDATEINFO_SUMMARY *);
 
+typedef uint32_t
+(*PFN_TDNF_HISTORY_CMD)(
+    PTDNF_CLI_CONTEXT,
+    PTDNF_HISTORY_ARGS,
+    PTDNF_HISTORY_INFO *);
+
+typedef uint32_t
+(*PFN_TDNF_HISTORY_RESOLVE_CMD)(
+    PTDNF_CLI_CONTEXT,
+    PTDNF_HISTORY_ARGS,
+    PTDNF_SOLVED_PKG_INFO *);
+
 typedef struct _TDNF_CLI_CONTEXT_
 {
     HTDNF hTdnf;
     void *pUserData;
 
-    PFN_TDNF_ALTER              pFnAlter;
-    PFN_TDNF_CHECK_LOCAL        pFnCheckLocal;
-    PFN_TDNF_CHECK_UPDATE       pFnCheckUpdate;
-    PFN_TDNF_CHECK              pFnCheck;
-    PFN_TDNF_CLEAN              pFnClean;
-    PFN_TDNF_COUNT              pFnCount;
-    PFN_TDNF_INFO               pFnInfo;
-    PFN_TDNF_LIST               pFnList;
-    PFN_TDNF_PROVIDES           pFnProvides;
-    PFN_TDNF_REPOLIST           pFnRepoList;
-    PFN_TDNF_REPOSYNC           pFnRepoSync;
-    PFN_TDNF_REPOQUERY          pFnRepoQuery;
-    PFN_TDNF_RESOLVE            pFnResolve;
-    PFN_TDNF_SEARCH             pFnSearch;
-    PFN_TDNF_UPDATEINFO         pFnUpdateInfo;
-    PFN_TDNF_UPDATEINFO_SUMMARY pFnUpdateInfoSummary;
+    PFN_TDNF_ALTER                pFnAlter;
+    PFN_TDNF_CHECK_LOCAL          pFnCheckLocal;
+    PFN_TDNF_CHECK_UPDATE         pFnCheckUpdate;
+    PFN_TDNF_CHECK                pFnCheck;
+    PFN_TDNF_CLEAN                pFnClean;
+    PFN_TDNF_COUNT                pFnCount;
+    PFN_TDNF_INFO                 pFnInfo;
+    PFN_TDNF_LIST                 pFnList;
+    PFN_TDNF_PROVIDES             pFnProvides;
+    PFN_TDNF_REPOLIST             pFnRepoList;
+    PFN_TDNF_REPOSYNC             pFnRepoSync;
+    PFN_TDNF_REPOQUERY            pFnRepoQuery;
+    PFN_TDNF_RESOLVE              pFnResolve;
+    PFN_TDNF_SEARCH               pFnSearch;
+    PFN_TDNF_UPDATEINFO           pFnUpdateInfo;
+    PFN_TDNF_UPDATEINFO_SUMMARY   pFnUpdateInfoSummary;
+    PFN_TDNF_HISTORY_CMD          pFnHistoryList;
+    PFN_TDNF_HISTORY_RESOLVE_CMD  pFnHistoryResolve;
 }TDNF_CLI_CONTEXT, *PTDNF_CLI_CONTEXT;
 
 #ifdef __cplusplus
