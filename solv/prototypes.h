@@ -596,6 +596,14 @@ SolvUseMetaDataCache(
     int       *nUseMetaDataCache
     );
 
+uint32_t
+SolvFindSolvablesByNevraStr(
+    Pool *pool,
+    const char *nevra,
+    Queue* qresult,
+    int installed
+    );
+
 #ifdef __cplusplus
 }
 #endif

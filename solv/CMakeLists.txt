@@ -13,4 +13,5 @@ add_library(${LIB_TDNF_SOLV}
     tdnfpool.c
     tdnfquery.c
     tdnfrepo.c
+    simplequery.c
 )
