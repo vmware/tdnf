@@ -121,6 +121,20 @@ TDNFCliInvokeSearch(
     );
 
 uint32_t
+TDNFCliInvokeHistoryList(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_HISTORY_INFO *ppHistoryInfo
+);
+
+uint32_t
+TDNFCliInvokeHistoryResolve(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_SOLVED_PKG_INFO *ppSolvedPkgInfo
+);
+
+uint32_t
 TDNFCliUpdateInfoInfo(
     PTDNF_UPDATEINFO pInfo
     );
@@ -230,14 +244,7 @@ ShowConsoleProps(
 
 uint32_t
 GetConsoleWidth(
-    int* pnWidth
-    );
-
-int
-CalculateColumnWidth(
-    int nTotalWidth,
-    int nRequestedPercent,
-    int nMinVal
+    int *pnConsoleWidth
     );
 
 uint32_t
@@ -277,7 +284,7 @@ HandleOptionsError(
 uint32_t
 TDNFCliParseArgs(
     int argc,
-    char* const* argv,
+    char** argv,
     PTDNF_CMD_ARGS* ppCmdArgs
     );
 
@@ -292,6 +299,18 @@ uint32_t
 TDNFCliParseCleanArgs(
     PTDNF_CMD_ARGS pCmdArgs,
     TDNF_CLEANTYPE* pnCleanType
+    );
+
+// psarsehistorargs.c
+uint32_t
+TDNFCliParseHistoryArgs(
+    PTDNF_CMD_ARGS pArgs,
+    PTDNF_HISTORY_ARGS* ppHistoryArgs
+    );
+
+void
+TDNFCliFreeHistoryArgs(
+    PTDNF_HISTORY_ARGS pHistoryArgs
     );
 
 //parselistargs.c

@@ -34,6 +34,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
     {"downgrade",          TDNFCliDowngradeCommand, true},
     {"erase",              TDNFCliEraseCommand, true},
     {"help",               TDNFCliHelpCommand, false},
+    {"history",            TDNFCliHistoryCommand, true},
     {"info",               TDNFCliInfoCommand, false},
     {"install",            TDNFCliInstallCommand, true},
     {"list",               TDNFCliListCommand, false},
@@ -99,6 +100,8 @@ int main(int argc, char **argv)
         _context.pFnSearch = TDNFCliInvokeSearch;
         _context.pFnUpdateInfo = TDNFCliInvokeUpdateInfo;
         _context.pFnUpdateInfoSummary = TDNFCliInvokeUpdateInfoSummary;
+        _context.pFnHistoryList = TDNFCliInvokeHistoryList;
+        _context.pFnHistoryResolve = TDNFCliInvokeHistoryResolve;
 
         pszCmd = pCmdArgs->ppszCmds[0];
 
@@ -483,3 +486,28 @@ TDNFCliInvokeUpdateInfoSummary(
                ppSummary);
 }
 
+uint32_t
+TDNFCliInvokeHistoryList(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_HISTORY_INFO *ppHistoryInfo
+)
+{
+    return TDNFHistoryList(
+        pContext->hTdnf,
+        pHistoryArgs,
+        ppHistoryInfo);
+}
+
+uint32_t
+TDNFCliInvokeHistoryResolve(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_SOLVED_PKG_INFO *ppSolvedPkgInfo
+)
+{
+    return TDNFHistoryResolve(
+        pContext->hTdnf,
+        pHistoryArgs,
+        ppSolvedPkgInfo);
+}

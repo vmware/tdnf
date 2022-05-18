@@ -151,10 +151,10 @@ TDNFCliListCommand(
     char szNameAndArch[MAX_COL_LEN] = {0};
     char szVersionAndRelease[MAX_COL_LEN] = {0};
 
-    #define COL_COUNT 3
+    #define LIST_COL_COUNT 3
     //Name.Arch | Version-Release | Repo
-    int nColPercents[COL_COUNT] = {55, 25, 15};
-    int nColWidths[COL_COUNT] = {0};
+    int nColPercents[LIST_COL_COUNT] = {55, 25, 15};
+    int nColWidths[LIST_COL_COUNT] = {0};
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnList)
     {
@@ -200,7 +200,7 @@ TDNFCliListCommand(
     }
     else
     {
-        dwError = GetColumnWidths(COL_COUNT, nColPercents, nColWidths);
+        dwError = GetColumnWidths(LIST_COL_COUNT, nColPercents, nColWidths);
         BAIL_ON_CLI_ERROR(dwError);
 
         for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
@@ -1043,3 +1043,224 @@ TDNFCliRefresh(
     return TDNFRefresh(pContext->hTdnf);
 }
 
+static
+uint32_t
+TDNFCliHistoryAlter(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+)
+{
+    uint32_t dwError = 0;
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+
+    dwError = pContext->pFnHistoryResolve(pContext, pHistoryArgs, &pSolvedPkgInfo);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    if (pHistoryArgs->nCommand == HISTORY_CMD_INIT)
+    {
+    }
+    else if (!(pSolvedPkgInfo->ppszPkgsNotResolved && pSolvedPkgInfo->ppszPkgsNotResolved[0]))
+    {
+        dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, 0, pSolvedPkgInfo);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else
+    {
+        char *pszName = NULL;
+        int i;
+        pr_crit("The following packages could not be resolved:\n\n");
+        for (i = 0, pszName = pSolvedPkgInfo->ppszPkgsNotResolved[0];
+             pszName;
+             i++, pszName = pSolvedPkgInfo->ppszPkgsNotResolved[i])
+        {
+            pr_crit("%s\n", pszName);
+        }
+        pr_crit("\n"
+                "The package(s) may have been moved out of the enabled repositories since the\n"
+                "last time they were installed. You may be able to resolve this by enabling\n"
+                "additional repositories.\n");
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+cleanup:
+    TDNFCliFreeSolvedPackageInfo(pSolvedPkgInfo);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+static
+uint32_t
+TDNFCliHistoryList(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+)
+{
+    uint32_t dwError = 0;
+    PTDNF_HISTORY_INFO pHistoryInfo = NULL;
+    PTDNF_HISTORY_INFO_ITEM pItems = NULL;
+    struct json_dump *jd = NULL;
+    struct json_dump *jd_item = NULL;
+    struct json_dump *jd_list_added = NULL;
+    struct json_dump *jd_list_removed = NULL;
+
+    dwError = pContext->pFnHistoryList(pContext, pHistoryArgs, &pHistoryInfo);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    pItems = pHistoryInfo->pItems;
+
+    if (!pCmdArgs->nJsonOutput)
+    {
+        int nConsoleWidth, nCmdWidth;
+
+        dwError = GetConsoleWidth(&nConsoleWidth);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        /* We want to give as much space as possible to the command line.
+           All other fields have fixed lengths. */
+        /* 4 = ID, 21 = date/time, 9 = '+add/-rem', 7 = spaces */
+        nCmdWidth = nConsoleWidth - 4 - 21 - 9 - 7;
+
+        pr_crit("ID   %-*s date/time             +add  / -rem\n", nCmdWidth, "cmd line");
+        for (int i = 0; i < pHistoryInfo->nItemCount; i++)
+        {
+            char szTime[22] = {0};
+            strftime(szTime, 22, "%a %b %d %Y %H:%M", localtime(&pItems[i].timeStamp));
+            pr_crit("%4d %-*s %-21s +%-4d / -%-4d\n",
+                    pItems[i].nId,
+                    nCmdWidth, pItems[i].pszCmdLine,
+                    szTime,
+                    pItems[i].nAddedCount,
+                    pItems[i].nRemovedCount);
+            if (pHistoryArgs->nInfo)
+            {
+                if (pItems[i].ppszAddedPkgs && pItems[i].ppszAddedPkgs[0])
+                {
+                    int j;
+                    pr_crit("added: ");
+                    for (j = 0; j < pItems[i].nAddedCount - 1; j++)
+                    {
+                        pr_crit("%s, ", pItems[i].ppszAddedPkgs[j]);
+                    }
+                    pr_crit("%s", pItems[i].ppszAddedPkgs[j]);
+                    pr_crit("\n");
+                }
+                if (pItems[i].ppszRemovedPkgs && pItems[i].ppszRemovedPkgs[0])
+                {
+                    int j;
+                    pr_crit("removed: ");
+                    for (j = 0; j < pItems[i].nRemovedCount - 1; j++)
+                    {
+                        pr_crit("%s, ", pItems[i].ppszRemovedPkgs[j]);
+                    }
+                    pr_crit("%s", pItems[i].ppszRemovedPkgs[j]);
+                    pr_crit("\n");
+                }
+                pr_crit("\n");
+            }
+        }
+    }
+    else
+    {
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+
+        CHECK_JD_RC(jd_list_start(jd));
+
+        for(int i = 0; i < pHistoryInfo->nItemCount; i++)
+        {
+            jd_item = jd_create(0);
+            CHECK_JD_NULL(jd_item);
+
+            CHECK_JD_RC(jd_map_start(jd_item));
+            CHECK_JD_RC(jd_map_add_int(jd_item, "Id", pItems[i].nId));
+            CHECK_JD_RC(jd_map_add_string(jd_item, "CmdLine", pItems[i].pszCmdLine));
+            CHECK_JD_RC(jd_map_add_int(jd_item, "TimeStamp", pItems[i].timeStamp));
+            CHECK_JD_RC(jd_map_add_int(jd_item, "AddedCount", pItems[i].nAddedCount));
+            CHECK_JD_RC(jd_map_add_int(jd_item, "RemovedCount", pItems[i].nRemovedCount));
+            if (pHistoryArgs->nInfo)
+            {
+                jd_list_added = jd_create(0);
+                CHECK_JD_NULL(jd_list_added);
+                jd_list_start(jd_list_added);
+
+                jd_list_removed = jd_create(0);
+                CHECK_JD_NULL(jd_list_removed);
+                jd_list_start(jd_list_removed);
+
+                if (pItems[i].ppszAddedPkgs && pItems[i].ppszAddedPkgs[0])
+                {
+                    for (int j = 0; j < pItems[i].nAddedCount; j++)
+                    {
+                        CHECK_JD_RC(jd_list_add_string(jd_list_added, pItems[i].ppszAddedPkgs[j]));
+                    }
+                }
+                if (pItems[i].ppszRemovedPkgs && pItems[i].ppszRemovedPkgs[0])
+                {
+                    for (int j = 0; j < pItems[i].nRemovedCount; j++)
+                    {
+                        CHECK_JD_RC(jd_list_add_string(jd_list_removed, pItems[i].ppszRemovedPkgs[j]));
+                    }
+                }
+                CHECK_JD_RC(jd_map_add_child(jd_item, "Added", jd_list_added));
+                JD_SAFE_DESTROY(jd_list_added);
+
+                CHECK_JD_RC(jd_map_add_child(jd_item, "Removed", jd_list_removed));
+                JD_SAFE_DESTROY(jd_list_removed);
+            }
+            CHECK_JD_RC(jd_list_add_child(jd, jd_item));
+            JD_SAFE_DESTROY(jd_item);
+        }
+        pr_json(jd->buf);
+        JD_SAFE_DESTROY(jd);
+    }
+cleanup:
+    TDNFFreeHistoryInfo(pHistoryInfo);
+    return dwError;
+
+error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_item);
+    JD_SAFE_DESTROY(jd_list_added);
+    JD_SAFE_DESTROY(jd_list_removed);
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliHistoryCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+)
+{
+    uint32_t dwError = 0;
+    PTDNF_HISTORY_ARGS pHistoryArgs = NULL;
+
+    if(!pContext || !pContext->hTdnf || !pCmdArgs)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    dwError = TDNFCliParseHistoryArgs(pCmdArgs, &pHistoryArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    if (pHistoryArgs->nCommand == HISTORY_CMD_LIST)
+    {
+        dwError = TDNFCliHistoryList(pContext, pCmdArgs, pHistoryArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFCliHistoryAlter(pContext, pCmdArgs, pHistoryArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+cleanup:
+    TDNFCliFreeHistoryArgs(pHistoryArgs);
+    return dwError;
+
+error:
+    goto cleanup;
+}

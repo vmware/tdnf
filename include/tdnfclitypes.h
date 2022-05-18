@@ -148,6 +148,18 @@ typedef uint32_t
     PTDNF_UPDATEINFO_ARGS,
     PTDNF_UPDATEINFO_SUMMARY *);
 
+typedef uint32_t
+(*PFN_TDNF_HISTORY_CMD)(
+    PTDNF_CLI_CONTEXT,
+    PTDNF_HISTORY_ARGS,
+    PTDNF_HISTORY_INFO *);
+
+typedef uint32_t
+(*PFN_TDNF_HISTORY_RESOLVE_CMD)(
+    PTDNF_CLI_CONTEXT,
+    PTDNF_HISTORY_ARGS,
+    PTDNF_SOLVED_PKG_INFO *);
+
 typedef struct _TDNF_CLI_CONTEXT_
 {
     HTDNF hTdnf;
@@ -169,6 +181,8 @@ typedef struct _TDNF_CLI_CONTEXT_
     PFN_TDNF_SEARCH             pFnSearch;
     PFN_TDNF_UPDATEINFO         pFnUpdateInfo;
     PFN_TDNF_UPDATEINFO_SUMMARY pFnUpdateInfoSummary;
+    PFN_TDNF_HISTORY_CMD        pFnHistoryList;
+    PFN_TDNF_HISTORY_RESOLVE_CMD  pFnHistoryResolve;
 }TDNF_CLI_CONTEXT, *PTDNF_CLI_CONTEXT;
 
 #ifdef __cplusplus

@@ -1904,6 +1904,331 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFHistoryResolve(
+    PTDNF pTdnf,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_SOLVED_PKG_INFO *ppSolvedPkgInfo)
+{
+    uint32_t dwError = 0;
+    int rc;
+    char **ppszPkgsNotResolved = NULL;
+    Queue queueGoal = {0};
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+    struct history_ctx *ctx = NULL;
+    struct history_delta *hd = NULL;
+    struct history_nevra_map *hnm = NULL;
+    rpmts ts = NULL;
+    Queue qInstall = {0};
+    Queue qErase = {0};
+
+    if(!pTdnf || !pHistoryArgs || !ppSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* args sanity checks */
+    if (pHistoryArgs->nCommand == HISTORY_CMD_ROLLBACK)
+    {
+        if (pHistoryArgs->nTo <= 0)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    else if (pHistoryArgs->nCommand == HISTORY_CMD_UNDO ||
+             pHistoryArgs->nCommand == HISTORY_CMD_REDO)
+    {
+        if (pHistoryArgs->nFrom <= 1 || /* cannot undo or redo the base set */
+            pHistoryArgs->nFrom > pHistoryArgs->nTo)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+    else if (pHistoryArgs->nCommand != HISTORY_CMD_INIT)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRefresh(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    ts = rpmtsCreate();
+    if(!ts)
+    {
+        dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (rpmtsOpenDB(ts, O_RDONLY))
+    {
+        dwError = ERROR_TDNF_RPMTS_OPENDB_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(rpmtsSetRootDir (ts, pTdnf->pArgs->pszInstallRoot))
+    {
+        dwError = ERROR_TDNF_RPMTS_BAD_ROOT_DIR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetHistoryCtx(pTdnf, &ctx,
+                                pHistoryArgs->nCommand != HISTORY_CMD_INIT);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    history_set_rpmts(ctx, ts);
+
+    rc = history_init(ctx);
+    if (rc != 0)
+    {
+        dwError = ERROR_TDNF_HISTORY_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pHistoryArgs->nCommand == HISTORY_CMD_INIT)
+    {
+        goto cleanup;
+    }
+    else if (pHistoryArgs->nCommand == HISTORY_CMD_ROLLBACK)
+    {
+        hd = history_get_delta(ctx, pHistoryArgs->nTo);
+    }
+    else if (pHistoryArgs->nCommand == HISTORY_CMD_UNDO)
+    {
+        hd = history_get_delta_range(ctx, pHistoryArgs->nFrom - 1, pHistoryArgs->nTo);
+    }
+    else if (pHistoryArgs->nCommand == HISTORY_CMD_REDO)
+    {
+        hd = history_get_delta_range(ctx, pHistoryArgs->nTo, pHistoryArgs->nFrom - 1);
+    }
+
+    if (hd == NULL)
+    {
+        dwError = ERROR_TDNF_HISTORY_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (hd->added_count > 0)
+    {
+        dwError = TDNFAllocateMemory(
+                      hd->added_count+1, /* only added pkgs, plus a NULL ptr */
+                      sizeof(char*),
+                      (void**)&ppszPkgsNotResolved);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    hnm = history_nevra_map(ctx);
+    if (hnm == NULL)
+    {
+        dwError = ERROR_TDNF_HISTORY_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    queue_init(&qInstall);
+    queue_init(&qErase);
+
+    for (int i = 0; i < hd->added_count; i++)
+    {
+        char *pszPkgName = history_get_nevra(hnm, hd->added_ids[i]);
+        if (pszPkgName)
+        {
+            Queue qResult = {0};
+            queue_init(&qResult);
+
+            dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool, pszPkgName, &qResult, 0);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if (qResult.count == 0)
+            {
+                dwError = TDNFAddNotResolved(ppszPkgsNotResolved, pszPkgName);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            else
+            {
+                /* We may have found multiples if they occur in multiple
+                   repos. Take the first one. */
+                queue_push(&qInstall, qResult.elements[0]);
+            }
+            queue_free(&qResult);
+        }
+        else
+        {
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    for (int i = 0; i < hd->removed_count; i++)
+    {
+        char *pszPkgName = history_get_nevra(hnm, hd->removed_ids[i]);
+        if (pszPkgName)
+        {
+            dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool, pszPkgName, &qErase, 1);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else
+        {
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    dwError = TDNFHistoryGoal(
+                  pTdnf,
+                  &qInstall,
+                  &qErase,
+                  &pSolvedPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pSolvedPkgInfo->nNeedAction =
+        pSolvedPkgInfo->pPkgsToInstall ||
+        pSolvedPkgInfo->pPkgsToUpgrade ||
+        pSolvedPkgInfo->pPkgsToDowngrade ||
+        pSolvedPkgInfo->pPkgsToRemove  ||
+        pSolvedPkgInfo->pPkgsUnNeeded ||
+        pSolvedPkgInfo->pPkgsToReinstall ||
+        pSolvedPkgInfo->pPkgsObsoleted;
+
+    pSolvedPkgInfo->nNeedDownload =
+        pSolvedPkgInfo->pPkgsToInstall ||
+        pSolvedPkgInfo->pPkgsToUpgrade ||
+        pSolvedPkgInfo->pPkgsToDowngrade ||
+        pSolvedPkgInfo->pPkgsToReinstall;
+
+    pSolvedPkgInfo->ppszPkgsNotResolved = ppszPkgsNotResolved;
+
+    *ppSolvedPkgInfo = pSolvedPkgInfo;
+
+cleanup:
+    history_free_nevra_map(hnm);
+    history_free_delta(hd);
+    destroy_history_ctx(ctx);
+    queue_free(&queueGoal);
+    queue_free(&qInstall);
+    queue_free(&qErase);
+    if (ts) {
+        rpmtsCloseDB(ts);
+        rpmtsFree(ts);
+    }
+    return dwError;
+
+error:
+    if(pSolvedPkgInfo)
+    {
+        TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
+    }
+    if(ppszPkgsNotResolved)
+    {
+        TDNFFreeStringArray(ppszPkgsNotResolved);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFHistoryList(
+    PTDNF pTdnf,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_HISTORY_INFO *ppHistoryInfo)
+{
+    uint32_t dwError = 0;
+    struct history_transaction *tas = NULL;
+    struct history_nevra_map *hnm = NULL;
+    int count = 0;
+    PTDNF_HISTORY_INFO pHistoryInfo = NULL;
+    PTDNF_HISTORY_INFO_ITEM pHistoryInfoItems = NULL;
+    struct history_ctx *ctx = NULL;
+
+    if(!pTdnf || !pHistoryArgs || !ppHistoryInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pHistoryArgs->nFrom != 0 && pHistoryArgs->nTo != 0)
+    {
+        if (pHistoryArgs->nFrom < 0 ||
+            pHistoryArgs->nTo < 0 ||
+            pHistoryArgs->nFrom > pHistoryArgs->nTo)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    dwError = TDNFGetHistoryCtx(pTdnf, &ctx, 1);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    history_get_transactions(ctx, &tas, &count,
+                             pHistoryArgs->nReverse,
+                             pHistoryArgs->nFrom, pHistoryArgs->nTo);
+
+    dwError = TDNFAllocateMemory(
+                  count,
+                  sizeof(TDNF_HISTORY_INFO_ITEM),
+                  (void**)&pHistoryInfoItems);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pHistoryArgs->nInfo)
+    {
+        hnm = history_nevra_map(ctx);
+    }
+
+    for(int i = 0; i < count; i++)
+    {
+        pHistoryInfoItems[i].nId = tas[i].id;
+        pHistoryInfoItems[i].nType = tas[i].type;
+        dwError = TDNFAllocateString(tas[i].cmdline, &pHistoryInfoItems[i].pszCmdLine);
+        BAIL_ON_TDNF_ERROR(dwError);
+        pHistoryInfoItems[i].timeStamp = tas[i].timestamp;
+        pHistoryInfoItems[i].nAddedCount = tas[i].delta.added_count;
+        pHistoryInfoItems[i].nRemovedCount = tas[i].delta.removed_count;
+
+        if (hnm)
+        {
+            dwError = TDNFAllocateMemory(tas[i].delta.added_count, sizeof(char *), (void **)&pHistoryInfoItems[i].ppszAddedPkgs);
+            for (int j = 0; j < tas[i].delta.added_count; j++)
+            {
+                dwError = TDNFAllocateString(history_get_nevra(hnm, tas[i].delta.added_ids[j]),
+                                             &pHistoryInfoItems[i].ppszAddedPkgs[j]);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            dwError = TDNFAllocateMemory(tas[i].delta.removed_count, sizeof(char *), (void **)&pHistoryInfoItems[i].ppszRemovedPkgs);
+            for (int j = 0; j < tas[i].delta.removed_count; j++)
+            {
+                dwError = TDNFAllocateString(history_get_nevra(hnm, tas[i].delta.removed_ids[j]),
+                                             &pHistoryInfoItems[i].ppszRemovedPkgs[j]);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+
+    dwError = TDNFAllocateMemory(
+                  count,
+                  sizeof(TDNF_HISTORY_INFO),
+                  (void**)&pHistoryInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pHistoryInfo->nItemCount = count;
+    pHistoryInfo->pItems = pHistoryInfoItems;
+    *ppHistoryInfo = pHistoryInfo;
+
+cleanup:
+    history_free_nevra_map(hnm);
+    history_free_transactions(tas, count);
+    destroy_history_ctx(ctx);
+    return dwError;
+
+error:
+    if (pHistoryInfoItems)
+    {
+        TDNFFreeHistoryInfoItems(pHistoryInfoItems, count);
+    }
+    goto cleanup;
+}
+
 //api calls to free memory allocated by tdnfclientlib
 void
 TDNFCloseHandle(

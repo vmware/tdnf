@@ -140,6 +140,20 @@ TDNFUpdateInfoSummary(
     PTDNF_UPDATEINFO_SUMMARY* ppSummary
     );
 
+uint32_t
+TDNFHistoryResolve(
+    PTDNF pTdnf,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_SOLVED_PKG_INFO *ppSolvedPkgInfo);
+
+uint32_t
+TDNFHistoryList(
+    PTDNF pTdnf,
+    PTDNF_HISTORY_ARGS pHistoryArgs,
+    PTDNF_HISTORY_INFO *ppHistoryInfo);
+
+
+
 //confidence check. displays current installed count.
 //should be same as rpm -qa | wc -l
 uint32_t
@@ -255,7 +269,14 @@ TDNFFreeUpdateInfoSummary(
 void
 TDNFFreeCmdOpt(
     PTDNF_CMD_OPT pCmdOpt
+
     );
+
+void
+TDNFFreeHistoryInfo(
+    PTDNF_HISTORY_INFO pHistoryInfo
+);
+
 
 uint32_t TDNFUriIsRemote(
     const char* pszKeyUrl,

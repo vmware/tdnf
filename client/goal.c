@@ -294,6 +294,132 @@ error:
     goto cleanup;
 }
 
+static
+uint32_t
+TDNFSolv(
+    PTDNF pTdnf,
+    Queue *pQueueJobs,
+    char** ppszExcludes,
+    uint32_t dwExcludeCount,
+    int nAllowErasing,
+    int nAutoErase,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_SOLVED_PKG_INFO pInfo = NULL;
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
+    Solver *pSolv = NULL;
+    Transaction *pTrans = NULL;
+    int nFlags = 0;
+    int nProblems = 0;
+
+    if(!pTdnf || !ppInfo || !ppInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(pTdnf->pArgs->nBest)
+    {
+        nFlags = nFlags | SOLVER_FORCEBEST;
+    }
+    if (nAutoErase)
+    {
+        nFlags = nFlags | SOLVER_CLEANDEPS;
+    }
+
+    dwError = SolvAddFlagsToJobs(pQueueJobs, nFlags);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (dwExcludeCount != 0 && ppszExcludes)
+    {
+        if (!pTdnf->pSack || !pTdnf->pSack->pPool)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFSolvAddPkgLocks(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSolvAddMinVersions(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pSolv = solver_create(pTdnf->pSack->pPool);
+    if(pSolv == NULL)
+    {
+        dwError = ERROR_TDNF_OUT_OF_MEMORY;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(nAllowErasing)
+    {
+        solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
+    }
+    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_VENDORCHANGE, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_KEEP_ORPHANS, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_DOWNGRADE, 1);
+    solver_set_flag(pSolv, SOLVER_FLAG_INSTALL_ALSO_UPDATES, 1);
+
+    nProblems = solver_solve(pSolv, pQueueJobs);
+    if (nProblems > 0)
+    {
+        dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pTrans = solver_create_transaction(pSolv);
+    if(!pTrans)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(pTdnf->pArgs->nDebugSolver)
+    {
+        dwError = SolvAddDebugInfo(pSolv, "debugdata");
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGoalGetAllResultsIgnoreNoData(
+                  pTrans,
+                  pSolv,
+                  &pInfo,
+                  pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppInfo = pInfo;
+
+cleanup:
+    if(pTrans)
+    {
+        transaction_free(pTrans);
+    }
+    if(pSolv)
+    {
+        solver_free(pSolv);
+    }
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pInfo);
+    if(ppInfo)
+    {
+        *ppInfo = NULL;
+    }
+    goto cleanup;
+}
+
 uint32_t
 TDNFGoal(
     PTDNF pTdnf,
@@ -304,14 +430,8 @@ TDNFGoal(
 {
     uint32_t dwError = 0;
 
-    PTDNF_SOLVED_PKG_INFO pInfoTemp = NULL;
-    TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
     Queue queueJobs = {0};
-
-    int nFlags = 0;
-    int nProblems = 0;
+    int nAllowErasing = 0;
     char** ppszExcludes = NULL;
     uint32_t dwExcludeCount = 0;
     char **ppszAutoInstalled = NULL;
@@ -352,128 +472,94 @@ TDNFGoal(
         }
     }
 
-    if(pTdnf->pArgs->nBest)
-    {
-        nFlags = nFlags | SOLVER_FORCEBEST;
-    }
-    if ((pTdnf->pConf->nCleanRequirementsOnRemove &&
-         !pTdnf->pArgs->nNoAutoRemove) ||
-        nAlterType == ALTER_AUTOERASE)
-    {
-        nFlags = nFlags | SOLVER_CLEANDEPS;
-    }
-
-    dwError = SolvAddFlagsToJobs(&queueJobs, nFlags);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (dwExcludeCount != 0 && ppszExcludes)
-    {
-        if (!pTdnf->pSack || !pTdnf->pSack->pPool)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        dwError = SolvAddExcludes(pTdnf->pSack->pPool, ppszExcludes);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFSolvAddPkgLocks(pTdnf, &queueJobs, pTdnf->pSack->pPool);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFSolvAddMinVersions(pTdnf, &queueJobs, pTdnf->pSack->pPool);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    pSolv = solver_create(pTdnf->pSack->pPool);
-    if(pSolv == NULL)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(pTdnf->pArgs->nAllowErasing ||
-       nAlterType == ALTER_ERASE ||
-       nAlterType == ALTER_AUTOERASE)
+    nAllowErasing =
+        pTdnf->pArgs->nAllowErasing ||
+        nAlterType == ALTER_ERASE ||
+        nAlterType == ALTER_AUTOERASE;
+    if(nAllowErasing)
     {
         dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvAddUserInstalledToJobs(&queueJobs, pTdnf->pSack->pPool, ppszAutoInstalled);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
-    }
-    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_VENDORCHANGE, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_KEEP_ORPHANS, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_YUM_OBSOLETES, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_DOWNGRADE, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_INSTALL_ALSO_UPDATES, 1);
-
-    nProblems = solver_solve(pSolv, &queueJobs);
-    if (nProblems > 0)
-    {
-        dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        if (nAlterType == ALTER_UPGRADE && dwExcludeCount != 0 && ppszExcludes)
-        {
-            /* if we had packages to exclude, then we'd have inactive ones too */
-            dwSkipProblem |= SKIPPROBLEM_DISABLED;
-        }
-
-        dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
+        dwError = SolvAddUserInstalledToJobs(&queueJobs,
+                                             pTdnf->pSack->pPool,
+                                             ppszAutoInstalled);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pTrans = solver_create_transaction(pSolv);
-    if(!pTrans)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(pTdnf->pArgs->nDebugSolver)
-    {
-        dwError = SolvAddDebugInfo(pSolv, "debugdata");
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFGoalGetAllResultsIgnoreNoData(
-                  pTrans,
-                  pSolv,
-                  &pInfoTemp,
-                  pTdnf);
+    dwError = TDNFSolv(pTdnf, &queueJobs, ppszExcludes, dwExcludeCount,
+                       nAllowErasing,
+                       (pTdnf->pConf->nCleanRequirementsOnRemove &&
+                                !pTdnf->pArgs->nNoAutoRemove) ||
+                               nAlterType == ALTER_AUTOERASE,
+                       ppInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (nAlterType == ALTER_INSTALL)
     {
-        dwError = TDNFAddUserInstall(pTdnf, pQueuePkgList, pInfoTemp);
+        dwError = TDNFAddUserInstall(pTdnf, pQueuePkgList, *ppInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    *ppInfo = pInfoTemp;
 
 cleanup:
     TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
     queue_free(&queueJobs);
-    if(pTrans)
-    {
-        transaction_free(pTrans);
-    }
-    if(pSolv)
-    {
-        solver_free(pSolv);
-    }
     return dwError;
 
 error:
-    TDNF_SAFE_FREE_MEMORY(pInfoTemp);
-    if(ppInfo)
+    goto cleanup;
+}
+
+uint32_t
+TDNFHistoryGoal(
+    PTDNF pTdnf,
+    Queue *pqInstall,
+    Queue *pqErase,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    Queue queueJobs = {0};
+    char** ppszExcludes = NULL;
+    uint32_t dwExcludeCount = 0;
+
+    if(!pTdnf || !ppInfo || !pqInstall || !pqErase)
     {
-        *ppInfo = NULL;
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    dwError = TDNFPkgsToExclude(pTdnf, &dwExcludeCount, &ppszExcludes);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    queue_init(&queueJobs);
+
+    for (int i = 0; i < pqInstall->count; i++)
+    {
+        Id id = pqInstall->elements[i];
+        TDNFAddGoal(pTdnf, ALTER_INSTALL, &queueJobs, id,
+                    dwExcludeCount, ppszExcludes);
+    }
+    for (int i = 0; i < pqErase->count; i++)
+    {
+        Id id = pqErase->elements[i];
+        TDNFAddGoal(pTdnf, ALTER_ERASE, &queueJobs, id,
+                    dwExcludeCount, ppszExcludes);
+    }
+
+    dwError = TDNFSolv(pTdnf, &queueJobs, ppszExcludes, dwExcludeCount,
+                       1, /* nAllowErasing */
+                       0, /* nAutoErase */
+                       ppInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszExcludes);
+    queue_free(&queueJobs);
+    return dwError;
+
+error:
     goto cleanup;
 }
 

@@ -42,11 +42,13 @@ add_library(${LIB_TDNF} SHARED
     utils.c
     metalink.c
     list.c
+    history.c
 )
 
 target_link_libraries(${LIB_TDNF}
     ${LIB_TDNF_COMMON}
     ${LIB_TDNF_SOLV}
+    ${LIB_TDNF_HISTORY}
     ${RPM_LIBRARIES}
     ${LibSolv_LIBRARIES}
     ${CURL_LIBRARIES}

@@ -160,37 +160,24 @@ error:
 }
 
 uint32_t
-TDNFCliAlterCommand(
+TDNFCliAskAndAlter(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs,
-    TDNF_ALTERTYPE nAlterType
-    )
+    TDNF_ALTERTYPE nAlterType,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+)
 {
     uint32_t dwError = 0;
     char** ppszPackageArgs = NULL;
-    int nPackageCount = 0;
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
     int nSilent = 0;
 
-    if(!pContext || !pContext->hTdnf || !pCmdArgs)
+    if(!pContext || !pCmdArgs || !pSolvedPkgInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
     }
 
     nSilent = pCmdArgs->nNoOutput;
-
-    dwError = TDNFCliParsePackageArgs(
-                  pCmdArgs,
-                  &ppszPackageArgs,
-                  &nPackageCount);
-    BAIL_ON_CLI_ERROR(dwError);
-
-    dwError = pContext->pFnResolve(
-                  pContext,
-                  nAlterType,
-                  &pSolvedPkgInfo);
-    BAIL_ON_CLI_ERROR(dwError);
 
     if(!nSilent && pSolvedPkgInfo->ppszPkgsNotResolved)
     {
@@ -271,6 +258,47 @@ TDNFCliAlterCommand(
 
 cleanup:
     TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliAlterCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    TDNF_ALTERTYPE nAlterType
+    )
+{
+    uint32_t dwError = 0;
+    char** ppszPackageArgs = NULL;
+    int nPackageCount = 0;
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+
+    if(!pContext || !pContext->hTdnf || !pCmdArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFCliParsePackageArgs(
+                  pCmdArgs,
+                  &ppszPackageArgs,
+                  &nPackageCount);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = pContext->pFnResolve(
+                  pContext,
+                  nAlterType,
+                  &pSolvedPkgInfo);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, nAlterType, pSolvedPkgInfo);
+    BAIL_ON_CLI_ERROR(dwError);
+
+cleanup:
+    TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
     TDNFCliFreeSolvedPackageInfo(pSolvedPkgInfo);
     return dwError;
 
@@ -279,7 +307,6 @@ error:
     {
         dwError = ERROR_TDNF_CLI_NOTHING_TO_DO;
     }
-
     goto cleanup;
 }
 

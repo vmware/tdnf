@@ -32,6 +32,8 @@ TDNFRpmExecTransaction(
     int nDownloadOnly = 0;
     TDNFRPMTS ts = {0};
     PTDNF_CMD_OPT pSetOpt = NULL;
+    struct history_ctx *pHistoryCtx = NULL;
+    char *pszCmdLine = NULL;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
     {
@@ -97,14 +99,50 @@ TDNFRpmExecTransaction(
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (!nDownloadOnly) {
+        int rc;
+
+        dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 0);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        history_set_rpmts(pHistoryCtx, ts.pTS);
+
+        rc = history_init(pHistoryCtx);
+        if (rc != 0)
+        {
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
         dwError = TDNFRunTransaction(&ts, pTdnf);
         BAIL_ON_TDNF_ERROR(dwError);
+
+        if (pTdnf->pArgs->nArgc >= 1)
+        {
+            dwError = TDNFJoinArrayToString(&(pTdnf->pArgs->ppszArgv[1]),
+                                            " ",
+                                            pTdnf->pArgs->nArgc,
+                                            &pszCmdLine);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        rc = history_update_state(pHistoryCtx, pszCmdLine);
+        if (rc != 0)
+        {
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
 
         dwError = TDNFMarkAutoInstalled(pTdnf, pSolvedInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
+
+    TDNF_SAFE_FREE_MEMORY(pszCmdLine);
+    if (pHistoryCtx)
+    {
+        destroy_history_ctx(pHistoryCtx);
+    }
     if(ts.pTS)
     {
         rpmtsCloseDB(ts.pTS);

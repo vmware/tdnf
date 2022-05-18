@@ -21,7 +21,7 @@ extern "C" {
 uint32_t
 TDNFCliParseArgs(
     int argc,
-    char* const* argv,
+    char** argv,
     PTDNF_CMD_ARGS* ppCmdArgs
     );
 
@@ -29,6 +29,17 @@ uint32_t
 TDNFCliParseScope(
     const char* pszScope,
     TDNF_SCOPE* pnScope
+    );
+
+uint32_t
+TDNFCliParseHistoryArgs(
+    PTDNF_CMD_ARGS pArgs,
+    PTDNF_HISTORY_ARGS* ppHistoryArgs
+    );
+
+void
+TDNFCliFreeHistoryArgs(
+    PTDNF_HISTORY_ARGS pHistoryArgs
     );
 
 uint32_t
@@ -237,6 +248,12 @@ TDNFCliHelpCommand(
     PTDNF_CMD_ARGS pCmdArgs
     );
 
+uint32_t
+TDNFCliHistoryCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
 //installcmd.c
 uint32_t
 TDNFCliDowngradeCommand(
@@ -273,6 +290,14 @@ TDNFCliUpgradeCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs
     );
+
+uint32_t
+TDNFCliAskAndAlter(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    TDNF_ALTERTYPE nAlterType,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+);
 
 uint32_t
 TDNFCliAlterCommand(
@@ -322,14 +347,7 @@ ShowConsoleProps(
 
 uint32_t
 GetConsoleWidth(
-    int* pnWidth
-    );
-
-int
-CalculateColumnWidth(
-    int nTotalWidth,
-    int nRequestedPercent,
-    int nMinVal
+    int* pConsoleWidth
     );
 
 uint32_t
