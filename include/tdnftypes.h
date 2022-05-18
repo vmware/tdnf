@@ -223,6 +223,7 @@ typedef struct _TDNF_CMD_ARGS
     int nDownloadOnly;     //download packages only, no install
     int nNoAutoRemove;     //overide clean_requirements_on_remove config option
     int nJsonOutput;       //output in json format
+    int nTestOnly;         //run test transaction only
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location

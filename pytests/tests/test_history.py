@@ -95,6 +95,74 @@ def test_history_undo(utils):
     assert not utils.check_package(pkgname2)
 
 
+def test_history_undo_remove(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+
+    utils.erase_package(pkgname)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    assert utils.check_package(pkgname)
+
+    utils.run(['tdnf', 'remove', '-y', pkgname])
+    assert not utils.check_package(pkgname)
+
+    ret = utils.run(['tdnf', 'history'])
+    baseline = ret['stdout'][-1].split()[0]
+
+    # should undo remove of pkgname
+    utils.run(['tdnf', 'history', '-y', '--nogpgcheck', 'undo', '--from', str(int(baseline))])
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
+
+
+def test_history_undo_downloadonly(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+
+    utils.erase_package(pkgname)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    assert utils.check_package(pkgname)
+
+    utils.run(['tdnf', 'remove', '-y', pkgname])
+    assert not utils.check_package(pkgname)
+
+    ret = utils.run(['tdnf', 'history'])
+    baseline = ret['stdout'][-1].split()[0]
+
+    # would undo remove of pkgname
+    utils.run(['tdnf', 'history', '-y', '--downloadonly', '--nogpgcheck', 'undo', '--from', str(int(baseline))])
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+
+    # verify that there is no record of it either
+    ret = utils.run(['tdnf', 'history'])
+    assert baseline == ret['stdout'][-1].split()[0]
+
+
+def test_history_undo_testonly(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+
+    utils.erase_package(pkgname)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    assert utils.check_package(pkgname)
+
+    utils.run(['tdnf', 'remove', '-y', pkgname])
+    assert not utils.check_package(pkgname)
+
+    ret = utils.run(['tdnf', 'history'])
+    baseline = ret['stdout'][-1].split()[0]
+
+    # would undo remove of pkgname
+    utils.run(['tdnf', 'history', '-y', '--testonly', '--nogpgcheck', 'undo', '--from', str(int(baseline))])
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+
+    # verify that there is no record of it either
+    ret = utils.run(['tdnf', 'history'])
+    assert baseline == ret['stdout'][-1].split()[0]
+
+
 def test_history_undo_multiple(utils):
     pkgname1 = utils.config["mulversion_pkgname"]
     pkgname2 = utils.config["sglversion_pkgname"]

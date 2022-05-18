@@ -58,6 +58,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nDownloadOnly  = pCmdArgsIn->nDownloadOnly;
     pCmdArgs->nNoAutoRemove  = pCmdArgsIn->nNoAutoRemove;
     pCmdArgs->nJsonOutput    = pCmdArgsIn->nJsonOutput;
+    pCmdArgs->nTestOnly      = pCmdArgsIn->nTestOnly;
 
     pCmdArgs->nArgc = pCmdArgsIn->nArgc;
     pCmdArgs->ppszArgv = pCmdArgsIn->ppszArgv;

@@ -206,23 +206,31 @@ TDNFRpmExecTransaction(
 
     nDownloadOnly = pTdnf->pArgs->nDownloadOnly;
     if (!nDownloadOnly) {
-        dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 0);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        if (pTdnf->pArgs->nArgc >= 1)
+        if (!pTdnf->pArgs->nTestOnly)
         {
-            dwError = TDNFJoinArrayToString(&(pTdnf->pArgs->ppszArgv[1]),
-                                            " ",
-                                            pTdnf->pArgs->nArgc,
-                                            &pszCmdLine);
+            dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 0);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if (pTdnf->pArgs->nArgc >= 1)
+            {
+                dwError = TDNFJoinArrayToString(&(pTdnf->pArgs->ppszArgv[1]),
+                                                " ",
+                                                pTdnf->pArgs->nArgc,
+                                                &pszCmdLine);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            dwError = TDNFRunTransactionWithHistory(pTdnf, pTS, pHistoryCtx, pszCmdLine);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFMarkAutoInstalled(pTdnf, pHistoryCtx, pSolvedInfo, 0);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-
-        dwError = TDNFRunTransactionWithHistory(pTdnf, pTS, pHistoryCtx, pszCmdLine);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFMarkAutoInstalled(pTdnf, pHistoryCtx, pSolvedInfo, 0);
-        BAIL_ON_TDNF_ERROR(dwError);
+        else
+        {
+            dwError = TDNFRunTransaction(pTS, pTdnf);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
 cleanup:
@@ -264,7 +272,7 @@ TDNFRpmExecHistoryTransaction(
     BAIL_ON_TDNF_ERROR(dwError);
 
     nDownloadOnly = pTdnf->pArgs->nDownloadOnly;
-    if (!nDownloadOnly) {
+    if (!nDownloadOnly && !pTdnf->pArgs->nTestOnly) {
         int rc = 0;
         int trans_id;
 
@@ -326,6 +334,11 @@ TDNFRpmExecHistoryTransaction(
             dwError = ERROR_TDNF_HISTORY_ERROR;
             BAIL_ON_TDNF_ERROR(dwError);
         }
+    }
+    else if(!nDownloadOnly && pTdnf->pArgs->nTestOnly)
+    {
+        dwError = TDNFRunTransaction(pTS, pTdnf);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
@@ -648,15 +661,17 @@ TDNFRunTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //TODO do callbacks for output
-    pr_info("Running transaction\n");
-
-    rpmtsSetFlags(pTS->pTS, pTS->nTransFlags);
-    rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
-    if (rc != 0)
+    if (!pTdnf->pArgs->nTestOnly)
     {
-        dwError = ERROR_TDNF_TRANSACTION_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
+        pr_info("Running transaction\n");
+
+        rpmtsSetFlags(pTS->pTS, pTS->nTransFlags);
+        rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
+        if (rc != 0)
+        {
+            dwError = ERROR_TDNF_TRANSACTION_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
 cleanup:

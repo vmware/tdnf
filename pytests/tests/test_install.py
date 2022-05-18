@@ -61,7 +61,15 @@ def test_dummy_requires(utils):
     assert ' nothing provides ' in ret['stderr'][0]
 
 
-def xxx_test_install_memcheck(utils):
+def test_install_testonly(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', '--testonly', pkgname])
+    assert not utils.check_package(pkgname)
+
+
+def test_install_memcheck(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
