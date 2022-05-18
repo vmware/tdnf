@@ -135,6 +135,12 @@ def test_updateinfo_info(utils):
     assert(type(d) == list)
 
 
+def test_history_info(utils):
+    ret = utils.run(['tdnf', '-j', 'history', '--info'])
+    d = json.loads("\n".join(ret['stdout']))
+    assert(type(d) == list)
+
+
 def test_jsondump(utils):
     cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
     ret = utils.run([cmd])
