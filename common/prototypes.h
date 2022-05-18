@@ -74,6 +74,14 @@ TDNFSplitStringToArray(
     );
 
 uint32_t
+TDNFJoinArrayToString(
+    char **ppszArray,
+    char *pszSep,
+    int count,
+    char **ppszResult
+);
+
+uint32_t
 TDNFAllocateStringPrintf(
     char** ppszDst,
     const char* pszFmt,
