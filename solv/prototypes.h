@@ -439,16 +439,10 @@ SolvAddPkgEraseJob(
     );
 
 uint32_t
-SolvAddPkgUserInstalledJob(
-    Queue* pQueueJobs,
-    Id dwId
-    );
-
-uint32_t
 SolvAddUserInstalledToJobs(
     Queue* pQueueJobs,
     Pool *pPool,
-    char **ppszAutoInstalled
+    struct history_ctx *pHistoryCtx
     );
 
 uint32_t

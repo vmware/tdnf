@@ -296,6 +296,39 @@ error:
 
 static
 uint32_t
+TDNFAddUserInstalledToJobs(
+    PTDNF pTdnf,
+    Queue* pQueueJobs
+    )
+{
+    uint32_t dwError = 0;
+    struct history_ctx *pHistoryCtx = NULL;
+
+    if(!pTdnf || !pQueueJobs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 1);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvAddUserInstalledToJobs(pQueueJobs,
+                                         pTdnf->pSack->pPool,
+                                         pHistoryCtx);
+    BAIL_ON_TDNF_ERROR(dwError);
+cleanup:
+    if (pHistoryCtx)
+    {
+        destroy_history_ctx(pHistoryCtx);
+    }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+static
+uint32_t
 TDNFSolv(
     PTDNF pTdnf,
     Queue *pQueueJobs,
@@ -478,13 +511,9 @@ TDNFGoal(
         nAlterType == ALTER_AUTOERASE;
     if(nAllowErasing)
     {
-        dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
+        TDNFAddUserInstalledToJobs(pTdnf, &queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvAddUserInstalledToJobs(&queueJobs,
-                                             pTdnf->pSack->pPool,
-                                             ppszAutoInstalled);
-        BAIL_ON_TDNF_ERROR(dwError);
+        /* TODO: deal with no db error? */
     }
 
     dwError = TDNFSolv(pTdnf, &queueJobs, ppszExcludes, dwExcludeCount,
@@ -609,11 +638,8 @@ TDNFMarkAutoInstalledSinglePkg(
 )
 {
     uint32_t dwError = 0;
-    char **ppszAutoInstalled = NULL;
-    char *pszDataDir = NULL;
-    char *pszAutoFile = NULL;
-    int i;
-    FILE *fp = NULL;
+    int rc;
+    struct history_ctx *pHistoryCtx = NULL;
 
     if (!pTdnf || !pszPkgName)
     {
@@ -621,167 +647,27 @@ TDNFMarkAutoInstalledSinglePkg(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
+    dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 1);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFJoinPath(&pszDataDir,
-                           pTdnf->pArgs->pszInstallRoot,
-                           TDNF_DEFAULT_DATA_LOCATION,
-                           NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFUtilsMakeDir(pszDataDir);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFJoinPath(&pszAutoFile,
-                           pszDataDir,
-                           TDNF_AUTOINSTALLED_FILE,
-                           NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    fp = fopen(pszAutoFile, "w");
-    if(!fp)
+    rc = history_set_auto_flag(pHistoryCtx, pszPkgName, 0);
+    if (rc != 0)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        dwError = ERROR_TDNF_HISTORY_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    /* ppszAutoInstalled may be NULL, in which case
-       we just effectively touched the file */
-    for (i = 0; ppszAutoInstalled && ppszAutoInstalled[i]; i++)
-    {
-        if (strcmp(ppszAutoInstalled[i], pszPkgName) == 0)
-        {
-            pr_info("marking %s as user installed\n", pszPkgName);
-            continue;
-        }
-        fprintf(fp, "%s\n", ppszAutoInstalled[i]);
-    }
-    fclose(fp);
-
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
-    TDNF_SAFE_FREE_MEMORY(pszDataDir);
-    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
+    if (pHistoryCtx)
+    {
+        destroy_history_ctx(pHistoryCtx);
+    }
     return dwError;
 error:
-    if (fp)
-    {
-        fclose(fp);
-    }
     goto cleanup;
 }
 
 uint32_t
 TDNFMarkAutoInstalled(
-    PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO ppInfo
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
-    char **ppszAutoInstalled = NULL;
-    int i, j;
-    int nCount = 0;
-    int nCountOld = 0;
-    FILE *fp = NULL;
-    char *pszAutoFile = NULL;
-    char *pszDataDir = NULL;
-
-    if (!pTdnf || !ppInfo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFReadAutoInstalled(pTdnf, &ppszAutoInstalled);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (ppszAutoInstalled != NULL)
-    {
-        dwError = TDNFStringArrayCount(ppszAutoInstalled, &nCount);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    nCountOld = nCount;
-    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
-    {
-        nCount++;
-    }
-
-    dwError = TDNFReAllocateMemory((nCount+1) * sizeof(char **), (void **)&ppszAutoInstalled);
-    BAIL_ON_TDNF_ERROR(dwError);
-    ppszAutoInstalled[nCount] = NULL;
-
-    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
-    {
-        dwError = TDNFAllocateString(pPkgInfo->pszName, &ppszAutoInstalled[nCountOld++]);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFStringArraySort(ppszAutoInstalled);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFJoinPath(&pszDataDir,
-                           pTdnf->pArgs->pszInstallRoot,
-                           TDNF_DEFAULT_DATA_LOCATION,
-                           NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFUtilsMakeDir(pszDataDir);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFJoinPath(&pszAutoFile,
-                           pszDataDir,
-                           TDNF_AUTOINSTALLED_FILE,
-                           NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    fp = fopen(pszAutoFile, "w");
-    if(!fp)
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    for (i = 0; ppszAutoInstalled[i]; i++)
-    {
-        if (i > 0 && strcmp(ppszAutoInstalled[i-1], ppszAutoInstalled[i]) == 0)
-        {
-            continue;
-        }
-        if (ppInfo->ppszPkgsUserInstall)
-        {
-            for (j = 0; ppInfo->ppszPkgsUserInstall[j]; j++)
-            {
-                if (strcmp(ppszAutoInstalled[i],
-                           ppInfo->ppszPkgsUserInstall[j]) == 0)
-                {
-                    break;
-                }
-            }
-        }
-        if (!ppInfo->ppszPkgsUserInstall || ppInfo->ppszPkgsUserInstall[j] == NULL)
-        {
-            fprintf(fp, "%s\n", ppszAutoInstalled[i]);
-        }
-    }
-
-cleanup:
-    if (fp)
-    {
-        fclose(fp);
-    }
-    TDNF_SAFE_FREE_MEMORY(pszDataDir);
-    TDNF_SAFE_FREE_MEMORY(pszAutoFile);
-    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFMarkAutoInstalledHistory(
     PTDNF pTdnf,
     struct history_ctx *pHistoryCtx,
     PTDNF_SOLVED_PKG_INFO ppInfo
@@ -809,6 +695,7 @@ TDNFMarkAutoInstalledHistory(
     BAIL_ON_TDNF_ERROR(dwError);
     ppszAutoInstalled[nCount] = NULL;
 
+    /* TODO: no need for intermediate ppszAutoInstalled list */
     nCount = 0;
     for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
@@ -826,6 +713,7 @@ TDNFMarkAutoInstalledHistory(
             /* skip duplicates */
             continue;
         }
+
         /* check if user installed */
         if (ppInfo->ppszPkgsUserInstall)
         {
@@ -843,11 +731,15 @@ TDNFMarkAutoInstalledHistory(
         if (!ppInfo->ppszPkgsUserInstall || ppInfo->ppszPkgsUserInstall[j] == NULL)
         {
             rc = history_set_auto_flag(pHistoryCtx, ppszAutoInstalled[i], 1);
-            if (rc != 0)
-            {
-                dwError = ERROR_TDNF_HISTORY_ERROR;
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
+        }
+        else
+        {
+            rc = history_set_auto_flag(pHistoryCtx, ppszAutoInstalled[i], 0);
+        }
+        if (rc != 0)
+        {
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
     }
 cleanup:

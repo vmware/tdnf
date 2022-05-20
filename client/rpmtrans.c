@@ -130,7 +130,7 @@ TDNFRpmExecTransaction(
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        dwError = TDNFMarkAutoInstalledHistory(pTdnf, pHistoryCtx, pSolvedInfo);
+        dwError = TDNFMarkAutoInstalled(pTdnf, pHistoryCtx, pSolvedInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

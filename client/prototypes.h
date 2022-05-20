@@ -480,6 +480,7 @@ TDNFMarkAutoInstalledSinglePkg(
 uint32_t
 TDNFMarkAutoInstalled(
     PTDNF pTdnf,
+    struct history_ctx *pHistoryCtx,
     PTDNF_SOLVED_PKG_INFO ppInfo
     );
 
