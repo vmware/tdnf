@@ -21,6 +21,7 @@ struct history_ctx
     int *installed_ids; /* installed ids must be sorted */
     int installed_count;
     char *cookie;
+    int trans_id;
 };
 
 struct history_delta
@@ -69,3 +70,6 @@ int history_get_transactions(struct history_ctx *ctx,
                              int *pcount,
                              int reverse, int from, int to);
 void history_free_transactions(struct history_transaction *tas, int count);
+
+int history_set_auto_flag(struct history_ctx *ctx, char *name, int value);
+int history_get_auto_flag(struct history_ctx *ctx, char *name, int *pvalue);

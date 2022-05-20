@@ -140,6 +140,31 @@ error:
     return db;
 }
 
+/* Check if table exists. Returns SQLITE_ROW if it exists, SQLITE_DONE if not,
+   or error code in case of error */
+static
+int db_table_exists(sqlite3 *db, const char *name)
+{
+    int rc = 0;
+    sqlite3_stmt *res = NULL;
+
+    rc = sqlite3_prepare_v2(db,
+                            "SELECT * FROM sqlite_master "
+                                "WHERE type='table' AND name=?;",
+                            -1, &res, 0);
+    check_db_rc(db, rc);
+
+    sqlite3_bind_text(res, 1, name, -1, NULL);
+
+    rc = sqlite3_step(res);
+    sqlite3_finalize(res); res = NULL;
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
 /* count known rpms in db */
 static
 int db_rpms_count(sqlite3 *db, int *pcount)
@@ -244,21 +269,22 @@ error:
     return hnm;
 }
 
-/*
- * Add nevra to db if it's not there already. The id will be returned
- * in *pid if that's not NULL.
-*/
 static
-int db_add_nevra(sqlite3 *db, const char *nevra, int *pid)
+int db_get_dict_entry(sqlite3 *db,
+                      const char *table_name, const char *field_name,
+                      const char *entry, int *pid,
+                      int create)
 {
     int rc = 0, step;
     sqlite3_stmt *res = NULL;
-    const char *sql_find = "SELECT * FROM rpms WHERE nevra = ?;";
+    char sql[256];
 
-    rc = sqlite3_prepare_v2(db, sql_find, -1, &res, 0);
+    snprintf(sql, sizeof(sql), "SELECT * FROM %s WHERE %s = ?;", table_name, field_name);
+
+    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_text(res, 1, nevra, -1, NULL);
+    sqlite3_bind_text(res, 1, entry, -1, NULL);
     step = sqlite3_step(res);
     if (step == SQLITE_ROW) {
         int id = sqlite3_column_int(res, 0);
@@ -270,11 +296,17 @@ int db_add_nevra(sqlite3 *db, const char *nevra, int *pid)
     }
     sqlite3_finalize(res); res = NULL;
 
+    if (!create) {
+        if (pid) *pid = 0;
+        return 0;
+    }
+
     /* add it to db */
-    rc = sqlite3_prepare_v2(db, "INSERT INTO rpms(nevra) VALUES (?);", -1, &res, 0);
+    snprintf(sql, sizeof(sql), "INSERT INTO %s(%s) VALUES (?);", table_name, field_name);
+    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_text(res, 1, nevra, -1, NULL);
+    sqlite3_bind_text(res, 1, entry, -1, NULL);
     step = sqlite3_step(res);
     if (step == SQLITE_DONE) {
         int id = sqlite3_last_insert_rowid(db);
@@ -286,6 +318,16 @@ error:
     if (res)
         sqlite3_finalize(res);
     return rc;
+}
+
+/*
+ * Add nevra to db if it's not there already. The id will be returned
+ * in *pid if that's not NULL.
+*/
+static
+int db_add_nevra(sqlite3 *db, const char *nevra, int *pid)
+{
+    return db_get_dict_entry(db, "rpms", "nevra", nevra, pid, 1);
 }
 
 /* read transaction items into ht */
@@ -552,6 +594,129 @@ error:
     return rc;
 }
 
+static
+int db_set_auto_flag(sqlite3 *db, int trans_id, char *name, int value)
+{
+    int rc = 0, ret;
+    int name_id;
+    sqlite3_stmt *res = NULL;
+
+    char *sql = "CREATE TABLE IF NOT EXISTS "
+        "names(Id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);";
+    rc = sqlite3_exec(db, sql, 0, 0, NULL);
+    check_db_rc(db, rc);
+
+    rc = db_get_dict_entry(db, "names", "name", name, &name_id, 1);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_exec(db,
+        "CREATE TABLE IF NOT EXISTS "
+            "flag_set("
+                "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                "trans_id INTEGER,"
+                "name_id INTEGER,"
+                "value INTEGER);",
+        0, 0, NULL);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_prepare_v2(db,
+        "INSERT INTO flag_set(trans_id, name_id, value) VALUES (?, ?, ?);",
+        -1, &res, 0);
+    check_db_rc(db, rc);
+
+    sqlite3_bind_int(res, 1, trans_id);
+    sqlite3_bind_int(res, 2, name_id);
+    sqlite3_bind_int(res, 3, value);
+
+    ret = sqlite3_step(res);
+    check_cond(ret == SQLITE_DONE);
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+static
+int db_get_auto_flag(sqlite3 *db, int trans_id, char *name, int *pvalue)
+{
+    int rc = 0, step;
+    int name_id;
+    sqlite3_stmt *res = NULL;
+
+    rc = db_table_exists(db, "flag_set");
+    if (rc == SQLITE_DONE) { /* no table */
+        *pvalue = 0;
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_table_exists(db, "names");
+    if (rc == SQLITE_DONE) { /* no table */
+        *pvalue = 0;
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_get_dict_entry(db, "names", "name", name, &name_id, 0);
+    check_db_rc(db, rc);
+
+    if (name_id == 0) {
+        /* not found is valid and means value is 0 (unset) */
+        *pvalue = 0;
+        return 0;
+    }
+
+    /* last entry will set the value */
+    /* shouldn't matter if we order by id or trans_id? */
+    rc = sqlite3_prepare_v2(db,
+                            "SELECT value FROM flag_set "
+                                "WHERE name_id = ? AND trans_id <= ? "
+                                "ORDER BY trans_id DESC;",
+                            -1, &res, 0);
+    check_db_rc(db, rc);
+    sqlite3_bind_int(res, 1, name_id);
+    sqlite3_bind_int(res, 2, trans_id);
+
+    step = sqlite3_step(res);
+    sqlite3_finalize(res); res = NULL;
+
+    if (step == SQLITE_ROW) { /* found */
+        *pvalue = sqlite3_column_int(res, 0);
+    } else {
+        /* Not found is valid and means value is 0 (unset).
+           This can happen although we found the name if trans_id is not the
+           latest and an entry was added later. */
+        *pvalue = 0;
+    }
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+int history_set_auto_flag(struct history_ctx *ctx, char *name, int value)
+{
+    int rc = 0;
+
+    check_cond(ctx->trans_id > 0);
+    rc = db_set_auto_flag(ctx->db, ctx->trans_id, name, value);
+    check_rc(rc);
+error:
+    return rc;
+}
+
+int history_get_auto_flag(struct history_ctx *ctx, char *name, int *pvalue)
+{
+    int rc = 0;
+
+    check_cond(ctx->trans_id > 0);
+    rc = db_get_auto_flag(ctx->db, ctx->trans_id, name, pvalue);
+    check_rc(rc);
+error:
+    return rc;
+}
 
 /* Helper to set the ctx cookie, free'ing the old one if needed */
 static
@@ -560,7 +725,6 @@ void history_set_cookie(struct history_ctx *ctx, const char *cookie)
     safe_free(ctx->cookie);
     ctx->cookie = strdup(cookie);
 }
-
 
 /* Helper to convert installed_map into list of ids.
    The list will be sorted. */
@@ -750,6 +914,7 @@ int history_set_state(struct history_ctx *ctx, int trans_id)
 
     history_set_ids_from_map(ctx, installed_map, map_size);
 
+    ctx->trans_id = trans_id;
 error:
     safe_free(installed_map);
 
@@ -795,6 +960,7 @@ int history_record_state(struct history_ctx *ctx)
                             ctx->installed_ids, ctx->installed_count);
     check_rc(rc);
 
+    ctx->trans_id = trans_id;
 error:
     if (rc)
         sqlite3_exec(ctx->db, "ROLLBACK;", 0, 0, NULL);
@@ -961,6 +1127,7 @@ int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline)
     ctx->installed_count = current_count;
 
     history_set_cookie(ctx, cookie);
+    ctx->trans_id = trans_id;
 error:
     if (rc)
         sqlite3_exec(ctx->db, "ROLLBACK;", 0, 0, NULL);
@@ -1021,10 +1188,11 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
                  * No change, we can either update from db or read rpms.
                  * The former may need replaying history, the latter may be faster
                  */
-                rc = db_update_rpms(ts, ctx->db,
+                rc = db_update_rpms(ctx->ts, ctx->db,
                                     &(ctx->installed_ids), &ctx->installed_count);
                 check_rc(rc);
                 history_set_cookie(ctx, cookie_db);
+                ctx->trans_id = id;
             }
             sqlite3_finalize(res); res = NULL;
             db_isfresh = 0;
