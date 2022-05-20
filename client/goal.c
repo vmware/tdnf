@@ -781,6 +781,83 @@ error:
 }
 
 uint32_t
+TDNFMarkAutoInstalledHistory(
+    PTDNF pTdnf,
+    struct history_ctx *pHistoryCtx,
+    PTDNF_SOLVED_PKG_INFO ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    char **ppszAutoInstalled = NULL;
+    int i, j;
+    int rc;
+    int nCount = 0;
+
+    if (!pTdnf || !pHistoryCtx || !ppInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        nCount++;
+    }
+
+    dwError = TDNFReAllocateMemory((nCount+1) * sizeof(char **), (void **)&ppszAutoInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+    ppszAutoInstalled[nCount] = NULL;
+
+    nCount = 0;
+    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        dwError = TDNFAllocateString(pPkgInfo->pszName, &ppszAutoInstalled[nCount++]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFStringArraySort(ppszAutoInstalled);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; ppszAutoInstalled[i]; i++)
+    {
+        if (i > 0 && strcmp(ppszAutoInstalled[i-1], ppszAutoInstalled[i]) == 0)
+        {
+            /* skip duplicates */
+            continue;
+        }
+        /* check if user installed */
+        if (ppInfo->ppszPkgsUserInstall)
+        {
+            /* TODO: if ppszPkgsUserInstall is sorted, we can start with j
+               where it left last time */
+            for (j = 0; ppInfo->ppszPkgsUserInstall[j]; j++)
+            {
+                if (strcmp(ppszAutoInstalled[i],
+                           ppInfo->ppszPkgsUserInstall[j]) == 0)
+                {
+                    break;
+                }
+            }
+        }
+        if (!ppInfo->ppszPkgsUserInstall || ppInfo->ppszPkgsUserInstall[j] == NULL)
+        {
+            rc = history_set_auto_flag(pHistoryCtx, ppszAutoInstalled[i], 1);
+            if (rc != 0)
+            {
+                dwError = ERROR_TDNF_HISTORY_ERROR;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+cleanup:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFAddGoal(
     PTDNF pTdnf,
     TDNF_ALTERTYPE nAlterType,

@@ -132,6 +132,39 @@ error:
 }
 
 uint32_t
+SolvAddUserInstalledToJobsHistory(
+    Queue* pQueueJobs,
+    Pool *pPool
+    )
+{
+    uint32_t dwError = 0;
+    struct history_ctx *pHistoryCtx = NULL;
+    Id p;
+    Solvable *s;
+    int i;
+
+    if(!pQueueJobs || !pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    FOR_REPO_SOLVABLES(pPool->installed, p, s)
+    {
+        if (i >= queueAutoInstalled.count)
+        {
+            queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_USERINSTALLED, s->name);
+        }
+    }
+cleanup:
+    queue_free(&queueAutoInstalled);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 SolvAddPkgInstallJob(
     Queue*  pQueueJobs,
     Id      dwId
