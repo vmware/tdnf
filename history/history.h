@@ -6,7 +6,10 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
+#pragma once
+
 #include <sqlite3.h>
+#include <rpm/rpmlib.h>
 
 #define HISTORY_TRANS_TYPE_BASE 0
 #define HISTORY_TRANS_TYPE_DELTA 1
@@ -71,5 +74,5 @@ int history_get_transactions(struct history_ctx *ctx,
                              int reverse, int from, int to);
 void history_free_transactions(struct history_transaction *tas, int count);
 
-int history_set_auto_flag(struct history_ctx *ctx, char *name, int value);
-int history_get_auto_flag(struct history_ctx *ctx, char *name, int *pvalue);
+int history_set_auto_flag(struct history_ctx *ctx, const char *name, int value);
+int history_get_auto_flag(struct history_ctx *ctx, const char *name, int *pvalue);

@@ -49,6 +49,16 @@
     goto error; \
 }
 
+#define check_db_step(db, step) \
+    if((step) != SQLITE_ROW && (step) != SQLITE_DONE) { \
+        fprintf(stderr, \
+            "check_db_rc failed with %s in %s line %d\n", \
+            sqlite3_errmsg(db), __FUNCTION__, __LINE__); \
+        rc = -1; \
+        ((void)(rc)); /* suppress "set but not used" warning */ \
+        goto error; \
+    }
+
 #define check_db_cmd(db, cmd) { \
     rc = (cmd); \
     check_db_rc(db, rc); \
@@ -595,15 +605,18 @@ error:
 }
 
 static
-int db_set_auto_flag(sqlite3 *db, int trans_id, char *name, int value)
+int db_set_auto_flag(sqlite3 *db, int trans_id, const char *name, int value)
 {
     int rc = 0, ret;
     int name_id;
     sqlite3_stmt *res = NULL;
 
-    char *sql = "CREATE TABLE IF NOT EXISTS "
-        "names(Id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);";
-    rc = sqlite3_exec(db, sql, 0, 0, NULL);
+    rc = sqlite3_exec(db,
+        "CREATE TABLE IF NOT EXISTS "
+            "names("
+                "Id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "name TEXT);",
+        0, 0, NULL);
     check_db_rc(db, rc);
 
     rc = db_get_dict_entry(db, "names", "name", name, &name_id, 1);
@@ -638,7 +651,7 @@ error:
 }
 
 static
-int db_get_auto_flag(sqlite3 *db, int trans_id, char *name, int *pvalue)
+int db_get_auto_flag(sqlite3 *db, int trans_id, const char *name, int *pvalue)
 {
     int rc = 0, step;
     int name_id;
@@ -670,25 +683,25 @@ int db_get_auto_flag(sqlite3 *db, int trans_id, char *name, int *pvalue)
     /* last entry will set the value */
     /* shouldn't matter if we order by id or trans_id? */
     rc = sqlite3_prepare_v2(db,
-                            "SELECT value FROM flag_set "
+                            "SELECT * FROM flag_set "
                                 "WHERE name_id = ? AND trans_id <= ? "
-                                "ORDER BY trans_id DESC;",
+                                "ORDER BY id DESC;",
                             -1, &res, 0);
     check_db_rc(db, rc);
     sqlite3_bind_int(res, 1, name_id);
     sqlite3_bind_int(res, 2, trans_id);
 
     step = sqlite3_step(res);
-    sqlite3_finalize(res); res = NULL;
 
     if (step == SQLITE_ROW) { /* found */
-        *pvalue = sqlite3_column_int(res, 0);
+        *pvalue = sqlite3_column_int(res, 3);
     } else {
         /* Not found is valid and means value is 0 (unset).
            This can happen although we found the name if trans_id is not the
            latest and an entry was added later. */
         *pvalue = 0;
     }
+    sqlite3_finalize(res); res = NULL;
 
 error:
     if (res)
@@ -696,10 +709,11 @@ error:
     return rc;
 }
 
-int history_set_auto_flag(struct history_ctx *ctx, char *name, int value)
+int history_set_auto_flag(struct history_ctx *ctx, const char *name, int value)
 {
     int rc = 0;
 
+    check_ptr(name);
     check_cond(ctx->trans_id > 0);
     rc = db_set_auto_flag(ctx->db, ctx->trans_id, name, value);
     check_rc(rc);
@@ -707,10 +721,11 @@ error:
     return rc;
 }
 
-int history_get_auto_flag(struct history_ctx *ctx, char *name, int *pvalue)
+int history_get_auto_flag(struct history_ctx *ctx, const char *name, int *pvalue)
 {
     int rc = 0;
 
+    check_ptr(name);
     check_cond(ctx->trans_id > 0);
     rc = db_get_auto_flag(ctx->db, ctx->trans_id, name, pvalue);
     check_rc(rc);
@@ -1153,14 +1168,7 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
     /* this fails if the rpm db isn't opened */
     check_ptr(cookie);
 
-    rc = sqlite3_prepare_v2(ctx->db,
-                            "SELECT * FROM sqlite_master "
-                                "WHERE type='table' AND name='transactions';",
-                            -1, &res, 0);
-    check_db_rc(ctx->db, rc);
-
-    step = sqlite3_step(res);
-    sqlite3_finalize(res); res = NULL;
+    step = db_table_exists(ctx->db, "transactions");
 
     if (step == SQLITE_ROW) {
         rc = sqlite3_prepare_v2(ctx->db,
@@ -1197,6 +1205,8 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
             sqlite3_finalize(res); res = NULL;
             db_isfresh = 0;
         }
+    } else {
+        check_cond(step == SQLITE_DONE);
     }
 
     if (db_isfresh) {
@@ -1220,9 +1230,10 @@ error:
 
 struct history_ctx *create_history_ctx(const char *db_filename)
 {
-    int rc = 0;
+    int rc = 0, step;
     sqlite3 *db;
     struct history_ctx *ctx = NULL;
+    sqlite3_stmt *res = NULL;
 
     db = init_db(db_filename);
     check_ptr(db);
@@ -1232,7 +1243,30 @@ struct history_ctx *create_history_ctx(const char *db_filename)
 
     ctx->db = db;
 
+    step = db_table_exists(ctx->db, "transactions");
+    check_db_step(db, step);
+
+    if (step == SQLITE_ROW) {
+        rc = sqlite3_prepare_v2(ctx->db,
+                                "SELECT * FROM transactions ORDER BY id DESC;",
+                                -1, &res, 0);
+        check_db_rc(ctx->db, rc);
+
+        step = sqlite3_step(res);
+        if (step == SQLITE_ROW) {
+            char *cookie = (char *)sqlite3_column_text(res, 1);
+            if (cookie)
+                history_set_cookie(ctx, cookie);
+            ctx->trans_id = sqlite3_column_int(res, 0);
+        }
+    }
 error:
+    if (res)
+        sqlite3_finalize(res);
+    if (rc) {
+        destroy_history_ctx(ctx);
+        return NULL;
+    }
     return ctx;
 }
 
