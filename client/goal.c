@@ -675,10 +675,8 @@ TDNFMarkAutoInstalled(
 {
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
-    char **ppszAutoInstalled = NULL;
-    int i, j;
+    int i;
     int rc;
-    int nCount = 0;
 
     if (!pTdnf || !pHistoryCtx || !ppInfo)
     {
@@ -686,56 +684,40 @@ TDNFMarkAutoInstalled(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* ppInfo->pPkgsToInstall contains packages that were installed.
+       ppInfo->ppszPkgsUserInstall contains packages that the user intended to
+       install. Therefore, any packages that are in pPkgsToInstall but not in
+       ppszPkgsUserInstall are automatic installs and were pulled in by
+       dependencies.
+    
+       Corner cases:
+       - packages that are dependencies but are already installed will be
+         unaffected
+       - on upgrades/downgrades, only additional packages will be in
+         pPkgsToInstall. These are automatic if the upgrade was invoked w/out
+         package args. If they are in package args, they are not in pPkgsToInstall
+         (but will be in pPkgsToUpgrade) and their status will not change.
+    */
     for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
-        nCount++;
-    }
-
-    dwError = TDNFReAllocateMemory((nCount+1) * sizeof(char **), (void **)&ppszAutoInstalled);
-    BAIL_ON_TDNF_ERROR(dwError);
-    ppszAutoInstalled[nCount] = NULL;
-
-    /* TODO: no need for intermediate ppszAutoInstalled list */
-    nCount = 0;
-    for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
-    {
-        dwError = TDNFAllocateString(pPkgInfo->pszName, &ppszAutoInstalled[nCount++]);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFStringArraySort(ppszAutoInstalled);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for (i = 0; ppszAutoInstalled[i]; i++)
-    {
-        if (i > 0 && strcmp(ppszAutoInstalled[i-1], ppszAutoInstalled[i]) == 0)
-        {
-            /* skip duplicates */
-            continue;
-        }
-
+        const char *pszName = pPkgInfo->pszName;
+        int nFlag = 1;
         /* check if user installed */
         if (ppInfo->ppszPkgsUserInstall)
         {
-            /* TODO: if ppszPkgsUserInstall is sorted, we can start with j
+            /* TODO: if both lists were sorted, we could start with i
                where it left last time */
-            for (j = 0; ppInfo->ppszPkgsUserInstall[j]; j++)
+            for (i = 0; ppInfo->ppszPkgsUserInstall[i]; i++)
             {
-                if (strcmp(ppszAutoInstalled[i],
-                           ppInfo->ppszPkgsUserInstall[j]) == 0)
+                if (strcmp(pszName,
+                           ppInfo->ppszPkgsUserInstall[i]) == 0)
                 {
+                    nFlag = 0;
                     break;
                 }
             }
         }
-        if (!ppInfo->ppszPkgsUserInstall || ppInfo->ppszPkgsUserInstall[j] == NULL)
-        {
-            rc = history_set_auto_flag(pHistoryCtx, ppszAutoInstalled[i], 1);
-        }
-        else
-        {
-            rc = history_set_auto_flag(pHistoryCtx, ppszAutoInstalled[i], 0);
-        }
+        rc = history_set_auto_flag(pHistoryCtx, pszName, nFlag);
         if (rc != 0)
         {
             dwError = ERROR_TDNF_HISTORY_ERROR;
@@ -743,7 +725,6 @@ TDNFMarkAutoInstalled(
         }
     }
 cleanup:
-    TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     return dwError;
 error:
     goto cleanup;
