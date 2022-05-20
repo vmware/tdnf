@@ -712,11 +712,19 @@ error:
 int history_set_auto_flag(struct history_ctx *ctx, const char *name, int value)
 {
     int rc = 0;
+    int oldval;
 
     check_ptr(name);
     check_cond(ctx->trans_id > 0);
-    rc = db_set_auto_flag(ctx->db, ctx->trans_id, name, value);
+
+    /* setting only when needed avoids cluttering the db */
+    rc = db_get_auto_flag(ctx->db, ctx->trans_id, name, &oldval);
     check_rc(rc);
+
+    if (oldval != value) {
+        rc = db_set_auto_flag(ctx->db, ctx->trans_id, name, value);
+        check_rc(rc);
+    }
 error:
     return rc;
 }
