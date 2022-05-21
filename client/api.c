@@ -2180,7 +2180,10 @@ TDNFHistoryList(
     {
         pHistoryInfoItems[i].nId = tas[i].id;
         pHistoryInfoItems[i].nType = tas[i].type;
-        dwError = TDNFAllocateString(tas[i].cmdline, &pHistoryInfoItems[i].pszCmdLine);
+        dwError = TDNFAllocateString(tas[i].cmdline ?
+            tas[i].cmdline :
+            "(none)",
+            &pHistoryInfoItems[i].pszCmdLine);
         BAIL_ON_TDNF_ERROR(dwError);
         pHistoryInfoItems[i].timeStamp = tas[i].timestamp;
         pHistoryInfoItems[i].nAddedCount = tas[i].delta.added_count;
