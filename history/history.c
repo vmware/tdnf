@@ -605,9 +605,33 @@ error:
 }
 
 static
+int db_set_auto_flag_byid(sqlite3 *db, int trans_id, int name_id, int value)
+{
+    int rc = 0, step;
+    sqlite3_stmt *res = NULL;
+
+    rc = sqlite3_prepare_v2(db,
+        "INSERT INTO flag_set(trans_id, name_id, value) VALUES (?, ?, ?);",
+        -1, &res, 0);
+    check_db_rc(db, rc);
+
+    sqlite3_bind_int(res, 1, trans_id);
+    sqlite3_bind_int(res, 2, name_id);
+    sqlite3_bind_int(res, 3, value);
+
+    step = sqlite3_step(res);
+    check_cond(step == SQLITE_DONE);
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+static
 int db_set_auto_flag(sqlite3 *db, int trans_id, const char *name, int value)
 {
-    int rc = 0, ret;
+    int rc = 0;
     int name_id;
     sqlite3_stmt *res = NULL;
 
@@ -632,18 +656,43 @@ int db_set_auto_flag(sqlite3 *db, int trans_id, const char *name, int value)
         0, 0, NULL);
     check_db_rc(db, rc);
 
+    rc = db_set_auto_flag_byid(db, trans_id, name_id, value);
+    check_rc(rc);
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+static
+int db_get_auto_flag_byid(sqlite3 *db, int trans_id, int name_id, int *pvalue)
+{
+    int rc = 0, step;
+    sqlite3_stmt *res = NULL;
+
+    /* last entry will set the value */
+    /* shouldn't matter if we order by id or trans_id? */
     rc = sqlite3_prepare_v2(db,
-        "INSERT INTO flag_set(trans_id, name_id, value) VALUES (?, ?, ?);",
-        -1, &res, 0);
+                            "SELECT * FROM flag_set "
+                                "WHERE name_id = ? AND trans_id <= ? "
+                                "ORDER BY id DESC;",
+                            -1, &res, 0);
     check_db_rc(db, rc);
+    sqlite3_bind_int(res, 1, name_id);
+    sqlite3_bind_int(res, 2, trans_id);
 
-    sqlite3_bind_int(res, 1, trans_id);
-    sqlite3_bind_int(res, 2, name_id);
-    sqlite3_bind_int(res, 3, value);
+    step = sqlite3_step(res);
 
-    ret = sqlite3_step(res);
-    check_cond(ret == SQLITE_DONE);
-
+    if (step == SQLITE_ROW) { /* found */
+        *pvalue = sqlite3_column_int(res, 3);
+    } else {
+        /* Not found is valid and means value is 0 (unset).
+           This can happen although we found the name if trans_id is not the
+           latest and an entry was added later. */
+        *pvalue = 0;
+    }
+    sqlite3_finalize(res); res = NULL;
 error:
     if (res)
         sqlite3_finalize(res);
@@ -653,7 +702,7 @@ error:
 static
 int db_get_auto_flag(sqlite3 *db, int trans_id, const char *name, int *pvalue)
 {
-    int rc = 0, step;
+    int rc = 0;
     int name_id;
     sqlite3_stmt *res = NULL;
 
@@ -680,28 +729,8 @@ int db_get_auto_flag(sqlite3 *db, int trans_id, const char *name, int *pvalue)
         return 0;
     }
 
-    /* last entry will set the value */
-    /* shouldn't matter if we order by id or trans_id? */
-    rc = sqlite3_prepare_v2(db,
-                            "SELECT * FROM flag_set "
-                                "WHERE name_id = ? AND trans_id <= ? "
-                                "ORDER BY id DESC;",
-                            -1, &res, 0);
+    rc = db_get_auto_flag_byid(db, trans_id, name_id, pvalue);
     check_db_rc(db, rc);
-    sqlite3_bind_int(res, 1, name_id);
-    sqlite3_bind_int(res, 2, trans_id);
-
-    step = sqlite3_step(res);
-
-    if (step == SQLITE_ROW) { /* found */
-        *pvalue = sqlite3_column_int(res, 3);
-    } else {
-        /* Not found is valid and means value is 0 (unset).
-           This can happen although we found the name if trans_id is not the
-           latest and an entry was added later. */
-        *pvalue = 0;
-    }
-    sqlite3_finalize(res); res = NULL;
 
 error:
     if (res)
@@ -740,6 +769,14 @@ int history_get_auto_flag(struct history_ctx *ctx, const char *name, int *pvalue
 error:
     return rc;
 }
+
+/* restore flags t values from trans_id */
+/*
+int history_restore_flags(struct history_ctx *ctx, int trans_id)
+{
+
+}
+*/
 
 /* Helper to set the ctx cookie, free'ing the old one if needed */
 static
