@@ -1,7 +1,5 @@
 # tdnf - tiny dandified yum
 
-[![Build Status](https://travis-ci.org/vmware/tdnf.svg?branch=dev)](https://travis-ci.org/vmware/tdnf)
-
 In order to compile, from the checkout directory, run the following
 
 ```sh
