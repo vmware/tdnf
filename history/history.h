@@ -35,6 +35,13 @@ struct history_delta
     int removed_count;
 };
 
+struct history_flags_delta
+{
+    int *changed_ids;
+    int *values;
+    int count;
+};
+
 struct history_transaction
 {
     int id;
@@ -43,6 +50,7 @@ struct history_transaction
     time_t timestamp;
     char *cookie;
     struct history_delta delta;
+    struct history_flags_delta flags_delta;
 };
 
 struct history_nevra_map
