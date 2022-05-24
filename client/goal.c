@@ -675,8 +675,6 @@ TDNFMarkAutoInstalled(
 {
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
-    int i;
-    int rc;
 
     if (!pTdnf || !pHistoryCtx || !ppInfo)
     {
@@ -700,6 +698,7 @@ TDNFMarkAutoInstalled(
     */
     for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
+        int rc;
         const char *pszName = pPkgInfo->pszName;
         int nFlag = 1;
         /* check if user installed */
@@ -707,7 +706,7 @@ TDNFMarkAutoInstalled(
         {
             /* TODO: if both lists were sorted, we could start with i
                where it left last time */
-            for (i = 0; ppInfo->ppszPkgsUserInstall[i]; i++)
+            for (int i = 0; ppInfo->ppszPkgsUserInstall[i]; i++)
             {
                 if (strcmp(pszName,
                            ppInfo->ppszPkgsUserInstall[i]) == 0)
