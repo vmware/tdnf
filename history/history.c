@@ -1316,7 +1316,7 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
                  * No change, we can either update from db or read rpms.
                  * The former may need replaying history, the latter may be faster
                  */
-                rc = db_update_rpms(ctx->ts, ctx->db,
+                rc = db_update_rpms(ts, ctx->db,
                                     &(ctx->installed_ids), &ctx->installed_count);
                 check_rc(rc);
                 history_set_cookie(ctx, cookie_db);

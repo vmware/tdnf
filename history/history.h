@@ -84,3 +84,7 @@ void history_free_transactions(struct history_transaction *tas, int count);
 
 int history_set_auto_flag(struct history_ctx *ctx, const char *name, int value);
 int history_get_auto_flag(struct history_ctx *ctx, const char *name, int *pvalue);
+
+int history_restore_auto_flags(struct history_ctx *ctx, int trans_id);
+int history_replay_auto_flags(struct history_ctx *ctx, int from, int to);
+
