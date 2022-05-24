@@ -199,14 +199,15 @@ error:
     return rc;
 }
 
-/* max rpm id db (should be same as count unless there are gaps) */
+/* max id in a table (should be same as count unless there are gaps) */
 static
-int db_rpms_maxid(sqlite3 *db, int *pmaxid)
+int db_maxid(sqlite3 *db, const char *table_name, int *pmaxid)
 {
     int rc = 0, step;
     sqlite3_stmt *res = NULL;
-    const char *sql = "SELECT * FROM rpms ORDER BY id DESC;";
+    char sql[256];
 
+    snprintf(sql, sizeof(sql), "SELECT * FROM %s ORDER BY id DESC;", table_name);
     rc = sqlite3_prepare_v2(db,
                             sql,
                             -1, &res, 0);
@@ -221,6 +222,13 @@ error:
     if (res)
         sqlite3_finalize(res);
     return rc;
+}
+
+/* max rpm id db (should be same as count unless there are gaps) */
+static
+int db_rpms_maxid(sqlite3 *db, int *pmaxid)
+{
+    return db_maxid(db, "rpms", pmaxid);
 }
 
 static
@@ -770,13 +778,38 @@ error:
     return rc;
 }
 
-/* restore flags t values from trans_id */
-/*
-int history_restore_flags(struct history_ctx *ctx, int trans_id)
+/* restore flags to values from trans_id */
+int history_restore_auto_flags(struct history_ctx *ctx, int trans_id)
 {
+    int rc = 0;
+    int i, count;
 
+    rc = db_table_exists(db, "names");
+    if (rc == SQLITE_DONE) { /* no table => nothing to restore */
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_maxid(ctx->db, "names", &count);
+    check_rc(rc);
+
+    for (i = 1; i <= count; i++) {
+        int value, oldval;
+
+        rc = db_get_auto_flag_byid(ctx->db, trans_id, i, &value);
+        check_rc(rc);
+
+        rc = db_get_auto_flag_byid(ctx->db, ctx->trans_id, i, &oldval);
+        check_rc(rc);
+
+        if (value != oldval) {
+            rc = db_set_auto_flag_byid(ctx->db, ctx->trans_id, i, value);
+            check_rc(rc);
+        }
+    }
+error:
+    return rc;
 }
-*/
 
 /* Helper to set the ctx cookie, free'ing the old one if needed */
 static
