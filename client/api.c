@@ -1979,9 +1979,7 @@ TDNFHistoryResolve(
                                 pHistoryArgs->nCommand != HISTORY_CMD_INIT);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    history_set_rpmts(ctx, ts);
-
-    rc = history_init(ctx);
+    rc = history_sync(ctx, ts);
     if (rc != 0)
     {
         dwError = ERROR_TDNF_HISTORY_ERROR;

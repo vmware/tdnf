@@ -18,7 +18,6 @@
 struct history_ctx
 {
     sqlite3 *db;
-    rpmts ts;
     int *installed_ids; /* installed ids must be sorted */
     int installed_count;
     char *cookie;
@@ -51,8 +50,7 @@ struct history_nevra_map
 struct history_ctx *create_history_ctx(const char *db_filename);
 void destroy_history_ctx(struct history_ctx *ctx);
 
-void history_set_rpmts(struct history_ctx *ctx, rpmts ts);
-int history_init(struct history_ctx *ctx);
+int history_sync(struct history_ctx *ctx, rpmts ts);
 
 char *history_nevra_from_id(struct history_ctx *ctx, int id);
 struct history_nevra_map *history_nevra_map(struct history_ctx *ctx);
@@ -64,7 +62,7 @@ struct history_delta *history_get_delta(struct history_ctx *ctx, int trans_id);
 struct history_delta *history_get_delta_range(struct history_ctx *ctx, int trans_id0, int trans_id1);
 
 int history_record_state(struct history_ctx *ctx);
-int history_update_state(struct history_ctx *ctx, const char *cmdline);
+int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline);
 
 int history_get_transactions(struct history_ctx *ctx,
                              struct history_transaction **ptas,

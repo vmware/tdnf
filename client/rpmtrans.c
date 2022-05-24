@@ -104,9 +104,7 @@ TDNFRpmExecTransaction(
         dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 0);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        history_set_rpmts(pHistoryCtx, ts.pTS);
-
-        rc = history_init(pHistoryCtx);
+        rc = history_sync(pHistoryCtx, ts.pTS);
         if (rc != 0)
         {
             dwError = ERROR_TDNF_HISTORY_ERROR;
@@ -125,7 +123,7 @@ TDNFRpmExecTransaction(
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
-        rc = history_update_state(pHistoryCtx, pszCmdLine);
+        rc = history_update_state(pHistoryCtx, ts.pTS, pszCmdLine);
         if (rc != 0)
         {
             dwError = ERROR_TDNF_HISTORY_ERROR;

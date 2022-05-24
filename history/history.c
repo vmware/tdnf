@@ -907,7 +907,7 @@ error:
    Update state in ctx and db to actual RPM state on system if it has changed
    by adding a delta transaction.
 */
-int history_update_state(struct history_ctx *ctx, const char *cmdline)
+int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline)
 {
     int rc = 0;
     int trans_id;
@@ -916,7 +916,7 @@ int history_update_state(struct history_ctx *ctx, const char *cmdline)
     int *removed_ids = NULL, removed_count;
     char *cookie = NULL;
 
-    cookie = rpmdbCookie(rpmtsGetRdb(ctx->ts));
+    cookie = rpmdbCookie(rpmtsGetRdb(ts));
     check_ptr(cookie);
 
     if (strcmp(ctx->cookie, cookie) == 0) {
@@ -925,7 +925,7 @@ int history_update_state(struct history_ctx *ctx, const char *cmdline)
         return 0;
     }
 
-    rc = db_update_rpms(ctx->ts, ctx->db, &current_ids, &current_count);
+    rc = db_update_rpms(ts, ctx->db, &current_ids, &current_count);
     check_rc(rc);
 
     rc = diff_arrays(ctx->installed_ids, ctx->installed_count,
@@ -972,17 +972,17 @@ error:
     return rc;
 }
 
-/* initialize history context */
-int history_init(struct history_ctx *ctx)
+/* sync history context to current state from ts */
+int history_sync(struct history_ctx *ctx, rpmts ts)
 {
     sqlite3_stmt *res = NULL;
     int step, rc = 0;
     char *cookie = NULL;
     int db_isfresh = 1;
 
-    check_ptr(ctx->ts);
+    check_ptr(ts);
 
-    cookie = rpmdbCookie(rpmtsGetRdb(ctx->ts));
+    cookie = rpmdbCookie(rpmtsGetRdb(ts));
     /* this fails if the rpm db isn't opened */
     check_ptr(cookie);
 
@@ -1014,16 +1014,17 @@ int history_init(struct history_ctx *ctx)
                 rc = history_set_state(ctx, id);
                 check_rc(rc);
                 history_set_cookie(ctx, cookie_db);
-                rc = history_update_state(ctx, "(unknown)");
+                rc = history_update_state(ctx, ts, "(unknown)");
                 check_rc(rc);
             } else {
-                history_set_cookie(ctx, cookie_db);
                 /*
                  * No change, we can either update from db or read rpms.
                  * The former may need replaying history, the latter may be faster
                  */
-                db_update_rpms(ctx->ts, ctx->db,
-                               &(ctx->installed_ids), &ctx->installed_count);
+                rc = db_update_rpms(ts, ctx->db,
+                                    &(ctx->installed_ids), &ctx->installed_count);
+                check_rc(rc);
+                history_set_cookie(ctx, cookie_db);
             }
             sqlite3_finalize(res); res = NULL;
             db_isfresh = 0;
@@ -1034,7 +1035,7 @@ int history_init(struct history_ctx *ctx)
         /* we are starting from scratch */
         history_set_cookie(ctx, cookie);
 
-        rc = db_update_rpms(ctx->ts, ctx->db,
+        rc = db_update_rpms(ts, ctx->db,
                             &(ctx->installed_ids), &ctx->installed_count);
         check_rc(rc);
 
@@ -1047,11 +1048,6 @@ error:
         sqlite3_finalize(res);
     safe_free(cookie);
     return rc;
-}
-
-void history_set_rpmts(struct history_ctx *ctx, rpmts ts)
-{
-    ctx->ts = ts;
 }
 
 struct history_ctx *create_history_ctx(const char *db_filename)
