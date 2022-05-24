@@ -618,6 +618,8 @@ int db_set_auto_flag_byid(sqlite3 *db, int trans_id, int name_id, int value)
     int rc = 0, step;
     sqlite3_stmt *res = NULL;
 
+    /* TODO: check if entry with trans_id and name_id already exists and update,
+       instead of creating a new entry */
     rc = sqlite3_prepare_v2(db,
         "INSERT INTO flag_set(trans_id, name_id, value) VALUES (?, ?, ?);",
         -1, &res, 0);
@@ -784,7 +786,7 @@ int history_restore_auto_flags(struct history_ctx *ctx, int trans_id)
     int rc = 0;
     int i, count;
 
-    rc = db_table_exists(db, "names");
+    rc = db_table_exists(ctx->db, "names");
     if (rc == SQLITE_DONE) { /* no table => nothing to restore */
         return 0;
     }
@@ -805,6 +807,46 @@ int history_restore_auto_flags(struct history_ctx *ctx, int trans_id)
         if (value != oldval) {
             rc = db_set_auto_flag_byid(ctx->db, ctx->trans_id, i, value);
             check_rc(rc);
+        }
+    }
+error:
+    return rc;
+}
+
+/* range is exclusive for from */
+int history_replay_auto_flags(struct history_ctx *ctx, int from, int to)
+{
+    int rc = 0;
+    int i, count;
+
+    rc = db_table_exists(ctx->db, "names");
+    if (rc == SQLITE_DONE) { /* no table => nothing to restore */
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_maxid(ctx->db, "names", &count);
+    check_rc(rc);
+
+    for (i = 1; i <= count; i++) {
+        int val_from, val_to;
+
+        rc = db_get_auto_flag_byid(ctx->db, from, i, &val_from);
+        check_rc(rc);
+        rc = db_get_auto_flag_byid(ctx->db, to, i, &val_to);
+        check_rc(rc);
+
+        if (val_from != val_to)
+        {
+            int oldval;
+
+            rc = db_get_auto_flag_byid(ctx->db, ctx->trans_id, i, &oldval);
+            check_rc(rc);
+
+            if (val_to != oldval) {
+                rc = db_set_auto_flag_byid(ctx->db, ctx->trans_id, i, val_to);
+                check_rc(rc);
+            }
         }
     }
 error:
