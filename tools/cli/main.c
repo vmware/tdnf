@@ -102,6 +102,7 @@ int main(int argc, char **argv)
         _context.pFnUpdateInfoSummary = TDNFCliInvokeUpdateInfoSummary;
         _context.pFnHistoryList = TDNFCliInvokeHistoryList;
         _context.pFnHistoryResolve = TDNFCliInvokeHistoryResolve;
+        _context.pFnAlterHistory = TDNFCliInvokeAlterHistory;
 
         pszCmd = pCmdArgs->ppszCmds[0];
 
@@ -364,6 +365,16 @@ TDNFCliInvokeAlter(
     )
 {
     return TDNFAlterCommand(pContext->hTdnf, nAlterType, pSolvedPkgInfo);
+}
+
+uint32_t
+TDNFCliInvokeAlterHistory(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    )
+{
+    return TDNFAlterHistoryCommand(pContext->hTdnf, pSolvedPkgInfo, pHistoryArgs);
 }
 
 uint32_t

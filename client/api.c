@@ -199,6 +199,30 @@ error:
     goto cleanup;
 }
 
+uint32_t
+TDNFAlterHistoryCommand(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    )
+{
+    uint32_t dwError = 0;
+    if(!pTdnf || !pSolvedInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRpmExecHistoryTransaction(pTdnf, pSolvedInfo, pHistoryArgs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 /**
  * Use case : tdnf check --skipconflicts --skipobsoletes
  *            tdnf check --skipconflicts

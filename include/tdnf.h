@@ -206,6 +206,16 @@ TDNFAlterCommand(
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
     );
 
+/* Similar to TDNFAlterCommand() but for history
+   transactions like rollback, undo and redo
+*/
+uint32_t
+TDNFAlterHistoryCommand(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    );
+
 //Show a descriptive error message
 //divided into different areas like
 //solv, repo, rpm and generic tdnf errors.

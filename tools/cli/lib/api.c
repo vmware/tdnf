@@ -1062,8 +1062,24 @@ TDNFCliHistoryAlter(
     }
     else if (!(pSolvedPkgInfo->ppszPkgsNotResolved && pSolvedPkgInfo->ppszPkgsNotResolved[0]))
     {
-        dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, 0, pSolvedPkgInfo);
+        dwError = TDNFCliAskForAction(pCmdArgs, pSolvedPkgInfo);
+        if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
+        {
+            dwError = 0;
+        }
         BAIL_ON_CLI_ERROR(dwError);
+
+        dwError = pContext->pFnAlterHistory(
+                    pContext,
+                    pSolvedPkgInfo,
+                    pHistoryArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        if (pCmdArgs->nJsonOutput)
+        {
+            dwError = TDNFCliPrintActionComplete(pCmdArgs);
+            BAIL_ON_CLI_ERROR(dwError);
+        }
     }
     else
     {

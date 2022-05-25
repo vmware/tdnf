@@ -285,10 +285,6 @@ TDNFCliAskAndAlter(
     }
 
     dwError = TDNFCliAskForAction(pCmdArgs, pSolvedPkgInfo);
-    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
-    {
-        dwError = 0;
-    }
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = pContext->pFnAlter(
@@ -308,6 +304,10 @@ cleanup:
     return dwError;
 
 error:
+    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
+    {
+        dwError = 0;
+    }
     goto cleanup;
 }
 

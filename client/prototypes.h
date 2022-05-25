@@ -877,6 +877,13 @@ TDNFRpmExecTransaction(
     TDNF_ALTERTYPE nAlterType
     );
 
+uint32_t
+TDNFRpmExecHistoryTransaction(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    );
+
 void*
 TDNFRpmCB(
     const void* pArg,
