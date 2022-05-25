@@ -873,8 +873,7 @@ TDNFAddNotResolved(
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pInfo,
-    TDNF_ALTERTYPE nAlterType
+    PTDNF_SOLVED_PKG_INFO pInfo
     );
 
 uint32_t

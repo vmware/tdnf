@@ -183,13 +183,16 @@ TDNFAlterCommand(
     )
 {
     uint32_t dwError = 0;
+
+    UNUSED(nAlterType);
+
     if(!pTdnf || !pSolvedInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo, nAlterType);
+    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:

@@ -60,7 +60,6 @@ uint32_t
 TDNFRpmCreateTS(
     PTDNF pTdnf,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo,
-    TDNF_ALTERTYPE nAlterType,
     PTDNFRPMTS *ppTS
     )
 {
@@ -89,7 +88,7 @@ TDNFRpmCreateTS(
 
     //Allow downgrades
     pTS->nProbFilterFlags = RPMPROB_FILTER_OLDPACKAGE;
-    if(nAlterType == ALTER_REINSTALL)
+    if(pSolvedInfo->pPkgsToReinstall)
     {
         pTS->nProbFilterFlags = pTS->nProbFilterFlags | RPMPROB_FILTER_REPLACEPKG;
     }
@@ -197,8 +196,7 @@ error:
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
-    TDNF_ALTERTYPE nAlterType
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo
     )
 {
     uint32_t dwError = 0;
@@ -212,7 +210,7 @@ TDNFRpmExecTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRpmCreateTS(pTdnf, pSolvedInfo, nAlterType, &pTS);
+    dwError = TDNFRpmCreateTS(pTdnf, pSolvedInfo, &pTS);
     BAIL_ON_TDNF_ERROR(dwError);
 
     nDownloadOnly = pTdnf->pArgs->nDownloadOnly;
@@ -260,7 +258,7 @@ TDNFRpmExecHistoryTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRpmCreateTS(pTdnf, pSolvedInfo, 0, &pTS);
+    dwError = TDNFRpmCreateTS(pTdnf, pSolvedInfo, &pTS);
     BAIL_ON_TDNF_ERROR(dwError);
 
     nDownloadOnly = pTdnf->pArgs->nDownloadOnly;
