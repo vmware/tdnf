@@ -8,7 +8,12 @@ cmake ..
 make
 ```
 
-You could also build tdnf using docker using the following commands:
+Do enable debugging symbols (useful for use with `gdb`), use:
+```
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+```
+
+You can also build tdnf using docker using the following commands:
 
 ```sh
 docker build -t photon/tdnf-build -f ci/Dockerfile.photon .
