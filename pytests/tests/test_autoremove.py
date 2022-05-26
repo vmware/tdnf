@@ -192,33 +192,3 @@ def test_autoremove_conf_false_autoremove(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(not utils.check_package(pkgname_req))
-
-
-# check issues with the 'autoinstalled' file not existing
-# or the directory (PR #316)
-def test_no_autoinstalled_dir(utils):
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.install_package(pkgname)
-    os.rename('/var/lib/tdnf', '/var/lib/tdnf.away')
-    ret = utils.run(['tdnf', '-y', 'install', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
-
-
-def test_no_autoinstalled_file(utils):
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.install_package(pkgname)
-    os.rename('/var/lib/tdnf/autoinstalled', '/var/lib/tdnf/autoinstalled.away')
-    ret = utils.run(['tdnf', '-y', 'install', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
-
-
-def test_no_autoinstalled_empty(utils):
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.install_package(pkgname)
-    os.rename('/var/lib/tdnf/autoinstalled', '/var/lib/tdnf/autoinstalled.away')
-    os.mknod('/var/lib/tdnf/autoinstalled')
-    ret = utils.run(['tdnf', '-y', 'install', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
