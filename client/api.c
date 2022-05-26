@@ -2063,7 +2063,8 @@ TDNFHistoryResolve(
             Queue qResult = {0};
             queue_init(&qResult);
 
-            dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool, pszPkgName, &qResult, 0);
+            dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool,
+                                                  pszPkgName, &qResult, 0);
             BAIL_ON_TDNF_ERROR(dwError);
 
             if (qResult.count == 0)
@@ -2073,9 +2074,23 @@ TDNFHistoryResolve(
             }
             else
             {
-                /* We may have found multiples if they occur in multiple
-                   repos. Take the first one. */
-                queue_push(&qInstall, qResult.elements[0]);
+                Queue qInstalled = {0};
+                queue_init(&qInstalled);
+
+                /* find if pkg is already installed */
+                /* TODO: make this more efficient by using the pool ids of the solvable
+                   with SolvFindSolvablesByNevraId() */
+                dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool,
+                                                      pszPkgName, &qInstalled, 1);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                if (qInstalled.count == 0)
+                {
+                    /* We may have found multiples if they occur in multiple
+                       repos. Take the first one. */
+                    queue_push(&qInstall, qResult.elements[0]);
+                }
+                queue_free(&qInstalled);
             }
             queue_free(&qResult);
         }
