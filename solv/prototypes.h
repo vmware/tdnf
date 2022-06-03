@@ -96,6 +96,12 @@ SolvGetPkgInstallSizeFromId(
     uint32_t * pdwSize);
 
 uint32_t
+SolvGetPkgDownloadSizeFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    uint32_t * pdwSize);
+
+uint32_t
 SolvGetPkgSummaryFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,

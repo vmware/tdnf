@@ -439,6 +439,11 @@ TDNFCheckProtectedPkgs(
     );
 
 uint32_t
+TDNFCalculateTotalDownloadSize(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+    );
+
+uint32_t
 TDNFPopulatePkgInfoArrayDependencies(
     PSolvSack pSack,
     PSolvPackageList pPkgList,

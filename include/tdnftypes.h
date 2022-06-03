@@ -149,6 +149,7 @@ typedef struct _TDNF_PKG_INFO
 {
     uint32_t dwEpoch;
     uint32_t dwInstallSizeBytes;
+    uint32_t dwDownloadSizeBytes;
     char* pszName;
     char* pszRepoName;
     char* pszVersion;
@@ -159,6 +160,7 @@ typedef struct _TDNF_PKG_INFO
     char* pszLicense;
     char* pszDescription;
     char* pszFormattedSize;
+    char* pszFormattedDownloadSize;
     char* pszRelease;
     char* pszLocation;
     char **ppszDependencies;
@@ -172,6 +174,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
 {
     int nNeedAction;
     int nNeedDownload;
+    uint32_t dwTotalDownloadSizeBytes;
     TDNF_ALTERTYPE nAlterType;
     PTDNF_PKG_INFO pPkgsNotAvailable;
     PTDNF_PKG_INFO pPkgsExisting;

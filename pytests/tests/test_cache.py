@@ -123,3 +123,40 @@ def test_enable_repo_make_cache_verbose(utils):
     utils.run(['tdnf', '-v', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)
     assert(before < after)
+
+
+def test_download_vs_cache_size_single_package(utils):
+    clean_cache(utils)
+    enable_cache(utils)
+
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+
+    down_bytes = utils.download_size_to_bytes(ret['stdout'])
+    cached_rpm_bytes = sum(utils.get_cached_package_sizes(cache_dir).values())
+
+    assert(utils.floats_approx_equal(down_bytes, cached_rpm_bytes))
+
+
+def test_download_vs_cache_size_multiple_packages(utils):
+    clean_cache(utils)
+    enable_cache(utils)
+
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    run_args = ['tdnf', 'install', '-y', '--nogpgcheck']
+    pkg_list = [
+        utils.config["mulversion_pkgname"],
+        utils.config["sglversion_pkgname"],
+        utils.config["sglversion2_pkgname"],
+    ]
+    for pkgname in pkg_list:
+        utils.erase_package(pkgname)
+        run_args.append(pkgname)
+
+    ret = utils.run(run_args)
+    down_bytes = utils.download_size_to_bytes(ret['stdout'])
+    cached_rpm_bytes = sum(utils.get_cached_package_sizes(cache_dir).values())
+
+    assert(utils.floats_approx_equal(down_bytes, cached_rpm_bytes))
