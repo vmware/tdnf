@@ -156,7 +156,7 @@ TDNFUtilsFormatSize(
     dwError = TDNFAllocateMemory(1, nMaxSize, (void**)&pszFormattedSize);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(sprintf(pszFormattedSize, "%6.2f%c", dSize, pszSizes[nIndex]) < 0)
+    if(snprintf(pszFormattedSize, nMaxSize, "%6.2f%c", dSize, pszSizes[nIndex]) >= nMaxSize)
     {
         dwError = ERROR_TDNF_OUT_OF_MEMORY;
         BAIL_ON_TDNF_ERROR(dwError);

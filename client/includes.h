@@ -27,6 +27,8 @@
 #include <sys/file.h>
 #include <time.h>
 #include <sys/utsname.h>
+#include <sys/vfs.h>
+#include <sys/types.h>
 
 #include <dirent.h>
 #include <pthread.h>

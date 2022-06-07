@@ -18,8 +18,15 @@ def setup_test(utils):
 
 
 def teardown_test(utils):
-    pkgname = utils.config["sglversion_pkgname"]
-    utils.run(['tdnf', 'erase', '-y', pkgname])
+    run_cmd = ['tdnf', 'erase', '-y']
+    pkg_list = [
+        utils.config["mulversion_pkgname"],
+        utils.config["sglversion_pkgname"],
+        utils.config["sglversion2_pkgname"],
+    ]
+    for pkgname in pkg_list:
+        utils.erase_package(pkgname)
+    utils.run(run_cmd)
 
 
 def clean_cache(utils):

@@ -233,24 +233,11 @@ typedef enum
 	    "ERROR_TDNF_DOWNGRADE_NOT_ALLOWED",\
 	    "a downgrade is not allowed below the minimal version. Check 'minversions' in the configuration."},\
     {ERROR_TDNF_PERM, "ERROR_TDNF_PERM", "Operation not permitted. You have to be root."},\
-    {ERROR_TDNF_INVALID_PARAMETER, "ERROR_TDNF_INVALID_PARAMETER", "Invalid argument."},\
-    {ERROR_TDNF_OUT_OF_MEMORY, "ERROR_TDNF_OUT_OF_MEMORY", "Out of memory."},\
-    {ERROR_TDNF_NO_DATA, "ERROR_TDNF_NO_DATA", "No data available."},\
-    {ERROR_TDNF_FILE_NOT_FOUND, "ERROR_TDNF_FILE_NOT_FOUND", "File not found."},\
-    {ERROR_TDNF_ACCESS_DENIED, "ERROR_TDNF_ACCESS_DENIED", "Permission denied."},\
-    {ERROR_TDNF_ALREADY_EXISTS, "ERROR_TDNF_ALREADY_EXISTS", "File exists."},\
-    {ERROR_TDNF_INVALID_ADDRESS, "ERROR_TDNF_INVALID_ADDRESS", "Bad address."},\
-    {ERROR_TDNF_CALL_INTERRUPTED, "ERROR_TDNF_CALL_INTERRUPTED", "Interrupted syscall."},\
-    {ERROR_TDNF_FILESYS_IO, "ERROR_TDNF_FILESYS_IO", "Filesystem I/O error."},\
-    {ERROR_TDNF_SYM_LOOP, "ERROR_TDNF_SYM_LOOP", "Too many links."},\
-    {ERROR_TDNF_NAME_TOO_LONG, "ERROR_TDNF_NAME_TOO_LONG", "File name too long."},\
-    {ERROR_TDNF_CALL_NOT_SUPPORTED, "ERROR_TDNF_CALL_NOT_SUPPORTED", "Invalid syscall number."},\
-    {ERROR_TDNF_INVALID_DIR, "ERROR_TDNF_INVALID_DIR", "Not a directory."},\
-    {ERROR_TDNF_OVERFLOW, "ERROR_TDNF_OVERFLOW", "Value too large for defined data type."},\
     {ERROR_TDNF_OPT_NOT_FOUND, "ERROR_TDNF_OPT_NOT_FOUND", "A required option was not found"},\
     {ERROR_TDNF_OPERATION_ABORTED, "ERROR_TDNF_OPERATION_ABORTED", "Operation aborted."},\
     {ERROR_TDNF_INVALID_INPUT, "ERROR_TDNF_INVALID_INPUT", "Invalid input."},\
     {ERROR_TDNF_CACHE_DISABLED, "ERROR_TDNF_CACHE_DISABLED", "cache only is set, but no repo data found"},\
+    {ERROR_TDNF_CACHE_DIR_OUT_OF_DISK_SPACE, "ERROR_TDNF_CACHE_DIR_OUT_OF_DISK_SPACE", "Insufficient disk space at cache directory /var/cache/tdnf (unless specified differently in config). Try freeing space first."},\
     {ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND, "ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND", "An event context item was not found. This is usually related to plugin events. Try --noplugins to deactivate all plugins or --disableplugin=<plugin> to deactivate a specific one. You can permanently deactivate an offending plugin by setting enable=0 in the plugin config file."},\
     {ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE, "ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE", "An event item type had a mismatch. This is usually related to plugin events. Try --noplugins to deactivate all plugins or --disableplugin=<plugin> to deactivate a specific one. You can permanently deactivate an offending plugin by setting enable=0 in the plugin config file."},\
     {ERROR_TDNF_NO_GPGKEY_CONF_ENTRY,         "ERROR_TDNF_NO_GPGKEY_CONF_ENTRY",         "gpgkey entry is missing for this repo. please add gpgkey in repo file or use --nogpgcheck to ignore."}, \

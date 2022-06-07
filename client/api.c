@@ -1567,6 +1567,7 @@ TDNFResolve(
     Queue queueGoal = {0};
     char** ppszPkgsNotResolved = NULL;
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
+    uint64_t qwAvailCacheBytes = 0;
 
     if(!pTdnf || !ppSolvedPkgInfo)
     {
@@ -1634,8 +1635,14 @@ TDNFResolve(
         pSolvedPkgInfo->pPkgsToDowngrade ||
         pSolvedPkgInfo->pPkgsToReinstall;
 
-    dwError = TDNFCalculateTotalDownloadSize(pSolvedPkgInfo);
+    dwError = TDNFGetAvailableCacheBytes(pTdnf->pConf, &qwAvailCacheBytes);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pSolvedPkgInfo->nNeedDownload)
+    {
+        dwError = TDNFCheckDownloadCacheBytes(pSolvedPkgInfo, qwAvailCacheBytes);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     pSolvedPkgInfo->ppszPkgsNotResolved = ppszPkgsNotResolved;
     *ppSolvedPkgInfo = pSolvedPkgInfo;

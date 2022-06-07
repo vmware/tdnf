@@ -713,21 +713,17 @@ PrintAction(
         pPkgInfo = pPkgInfo->pNext;
     }
 
-    TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
+    dwError = TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
+    BAIL_ON_TDNF_ERROR(dwError);
     pr_info("\nTotal installed size: %s\n", pszTotalInstallSize);
 
-    TDNFUtilsFormatSize(dwTotalDownloadSize, &pszTotalDownloadSize);
+    dwError = TDNFUtilsFormatSize(dwTotalDownloadSize, &pszTotalDownloadSize);
+    BAIL_ON_TDNF_ERROR(dwError);
     pr_info("Total download size: %s\n", pszTotalDownloadSize);
 
 cleanup:
-    if (pszTotalInstallSize)
-    {
-        free(pszTotalInstallSize);
-    }
-    if (pszTotalDownloadSize)
-    {
-        free(pszTotalDownloadSize);
-    }
+    TDNFFreeMemory(pszTotalInstallSize);
+    TDNFFreeMemory(pszTotalDownloadSize);
     return dwError;
 
 error:

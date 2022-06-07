@@ -297,6 +297,10 @@ TDNFCliInfoCommand(
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Url", pPkg->pszURL));
             CHECK_JD_RC(jd_map_add_int(jd_pkg, "InstallSize", pPkg->dwInstallSizeBytes));
+            if (pPkg->dwDownloadSizeBytes)
+            {
+                CHECK_JD_RC(jd_map_add_int(jd_pkg, "DownloadSize", pPkg->dwDownloadSizeBytes));
+            }
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Summary", pPkg->pszSummary));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "License", pPkg->pszLicense));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Description", pPkg->pszDescription));
@@ -319,6 +323,10 @@ TDNFCliInfoCommand(
             pr_crit("Version       : %s\n", pPkg->pszVersion);
             pr_crit("Release       : %s\n", pPkg->pszRelease);
             pr_crit("Install Size  : %s (%u)\n", pPkg->pszFormattedSize, pPkg->dwInstallSizeBytes);
+            if (pPkg->dwDownloadSizeBytes)
+            {
+                pr_crit("Download Size  : %s (%u)\n", pPkg->pszFormattedDownloadSize, pPkg->dwDownloadSizeBytes);
+            }
             pr_crit("Repo          : %s\n", pPkg->pszRepoName);
             pr_crit("Summary       : %s\n", pPkg->pszSummary);
             pr_crit("URL           : %s\n", pPkg->pszURL);
