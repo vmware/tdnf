@@ -39,7 +39,7 @@ def test_list(utils):
 
 def test_list_tdnfj(utils):
     tdnfj = os.path.join(utils.config['build_dir'], 'bin/tdnfj')
-    ret = utils.run([tdnfj, 'list'])
+    ret = utils.run([tdnfj, '-c', os.path.join(utils.config['repo_path'], 'tdnf.conf'), 'list'])
     infolist = json.loads("\n".join(ret['stdout']))
 
     glibc_found = False
