@@ -168,6 +168,7 @@ TDNFCliParseRepoQueryArgs(
 cleanup:
     return dwError;
 error:
+    *ppRepoqueryArgs = NULL;
     TDNFCliFreeRepoQueryArgs(pRepoqueryArgs);
     goto cleanup;
 }
