@@ -651,7 +651,8 @@ TDNFDownloadFile(
     if(lStatus >= 400)
     {
         pr_err(
-                "Error: %ld when downloading %s\n. Please check repo url.\n",
+                "Error: %ld when downloading %s\n. Please check repo url "
+                "or refresh metadata with 'tdnf makecache'.\n",
                 lStatus,
                 pszFileUrl);
         dwError = ERROR_TDNF_INVALID_PARAMETER;
