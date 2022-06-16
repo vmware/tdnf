@@ -206,3 +206,12 @@ def test_list1(utils):
                               'tdnf-repoquery-{}'.format(dep)
                               ])
     assert(ret['retval'] == 0)
+
+
+# fail with ore than one pkg spec
+def test_two_args(utils):
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     'foo',
+                     'bar'])
+    assert(ret['retval'] == 902)
