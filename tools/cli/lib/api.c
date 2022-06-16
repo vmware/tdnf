@@ -232,7 +232,7 @@ TDNFCliListCommand(
             }
 
             pr_crit(
-                "%-*s%-*s%*s\n",
+                "%-*s %-*s %*s\n",
                 nColWidths[0],
                 szNameAndArch,
                 nColWidths[1],
