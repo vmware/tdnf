@@ -102,7 +102,7 @@ static
 int _jd_realloc(struct json_dump *jd, unsigned int add_size)
 {
     if (jd == NULL)
-        return -1;    
+        return -1;
 
     if (jd->pos + add_size >= jd->buf_size - 1) {
         add_size += SIZE_INC;
@@ -238,7 +238,7 @@ int jd_map_add_string(struct json_dump *jd, const char *key, const char *value)
         return -1;
 
     rc = _jd_map_add_raw(jd, key, json_value);
- 
+
     free(json_value);
 
     return rc;
@@ -338,7 +338,7 @@ int jd_list_add_string(struct json_dump *jd, const char *value)
 {
     char *json_value;
     int rc;
-    
+
     if (!value)
         return jd_list_add_null(jd);
 
@@ -347,7 +347,7 @@ int jd_list_add_string(struct json_dump *jd, const char *value)
         return -1;
 
     rc = _jd_list_add_raw(jd, json_value);
- 
+
     free(json_value);
 
     return rc;

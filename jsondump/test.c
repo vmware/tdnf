@@ -70,7 +70,7 @@ int main(void)
     }
 
     printf("%s\n", jd->buf);
-    
+
     jd_destroy(jd);
 
     /* list of ints */
@@ -83,7 +83,7 @@ int main(void)
     }
 
     printf("%s\n", jd->buf);
-    
+
     jd_destroy(jd);
 
     /* list of bools */
@@ -95,7 +95,7 @@ int main(void)
     CHECK_RC(jd_list_add_bool(jd, 0));
 
     printf("%s\n", jd->buf);
-    
+
     jd_destroy(jd);
 
     return 0;
