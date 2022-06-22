@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 ## file:    build-tdnf-rpms.sh
 ## brief:   Build tdnf rpms using tdnf.spec
@@ -27,6 +28,9 @@ if ! rpm -q ${build_tools[@]} > /dev/null; then
     dnf install -y ${build_tools[@]}
   fi
 fi
+
+# https://github.com/actions/checkout/issues/760
+git config --global --add safe.directory $(pwd)
 
 echo "Building ${full_name} RPMs"
 tar zcf ${full_name}.tar.gz --transform "s,^,${full_name}/," $(git ls-files)
