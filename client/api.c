@@ -410,76 +410,67 @@ TDNFCheckUpdates(
 uint32_t
 TDNFClean(
     PTDNF pTdnf,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO* ppCleanInfo
+    TDNF_CLEANTYPE nCleanType
     )
 {
     uint32_t dwError = 0;
-    PTDNF_CLEAN_INFO pCleanInfo = NULL;
-    char** ppszReposUsed = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
-    if(!pTdnf || !ppCleanInfo)
+    if(!pTdnf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Rest of the clean options will be
-    //supported in the next release
-    if(nCleanType != CLEANTYPE_ALL)
+    if(nCleanType == CLEANTYPE_PLUGINS)
     {
         dwError = ERROR_TDNF_CLEAN_UNSUPPORTED;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateMemory(
-                  1,
-                  sizeof(TDNF_CLEAN_INFO),
-                  (void**)&pCleanInfo);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFCopyEnabledRepos(pTdnf->pRepos, &pCleanInfo->ppszReposUsed);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    ppszReposUsed = pCleanInfo->ppszReposUsed;
-    if(nCleanType == CLEANTYPE_ALL)
+    for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
-        while(*ppszReposUsed)
+        if (strcmp(pRepo->pszId, CMDLINE_REPO_NAME) == 0)
         {
-            dwError = TDNFRepoRemoveCache(pTdnf,*ppszReposUsed);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            dwError = TDNFRemoveSolvCache(pTdnf, *ppszReposUsed);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            if (!pTdnf->pConf->nKeepCache)
-            {
-                dwError = TDNFRemoveRpmCache(pTdnf, *ppszReposUsed);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-
-            dwError = TDNFRemoveKeysCache(pTdnf, *ppszReposUsed);
-            BAIL_ON_TDNF_ERROR(dwError);
-
-            ++ppszReposUsed;
+            continue;
         }
+        pr_info("cleaning %s:", pRepo->pszId);
+        if (nCleanType == CLEANTYPE_METADATA || nCleanType == CLEANTYPE_ALL)
+        {
+            pr_info(" metadata");
+            dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (nCleanType == CLEANTYPE_DBCACHE || nCleanType == CLEANTYPE_ALL)
+        {
+            pr_info(" dbcache");
+            dwError = TDNFRemoveSolvCache(pTdnf, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (nCleanType == CLEANTYPE_PACKAGES || nCleanType == CLEANTYPE_ALL)
+        {
+            pr_info(" packages");
+            dwError = TDNFRemoveRpmCache(pTdnf, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (nCleanType == CLEANTYPE_KEYS || nCleanType == CLEANTYPE_ALL)
+        {
+            pr_info(" keys");
+            dwError = TDNFRemoveKeysCache(pTdnf, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (nCleanType == CLEANTYPE_EXPIRE_CACHE || nCleanType == CLEANTYPE_ALL)
+        {
+            pr_info(" expire-cache");
+            dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pr_info("\n");
     }
-
-    pCleanInfo->nCleanAll = (nCleanType == CLEANTYPE_ALL);
-
-    *ppCleanInfo = pCleanInfo;
 cleanup:
     return dwError;
 
 error:
-    if(ppCleanInfo)
-    {
-        *ppCleanInfo = NULL;
-    }
-    if(pCleanInfo)
-    {
-        TDNFFreeCleanInfo(pCleanInfo);
-    }
     goto cleanup;
 }
 

@@ -117,7 +117,7 @@ typedef enum
     CLEANTYPE_DBCACHE,
     CLEANTYPE_PLUGINS,
     CLEANTYPE_EXPIRE_CACHE,
-    CLEANTYPE_RPMDB,
+    CLEANTYPE_KEYS,
     CLEANTYPE_ALL
 }TDNF_CLEANTYPE;
 
@@ -281,16 +281,6 @@ typedef struct _TDNF_REPO_DATA
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;
-
-typedef struct _TDNF_CLEAN_INFO
-{
-    int nCleanAll;
-    char** ppszReposUsed;
-    int nRpmDbFilesRemoved;
-    int nMetadataFilesRemoved;
-    int nDbCacheFilesRemoved;
-    int nPackageFilesRemoved;
-}TDNF_CLEAN_INFO, *PTDNF_CLEAN_INFO;
 
 typedef struct _TDNF_ERROR_DESC
 {

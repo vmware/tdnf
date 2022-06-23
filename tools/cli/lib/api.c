@@ -56,8 +56,6 @@ TDNFCliCleanCommand(
 {
     uint32_t dwError = 0;
     TDNF_CLEANTYPE nCleanType = CLEANTYPE_NONE;
-    PTDNF_CLEAN_INFO pTDNFCleanInfo = NULL;
-    char** ppszReposUsed = NULL;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnClean)
     {
@@ -68,30 +66,12 @@ TDNFCliCleanCommand(
     dwError = TDNFCliParseCleanArgs(pCmdArgs, &nCleanType);
     BAIL_ON_CLI_ERROR(dwError);
 
-    dwError = pContext->pFnClean(pContext, nCleanType, &pTDNFCleanInfo);
+    dwError = pContext->pFnClean(pContext, nCleanType);
     BAIL_ON_CLI_ERROR(dwError);
 
-    //Print clean info
-    pr_info("Cleaning repos:");
-    ppszReposUsed = pTDNFCleanInfo->ppszReposUsed;
-    while(*ppszReposUsed)
-    {
-        pr_info(" %s", *ppszReposUsed);
-        ++ppszReposUsed;
-    }
-
-    pr_info("\n");
-
-    if(pTDNFCleanInfo->nCleanAll)
-    {
-        pr_info("Cleaning up everything\n");
-    }
+    pr_info("Done.\n");
 
 cleanup:
-    if(pTDNFCleanInfo)
-    {
-        TDNFFreeCleanInfo(pTDNFCleanInfo);
-    }
     return dwError;
 
 error:

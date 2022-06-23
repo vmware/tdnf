@@ -408,18 +408,6 @@ TDNFFreeRepos(
     }
 }
 
-void
-TDNFFreeCleanInfo(
-    PTDNF_CLEAN_INFO pCleanInfo
-    )
-{
-    if(pCleanInfo)
-    {
-        TDNF_SAFE_FREE_STRINGARRAY(pCleanInfo->ppszReposUsed);
-        TDNFFreeMemory(pCleanInfo);
-    }
-}
-
 uint32_t
 TDNFYesOrNo(
     PTDNF_CMD_ARGS pArgs,

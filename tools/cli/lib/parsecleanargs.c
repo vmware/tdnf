@@ -81,6 +81,7 @@ TDNFCliParseCleanType(
         {"metadata",      CLEANTYPE_METADATA},
         {"dbcache",       CLEANTYPE_DBCACHE},
         {"plugins",       CLEANTYPE_PLUGINS},
+        {"keys",          CLEANTYPE_KEYS},
         {"expire-cache",  CLEANTYPE_EXPIRE_CACHE},
         {"all",           CLEANTYPE_ALL},
     };

@@ -51,8 +51,7 @@ TDNFCliInvokeCheckUpdate(
 uint32_t
 TDNFCliInvokeClean(
     PTDNF_CLI_CONTEXT pContext,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO *ppTDNFCleanInfo
+    TDNF_CLEANTYPE nCleanType
     );
 
 uint32_t

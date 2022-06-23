@@ -51,8 +51,7 @@ TDNFCheckUpdates(
 uint32_t
 TDNFClean(
     PTDNF pTdnf,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO* ppCleanInfo
+    TDNF_CLEANTYPE nCleanType
     );
 
 //show list of packages filtered by scope, name
@@ -204,11 +203,6 @@ TDNFGetErrorString(
 void
 TDNFCloseHandle(
     PTDNF pTdnf
-    );
-
-void
-TDNFFreeCleanInfo(
-    PTDNF_CLEAN_INFO pCleanInfo
     );
 
 void
