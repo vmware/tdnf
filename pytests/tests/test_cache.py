@@ -44,6 +44,29 @@ def disable_cache(utils):
     utils.run(['sed', '-i', '/keepcache/d', tdnf_config])
 
 
+def switch_cache_path(utils, new_path):
+    tdnf_config = os.path.join(utils.config['repo_path'], 'tdnf.conf')
+    utils.run(['sed', '-i', '/cachedir/d', tdnf_config])
+    utils.run(['sed', '-i', '$ a cachedir={}'.format(new_path), tdnf_config])
+
+
+def clean_small_cache(utils):
+    utils.run(['rm', '-rf', utils.config['small_cache_path']])
+
+
+def try_mount_small_cache():
+    import subprocess
+    mount_script = subprocess.Popen(
+        './mount-small-cache',
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd="."
+    )
+    out, err = mount_script.communicate()
+    return mount_script.returncode
+
+
 def check_package_in_cache(utils, pkgname):
     cache_dir = utils.tdnf_config.get('main', 'cachedir')
     ret = utils.run(['find', cache_dir, '-name', pkgname + '*.rpm'])
@@ -167,3 +190,23 @@ def test_download_vs_cache_size_multiple_packages(utils):
     cached_rpm_bytes = sum(utils.get_cached_package_sizes(cache_dir).values())
 
     assert(utils.floats_approx_equal(down_bytes, cached_rpm_bytes))
+
+
+@pytest.mark.skipif(try_mount_small_cache() != 0, reason="Failed to mount small cache directory.")
+def test_cache_directory_out_of_disk_space(utils):
+    small_cache_path = utils.config['small_cache_path']
+    switch_cache_path(utils, small_cache_path)
+    enable_cache(utils)
+    clean_small_cache(utils)
+
+    run_args = ['tdnf', 'install', '-y', '--nogpgcheck']
+    pkg_list = [utils.config["toolarge_pkgname"]]
+    for pkgname in pkg_list:
+        utils.erase_package(pkgname)
+        run_args.append(pkgname)
+    ret = utils.run(run_args)
+
+    switch_cache_path(utils, utils.tdnf_config.get('main', 'cachedir'))
+    clean_cache(utils)
+    clean_small_cache(utils)
+    assert(ret['retval'] == 1036)
