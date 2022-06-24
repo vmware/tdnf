@@ -55,7 +55,7 @@ TDNFCliCleanCommand(
     )
 {
     uint32_t dwError = 0;
-    TDNF_CLEANTYPE nCleanType = CLEANTYPE_NONE;
+    uint32_t nCleanType = CLEANTYPE_NONE;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnClean)
     {

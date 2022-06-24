@@ -51,13 +51,13 @@ TDNFCliFreeListArgs(
 uint32_t
 TDNFCliParseCleanType(
     const char* pszCleanType,
-    TDNF_CLEANTYPE* pnCleanType
+    uint32_t* pnCleanType
     );
 
 uint32_t
 TDNFCliParseCleanArgs(
     PTDNF_CMD_ARGS pCmdArgs,
-    TDNF_CLEANTYPE* pnCleanType
+    uint32_t* pnCleanType
     );
 
 uint32_t

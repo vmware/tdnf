@@ -51,7 +51,7 @@ TDNFCheckUpdates(
 uint32_t
 TDNFClean(
     PTDNF pTdnf,
-    TDNF_CLEANTYPE nCleanType
+    uint32_t nCleanType
     );
 
 //show list of packages filtered by scope, name

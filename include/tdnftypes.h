@@ -108,18 +108,15 @@ typedef enum
     UPDATE_ENHANCEMENT
 }TDNF_UPDATEINFO_TYPE;
 
-//Clean command type
-typedef enum
-{
-    CLEANTYPE_NONE = -1,
-    CLEANTYPE_PACKAGES,
-    CLEANTYPE_METADATA,
-    CLEANTYPE_DBCACHE,
-    CLEANTYPE_PLUGINS,
-    CLEANTYPE_EXPIRE_CACHE,
-    CLEANTYPE_KEYS,
-    CLEANTYPE_ALL
-}TDNF_CLEANTYPE;
+#define CLEANTYPE_NONE         0x00
+#define CLEANTYPE_PACKAGES     0x01
+#define CLEANTYPE_METADATA     0x02
+#define CLEANTYPE_DBCACHE      0x04
+#define CLEANTYPE_PLUGINS      0x08
+#define CLEANTYPE_EXPIRE_CACHE 0x10
+#define CLEANTYPE_KEYS         0x20
+#define CLEANTYPE_ALL          0xff
+
 
 //RepoList command filter
 typedef enum
