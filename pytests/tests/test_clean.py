@@ -31,22 +31,22 @@ def test_clean_invalid_arg(utils):
 
 def test_clean_packages(utils):
     ret = utils.run(['tdnf', 'clean', 'packages'])
-    assert(ret['retval'] == 1016)
+    assert(ret['retval'] == 0)
 
 
 def test_clean_dbcache(utils):
     ret = utils.run(['tdnf', 'clean', 'dbcache'])
-    assert(ret['retval'] == 1016)
+    assert(ret['retval'] == 0)
 
 
 def test_clean_metadata(utils):
     ret = utils.run(['tdnf', 'clean', 'metadata'])
-    assert(ret['retval'] == 1016)
+    assert(ret['retval'] == 0)
 
 
 def test_clean_expire_cache(utils):
     ret = utils.run(['tdnf', 'clean', 'expire-cache'])
-    assert(ret['retval'] == 1016)
+    assert(ret['retval'] == 0)
 
 
 def test_clean_plugins(utils):

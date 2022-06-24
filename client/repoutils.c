@@ -351,7 +351,7 @@ TDNFRemoveLastRefreshMarker(
     BAIL_ON_TDNF_ERROR(dwError);
     if (pszLastRefreshMarker)
     {
-        if(unlink(pszLastRefreshMarker))
+        if(unlink(pszLastRefreshMarker) && errno != ENOENT)
         {
            dwError = errno;
            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);

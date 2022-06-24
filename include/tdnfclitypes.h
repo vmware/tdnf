@@ -69,8 +69,7 @@ typedef uint32_t
 typedef uint32_t
 (*PFN_TDNF_CLEAN)(
     PTDNF_CLI_CONTEXT,
-    TDNF_CLEANTYPE,
-    PTDNF_CLEAN_INFO *
+    uint32_t
     );
 
 typedef uint32_t

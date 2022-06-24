@@ -337,11 +337,10 @@ TDNFCliInvokeCheckUpdate(
 uint32_t
 TDNFCliInvokeClean(
     PTDNF_CLI_CONTEXT pContext,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO *ppTDNFCleanInfo
+    uint32_t nCleanType
     )
 {
-    return TDNFClean(pContext->hTdnf, nCleanType, ppTDNFCleanInfo);
+    return TDNFClean(pContext->hTdnf, nCleanType);
 }
 
 uint32_t

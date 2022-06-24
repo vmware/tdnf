@@ -24,11 +24,11 @@
 uint32_t
 TDNFCliParseCleanArgs(
     PTDNF_CMD_ARGS pCmdArgs,
-    TDNF_CLEANTYPE* pnCleanType
+    uint32_t* pnCleanType
     )
 {
     uint32_t dwError = 0;
-    TDNF_CLEANTYPE nCleanType = CLEANTYPE_NONE;
+    uint32_t nCleanType = CLEANTYPE_NONE;
 
     if(!pCmdArgs)
     {
@@ -64,12 +64,12 @@ error:
 uint32_t
 TDNFCliParseCleanType(
     const char* pszCleanType,
-    TDNF_CLEANTYPE* pnCleanType
+    uint32_t* pnCleanType
     )
 {
     uint32_t dwError = 0;
     int nIndex = 0;
-    TDNF_CLEANTYPE nCleanType = CLEANTYPE_ALL;
+    uint32_t nCleanType = CLEANTYPE_ALL;
     struct stTemp
     {
         char* pszTypeName;
@@ -81,6 +81,7 @@ TDNFCliParseCleanType(
         {"metadata",      CLEANTYPE_METADATA},
         {"dbcache",       CLEANTYPE_DBCACHE},
         {"plugins",       CLEANTYPE_PLUGINS},
+        {"keys",          CLEANTYPE_KEYS},
         {"expire-cache",  CLEANTYPE_EXPIRE_CACHE},
         {"all",           CLEANTYPE_ALL},
     };

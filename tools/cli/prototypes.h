@@ -51,8 +51,7 @@ TDNFCliInvokeCheckUpdate(
 uint32_t
 TDNFCliInvokeClean(
     PTDNF_CLI_CONTEXT pContext,
-    TDNF_CLEANTYPE nCleanType,
-    PTDNF_CLEAN_INFO *ppTDNFCleanInfo
+    uint32_t nCleanType
     );
 
 uint32_t
@@ -285,13 +284,13 @@ TDNFCliParseArgs(
 uint32_t
 ParseCleanType(
     const char* pszCleanType,
-    TDNF_CLEANTYPE* pnCleanType
+    uint32_t* pnCleanType
     );
 
 uint32_t
 TDNFCliParseCleanArgs(
     PTDNF_CMD_ARGS pCmdArgs,
-    TDNF_CLEANTYPE* pnCleanType
+    uint32_t* pnCleanType
     );
 
 //parselistargs.c
