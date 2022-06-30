@@ -571,6 +571,13 @@ SolvCalculateCookieForFile(
     );
 
 uint32_t
+SolvCreateRepoCacheName(
+    const char *pszName,
+    const char *pszUrl,
+    char **ppszCacheName
+    );
+
+uint32_t
 SolvGetMetaDataCachePath(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
     PSolvSack pSack,

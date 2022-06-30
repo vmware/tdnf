@@ -275,6 +275,7 @@ typedef struct _TDNF_REPO_DATA
     int nSkipMDFileLists;
     int nSkipMDUpdateInfo;
     int nSkipMDOther;
+    char *pszCacheName;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;

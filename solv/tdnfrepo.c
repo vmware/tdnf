@@ -377,6 +377,55 @@ error:
     goto cleanup;
 }
 
+/* Create a name for the repo cache path based on repo name and
+   a a hash of the url.
+*/
+uint32_t
+SolvCreateRepoCacheName(
+    const char *pszName,
+    const char *pszUrl,
+    char **ppszCacheName
+    )
+{
+    uint32_t dwError = 0;
+    Chksum *pChkSum = NULL;
+    unsigned char pCookie[SOLV_COOKIE_LEN] = {0};
+    char pszCookie[SOLV_COOKIE_LEN*2+1];
+    char *pszCacheName;
+    int i;
+
+    if (!pszName || !pszUrl || !ppszCacheName)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pChkSum = solv_chksum_create(REPOKEY_TYPE_SHA256);
+    if (!pChkSum)
+    {
+        dwError = ERROR_TDNF_SOLV_CHKSUM;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    solv_chksum_add(pChkSum, pszUrl, strlen(pszUrl));
+    solv_chksum_free(pChkSum, pCookie);
+
+    for (i = 0; i < SOLV_COOKIE_LEN; i++)
+    {
+        snprintf(&pszCookie[2*i], 3, "%.2x", pCookie[i]);
+    }
+
+    dwError = TDNFAllocateStringPrintf(&pszCacheName, "%s-%s", pszName, pszCookie);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    *ppszCacheName = pszCacheName;
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszCacheName);
+    goto cleanup;
+}
+
 uint32_t
 SolvGetMetaDataCachePath(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,

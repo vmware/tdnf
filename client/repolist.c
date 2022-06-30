@@ -665,6 +665,21 @@ TDNFRepoListFinalize(
                 dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
+
+            if (pRepo->pszMetaLink)
+            {
+                dwError = SolvCreateRepoCacheName(pRepo->pszId,
+                                                  pRepo->pszMetaLink,
+                                                  &pRepo->pszCacheName);
+            }
+            else if (pRepo->pszBaseUrl)
+            {
+                dwError = SolvCreateRepoCacheName(pRepo->pszId,
+                                                  pRepo->pszBaseUrl,
+                                                  &pRepo->pszCacheName);
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+            printf("pszCacheName = %s\n", pRepo->pszCacheName);
         }
     }
 cleanup:
