@@ -465,6 +465,11 @@ TDNFClean(
             dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+
+        /* remove the top level repo cache dir if it's not empty */
+        dwError = TDNFRepoRemoveCacheDir(pTdnf, pRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+        
         pr_info("\n");
     }
 cleanup:

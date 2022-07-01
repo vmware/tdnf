@@ -226,6 +226,44 @@ error:
     goto cleanup;
 }
 
+/* remove the repo top level cache dir */
+uint32_t
+TDNFRepoRemoveCacheDir(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    )
+{
+    uint32_t dwError = 0;
+    char* pszRepoCacheDir = NULL;
+
+    if(!pTdnf || !pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               NULL, NULL,
+                               &pszRepoCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (rmdir(pszRepoCacheDir) != 0)
+    {
+        /* ignore ENOTEMPTY, let's keep the dir if it's not empty */
+        if (errno != ENOENT && errno != ENOTEMPTY)
+        {
+            BAIL_ON_TDNF_ERROR(errno);
+        }
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFRepoRemoveCache(
     PTDNF pTdnf,

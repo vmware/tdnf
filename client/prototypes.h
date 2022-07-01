@@ -167,6 +167,12 @@ TDNFRepoGetRpmCacheDir(
     );
 
 uint32_t
+TDNFRepoRemoveCacheDir(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    );
+
+uint32_t
 TDNFRepoRemoveCache(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepo
