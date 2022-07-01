@@ -615,13 +615,6 @@ TDNFGetCachePath(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (!pRepo->pszCacheName)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-        pr_err("pRepo->pszCacheName not set\n");
-    }
-
     dwError = TDNFJoinPath(
                   ppszPath,
                   pTdnf->pConf->pszCacheDir,
