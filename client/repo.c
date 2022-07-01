@@ -47,11 +47,7 @@ TDNFInitRepo(
     pConf = pTdnf->pConf;
     pPool = pSack->pPool;
 
-    dwError = TDNFJoinPath(
-                  &pszRepoCacheDir,
-                  pConf->pszCacheDir,
-                  pRepoData->pszId,
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepoData, NULL, NULL, &pszRepoCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFJoinPath(

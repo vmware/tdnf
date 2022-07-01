@@ -281,11 +281,9 @@ TDNFRefreshSack(
            unless requested to ignore. lMetadataExpire < 0 means never expire. */
         if(pRepo->lMetadataExpire >= 0 && !pTdnf->pArgs->nCacheOnly)
         {
-            dwError = TDNFJoinPath(
-                          &pszRepoCacheDir,
-                          pTdnf->pConf->pszCacheDir,
-                          pRepo->pszId,
-                          NULL);
+            dwError = TDNFGetCachePath(pTdnf, pRepo,
+                                       NULL, NULL,
+                                       &pszRepoCacheDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFShouldSyncMetadata(

@@ -648,7 +648,8 @@ TDNFRepoListFinalize(
        for the repos that are enabled. */
     for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
-        if(pRepo->nEnabled)
+//        if(pRepo->nEnabled)
+        if (1)
         {
             if(pRepo->pszName)
             {
