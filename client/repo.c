@@ -32,22 +32,22 @@ TDNFInitRepo(
     char* pszRepoDataDir = NULL;
     char* pszRepoCacheDir = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
-    PTDNF_CONF pConf = NULL;
     Repo* pRepo = NULL;
     Pool* pPool = NULL;
     int nUseMetaDataCache = 0;
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo = NULL;
 
-    if (!pTdnf || !pTdnf->pConf || !pRepoData || !pSack || !pSack->pPool)
+    if (!pTdnf || !pRepoData || !pSack || !pSack->pPool)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pConf = pTdnf->pConf;
     pPool = pSack->pPool;
 
-    dwError = TDNFGetCachePath(pTdnf, pRepoData, NULL, NULL, &pszRepoCacheDir);
+    dwError = TDNFGetCachePath(pTdnf, pRepoData,
+                               NULL, NULL,
+                               &pszRepoCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFJoinPath(
@@ -77,6 +77,7 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     pSolvRepoInfo->pRepo = pRepo;
+    pSolvRepoInfo->pszRepoCacheDir = pszRepoCacheDir;
     pRepo->appdata = pSolvRepoInfo;
 
     dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);

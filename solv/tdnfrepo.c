@@ -278,6 +278,7 @@ SolvReadInstalledRpms(
     Repo *pRepo = NULL;
     FILE *pCacheFile = NULL;
     int  dwFlags = 0;
+
     if(!pPool || !ppRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -295,6 +296,7 @@ SolvReadInstalledRpms(
     {
         /* coverity[toctou] */
         pCacheFile = fopen(pszCacheFileName, "r");
+
         if(!pCacheFile)
         {
             dwError = errno;
@@ -378,7 +380,7 @@ error:
 }
 
 /* Create a name for the repo cache path based on repo name and
-   a a hash of the url.
+   a hash of the url.
 */
 uint32_t
 SolvCreateRepoCacheName(
@@ -447,9 +449,8 @@ SolvGetMetaDataCachePath(
     {
         dwError = TDNFAllocateStringPrintf(
                       &pszCachePath,
-                      "%s/%s/%s/%s.solv",
-                      pSack->pszCacheDir,
-                      pRepo->name,
+                      "%s/%s/%s.solv",
+                      pSolvRepoInfo->pszRepoCacheDir,
                       TDNF_SOLVCACHE_DIR_NAME,
                       pRepo->name);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -615,12 +616,10 @@ SolvCreateMetaDataCache(
     pRepo = pSolvRepoInfo->pRepo;
     dwError = TDNFJoinPath(
                   &pszSolvCacheDir,
-                  pSack->pszCacheDir,
-                  pRepo->name,
+                  pSolvRepoInfo->pszRepoCacheDir,
                   TDNF_SOLVCACHE_DIR_NAME,
                   NULL);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-
     if (access(pszSolvCacheDir, W_OK | X_OK))
     {
         if(errno != ENOENT)

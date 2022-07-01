@@ -46,6 +46,7 @@ typedef struct _SOLV_REPO_INFO_INTERNAL_
     Repo*         pRepo;
     unsigned char cookie[SOLV_COOKIE_LEN];
     int           nCookieSet;
+    char          *pszRepoCacheDir;
 }SOLV_REPO_INFO_INTERNAL, *PSOLV_REPO_INFO_INTERNAL;
 
 extern Id allDepKeyIds[];
