@@ -9,6 +9,7 @@
 import os
 import shutil
 import pytest
+import fnmatch
 
 INSTALLROOT = '/root/installroot'
 REPOFILENAME = 'photon-test.repo'
@@ -76,6 +77,14 @@ def erase_package(utils, pkgname, installroot=INSTALLROOT, pkgversion=None):
     assert(not check_package(utils, pkgname))
 
 
+def find_cache_dir(reponame):
+    cache_dir = os.path.join(INSTALLROOT, 'var/cache/tdnf')
+    for f in os.listdir(cache_dir):
+        if fnmatch.fnmatch(f, '{}-*'.format(reponame)):
+            return os.path.join(cache_dir, f)
+    return None
+
+
 def test_install(utils):
     install_root(utils)
     pkgname = utils.config["mulversion_pkgname"]
@@ -98,7 +107,7 @@ def test_makecache(utils):
                      '--installroot', INSTALLROOT,
                      '--releasever=4.0'], noconfig=True)
     assert(ret['retval'] == 0)
-    assert(os.path.isdir(os.path.join(INSTALLROOT, 'var/cache/tdnf', 'photon-test')))
+    assert(find_cache_dir('photon-test') is not None)
 
     shutil.rmtree(INSTALLROOT)
 

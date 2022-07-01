@@ -10,7 +10,7 @@
 import os
 import pytest
 import glob
-
+import fnmatch
 
 REPOFILENAME = "photon-skip.repo"
 REPOID = "photon-skip"
@@ -61,6 +61,14 @@ def get_cache_dir(utils):
     return '/var/cache/tdnf/'
 
 
+def find_cache_dir(utils, reponame):
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    for f in os.listdir(cache_dir):
+        if fnmatch.fnmatch(f, '{}-*'.format(reponame)):
+            return os.path.join(cache_dir, f)
+    return None
+
+
 # enable/disable md part, expect/do not expect download of the associated file
 def check_skip_md_part(utils, mdpart, skipped):
     repoconf = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
@@ -68,7 +76,7 @@ def check_skip_md_part(utils, mdpart, skipped):
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'clean', 'all'])
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'makecache'])
 
-    md_dir = os.path.join(get_cache_dir(utils), REPOID, 'repodata')
+    md_dir = os.path.join(find_cache_dir(utils, REPOID), 'repodata')
     assert((len(glob.glob('{}/*{}*'.format(md_dir, mdpart))) == 0) == skipped)
 
 
