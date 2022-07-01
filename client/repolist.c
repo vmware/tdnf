@@ -679,7 +679,6 @@ TDNFRepoListFinalize(
                                                   &pRepo->pszCacheName);
             }
             BAIL_ON_TDNF_ERROR(dwError);
-            printf("pszCacheName = %s\n", pRepo->pszCacheName);
         }
     }
 cleanup:
@@ -803,6 +802,7 @@ TDNFFreeReposInternal(
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszCacheName);
         pRepos = pRepo->pNext;
         TDNF_SAFE_FREE_MEMORY(pRepo);
     }

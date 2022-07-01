@@ -42,24 +42,24 @@ error:
 uint32_t
 TDNFRepoSetBaseUrl(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA pszRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszBaseUrlFile
     )
 {
     uint32_t dwError = 0;
     char *pszBaseUrl = NULL;
 
-    if (!pTdnf || !pszRepo || IsNullOrEmptyString(pszBaseUrlFile))
+    if (!pTdnf || !pRepo || IsNullOrEmptyString(pszBaseUrlFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    TDNF_SAFE_FREE_MEMORY(pszRepo->pszBaseUrl);
+    TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
     dwError = TDNFFileReadAllText(pszBaseUrlFile, &pszBaseUrl, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pszRepo->pszBaseUrl = pszBaseUrl;
+    pRepo->pszBaseUrl = pszBaseUrl;
 
 cleanup:
     return dwError;
@@ -180,14 +180,14 @@ error:
 uint32_t
 TDNFRepoGetRpmCacheDir(
     PTDNF pTdnf,
-    const char* pszRepoId,
+    PTDNF_REPO_DATA pRepo,
     char** ppszRpmCacheDir
     )
 {
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepoId) || !ppszRpmCacheDir)
+    if(!pTdnf || !pRepo || !ppszRpmCacheDir)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -199,12 +199,9 @@ TDNFRepoGetRpmCacheDir(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFJoinPath(
-                  &pszRpmCacheDir,
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoId,
-                  TDNF_RPM_CACHE_DIR_NAME,
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               TDNF_RPM_CACHE_DIR_NAME, NULL,
+                               &pszRpmCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(access(pszRpmCacheDir, F_OK))
@@ -232,24 +229,21 @@ error:
 uint32_t
 TDNFRepoRemoveCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     )
 {
     uint32_t dwError = 0;
     char* pszRepoCacheDir = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    if(!pTdnf || !pRepo || !pTdnf->pConf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFJoinPath(
-                  &pszRepoCacheDir,
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoId,
-                  TDNF_REPODATA_DIR_NAME,
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               TDNF_REPODATA_DIR_NAME, NULL,
+                               &pszRepoCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRecursivelyRemoveDir(pszRepoCacheDir);
@@ -270,19 +264,19 @@ error:
 uint32_t
 TDNFRemoveRpmCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     )
 {
     uint32_t dwError = 0;
     char* pszRpmCacheDir = NULL;
 
-    if (!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    if (!pTdnf || !pRepo || !pTdnf->pConf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRepoGetRpmCacheDir(pTdnf, pszRepoId, &pszRpmCacheDir);
+    dwError = TDNFRepoGetRpmCacheDir(pTdnf, pRepo, &pszRpmCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (!IsNullOrEmptyString(pszRpmCacheDir))
@@ -330,24 +324,21 @@ error:
 uint32_t
 TDNFRemoveLastRefreshMarker(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     )
 {
     uint32_t dwError = 0;
     char* pszLastRefreshMarker = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    if(!pTdnf || !pRepo || !pTdnf->pConf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFJoinPath(
-                  &pszLastRefreshMarker,
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoId,
-                  TDNF_REPO_METADATA_MARKER,
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               TDNF_REPO_METADATA_MARKER, NULL,
+                               &pszLastRefreshMarker);
     BAIL_ON_TDNF_ERROR(dwError);
     if (pszLastRefreshMarker)
     {
@@ -367,24 +358,21 @@ error:
 uint32_t
 TDNFRemoveSolvCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     )
 {
     uint32_t dwError = 0;
     char* pszSolvCacheDir = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    if(!pTdnf || !pRepo || !pTdnf->pConf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFJoinPath(
-                  &pszSolvCacheDir,
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoId,
-                  TDNF_SOLVCACHE_DIR_NAME,
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               TDNF_SOLVCACHE_DIR_NAME, NULL,
+                               &pszSolvCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRecursivelyRemoveDir(pszSolvCacheDir);
@@ -404,24 +392,21 @@ error:
 uint32_t
 TDNFRemoveKeysCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     )
 {
     uint32_t dwError = 0;
     char* pszKeysDir = NULL;
 
-    if(!pTdnf || !pTdnf->pConf || IsNullOrEmptyString(pszRepoId))
+    if(!pTdnf || !pRepo || !pTdnf->pConf)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFJoinPath(
-                  &pszKeysDir,
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoId,
-                  "keys",
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               "keys", NULL,
+                               &pszKeysDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRecursivelyRemoveDir(pszKeysDir);
@@ -606,6 +591,38 @@ TDNFRepoApplySSLSettings(
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetCachePath(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo,
+    const char *pszSubDir,
+    const char *pszFileName,
+    char **ppszPath
+)
+{
+    uint32_t dwError = 0;
+
+    if(!pTdnf || !pRepo || !ppszPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFJoinPath(
+                  ppszPath,
+                  pTdnf->pConf->pszCacheDir,
+                  pRepo->pszId,
+                  pszSubDir,
+                  pszFileName,
+                  NULL);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
 cleanup:
     return dwError;

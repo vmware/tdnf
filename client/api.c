@@ -438,31 +438,31 @@ TDNFClean(
         if (nCleanType & CLEANTYPE_METADATA)
         {
             pr_info(" metadata");
-            dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRepoRemoveCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_DBCACHE)
         {
             pr_info(" dbcache");
-            dwError = TDNFRemoveSolvCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveSolvCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_PACKAGES)
         {
             pr_info(" packages");
-            dwError = TDNFRemoveRpmCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveRpmCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_KEYS)
         {
             pr_info(" keys");
-            dwError = TDNFRemoveKeysCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveKeysCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_EXPIRE_CACHE)
         {
             pr_info(" expire-cache");
-            dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         pr_info("\n");

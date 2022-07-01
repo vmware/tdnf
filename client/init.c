@@ -313,14 +313,14 @@ TDNFRefreshSack(
                 goto cleanup;
             }
 
-            dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRepoRemoveCache(pTdnf, pRepo);
             if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
                 dwError = 0;//Ignore non existent folders
             }
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFRemoveSolvCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveSolvCache(pTdnf, pRepo);
             if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
                 dwError = 0;//Ignore non existent folders

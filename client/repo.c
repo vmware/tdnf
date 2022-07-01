@@ -121,9 +121,9 @@ error:
 
         if(pTdnf)
         {
-            TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
-            TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
-            TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
+            TDNFRepoRemoveCache(pTdnf, pRepoData);
+            TDNFRemoveSolvCache(pTdnf, pRepoData);
+            TDNFRemoveLastRefreshMarker(pTdnf, pRepoData);
         }
     }
     goto cleanup;
@@ -504,7 +504,7 @@ TDNFStoreBaseURLFromMetalink(
 {
     uint32_t dwError = 0;
     char *pszBaseUrlFile = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if (!pTdnf ||
         !pTdnf->pConf ||
@@ -514,34 +514,30 @@ TDNFStoreBaseURLFromMetalink(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    pRepos = pTdnf->pRepos;
-    if (!pRepos)
+
+    if (!pTdnf->pRepos)
     {
         dwError = ERROR_TDNF_NO_REPOS;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while(pRepos)
+    for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
-        if(!strcmp(pszRepo, pRepos->pszId))
+        if(!strcmp(pszRepo, pRepo->pszId))
         {
             break;
         }
-        pRepos = pRepos->pNext;
     }
 
-    if (!pRepos)
+    if (!pRepo)
     {
         dwError = ERROR_TDNF_NO_REPOS;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFJoinPath(&pszBaseUrlFile,
-                           pTdnf->pConf->pszCacheDir,
-                           pRepos->pszId,
-                           "tmp",
-                           TDNF_REPO_BASEURL_FILE_NAME,
-                           NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               "tmp", TDNF_REPO_BASEURL_FILE_NAME,
+                               &pszBaseUrlFile);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFCreateAndWriteToFile(pszBaseUrlFile, pszRepoMDURL);
@@ -704,11 +700,9 @@ TDNFGetRepoMD(
                   (void **)&pRepoMDRel);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFJoinPath(
-                  &pRepoMDRel->pszRepoCacheDir,
-                  pTdnf->pConf->pszCacheDir,
-                  pRepoData->pszId,
-                  NULL);
+    dwError = TDNFGetCachePath(pTdnf, pRepoData,
+                               NULL, NULL,
+                               &pRepoMDRel->pszRepoCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateString(pszRepoMDFile, &pRepoMDRel->pszRepoMD);
@@ -781,12 +775,9 @@ TDNFGetRepoMD(
     {
         pr_info("Refreshing metadata for: '%s'\n", pRepoData->pszName);
         /* always download to tmp */
-        dwError = TDNFJoinPath(
-                      &pszTmpRepoDataDir,
-                      pTdnf->pConf->pszCacheDir,
-                      pRepoData->pszId,
-                      "tmp",
-                      NULL);
+        dwError = TDNFGetCachePath(pTdnf, pRepoData,
+                                   "tmp", NULL,
+                                   &pszTmpRepoDataDir);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFUtilsMakeDirs(pszTmpRepoDataDir);
@@ -925,12 +916,12 @@ TDNFGetRepoMD(
     {
         /* Remove the old repodata, solvcache and lastRefreshMarker before
            replacing the new repomd file and metalink files. */
-        TDNFRepoRemoveCache(pTdnf, pRepoData->pszId);
-        TDNFRemoveSolvCache(pTdnf, pRepoData->pszId);
-        TDNFRemoveLastRefreshMarker(pTdnf, pRepoData->pszId);
+        TDNFRepoRemoveCache(pTdnf, pRepoData);
+        TDNFRemoveSolvCache(pTdnf, pRepoData);
+        TDNFRemoveLastRefreshMarker(pTdnf, pRepoData);
         if (!nKeepCache)
         {
-            TDNFRemoveRpmCache(pTdnf, pRepoData->pszId);
+            TDNFRemoveRpmCache(pTdnf, pRepoData);
         }
         dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -940,12 +931,9 @@ TDNFGetRepoMD(
 
     if (nNewRepoMDFile)
     {
-        dwError = TDNFJoinPath(
-                    &pszLastRefreshMarker,
-                    pTdnf->pConf->pszCacheDir,
-                    pRepoData->pszId,
-                    TDNF_REPO_METADATA_MARKER,
-                    NULL);
+        dwError = TDNFGetCachePath(pTdnf, pRepoData,
+                                   TDNF_REPO_METADATA_MARKER, NULL,
+                                   &pszLastRefreshMarker);
         BAIL_ON_TDNF_ERROR(dwError);
         dwError = TDNFTouchFile(pszLastRefreshMarker);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -1416,12 +1404,9 @@ TDNFDownloadMetadata(
     else
     {
         /* if printing only we use the already downloaded repomd.xml */
-        dwError = TDNFJoinPath(
-                  &pszRepoMDPath,
-                  pTdnf->pConf->pszCacheDir,
-                  pRepo->pszId,
-                  TDNF_REPO_METADATA_FILE_PATH,
-                  NULL);
+        dwError = TDNFGetCachePath(pTdnf, pRepo,
+                                   TDNF_REPO_METADATA_FILE_PATH, NULL,
+                                   &pszRepoMDPath);
         BAIL_ON_TDNF_ERROR(dwError);
 
         pr_info("%s\n", pszRepoMDUrl);
