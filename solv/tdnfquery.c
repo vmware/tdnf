@@ -80,15 +80,13 @@ uint32_t
 SolvAddUserInstalledToJobs(
     Queue* pQueueJobs,
     Pool *pPool,
-    char **ppszAutoInstalled
+    struct history_ctx *pHistoryCtx
     )
 {
     uint32_t dwError = 0;
+    int rc;
     Id p;
     Solvable *s;
-    Queue queueAutoInstalled = {0};
-    Id idAuto;
-    int i;
 
     if(!pQueueJobs || !pPool)
     {
@@ -96,37 +94,24 @@ SolvAddUserInstalledToJobs(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    queue_init(&queueAutoInstalled);
-    if (ppszAutoInstalled)
-    {
-        for(i = 0; ppszAutoInstalled[i] != NULL; i++)
-        {
-            idAuto = pool_str2id(pPool, ppszAutoInstalled[i], 0);
-            if (idAuto)
-            {
-                queue_push(&queueAutoInstalled, idAuto);
-            }
-        }
-    }
-
     FOR_REPO_SOLVABLES(pPool->installed, p, s)
     {
-        for (i = 0; i < queueAutoInstalled.count; i++)
+        int nFlag = 0;
+        const char *pszName = pool_id2str(pPool, s->name);
+        rc = history_get_auto_flag(pHistoryCtx, pszName, &nFlag);
+        if (rc != 0)
         {
-            if (queueAutoInstalled.elements[i] == s->name)
-            {
-                break;
-            }
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
-        if (i >= queueAutoInstalled.count)
+        if (nFlag == 0)
         {
             queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_USERINSTALLED, s->name);
         }
     }
-cleanup:
-    queue_free(&queueAutoInstalled);
-    return dwError;
 
+cleanup:
+    return dwError;
 error:
     goto cleanup;
 }
@@ -1418,6 +1403,64 @@ cleanup:
     return dwError;
 error:
     queue_free(&queueDuplicates);
+    goto cleanup;
+}
+
+uint32_t
+SolvApplyUserInstalledFilter(
+    PSolvQuery pQuery,
+    struct history_ctx *pHistoryCtx)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Queue queueUserInstalled = {0};
+    int i;
+    int rc;
+
+    if(!pQuery || !pHistoryCtx)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pPool = pQuery->pSack->pPool;
+
+    queue_init(&queueUserInstalled);
+
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+        Solvable *s = pool_id2solvable(pPool, idPkg);
+
+        if(!s)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (s->repo == pPool->installed)
+        {
+            const char *pszName;
+            int value;
+
+            pszName = pool_id2str(pPool, s->name);
+            rc = history_get_auto_flag(pHistoryCtx, pszName, &value);
+            if (rc != 0)
+            {
+                dwError = ERROR_TDNF_HISTORY_ERROR;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            if (value == 0)
+            {
+                queue_push(&queueUserInstalled, idPkg);
+            }
+        }
+    }
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueUserInstalled;
+cleanup:
+    return dwError;
+error:
+    queue_free(&queueUserInstalled);
     goto cleanup;
 }
 

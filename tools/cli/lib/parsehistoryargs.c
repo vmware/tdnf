@@ -100,12 +100,12 @@ TDNFCliParseHistoryArgs(
             pHistoryArgs->nTo = atoi(pSetOpt->pszOptValue);
         }
     }
-    
+
     if (pHistoryArgs->nTo == 0)
     {
         pHistoryArgs->nTo = pHistoryArgs->nFrom;
     }
-    
+
     *ppHistoryArgs = pHistoryArgs;
 cleanup:
     return dwError;

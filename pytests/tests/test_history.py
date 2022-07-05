@@ -21,6 +21,8 @@ def teardown_test(utils):
     pkgname3 = utils.config["sglversion2_pkgname"]
     for pkg in [pkgname1, pkgname2, pkgname3]:
         utils.erase_package(pkg)
+    utils.erase_package('tdnf-test-cleanreq-leaf1')
+    utils.erase_package('tdnf-test-cleanreq-required')
 
 
 def test_history_list(utils):
@@ -137,6 +139,46 @@ def test_history_redo(utils):
     utils.run(['tdnf', 'history', '-y', 'redo', '--from', str(int(baseline) + 2)])
     assert(ret['retval'] == 0)
     assert(utils.check_package(pkgname2))
+
+
+def test_history_mark(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.install_package(pkgname)
+
+    ret = utils.run(['tdnf', 'mark', 'remove', pkgname])
+    assert(ret['retval'] == 0)
+
+    ret = utils.run(['tdnf', 'history'])
+    trans_id = ret['stdout'][-1].split()[0]
+
+    utils.run(['tdnf', 'history', '-y', 'undo', trans_id])
+    assert(ret['retval'] == 0)
+
+    ret = utils.run(['tdnf', 'repoquery', '--userinstalled', pkgname])
+    assert(pkgname in "\n".join(ret['stdout']))
+
+
+# redo may pull additional deps if they were already installed
+# when the transaction was made, but were removed later. They
+# should to be pulled in and marked autoinstalled
+def test_history_redo_and_autoinstall(utils):
+    pkgname = 'tdnf-test-cleanreq-leaf1'
+    pkgname_req = 'tdnf-test-cleanreq-required'
+
+    utils.install_package(pkgname_req)
+    utils.install_package(pkgname)
+
+    ret = utils.run(['tdnf', 'history'])
+    trans_id = ret['stdout'][-1].split()[0]
+
+    utils.erase_package(pkgname)
+    utils.erase_package(pkgname_req)
+
+    utils.run(['tdnf', 'history', '-y', 'redo', trans_id])
+    assert(ret['retval'] == 0)
+
+    ret = utils.run(['tdnf', 'repoquery', '--userinstalled', pkgname_req])
+    assert(pkgname_req not in "\n".join(ret['stdout']))
 
 
 def test_history_memcheck(utils):

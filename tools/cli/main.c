@@ -39,6 +39,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
     {"install",            TDNFCliInstallCommand, true},
     {"list",               TDNFCliListCommand, false},
     {"makecache",          TDNFCliMakeCacheCommand, true},
+    {"mark",               TDNFCliMarkCommand, false},
     {"provides",           TDNFCliProvidesCommand, false},
     {"whatprovides",       TDNFCliProvidesCommand, false},
     {"reinstall",          TDNFCliReinstallCommand, true},
@@ -102,6 +103,8 @@ int main(int argc, char **argv)
         _context.pFnUpdateInfoSummary = TDNFCliInvokeUpdateInfoSummary;
         _context.pFnHistoryList = TDNFCliInvokeHistoryList;
         _context.pFnHistoryResolve = TDNFCliInvokeHistoryResolve;
+        _context.pFnAlterHistory = TDNFCliInvokeAlterHistory;
+        _context.pFnMark = TDNFCliInvokeMark;
 
         pszCmd = pCmdArgs->ppszCmds[0];
 
@@ -226,7 +229,7 @@ TDNFCliPrintError(
             CHECK_JD_RC(jd_map_start(jd));
             CHECK_JD_RC(jd_map_add_int(jd, "Error", dwErrorCode));
             CHECK_JD_RC(jd_map_add_string(jd, "ErrorMessage", pszError));
-            
+
             pr_json(jd->buf);
         }
     }
@@ -363,6 +366,16 @@ TDNFCliInvokeAlter(
     )
 {
     return TDNFAlterCommand(pContext->hTdnf, nAlterType, pSolvedPkgInfo);
+}
+
+uint32_t
+TDNFCliInvokeAlterHistory(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    )
+{
+    return TDNFAlterHistoryCommand(pContext->hTdnf, pSolvedPkgInfo, pHistoryArgs);
 }
 
 uint32_t
@@ -509,4 +522,14 @@ TDNFCliInvokeHistoryResolve(
         pContext->hTdnf,
         pHistoryArgs,
         ppSolvedPkgInfo);
+}
+
+uint32_t
+TDNFCliInvokeMark(
+    PTDNF_CLI_CONTEXT pContext,
+    char **ppszPkgNameSpecs,
+    uint32_t nValue
+    )
+{
+    return TDNFMark(pContext->hTdnf, ppszPkgNameSpecs, nValue);
 }

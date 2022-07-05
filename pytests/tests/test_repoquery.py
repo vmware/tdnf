@@ -215,3 +215,17 @@ def test_two_args(utils):
                      'foo',
                      'bar'])
     assert(ret['retval'] == 902)
+
+
+def test_userinstalled(utils):
+    pkgname = BASE_PKG
+    utils.install_package(pkgname)
+
+    ret = utils.run(['tdnf', 'repoquery', '--userinstalled', pkgname])
+    assert(pkgname in "\n".join(ret['stdout']))
+
+    ret = utils.run(['tdnf', 'mark', 'remove', pkgname])
+    assert(ret['retval'] == 0)
+
+    ret = utils.run(['tdnf', 'repoquery', '--userinstalled', pkgname])
+    assert(pkgname not in "\n".join(ret['stdout']))

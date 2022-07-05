@@ -382,6 +382,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int nExtras;           /* packages that are installed but not available */
     int nInstalled;
     int nUpgrades;
+    int nUserInstalled;
     char *pszFile;         /* packages that own this file */
     char ***pppszWhatKeys;
 

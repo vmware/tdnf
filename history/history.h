@@ -6,7 +6,10 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
+#pragma once
+
 #include <sqlite3.h>
+#include <rpm/rpmlib.h>
 
 #define HISTORY_TRANS_TYPE_BASE 0
 #define HISTORY_TRANS_TYPE_DELTA 1
@@ -21,6 +24,7 @@ struct history_ctx
     int *installed_ids; /* installed ids must be sorted */
     int installed_count;
     char *cookie;
+    int trans_id;
 };
 
 struct history_delta
@@ -31,6 +35,13 @@ struct history_delta
     int removed_count;
 };
 
+struct history_flags_delta
+{
+    int *changed_ids;
+    int *values;
+    int count;
+};
+
 struct history_transaction
 {
     int id;
@@ -39,6 +50,7 @@ struct history_transaction
     time_t timestamp;
     char *cookie;
     struct history_delta delta;
+    struct history_flags_delta flags_delta;
 };
 
 struct history_nevra_map
@@ -61,6 +73,7 @@ void history_free_delta(struct history_delta *hd);
 struct history_delta *history_get_delta(struct history_ctx *ctx, int trans_id);
 struct history_delta *history_get_delta_range(struct history_ctx *ctx, int trans_id0, int trans_id1);
 
+int history_add_transaction(struct history_ctx *ctx, const char *cmdline);
 int history_record_state(struct history_ctx *ctx);
 int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline);
 
@@ -69,3 +82,14 @@ int history_get_transactions(struct history_ctx *ctx,
                              int *pcount,
                              int reverse, int from, int to);
 void history_free_transactions(struct history_transaction *tas, int count);
+
+int history_set_auto_flag(struct history_ctx *ctx, const char *name, int value);
+int history_get_auto_flag(struct history_ctx *ctx, const char *name, int *pvalue);
+
+int history_restore_auto_flags(struct history_ctx *ctx, int trans_id);
+int history_replay_auto_flags(struct history_ctx *ctx, int from, int to);
+
+void free_history_flags_delta(struct history_flags_delta * hfd);
+struct history_flags_delta *
+history_get_flags_delta(struct history_ctx *ctx, int from, int to);
+

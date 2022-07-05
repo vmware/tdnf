@@ -134,6 +134,13 @@ TDNFCliInvokeHistoryResolve(
 );
 
 uint32_t
+TDNFCliInvokeAlterHistory(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    );
+
+uint32_t
 TDNFCliUpdateInfoInfo(
     PTDNF_UPDATEINFO pInfo
     );
@@ -391,4 +398,11 @@ TDNFCliUpdateInfoSummary(
 void
 TDNFFreeListArgs(
     PTDNF_LIST_ARGS pListArgs
+    );
+
+uint32_t
+TDNFCliInvokeMark(
+    PTDNF_CLI_CONTEXT pContext,
+    char **ppszPkgNameSpecs,
+    uint32_t nValue
     );

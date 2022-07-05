@@ -446,16 +446,10 @@ SolvAddPkgEraseJob(
     );
 
 uint32_t
-SolvAddPkgUserInstalledJob(
-    Queue* pQueueJobs,
-    Id dwId
-    );
-
-uint32_t
 SolvAddUserInstalledToJobs(
     Queue* pQueueJobs,
     Pool *pPool,
-    char **ppszAutoInstalled
+    struct history_ctx *pHistoryCtx
     );
 
 uint32_t
@@ -496,6 +490,11 @@ uint32_t
 SolvApplyFileProvidesFilter(
     PSolvQuery pQuery,
     char *pszFile);
+
+uint32_t
+SolvApplyUserInstalledFilter(
+    PSolvQuery pQuery,
+    struct history_ctx *pHistoryCtx);
 
 // tdnfrepo.c
 uint32_t

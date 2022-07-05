@@ -102,7 +102,7 @@ TDNFCliCountCommand(
     {
         pr_jsonf("%u", dwCount);
     } else {
-        pr_crit("Package count = %u\n", dwCount);        
+        pr_crit("Package count = %u\n", dwCount);
     }
 
 cleanup:
@@ -607,7 +607,7 @@ TDNFCliProvidesCommand(
                 pPkg->pszArch,
                 pPkg->pszSummary);
             pr_crit("Repo\t : %s\n", pPkg->pszRepoName);
-        }        
+        }
     }
 cleanup:
     if(pPkgInfos)
@@ -946,7 +946,7 @@ TDNFCliCheckUpdateCommand(
         }
         pr_json(jd->buf);
         JD_SAFE_DESTROY(jd);
-    }    
+    }
     else
     {
         for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
@@ -1057,8 +1057,24 @@ TDNFCliHistoryAlter(
     }
     else if (!(pSolvedPkgInfo->ppszPkgsNotResolved && pSolvedPkgInfo->ppszPkgsNotResolved[0]))
     {
-        dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, 0, pSolvedPkgInfo);
+        dwError = TDNFCliAskForAction(pCmdArgs, pSolvedPkgInfo);
+        if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
+        {
+            dwError = 0;
+        }
         BAIL_ON_CLI_ERROR(dwError);
+
+        dwError = pContext->pFnAlterHistory(
+                    pContext,
+                    pSolvedPkgInfo,
+                    pHistoryArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        if (pCmdArgs->nJsonOutput)
+        {
+            dwError = TDNFCliPrintActionComplete(pCmdArgs);
+            BAIL_ON_CLI_ERROR(dwError);
+        }
     }
     else
     {
@@ -1265,3 +1281,62 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+TDNFCliMarkCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t nValue = 0;
+
+    if(!pContext || !pContext->hTdnf || !pContext->pFnCount)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    if(pCmdArgs->nCmdCount > 1)
+    {
+        if (strcmp(pCmdArgs->ppszCmds[1], "install") == 0)
+        {
+            nValue = 0;
+        }
+        else if (strcmp(pCmdArgs->ppszCmds[1], "remove") == 0)
+        {
+            nValue = 1;
+        }
+        else
+        {
+            pr_crit("unknown action '%s'\n", pCmdArgs->ppszCmds[1]);
+            dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+    }
+    else
+    {
+        pr_crit("need action ('install' or 'remove') as argument\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    if(pCmdArgs->nCmdCount > 2)
+    {
+        dwError = pContext->pFnMark(pContext, &(pCmdArgs->ppszCmds[2]), nValue);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else
+    {
+        pr_crit("need package spec(s) as argument\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+

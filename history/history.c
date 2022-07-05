@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 #include <time.h>
+/* for O_RDONLY */
+#include <fcntl.h>
 
 #include <sqlite3.h>
 
@@ -16,6 +18,7 @@
 #include <rpm/rpmlog.h>
 #include <rpm/rpmps.h>
 #include <rpm/rpmts.h>
+#include <rpm/rpmdb.h>
 
 #include "history.h"
 
@@ -49,6 +52,16 @@
     goto error; \
 }
 
+#define check_db_step(db, step) \
+    if((step) != SQLITE_ROW && (step) != SQLITE_DONE) { \
+        fprintf(stderr, \
+            "check_db_rc failed with %s in %s line %d\n", \
+            sqlite3_errmsg(db), __FUNCTION__, __LINE__); \
+        rc = -1; \
+        ((void)(rc)); /* suppress "set but not used" warning */ \
+        goto error; \
+    }
+
 #define check_db_cmd(db, cmd) { \
     rc = (cmd); \
     check_db_rc(db, rc); \
@@ -59,6 +72,69 @@
 #define map_isset(map, idx) (map[(idx)-1] != 0)
 #define map_set(map, idx) { map[(idx)-1] = 1;}
 #define map_unset(map, idx) { map[(idx)-1] = 0;}
+
+
+/* SQL CREATE statements and column ids */
+
+#define SQL_CREATE_TABLE_RPMS \
+    "CREATE TABLE IF NOT EXISTS " \
+        "rpms(" \
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT," \
+            "nevra TEXT);"
+
+#define COLUMN_RPMS_ID 0
+#define COLUMN_RPMS_NEVRA 1
+
+#define SQL_CREATE_TABLE_NAMES \
+    "CREATE TABLE IF NOT EXISTS " \
+        "names(" \
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT," \
+            "name TEXT);"
+
+#define COLUMN_NAMES_ID 0
+#define COLUMN_NAMES_NAME 1
+
+#define TABLE_CREATE_TABLE_FLAG_SET \
+    "CREATE TABLE IF NOT EXISTS " \
+        "flag_set(" \
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT," \
+            "trans_id INTEGER," \
+            "name_id INTEGER," \
+            "value INTEGER);"
+
+#define COLUMN_FLAG_SET_ID 0
+#define COLUMN_FLAG_SET_TRANS_ID 1
+#define COLUMN_FLAG_SET_NAME_ID 2
+#define COLUMN_FLAG_SET_VALUE 3
+
+#define SQL_CREATE_TABLE_TRANSACTIONS \
+    "CREATE TABLE IF NOT EXISTS " \
+        "transactions(" \
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT," \
+            "cookie TEXT," \
+            "cmdline TEXT," \
+            "timestamp INTEGER, " \
+            "type INTEGER);"
+
+#define COLUMN_TRANSACTIONS_ID 0
+#define COLUMN_TRANSACTIONS_COOKIE 1
+#define COLUMN_TRANSACTIONS_CMDLINE 2
+#define COLUMN_TRANSACTIONS_TIMESTAMP 3
+#define COLUMN_TRANSACTIONS_TYPE 4
+
+#define SQL_CREATE_TABLE_TRANS_ITEMS \
+    "CREATE TABLE IF NOT EXISTS " \
+        "trans_items(" \
+            "Id INTEGER PRIMARY KEY AUTOINCREMENT," \
+            "trans_id INTEGER," \
+            "type INTEGER," \
+            "rpm_id INTEGER);"
+
+#define COLUMN_TRANS_ITEMS_ID 0
+#define COLUMN_TRANS_ITEMS_TRANS_ID 1
+#define COLUMN_TRANS_ITEMS_TYPE 2
+#define COLUMN_TRANS_ITEMS_RPM_ID 3
+
 
 static
 int _cmp_int(const void *p1, const void *p2)
@@ -140,6 +216,32 @@ error:
     return db;
 }
 
+/* Check if table exists. Returns SQLITE_ROW if it exists, SQLITE_DONE if not,
+   or error code in case of error */
+static
+int db_table_exists(sqlite3 *db, const char *name)
+{
+    int rc = 0;
+    sqlite3_stmt *res = NULL;
+
+    rc = sqlite3_prepare_v2(db,
+                            "SELECT * FROM sqlite_master "
+                                "WHERE type='table' AND name=?;",
+                            -1, &res, 0);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_text(res, 1, name, -1, NULL);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_step(res);
+    sqlite3_finalize(res); res = NULL;
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
 /* count known rpms in db */
 static
 int db_rpms_count(sqlite3 *db, int *pcount)
@@ -164,14 +266,15 @@ error:
     return rc;
 }
 
-/* max rpm id db (should be same as count unless there are gaps) */
+/* max id in a table (should be same as count unless there are gaps) */
 static
-int db_rpms_maxid(sqlite3 *db, int *pmaxid)
+int db_maxid(sqlite3 *db, const char *table_name, int *pmaxid)
 {
     int rc = 0, step;
     sqlite3_stmt *res = NULL;
-    const char *sql = "SELECT * FROM rpms ORDER BY id DESC;";
+    char sql[256];
 
+    snprintf(sql, sizeof(sql), "SELECT * FROM %s ORDER BY id DESC;", table_name);
     rc = sqlite3_prepare_v2(db,
                             sql,
                             -1, &res, 0);
@@ -180,12 +283,19 @@ int db_rpms_maxid(sqlite3 *db, int *pmaxid)
     step = sqlite3_step(res);
     check_cond(step == SQLITE_ROW);
 
-    *pmaxid = sqlite3_column_int(res, 0);
+    *pmaxid = sqlite3_column_int(res, COLUMN_RPMS_ID);
     sqlite3_finalize(res); res = NULL;
 error:
     if (res)
         sqlite3_finalize(res);
     return rc;
+}
+
+/* max rpm id db (should be same as count unless there are gaps) */
+static
+int db_rpms_maxid(sqlite3 *db, int *pmaxid)
+{
+    return db_maxid(db, "rpms", pmaxid);
 }
 
 static
@@ -205,16 +315,19 @@ void db_free_nevra_map(struct history_nevra_map *hnm)
 /*
  * Create a map with all known NEVRAs.
  */
+/* TODO: make this generic so it can be used for the 'names' table too */
 static
-struct history_nevra_map *db_nevra_map(sqlite3 *db)
+struct history_nevra_map *db_string_map(sqlite3 *db, const char *table_name)
 {
     int rc = 0;
     struct history_nevra_map *hnm = NULL;
     sqlite3_stmt *res = NULL;
-    const char *sql_find = "SELECT * FROM rpms;";
+    char sql_find[256];
     int count = 0;
 
-    rc = db_rpms_maxid(db, &count);
+    snprintf(sql_find, sizeof(sql_find), "SELECT * FROM %s;", table_name);
+
+    rc = db_maxid(db, table_name, &count);
     check_db_rc(db, rc);
 
     hnm = (struct history_nevra_map *)calloc(1, sizeof(struct history_nevra_map));
@@ -228,8 +341,8 @@ struct history_nevra_map *db_nevra_map(sqlite3 *db)
     rc = sqlite3_prepare_v2(db, sql_find, -1, &res, 0);
     check_db_rc(db, rc);
     for(int step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
-        int id = sqlite3_column_int(res, 0);
-        char *nevra = strdup((const char *)sqlite3_column_text(res, 1));
+        int id = sqlite3_column_int(res, COLUMN_RPMS_ID);
+        char *nevra = strdup((const char *)sqlite3_column_text(res, COLUMN_RPMS_NEVRA));
         check_ptr(nevra);
         check_cond((id > 0 && id <= count));
         /* map is zero based, rpm ids start with 1 */
@@ -244,24 +357,33 @@ error:
     return hnm;
 }
 
-/*
- * Add nevra to db if it's not there already. The id will be returned
- * in *pid if that's not NULL.
-*/
 static
-int db_add_nevra(sqlite3 *db, const char *nevra, int *pid)
+struct history_nevra_map *db_nevra_map(sqlite3 *db)
+{
+    return db_string_map(db, "rpms");
+}
+
+static
+int db_get_dict_entry(sqlite3 *db,
+                      const char *table_name, const char *field_name,
+                      const char *entry, int *pid,
+                      int create)
 {
     int rc = 0, step;
     sqlite3_stmt *res = NULL;
-    const char *sql_find = "SELECT * FROM rpms WHERE nevra = ?;";
+    char sql[256];
 
-    rc = sqlite3_prepare_v2(db, sql_find, -1, &res, 0);
+    snprintf(sql, sizeof(sql), "SELECT * FROM %s WHERE %s = ?;", table_name, field_name);
+
+    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_text(res, 1, nevra, -1, NULL);
+    rc = sqlite3_bind_text(res, 1, entry, -1, NULL);
+    check_db_rc(db, rc);
+
     step = sqlite3_step(res);
     if (step == SQLITE_ROW) {
-        int id = sqlite3_column_int(res, 0);
+        int id = sqlite3_column_int(res, COLUMN_RPMS_ID);
         if (pid)
             *pid = id;
         sqlite3_finalize(res);
@@ -270,11 +392,19 @@ int db_add_nevra(sqlite3 *db, const char *nevra, int *pid)
     }
     sqlite3_finalize(res); res = NULL;
 
+    if (!create) {
+        if (pid) *pid = 0;
+        return 0;
+    }
+
     /* add it to db */
-    rc = sqlite3_prepare_v2(db, "INSERT INTO rpms(nevra) VALUES (?);", -1, &res, 0);
+    snprintf(sql, sizeof(sql), "INSERT INTO %s(%s) VALUES (?);", table_name, field_name);
+    rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_text(res, 1, nevra, -1, NULL);
+    rc = sqlite3_bind_text(res, 1, entry, -1, NULL);
+    check_db_rc(db, rc);
+
     step = sqlite3_step(res);
     if (step == SQLITE_DONE) {
         int id = sqlite3_last_insert_rowid(db);
@@ -286,6 +416,16 @@ error:
     if (res)
         sqlite3_finalize(res);
     return rc;
+}
+
+/*
+ * Add nevra to db if it's not there already. The id will be returned
+ * in *pid if that's not NULL.
+*/
+static
+int db_add_nevra(sqlite3 *db, const char *nevra, int *pid)
+{
+    return db_get_dict_entry(db, "rpms", "nevra", nevra, pid, 1);
 }
 
 /* read transaction items into ht */
@@ -312,10 +452,12 @@ int history_delta_read(sqlite3 *db, struct history_delta *hd, int id)
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_int(res, 1, id);
+    rc = sqlite3_bind_int(res, 1, id);
+    check_db_rc(db, rc);
+
     for(int step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
-        int type = sqlite3_column_int(res, 2);
-        int rpm_id = sqlite3_column_int(res, 3);
+        int type = sqlite3_column_int(res, COLUMN_TRANS_ITEMS_TYPE);
+        int rpm_id = sqlite3_column_int(res, COLUMN_TRANS_ITEMS_RPM_ID);
         if (type == HISTORY_ITEM_TYPE_ADD || type == HISTORY_ITEM_TYPE_SET) {
             check_cond(hd->added_count < max_count);
             hd->added_ids[hd->added_count++] = rpm_id;
@@ -344,10 +486,12 @@ int db_play_delta(sqlite3 *db, int trans_id,
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_int(res, 1, trans_id);
+    rc = sqlite3_bind_int(res, 1, trans_id);
+    check_db_rc(db, rc);
+
     for(int step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
-        int type = sqlite3_column_int(res, 2);
-        int rpm_id = sqlite3_column_int(res, 3);
+        int type = sqlite3_column_int(res, COLUMN_TRANS_ITEMS_TYPE);
+        int rpm_id = sqlite3_column_int(res, COLUMN_TRANS_ITEMS_RPM_ID);
         check_cond(rpm_id > 0 && rpm_id <= map_size);
         check_cond(type == HISTORY_ITEM_TYPE_ADD || type == HISTORY_ITEM_TYPE_REMOVE);
         if (type == HISTORY_ITEM_TYPE_ADD) {
@@ -377,10 +521,12 @@ int db_play_set(sqlite3 *db, int trans_id,
     rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_int(res, 1, trans_id);
+    rc = sqlite3_bind_int(res, 1, trans_id);
+    check_db_rc(db, rc);
+
     for(int step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
-        int type = sqlite3_column_int(res, 2);
-        int rpm_id = sqlite3_column_int(res, 3);
+        int type = sqlite3_column_int(res, COLUMN_TRANS_ITEMS_TYPE);
+        int rpm_id = sqlite3_column_int(res, COLUMN_TRANS_ITEMS_RPM_ID);
         check_cond(rpm_id > 0 && rpm_id <= map_size);
         check_cond(type == HISTORY_ITEM_TYPE_SET);
         map_set(installed_map, rpm_id);
@@ -412,10 +558,12 @@ int db_play_transaction(sqlite3 *db, int trans_id,
                             -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_int(res, 1, HISTORY_TRANS_TYPE_BASE);
+    rc = sqlite3_bind_int(res, 1, HISTORY_TRANS_TYPE_BASE);
+    check_db_rc(db, rc);
+
     int base_id = 0;
     for (step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
-        base_id = sqlite3_column_int(res, 0);
+        base_id = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
         if (base_id <= trans_id)
             break;
     }
@@ -462,9 +610,7 @@ int db_update_rpms(rpmts ts, sqlite3 *db, int **pids, int *pcount)
         ids = (int *)calloc(count, sizeof(int));
     }
 
-    char *sql = "CREATE TABLE IF NOT EXISTS "
-        "rpms(Id INTEGER PRIMARY KEY AUTOINCREMENT, nevra TEXT);";
-    rc = sqlite3_exec(db, sql, 0, 0, NULL);
+    rc = sqlite3_exec(db, SQL_CREATE_TABLE_RPMS, 0, 0, NULL);
     check_db_rc(db, rc);
 
     mi = rpmtsInitIterator(ts, RPMDBI_PACKAGES, NULL, 0);
@@ -507,10 +653,17 @@ int db_add_transaction(sqlite3 *db, int *ptrans_id,
         -1, &res, 0);
     check_db_rc(db, rc);
 
-    sqlite3_bind_text(res, 1, cmdline, -1, NULL);
-    sqlite3_bind_text(res, 2, cookie, -1, NULL);
-    sqlite3_bind_int(res, 3, timestamp);
-    sqlite3_bind_int(res, 4, type);
+    rc = sqlite3_bind_text(res, 1, cmdline, -1, NULL);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_text(res, 2, cookie, -1, NULL);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_int(res, 3, timestamp);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_int(res, 4, type);
+    check_db_rc(db, rc);
 
     ret = sqlite3_step(res);
     check_cond(ret == SQLITE_DONE);
@@ -537,9 +690,14 @@ int db_add_trans_items(sqlite3 *db, int trans_id, int type,
             -1, &res, 0);
         check_db_rc(db, rc);
 
-        sqlite3_bind_int(res, 1, trans_id);
-        sqlite3_bind_int(res, 2, type);
-        sqlite3_bind_int(res, 3, rpm_ids[i]);
+        rc = sqlite3_bind_int(res, 1, trans_id);
+        check_db_rc(db, rc);
+
+        rc = sqlite3_bind_int(res, 2, type);
+        check_db_rc(db, rc);
+
+        rc = sqlite3_bind_int(res, 3, rpm_ids[i]);
+        check_db_rc(db, rc);
 
         ret = sqlite3_step(res);
         check_cond(ret == SQLITE_DONE);
@@ -552,6 +710,306 @@ error:
     return rc;
 }
 
+static
+int db_set_auto_flag_byid(sqlite3 *db, int trans_id, int name_id, int value)
+{
+    int rc = 0, step;
+    sqlite3_stmt *res = NULL;
+
+    /* TODO: check if entry with trans_id and name_id already exists and update,
+       instead of creating a new entry */
+    rc = sqlite3_prepare_v2(db,
+        "INSERT INTO flag_set(trans_id, name_id, value) VALUES (?, ?, ?);",
+        -1, &res, 0);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_int(res, 1, trans_id);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_int(res, 2, name_id);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_int(res, 3, value);
+    check_db_rc(db, rc);
+
+    step = sqlite3_step(res);
+    check_cond(step == SQLITE_DONE);
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+static
+int db_set_auto_flag(sqlite3 *db, int trans_id, const char *name, int value)
+{
+    int rc = 0;
+    int name_id;
+    sqlite3_stmt *res = NULL;
+
+    rc = sqlite3_exec(db, SQL_CREATE_TABLE_NAMES,
+        0, 0, NULL);
+    check_db_rc(db, rc);
+
+    rc = db_get_dict_entry(db, "names", "name", name, &name_id, 1);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_exec(db, TABLE_CREATE_TABLE_FLAG_SET,
+        0, 0, NULL);
+    check_db_rc(db, rc);
+
+    rc = db_set_auto_flag_byid(db, trans_id, name_id, value);
+    check_rc(rc);
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+static
+int db_get_auto_flag_byid(sqlite3 *db, int trans_id, int name_id, int *pvalue)
+{
+    int rc = 0, step;
+    sqlite3_stmt *res = NULL;
+
+    /* last entry will set the value */
+    /* shouldn't matter if we order by id or trans_id? */
+    rc = sqlite3_prepare_v2(db,
+                            "SELECT * FROM flag_set "
+                                "WHERE name_id = ? AND trans_id <= ? "
+                                "ORDER BY id DESC;",
+                            -1, &res, 0);
+    check_db_rc(db, rc);
+    rc = sqlite3_bind_int(res, 1, name_id);
+    check_db_rc(db, rc);
+
+    rc = sqlite3_bind_int(res, 2, trans_id);
+    check_db_rc(db, rc);
+
+    step = sqlite3_step(res);
+
+    if (step == SQLITE_ROW) { /* found */
+        *pvalue = sqlite3_column_int(res, COLUMN_FLAG_SET_VALUE);
+    } else {
+        /* Not found is valid and means value is 0 (unset).
+           This can happen although we found the name if trans_id is not the
+           latest and an entry was added later. */
+        *pvalue = 0;
+    }
+    sqlite3_finalize(res); res = NULL;
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+static
+int db_get_auto_flag(sqlite3 *db, int trans_id, const char *name, int *pvalue)
+{
+    int rc = 0;
+    int name_id;
+    sqlite3_stmt *res = NULL;
+
+    rc = db_table_exists(db, "flag_set");
+    if (rc == SQLITE_DONE) { /* no table */
+        *pvalue = 0;
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_table_exists(db, "names");
+    if (rc == SQLITE_DONE) { /* no table */
+        *pvalue = 0;
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_get_dict_entry(db, "names", "name", name, &name_id, 0);
+    check_db_rc(db, rc);
+
+    if (name_id == 0) {
+        /* not found is valid and means value is 0 (unset) */
+        *pvalue = 0;
+        return 0;
+    }
+
+    rc = db_get_auto_flag_byid(db, trans_id, name_id, pvalue);
+    check_db_rc(db, rc);
+
+error:
+    if (res)
+        sqlite3_finalize(res);
+    return rc;
+}
+
+int history_set_auto_flag(struct history_ctx *ctx, const char *name, int value)
+{
+    int rc = 0;
+    int oldval;
+
+    check_ptr(name);
+    check_cond(ctx->trans_id > 0);
+
+    /* setting only when needed avoids cluttering the db */
+    rc = db_get_auto_flag(ctx->db, ctx->trans_id, name, &oldval);
+    check_rc(rc);
+
+    if (oldval != value) {
+        rc = db_set_auto_flag(ctx->db, ctx->trans_id, name, value);
+        check_rc(rc);
+    }
+error:
+    return rc;
+}
+
+int history_get_auto_flag(struct history_ctx *ctx, const char *name, int *pvalue)
+{
+    int rc = 0;
+
+    check_ptr(name);
+    check_cond(ctx->trans_id > 0);
+    rc = db_get_auto_flag(ctx->db, ctx->trans_id, name, pvalue);
+    check_rc(rc);
+error:
+    return rc;
+}
+
+/* restore flags to values from trans_id */
+int history_restore_auto_flags(struct history_ctx *ctx, int trans_id)
+{
+    int rc = 0;
+    int i, count;
+
+    rc = db_table_exists(ctx->db, "names");
+    if (rc == SQLITE_DONE) { /* no table => nothing to restore */
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_maxid(ctx->db, "names", &count);
+    check_rc(rc);
+
+    for (i = 1; i <= count; i++) {
+        int value, oldval;
+
+        rc = db_get_auto_flag_byid(ctx->db, trans_id, i, &value);
+        check_rc(rc);
+
+        rc = db_get_auto_flag_byid(ctx->db, ctx->trans_id, i, &oldval);
+        check_rc(rc);
+
+        if (value != oldval) {
+            rc = db_set_auto_flag_byid(ctx->db, ctx->trans_id, i, value);
+            check_rc(rc);
+        }
+    }
+error:
+    return rc;
+}
+
+/* range is exclusive for from */
+int history_replay_auto_flags(struct history_ctx *ctx, int from, int to)
+{
+    int rc = 0;
+    int i, count;
+
+    rc = db_table_exists(ctx->db, "names");
+    if (rc == SQLITE_DONE) { /* no table => nothing to restore */
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+
+    rc = db_maxid(ctx->db, "names", &count);
+    check_rc(rc);
+
+    for (i = 1; i <= count; i++) {
+        int val_from, val_to;
+
+        rc = db_get_auto_flag_byid(ctx->db, from, i, &val_from);
+        check_rc(rc);
+        rc = db_get_auto_flag_byid(ctx->db, to, i, &val_to);
+        check_rc(rc);
+
+        if (val_from != val_to)
+        {
+            int oldval;
+
+            rc = db_get_auto_flag_byid(ctx->db, ctx->trans_id, i, &oldval);
+            check_rc(rc);
+
+            if (val_to != oldval) {
+                rc = db_set_auto_flag_byid(ctx->db, ctx->trans_id, i, val_to);
+                check_rc(rc);
+            }
+        }
+    }
+error:
+    return rc;
+}
+
+void free_history_flags_delta(struct history_flags_delta * hfd)
+{
+    if (hfd){
+        if (hfd->changed_ids) free(hfd->changed_ids);
+        if (hfd->values) free(hfd->values);
+        free(hfd);
+    }
+}
+
+/* range is exclusive for from */
+struct history_flags_delta *
+history_get_flags_delta(struct history_ctx *ctx, int from, int to)
+{
+    int rc = 0;
+    int i, count;
+    struct history_flags_delta *hfd = NULL;
+
+    rc = db_table_exists(ctx->db, "names");
+    if (rc == SQLITE_DONE) { /* no table => nothing to restore */
+        return 0;
+    }
+    check_cond(rc == SQLITE_ROW);
+    rc = db_maxid(ctx->db, "names", &count);
+    check_rc(rc);
+
+    hfd = (struct history_flags_delta *)calloc(1, sizeof(struct history_flags_delta));
+    check_ptr(hfd);
+    
+    hfd->changed_ids = calloc(count, sizeof(int));
+    check_ptr(hfd->changed_ids);
+    hfd->values = calloc(count, sizeof(int));
+    check_ptr(hfd->values);
+
+    for (i = 1; i <= count; i++) {
+        int val_from, val_to;
+
+        rc = db_get_auto_flag_byid(ctx->db, from, i, &val_from);
+        check_rc(rc);
+        rc = db_get_auto_flag_byid(ctx->db, to, i, &val_to);
+        check_rc(rc);
+        if (val_from != val_to)
+        {
+            int oldval;
+
+            rc = db_get_auto_flag_byid(ctx->db, ctx->trans_id, i, &oldval);
+            check_rc(rc);
+
+            if (val_to != oldval) {
+                hfd->changed_ids[hfd->count] = i;
+                hfd->values[hfd->count] = val_to;
+                hfd->count++;
+            }
+        }
+    }
+error:
+    if (rc) {
+        free_history_flags_delta(hfd);
+        hfd = NULL;
+    }
+    return hfd;
+}
 
 /* Helper to set the ctx cookie, free'ing the old one if needed */
 static
@@ -560,7 +1018,6 @@ void history_set_cookie(struct history_ctx *ctx, const char *cookie)
     safe_free(ctx->cookie);
     ctx->cookie = strdup(cookie);
 }
-
 
 /* Helper to convert installed_map into list of ids.
    The list will be sorted. */
@@ -750,6 +1207,7 @@ int history_set_state(struct history_ctx *ctx, int trans_id)
 
     history_set_ids_from_map(ctx, installed_map, map_size);
 
+    ctx->trans_id = trans_id;
 error:
     safe_free(installed_map);
 
@@ -770,11 +1228,7 @@ int history_record_state(struct history_ctx *ctx)
     check_db_rc(ctx->db, rc);
 
     rc = sqlite3_exec(ctx->db,
-        "CREATE TABLE IF NOT EXISTS "
-            "transactions(Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                "cookie TEXT, cmdline TEXT,"
-                "timestamp INTEGER, "
-                "type INTEGER);",
+        SQL_CREATE_TABLE_TRANSACTIONS,
         0, 0, NULL);
     check_db_rc(ctx->db, rc);
 
@@ -783,11 +1237,7 @@ int history_record_state(struct history_ctx *ctx)
     check_rc(rc);
 
     rc = sqlite3_exec(ctx->db,
-        "CREATE TABLE IF NOT EXISTS "
-            "trans_items(Id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "trans_id INTEGER,"
-            "type INTEGER,"
-            "rpm_id INTEGER);",
+        SQL_CREATE_TABLE_TRANS_ITEMS,
         0, 0, &err_msg);
     check_db_rc(ctx->db, rc);
 
@@ -795,6 +1245,7 @@ int history_record_state(struct history_ctx *ctx)
                             ctx->installed_ids, ctx->installed_count);
     check_rc(rc);
 
+    ctx->trans_id = trans_id;
 error:
     if (rc)
         sqlite3_exec(ctx->db, "ROLLBACK;", 0, 0, NULL);
@@ -844,7 +1295,7 @@ int history_get_transactions(struct history_ctx *ctx,
         step = sqlite3_step(res);
         check_cond(step == SQLITE_ROW);
 
-        count = sqlite3_column_int(res, 0);
+        count = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
         sqlite3_finalize(res); res = NULL;
 
         snprintf(sql, sizeof(sql),
@@ -863,8 +1314,11 @@ int history_get_transactions(struct history_ctx *ctx,
                                 sql,
                                 -1, &res, 0);
         check_db_rc(ctx->db, rc);
-        sqlite3_bind_int(res, 1, from);
-        sqlite3_bind_int(res, 2, to);
+        rc = sqlite3_bind_int(res, 1, from);
+        check_db_rc(ctx->db, rc);
+
+        rc = sqlite3_bind_int(res, 2, to);
+        check_db_rc(ctx->db, rc);
     }
 
     tas = (struct history_transaction *)calloc(count, sizeof(struct history_transaction));
@@ -875,16 +1329,16 @@ int history_get_transactions(struct history_ctx *ctx,
          step = sqlite3_step(res), i++) {
         check_cond(i >= 0 && i < count);
 
-        tas[i].id = sqlite3_column_int(res, 0);
+        tas[i].id = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
 
-        const char *cookie = (char *)sqlite3_column_text(res, 1);
+        const char *cookie = (char *)sqlite3_column_text(res, COLUMN_TRANSACTIONS_COOKIE);
         tas[i].cookie = cookie ? strdup(cookie) : NULL;
 
-        const char *cmdline = (char *)sqlite3_column_text(res, 2);
+        const char *cmdline = (char *)sqlite3_column_text(res, COLUMN_TRANSACTIONS_CMDLINE);
         tas[i].cmdline = cmdline ? strdup(cmdline) : NULL;
 
-        tas[i].timestamp = sqlite3_column_int(res, 3);
-        tas[i].type = sqlite3_column_int(res, 4);
+        tas[i].timestamp = sqlite3_column_int(res, COLUMN_TRANSACTIONS_TIMESTAMP);
+        tas[i].type = sqlite3_column_int(res, COLUMN_TRANSACTIONS_TYPE);
     }
     count = i;
 
@@ -901,6 +1355,23 @@ error:
         sqlite3_finalize(res);
     if (rc)
         history_free_transactions(tas, count);
+    return rc;
+}
+
+/* create an empty transaction - useful if we are just going to add flags */
+int history_add_transaction(struct history_ctx *ctx, const char *cmdline)
+{
+    int rc = 0;
+    int trans_id;
+    time_t now = time(NULL);
+
+    rc = db_add_transaction(ctx->db, &trans_id, cmdline, now,
+                            /* reuse cookie, we are not changing the rpmdb */
+                            ctx->cookie,
+                            HISTORY_TRANS_TYPE_DELTA);
+    check_rc(rc);
+    ctx->trans_id = trans_id;
+error:
     return rc;
 }
 
@@ -962,6 +1433,7 @@ int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline)
     ctx->installed_count = current_count;
 
     history_set_cookie(ctx, cookie);
+    ctx->trans_id = trans_id;
 error:
     if (rc)
         sqlite3_exec(ctx->db, "ROLLBACK;", 0, 0, NULL);
@@ -981,20 +1453,15 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
     char *cookie = NULL;
     int db_isfresh = 1;
 
+    check_ptr(ctx);
     check_ptr(ts);
 
+    rpmtsOpenDB(ts, O_RDONLY);
     cookie = rpmdbCookie(rpmtsGetRdb(ts));
     /* this fails if the rpm db isn't opened */
     check_ptr(cookie);
 
-    rc = sqlite3_prepare_v2(ctx->db,
-                            "SELECT * FROM sqlite_master "
-                                "WHERE type='table' AND name='transactions';",
-                            -1, &res, 0);
-    check_db_rc(ctx->db, rc);
-
-    step = sqlite3_step(res);
-    sqlite3_finalize(res); res = NULL;
+    step = db_table_exists(ctx->db, "transactions");
 
     if (step == SQLITE_ROW) {
         rc = sqlite3_prepare_v2(ctx->db,
@@ -1004,7 +1471,7 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
 
         step = sqlite3_step(res);
         if (step == SQLITE_ROW) {
-            int id = sqlite3_column_int(res, 0);
+            int id = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
             const char *cookie_db = (char *)sqlite3_column_text(res, 1);
 
             if (strcmp(cookie, cookie_db) != 0) {
@@ -1026,10 +1493,13 @@ int history_sync(struct history_ctx *ctx, rpmts ts)
                                     &(ctx->installed_ids), &ctx->installed_count);
                 check_rc(rc);
                 history_set_cookie(ctx, cookie_db);
+                ctx->trans_id = id;
             }
             sqlite3_finalize(res); res = NULL;
             db_isfresh = 0;
         }
+    } else {
+        check_cond(step == SQLITE_DONE);
     }
 
     if (db_isfresh) {
@@ -1053,9 +1523,10 @@ error:
 
 struct history_ctx *create_history_ctx(const char *db_filename)
 {
-    int rc = 0;
+    int rc = 0, step;
     sqlite3 *db;
     struct history_ctx *ctx = NULL;
+    sqlite3_stmt *res = NULL;
 
     db = init_db(db_filename);
     check_ptr(db);
@@ -1065,7 +1536,30 @@ struct history_ctx *create_history_ctx(const char *db_filename)
 
     ctx->db = db;
 
+    step = db_table_exists(ctx->db, "transactions");
+    check_db_step(db, step);
+
+    if (step == SQLITE_ROW) {
+        rc = sqlite3_prepare_v2(ctx->db,
+                                "SELECT * FROM transactions ORDER BY id DESC;",
+                                -1, &res, 0);
+        check_db_rc(ctx->db, rc);
+
+        step = sqlite3_step(res);
+        if (step == SQLITE_ROW) {
+            char *cookie = (char *)sqlite3_column_text(res, COLUMN_TRANSACTIONS_COOKIE);
+            if (cookie)
+                history_set_cookie(ctx, cookie);
+            ctx->trans_id = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
+        }
+    }
 error:
+    if (res)
+        sqlite3_finalize(res);
+    if (rc) {
+        destroy_history_ctx(ctx);
+        return NULL;
+    }
     return ctx;
 }
 

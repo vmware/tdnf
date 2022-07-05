@@ -55,6 +55,7 @@ target_link_libraries(${LIB_TDNF}
     ${METALINK_LIBRARIES}
     ${OPENSSL_LIBRARIES}
     ${LIBXML2_LIBRARIES}
+    ${SQLITE3_LIBRARIES}
 )
 
 set_target_properties(${LIB_TDNF} PROPERTIES

@@ -160,10 +160,8 @@ error:
 }
 
 uint32_t
-TDNFCliAskAndAlter(
-    PTDNF_CLI_CONTEXT pContext,
+TDNFCliAskForAction(
     PTDNF_CMD_ARGS pCmdArgs,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
 )
 {
@@ -171,7 +169,7 @@ TDNFCliAskAndAlter(
     char** ppszPackageArgs = NULL;
     int nSilent = 0;
 
-    if(!pContext || !pCmdArgs || !pSolvedPkgInfo)
+    if(!pCmdArgs || !pSolvedPkgInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
@@ -218,41 +216,10 @@ TDNFCliAskAndAlter(
         dwError = TDNFYesOrNo(pCmdArgs, "Is this ok [y/N]: ", &nAnswer);
         BAIL_ON_CLI_ERROR(dwError);
 
-        if(nAnswer)
+        if(!nAnswer)
         {
-            if(!nSilent && pSolvedPkgInfo->nNeedDownload)
-            {
-                pr_info("\nDownloading:\n");
-            }
-
-            dwError = pContext->pFnAlter(
-                          pContext,
-                          nAlterType,
-                          pSolvedPkgInfo);
+            dwError = ERROR_TDNF_OPERATION_ABORTED;
             BAIL_ON_CLI_ERROR(dwError);
-
-            if(!nSilent)
-            {
-                pr_info("\nComplete!\n");
-                if (pCmdArgs->nDownloadOnly)
-                {
-                    if (pCmdArgs->pszDownloadDir != NULL)
-                    {
-                        pr_info("Packages have been downloaded to %s.\n",
-                                pCmdArgs->pszDownloadDir);
-                    } else {
-                        pr_info("Packages have been downloaded to cache.\n");
-                    }
-                }
-            }
-        }
-        else
-        {
-            if (!pCmdArgs->nJsonOutput)
-            {
-                dwError = ERROR_TDNF_OPERATION_ABORTED;
-                BAIL_ON_CLI_ERROR(dwError);
-            }
         }
     }
 
@@ -261,6 +228,86 @@ cleanup:
     return dwError;
 
 error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliPrintActionComplete(
+    PTDNF_CMD_ARGS pCmdArgs
+)
+{
+    uint32_t dwError = 0;
+    int nSilent = 0;
+
+    if(!pCmdArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    nSilent = pCmdArgs->nNoOutput;
+
+    if(!nSilent)
+    {
+        pr_info("\nComplete!\n");
+        if (pCmdArgs->nDownloadOnly)
+        {
+            if (pCmdArgs->pszDownloadDir != NULL)
+            {
+                pr_info("Packages have been downloaded to %s.\n",
+                        pCmdArgs->pszDownloadDir);
+            } else {
+                pr_info("Packages have been downloaded to cache.\n");
+            }
+        }
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliAskAndAlter(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    TDNF_ALTERTYPE nAlterType,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
+)
+{
+    uint32_t dwError = 0;
+    char** ppszPackageArgs = NULL;
+
+    if(!pContext || !pCmdArgs || !pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFCliAskForAction(pCmdArgs, pSolvedPkgInfo);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = pContext->pFnAlter(
+                pContext,
+                nAlterType,
+                pSolvedPkgInfo);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    if (pCmdArgs->nJsonOutput)
+    {
+        dwError = TDNFCliPrintActionComplete(pCmdArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+cleanup:
+    TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
+    return dwError;
+
+error:
+    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
+    {
+        dwError = 0;
+    }
     goto cleanup;
 }
 
