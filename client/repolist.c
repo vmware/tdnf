@@ -645,42 +645,38 @@ TDNFRepoListFinalize(
     }
 
     /* Now that the overrides are applied, replace config vars
-       for the repos that are enabled. */
+       for all repos. */
     for(pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
     {
-//        if(pRepo->nEnabled)
-        if (1)
+        if(pRepo->pszName)
         {
-            if(pRepo->pszName)
-            {
-                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszName);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            if(pRepo->pszBaseUrl)
-            {
-                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            if(pRepo->pszMetaLink)
-            {
-                dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-
-            if (pRepo->pszMetaLink)
-            {
-                dwError = SolvCreateRepoCacheName(pRepo->pszId,
-                                                  pRepo->pszMetaLink,
-                                                  &pRepo->pszCacheName);
-            }
-            else if (pRepo->pszBaseUrl)
-            {
-                dwError = SolvCreateRepoCacheName(pRepo->pszId,
-                                                  pRepo->pszBaseUrl,
-                                                  &pRepo->pszCacheName);
-            }
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszName);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        if(pRepo->pszBaseUrl)
+        {
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if(pRepo->pszMetaLink)
+        {
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pRepo->pszMetaLink)
+        {
+            dwError = SolvCreateRepoCacheName(pRepo->pszId,
+                                              pRepo->pszMetaLink,
+                                              &pRepo->pszCacheName);
+        }
+        else if (pRepo->pszBaseUrl)
+        {
+            dwError = SolvCreateRepoCacheName(pRepo->pszId,
+                                              pRepo->pszBaseUrl,
+                                              &pRepo->pszCacheName);
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
     return dwError;

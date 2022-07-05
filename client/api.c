@@ -468,6 +468,20 @@ TDNFClean(
 
         /* remove the top level repo cache dir if it's not empty */
         dwError = TDNFRepoRemoveCacheDir(pTdnf, pRepo);
+        if (dwError == ERROR_TDNF_SYSTEM_BASE + ENOTEMPTY)
+        {
+            /* if we did a 'clean all' the directory should be empty now. If
+               not we either missed something or someone other than us
+               put a file there, so warn about it, but don't bail out.
+               If we did clean just one part it's not expected to be empty
+               unless the other parts were already cleaned.
+            */
+            if (nCleanType == CLEANTYPE_ALL)
+            {
+                pr_err("Cache directory for %s not removed because it's not empty.\n", pRepo->pszId);
+            }
+            dwError = 0;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
         
         pr_info("\n");

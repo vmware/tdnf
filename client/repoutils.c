@@ -247,13 +247,10 @@ TDNFRepoRemoveCacheDir(
                                &pszRepoCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (rmdir(pszRepoCacheDir) != 0)
+    if (rmdir(pszRepoCacheDir) != 0 && errno != ENOENT)
     {
-        /* ignore ENOTEMPTY, let's keep the dir if it's not empty */
-        if (errno != ENOENT && errno != ENOTEMPTY)
-        {
-            BAIL_ON_TDNF_ERROR(errno);
-        }
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
 cleanup:
