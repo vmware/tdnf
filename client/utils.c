@@ -764,3 +764,48 @@ error:
     TDNF_SAFE_FREE_STRINGARRAY(ppszAutoInstalled);
     goto cleanup;
 }
+
+void
+TDNFFreeHistoryInfoItems(
+    PTDNF_HISTORY_INFO_ITEM pHistoryItems,
+    int nCount
+)
+{
+    if (pHistoryItems)
+    {
+        for (int i = 0; i < nCount; i++)
+        {
+            TDNF_SAFE_FREE_MEMORY(pHistoryItems[i].pszCmdLine);
+            int j;
+            if (pHistoryItems[i].ppszAddedPkgs != NULL)
+            {
+                for (j = 0; j < pHistoryItems[i].nAddedCount; j++)
+                {
+                    TDNF_SAFE_FREE_MEMORY(pHistoryItems[i].ppszAddedPkgs[j]);
+                }
+                TDNF_SAFE_FREE_MEMORY(pHistoryItems[i].ppszAddedPkgs);
+            }
+            if (pHistoryItems[i].ppszRemovedPkgs != NULL)
+            {
+                for (j = 0; j < pHistoryItems[i].nRemovedCount; j++)
+                {
+                    TDNF_SAFE_FREE_MEMORY(pHistoryItems[i].ppszRemovedPkgs[j]);
+                }
+                TDNF_SAFE_FREE_MEMORY(pHistoryItems[i].ppszRemovedPkgs);
+            }
+        }
+        TDNFFreeMemory(pHistoryItems);
+    }
+}
+
+void
+TDNFFreeHistoryInfo(
+    PTDNF_HISTORY_INFO pHistoryInfo
+)
+{
+    if (pHistoryInfo)
+    {
+        TDNFFreeHistoryInfoItems(pHistoryInfo->pItems, pHistoryInfo->nItemCount);
+        TDNFFreeMemory(pHistoryInfo);
+    }
+}

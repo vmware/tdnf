@@ -176,6 +176,56 @@ error:
 }
 
 uint32_t
+TDNFJoinArrayToString(
+    char **ppszArray,
+    char *pszSep,
+    int count,
+    char **ppszResult
+)
+{
+    uint32_t dwError = 0;
+    int i, p = 0;
+    int nSize = 0, nSepSize = 0;
+    char *pszResult = NULL;
+
+    if(!ppszArray || !pszSep || !ppszResult)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nSepSize = strlen(pszSep);
+    nSize = nSepSize * count;
+    for(i = 0; i < count && ppszArray[i]; i++)
+    {
+        nSize += strlen(ppszArray[i]);
+    }
+    nSize++;
+
+    dwError = TDNFAllocateMemory(nSize, sizeof(char), (void**)&pszResult);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(i = 0; i < count && ppszArray[i]; i++)
+    {
+        strcpy(&pszResult[p], ppszArray[i]);
+        p += strlen(ppszArray[i]);
+        if (i < count-1 && ppszArray[i+1])
+        {
+            strcpy(&pszResult[p], pszSep);
+            p += nSepSize;
+        }
+    }
+
+    *ppszResult = pszResult;
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszResult);
+    goto cleanup;
+}
+
+uint32_t
 TDNFAllocateStringPrintf(
     char** ppszDst,
     const char* pszFmt,

@@ -231,6 +231,12 @@ TDNFCurlErrorIsFatal(
     CURLcode curlError
 );
 
+void
+TDNFFreeHistoryInfoItems(
+    PTDNF_HISTORY_INFO_ITEM pHistoryItems,
+    int nCount
+);
+
 //remoterepo.c
 uint32_t
 TDNFCheckHexDigest(
@@ -448,6 +454,14 @@ TDNFGoal(
     Queue* pkgList,
     PTDNF_SOLVED_PKG_INFO* ppInfo,
     TDNF_ALTERTYPE nAlterType
+    );
+
+uint32_t
+TDNFHistoryGoal(
+    PTDNF pTdnf,
+    Queue *pqInstall,
+    Queue *pqErase,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
     );
 
 uint32_t
@@ -1225,4 +1239,13 @@ TDNFDeleteList(
     TDNF_ML_LIST** head_ref,
     TDNF_ML_FREE_FUNC free_func
 );
+
+
+uint32_t
+TDNFGetHistoryCtx(
+    PTDNF pTdnf,
+    struct history_ctx **ppCtx,
+    int nMustExist
+);
+
 #endif /* __CLIENT_PROTOTYPES_H__ */

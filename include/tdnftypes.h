@@ -229,6 +229,9 @@ typedef struct _TDNF_CMD_ARGS
     char** ppszCmds;
     int nCmdCount;
     PTDNF_CMD_OPT pSetOpt;
+
+    int nArgc;
+    char **ppszArgv;
 }TDNF_CMD_ARGS, *PTDNF_CMD_ARGS;
 
 typedef struct _TDNF_CONF
@@ -364,7 +367,7 @@ typedef enum {
     REPOQUERY_DEP_KEY_DEPENDS,
     REPOQUERY_DEP_KEY_REQUIRES_PRE,
     REPOQUERY_DEP_KEY_COUNT
-} REPOQUERY_DEP_KEY;
+}REPOQUERY_DEP_KEY;
 
 typedef struct _TDNF_REPOQUERY_ARGS
 {
@@ -385,6 +388,42 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int nList;                /* list files of packages(s) */
     int nSource;              /* show source packages */
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
+
+typedef enum {
+    HISTORY_CMD_LIST = 0,
+    HISTORY_CMD_INIT,
+    HISTORY_CMD_ROLLBACK,
+    HISTORY_CMD_UNDO,
+    HISTORY_CMD_REDO
+} HISTORY_CMD;
+
+typedef struct _TDNF_HISTORY_ARGS
+{
+    HISTORY_CMD nCommand;
+    int nInfo;
+    int nFrom;
+    int nTo;
+    int nReverse;
+    char *pszSpec;
+} TDNF_HISTORY_ARGS, *PTDNF_HISTORY_ARGS;
+
+typedef struct _TDNF_HISTORY_INFO_ITEM
+{
+    int nId;
+    int nType;
+    char *pszCmdLine;
+    time_t timeStamp;
+    int nAddedCount;
+    int nRemovedCount;
+    char **ppszAddedPkgs;
+    char **ppszRemovedPkgs;
+} TDNF_HISTORY_INFO_ITEM, *PTDNF_HISTORY_INFO_ITEM;
+
+typedef struct _TDNF_HISTORY_INFO
+{
+    int nItemCount;
+    PTDNF_HISTORY_INFO_ITEM pItems;
+} TDNF_HISTORY_INFO, *PTDNF_HISTORY_INFO;
 
 #ifdef __cplusplus
 }

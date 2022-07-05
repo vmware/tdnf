@@ -128,6 +128,7 @@ typedef enum
 #define TDNF_REPO_BASEURL_FILE_NAME       "baseurl"
 
 #define TDNF_AUTOINSTALLED_FILE           "autoinstalled"
+#define TDNF_HISTORY_DB_FILE              "history.db"
 #define TDNF_DEFAULT_DATA_LOCATION        "/var/lib/tdnf"
 
 // repo defaults
@@ -257,6 +258,8 @@ typedef enum
     {ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT,      "ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT",      "Missing content in hash tag value"},\
     {ERROR_TDNF_ML_PARSER_MISSING_URL_ATTR,          "ERROR_TDNF_ML_PARSER_MISSING_URL_ATTR",          "Missing attribute in url tag"},\
     {ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT,      "ERROR_TDNF_ML_PARSER_MISSING_URL_CONTENT",       "Missing content in url tag value"},\
+    {ERROR_TDNF_HISTORY_NODB,                        "ERROR_TDNF_HISTORY_ERROR",                       "History database error"},\
+    {ERROR_TDNF_HISTORY_NODB,                        "ERROR_TDNF_HISTORY_NODB",                        "History database does not exist"},\
 };
 
 

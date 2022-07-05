@@ -64,7 +64,7 @@ static struct option pstOptions[] =
     {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
-    {"verbose",       no_argument, &_opt.nVerbose, 1},                //-v --verbose
+    {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
     // reposync options
     {"arch",          required_argument, 0, 0},
@@ -111,16 +111,20 @@ static struct option pstOptions[] =
     {"info",          no_argument, 0, 0},
     {"summary",       no_argument, 0, 0},
     // scope options for list and update-info
-    {"recent",       no_argument, 0, 0},
+    {"recent",        no_argument, 0, 0},
     {"updates",       no_argument, 0, 0},
     {"downgrades",    no_argument, 0, 0},
+    // history
+    {"to",            required_argument, 0, 0},
+    {"from",          required_argument, 0, 0},
+    {"reverse",       no_argument, 0, 0},
     {0, 0, 0, 0}
 };
 
 uint32_t
 TDNFCliParseArgs(
     int argc,
-    char* const* argv,
+    char** argv,
     PTDNF_CMD_ARGS* ppCmdArgs
     )
 {
@@ -156,6 +160,8 @@ TDNFCliParseArgs(
             _opt.nAssumeYes = 1;
         }
     }
+    pCmdArgs->nArgc = argc;
+    pCmdArgs->ppszArgv = argv;
 
     opterr = 0;//tell getopt to not print errors
     while (1)

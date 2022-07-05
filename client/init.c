@@ -59,6 +59,9 @@ TDNFCloneCmdArgs(
     pCmdArgs->nNoAutoRemove  = pCmdArgsIn->nNoAutoRemove;
     pCmdArgs->nJsonOutput    = pCmdArgsIn->nJsonOutput;
 
+    pCmdArgs->nArgc = pCmdArgsIn->nArgc;
+    pCmdArgs->ppszArgv = pCmdArgsIn->ppszArgv;
+
     dwError = TDNFAllocateString(
                   pCmdArgsIn->pszInstallRoot,
                   &pCmdArgs->pszInstallRoot);
