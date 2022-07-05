@@ -392,9 +392,8 @@ SolvCreateRepoCacheName(
     uint32_t dwError = 0;
     Chksum *pChkSum = NULL;
     unsigned char pCookie[SOLV_COOKIE_LEN] = {0};
-    char pszCookie[SOLV_COOKIE_LEN*2+1];
+    char pszCookie[9] = {0};
     char *pszCacheName;
-    int i;
 
     if (!pszName || !pszUrl || !ppszCacheName)
     {
@@ -411,10 +410,8 @@ SolvCreateRepoCacheName(
     solv_chksum_add(pChkSum, pszUrl, strlen(pszUrl));
     solv_chksum_free(pChkSum, pCookie);
 
-    for (i = 0; i < SOLV_COOKIE_LEN; i++)
-    {
-        snprintf(&pszCookie[2*i], 3, "%.2x", pCookie[i]);
-    }
+    snprintf(pszCookie, sizeof(pszCookie), "%.2x%.2x%.2x%.2x",
+             pCookie[0], pCookie[1], pCookie[2], pCookie[3]);
 
     dwError = TDNFAllocateStringPrintf(&pszCacheName, "%s-%s", pszName, pszCookie);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
