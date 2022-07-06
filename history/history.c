@@ -882,6 +882,8 @@ int history_restore_auto_flags(struct history_ctx *ctx, int trans_id)
     int rc = 0;
     int i, count;
 
+    check_ptr(ctx);
+
     rc = db_table_exists(ctx->db, "names");
     if (rc == SQLITE_DONE) { /* no table => nothing to restore */
         return 0;
@@ -914,6 +916,8 @@ int history_replay_auto_flags(struct history_ctx *ctx, int from, int to)
 {
     int rc = 0;
     int i, count;
+
+    check_ptr(ctx);
 
     rc = db_table_exists(ctx->db, "names");
     if (rc == SQLITE_DONE) { /* no table => nothing to restore */
@@ -966,6 +970,8 @@ history_get_flags_delta(struct history_ctx *ctx, int from, int to)
     int i, count;
     struct history_flags_delta *hfd = NULL;
 
+    check_ptr(ctx);
+
     rc = db_table_exists(ctx->db, "names");
     if (rc == SQLITE_DONE) { /* no table => nothing to restore */
         return 0;
@@ -976,7 +982,7 @@ history_get_flags_delta(struct history_ctx *ctx, int from, int to)
 
     hfd = (struct history_flags_delta *)calloc(1, sizeof(struct history_flags_delta));
     check_ptr(hfd);
-    
+
     hfd->changed_ids = calloc(count, sizeof(int));
     check_ptr(hfd->changed_ids);
     hfd->values = calloc(count, sizeof(int));
@@ -1054,6 +1060,9 @@ int history_set_ids_from_map(struct history_ctx *ctx,
 {
     int rc = 0;
 
+    check_ptr(ctx);
+    check_ptr(installed_map);
+
     safe_free(ctx->installed_ids);
     ctx->installed_ids =
         get_ids_from_map(installed_map, map_size, &ctx->installed_count);
@@ -1081,6 +1090,8 @@ struct history_delta *history_get_delta(struct history_ctx *ctx, int trans_id)
     struct history_delta *hd =
         (struct history_delta *)calloc(1, sizeof(struct history_delta));
     int *installed_ids = NULL;
+
+    check_ptr(ctx);
 
     check_ptr(hd);
 
@@ -1126,6 +1137,8 @@ struct history_delta *history_get_delta_range(struct history_ctx *ctx,
     struct history_delta *hd =
         (struct history_delta *)calloc(1, sizeof(struct history_delta));
     int *installed_ids0 = NULL, *installed_ids1 = NULL;
+
+    check_ptr(ctx);
 
     check_ptr(hd);
 
@@ -1179,13 +1192,21 @@ void history_free_nevra_map(struct history_nevra_map *hnm)
 
 struct history_nevra_map *history_nevra_map(struct history_ctx *ctx)
 {
+    int rc = 0;
+    check_ptr(ctx);
     return db_nevra_map(ctx->db);
+error:
+    return NULL;
 }
 
 char *history_get_nevra(struct history_nevra_map *hnm, int id)
 {
+    int rc  = 0;
+
+    check_ptr(hnm);
     if (id > 0 && id <= hnm->count)
         return hnm->idmap[id - 1];
+error:
     return NULL;
 }
 
@@ -1195,6 +1216,8 @@ int history_set_state(struct history_ctx *ctx, int trans_id)
     int rc = 0;
     char *installed_map = NULL;
     int map_size = 0;
+
+    check_ptr(ctx);
 
     rc = db_rpms_maxid(ctx->db, &map_size);
     check_rc(rc);
@@ -1222,6 +1245,8 @@ int history_record_state(struct history_ctx *ctx)
     int rc = 0;
     char *err_msg = NULL;
     int trans_id = 0;
+
+    check_ptr(ctx);
 
     /* avoid unfinished transaction record on failure or crash */
     rc = sqlite3_exec(ctx->db, "BEGIN TRANSACTION;", 0, 0, NULL);
@@ -1285,6 +1310,9 @@ int history_get_transactions(struct history_ctx *ctx,
     struct history_transaction *tas = NULL;
     char sql[256];
 
+    check_ptr(ctx);
+    check_ptr(ptas);
+    check_ptr(pcount);
     check_cond(to >= from);
 
     if (from == 0 || to == 0) {
@@ -1365,6 +1393,9 @@ int history_add_transaction(struct history_ctx *ctx, const char *cmdline)
     int trans_id;
     time_t now = time(NULL);
 
+    check_ptr(ctx);
+    check_ptr(cmdline);
+
     rc = db_add_transaction(ctx->db, &trans_id, cmdline, now,
                             /* reuse cookie, we are not changing the rpmdb */
                             ctx->cookie,
@@ -1387,6 +1418,9 @@ int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline)
     int *added_ids = NULL, added_count;
     int *removed_ids = NULL, removed_count;
     char *cookie = NULL;
+
+    check_ptr(ctx);
+    check_ptr(ts);
 
     cookie = rpmdbCookie(rpmtsGetRdb(ts));
     check_ptr(cookie);
@@ -1527,6 +1561,8 @@ struct history_ctx *create_history_ctx(const char *db_filename)
     sqlite3 *db;
     struct history_ctx *ctx = NULL;
     sqlite3_stmt *res = NULL;
+
+    check_ptr(db_filename);
 
     db = init_db(db_filename);
     check_ptr(db);
