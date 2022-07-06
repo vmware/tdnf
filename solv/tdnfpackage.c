@@ -2096,6 +2096,47 @@ error:
 }
 
 uint32_t
+SolvGetFileQueueFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    Queue *pQueueFiles)
+{
+    uint32_t dwError = 0;
+    Solvable *pSolv = NULL;
+    Dataiterator di;
+
+    if(!pSack || !pQueueFiles)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    queue_init(pQueueFiles);
+
+    dataiterator_init(&di, pSack->pPool, pSolv->repo, dwPkgId,
+                      SOLVABLE_FILELIST, NULL,
+                      SEARCH_FILES | SEARCH_COMPLETE_FILELIST);
+    while (dataiterator_step(&di)) {
+        /* apparently file names are not in the pool, so add if needed */
+        queue_push(pQueueFiles, pool_str2id(pSack->pPool, di.kv.str, 1));
+    }
+    dataiterator_free(&di);
+
+cleanup:
+    return dwError;
+error:
+    queue_free(pQueueFiles);
+    goto cleanup;
+}
+
+uint32_t
 SolvGetSourceFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,
@@ -2249,3 +2290,171 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+SolvIdIsOrphaned(
+    PSolvSack pSack,
+    Id p,
+    int *pnIsOrphan
+)
+{
+    uint32_t dwError = 0;
+    Id q;
+    Solvable *s, *t;
+    int nIsOrphan = 1;
+    Id allDepKeys[] = {
+        SOLVABLE_REQUIRES,
+        SOLVABLE_RECOMMENDS,
+        SOLVABLE_SUGGESTS,
+        SOLVABLE_SUPPLEMENTS,
+        SOLVABLE_ENHANCES
+    };
+    Pool *pPool;
+    Queue qFiles = {0};
+    Queue qProvides = {0};
+
+    if(!pSack || !pnIsOrphan)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    pPool = pSack->pPool;
+    s = pool_id2solvable(pPool, p);
+
+    /* Loop through installed, if any one requires p (aka s) it's not an orphan. */
+    FOR_REPO_SOLVABLES(pPool->installed, q, t)
+    {
+        if (p == q)
+        {
+            continue;
+        }
+
+        for (unsigned int k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+        {
+            /* deps are names, not solvables, hence we check for s->name
+               and not p */
+            if (solvable_matchesdep(t, allDepKeys[k], s->name, 0))
+            {
+                nIsOrphan = 0;
+                goto loopexit; /* we can skip other checks */
+            }
+        }
+    }
+
+    /* check if p provides files that are needed by anything installed */
+    dwError = SolvGetFileQueueFromId(pSack, p, &qFiles);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    FOR_REPO_SOLVABLES(pPool->installed, q, t)
+    {
+        if (p == q)
+        {
+            continue;
+        }
+
+        for (int i = 0; i < qFiles.count; i++)
+        {
+            for (unsigned int k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+            {
+                if (solvable_matchesdep(t, allDepKeys[k], qFiles.elements[i], 0))
+                {
+                    nIsOrphan = 0;
+                    goto loopexit; /* save 3 break statements */
+                }
+            }
+        }
+    }
+
+    /* Check if p provides something in its provides list needed by an
+       installed package.
+       Corner case: two (or more) packages providing the same provide, in
+       which case all but one of them can be an orphan but we cannot decide which
+       one. We mark none of them as an orphan. */
+    solvable_lookup_deparray(s, SOLVABLE_PROVIDES, &qProvides, -1);
+
+    FOR_REPO_SOLVABLES(pPool->installed, q, t)
+    {
+        if (p == q)
+        {
+            continue;
+        }
+
+        for (int i = 0; i < qProvides.count; i++)
+        {
+            for (unsigned int k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+            {
+                if (solvable_matchesdep(t, allDepKeys[k], qProvides.elements[i], 0))
+                {
+                    nIsOrphan = 0;
+                    goto loopexit; /* save 3 break statements */
+                }
+            }
+        }
+    }
+
+loopexit:
+
+    *pnIsOrphan = nIsOrphan;
+
+cleanup:
+    queue_free(&qFiles);
+    queue_free(&qProvides);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvGetAutoInstalledOrphans(
+    PSolvSack pSack,
+    struct history_ctx *pHistoryCtx,
+    Queue *pQueueAutoInstalled)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Id p;
+    Solvable *s;
+    int rc;
+
+    if(!pSack || !pQueueAutoInstalled || !pHistoryCtx)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    pPool = pSack->pPool;
+
+    queue_init(pQueueAutoInstalled);
+
+    FOR_REPO_SOLVABLES(pPool->installed, p, s)
+    {
+        const char *pszName;
+        int nIsAuto = 0, nIsOrphan = 0;
+
+        pszName = pool_id2str(pPool, s->name);
+        rc = history_get_auto_flag(pHistoryCtx, pszName, &nIsAuto);
+        if (rc != 0)
+        {
+            dwError = ERROR_TDNF_HISTORY_ERROR;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (nIsAuto == 0)
+        {
+            continue;
+        }
+
+        dwError = SolvIdIsOrphaned(pSack, p, &nIsOrphan);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if (!nIsOrphan)
+        {
+            continue;
+        }
+
+        queue_push(pQueueAutoInstalled, p);
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+

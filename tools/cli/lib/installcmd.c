@@ -130,8 +130,14 @@ TDNFCliAutoEraseCommand(
     )
 {
     uint32_t dwError = 0;
+    int nAlterType = ALTER_AUTOERASE;
 
-    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, ALTER_AUTOERASE);
+    if(pCmdArgs->nCmdCount == 1)
+    {
+        nAlterType = ALTER_AUTOERASEALL;
+    }
+
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, nAlterType);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:

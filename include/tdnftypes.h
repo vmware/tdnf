@@ -46,6 +46,7 @@ typedef enum
 typedef enum
 {
     ALTER_AUTOERASE,
+    ALTER_AUTOERASEALL,
     ALTER_DOWNGRADE,
     ALTER_DOWNGRADEALL,
     ALTER_ERASE,

@@ -308,6 +308,19 @@ SolvGetChangeLogFromId(
     PTDNF_PKG_CHANGELOG_ENTRY *ppEntries
     );
 
+uint32_t
+SolvIdIsOrphaned(
+    PSolvSack pSack,
+    Id p,
+    int *pnIsOrphan
+);
+
+uint32_t
+SolvGetAutoInstalledOrphans(
+    PSolvSack pSack,
+    struct history_ctx *pHistoryCtx,
+    Queue *pQueueAutoInstalled);
+
 // tdnfpool.c
 uint32_t
 SolvCreateSack(

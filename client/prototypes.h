@@ -392,6 +392,11 @@ TDNFFilterPackages(
     );
 
 uint32_t
+TDNFGetAutoInstalledOrphans(
+    PTDNF pTdnf,
+    Queue* pQueueGoal);
+
+uint32_t
 TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,

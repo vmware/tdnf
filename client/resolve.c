@@ -92,6 +92,11 @@ TDNFPrepareAllPackages(
                        queueGoal);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    else if (nAlterType == ALTER_AUTOERASEALL)
+    {
+        dwError = TDNFGetAutoInstalledOrphans(pTdnf, queueGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFGetSecuritySeverityOption(
                   pTdnf,
@@ -268,6 +273,40 @@ cleanup:
     if(pInstalledPkgList)
     {
         SolvFreePackageList(pInstalledPkgList);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetAutoInstalledOrphans(
+    PTDNF pTdnf,
+    Queue* pQueueGoal)
+{
+    uint32_t dwError = 0;
+    PSolvSack pSack = NULL;
+    struct history_ctx *pHistoryCtx = NULL;
+
+    if(!pTdnf || !pTdnf->pSack || !pQueueGoal)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSack = pTdnf->pSack;
+
+    dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 1);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetAutoInstalledOrphans(pSack, pHistoryCtx, pQueueGoal);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if(pHistoryCtx)
+    {
+        destroy_history_ctx(pHistoryCtx);
     }
     return dwError;
 

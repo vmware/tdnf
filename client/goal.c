@@ -508,7 +508,8 @@ TDNFGoal(
     nAllowErasing =
         pTdnf->pArgs->nAllowErasing ||
         nAlterType == ALTER_ERASE ||
-        nAlterType == ALTER_AUTOERASE;
+        nAlterType == ALTER_AUTOERASE ||
+        nAlterType == ALTER_AUTOERASEALL;
     if(nAllowErasing)
     {
         TDNFAddUserInstalledToJobs(pTdnf, &queueJobs);
@@ -794,6 +795,7 @@ TDNFAddGoal(
             break;
         case ALTER_ERASE:
         case ALTER_AUTOERASE:
+        case ALTER_AUTOERASEALL:
             dwError = SolvAddPkgEraseJob(pQueueJobs, dwId);
             BAIL_ON_TDNF_ERROR(dwError);
             break;
