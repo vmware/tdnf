@@ -14,7 +14,7 @@ configure_file(
 )
 
 add_custom_target(check
-    COMMAND pytest
+    COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH="${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" pytest
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Running tests.."
 )
