@@ -438,33 +438,52 @@ TDNFClean(
         if (nCleanType & CLEANTYPE_METADATA)
         {
             pr_info(" metadata");
-            dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRepoRemoveCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_DBCACHE)
         {
             pr_info(" dbcache");
-            dwError = TDNFRemoveSolvCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveSolvCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_PACKAGES)
         {
             pr_info(" packages");
-            dwError = TDNFRemoveRpmCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveRpmCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_KEYS)
         {
             pr_info(" keys");
-            dwError = TDNFRemoveKeysCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveKeysCache(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
         if (nCleanType & CLEANTYPE_EXPIRE_CACHE)
         {
             pr_info(" expire-cache");
-            dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+
+        /* remove the top level repo cache dir if it's not empty */
+        dwError = TDNFRepoRemoveCacheDir(pTdnf, pRepo);
+        if (dwError == ERROR_TDNF_SYSTEM_BASE + ENOTEMPTY)
+        {
+            /* if we did a 'clean all' the directory should be empty now. If
+               not we either missed something or someone other than us
+               put a file there, so warn about it, but don't bail out.
+               If we did clean just one part it's not expected to be empty
+               unless the other parts were already cleaned.
+            */
+            if (nCleanType == CLEANTYPE_ALL)
+            {
+                pr_err("Cache directory for %s not removed because it's not empty.\n", pRepo->pszId);
+            }
+            dwError = 0;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+        
         pr_info("\n");
     }
 cleanup:

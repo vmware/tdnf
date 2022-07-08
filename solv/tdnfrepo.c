@@ -278,6 +278,7 @@ SolvReadInstalledRpms(
     Repo *pRepo = NULL;
     FILE *pCacheFile = NULL;
     int  dwFlags = 0;
+
     if(!pPool || !ppRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -295,6 +296,7 @@ SolvReadInstalledRpms(
     {
         /* coverity[toctou] */
         pCacheFile = fopen(pszCacheFileName, "r");
+
         if(!pCacheFile)
         {
             dwError = errno;
@@ -377,6 +379,52 @@ error:
     goto cleanup;
 }
 
+/* Create a name for the repo cache path based on repo name and
+   a hash of the url.
+*/
+uint32_t
+SolvCreateRepoCacheName(
+    const char *pszName,
+    const char *pszUrl,
+    char **ppszCacheName
+    )
+{
+    uint32_t dwError = 0;
+    Chksum *pChkSum = NULL;
+    unsigned char pCookie[SOLV_COOKIE_LEN] = {0};
+    char pszCookie[9] = {0};
+    char *pszCacheName;
+
+    if (!pszName || !pszUrl || !ppszCacheName)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pChkSum = solv_chksum_create(REPOKEY_TYPE_SHA256);
+    if (!pChkSum)
+    {
+        dwError = ERROR_TDNF_SOLV_CHKSUM;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    solv_chksum_add(pChkSum, pszUrl, strlen(pszUrl));
+    solv_chksum_free(pChkSum, pCookie);
+
+    snprintf(pszCookie, sizeof(pszCookie), "%.2x%.2x%.2x%.2x",
+             pCookie[0], pCookie[1], pCookie[2], pCookie[3]);
+
+    dwError = TDNFAllocateStringPrintf(&pszCacheName, "%s-%s", pszName, pszCookie);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
+    *ppszCacheName = pszCacheName;
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszCacheName);
+    goto cleanup;
+}
+
 uint32_t
 SolvGetMetaDataCachePath(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
@@ -398,9 +446,8 @@ SolvGetMetaDataCachePath(
     {
         dwError = TDNFAllocateStringPrintf(
                       &pszCachePath,
-                      "%s/%s/%s/%s.solv",
-                      pSack->pszCacheDir,
-                      pRepo->name,
+                      "%s/%s/%s.solv",
+                      pSolvRepoInfo->pszRepoCacheDir,
                       TDNF_SOLVCACHE_DIR_NAME,
                       pRepo->name);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -566,12 +613,10 @@ SolvCreateMetaDataCache(
     pRepo = pSolvRepoInfo->pRepo;
     dwError = TDNFJoinPath(
                   &pszSolvCacheDir,
-                  pSack->pszCacheDir,
-                  pRepo->name,
+                  pSolvRepoInfo->pszRepoCacheDir,
                   TDNF_SOLVCACHE_DIR_NAME,
                   NULL);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-
     if (access(pszSolvCacheDir, W_OK | X_OK))
     {
         if(errno != ENOENT)

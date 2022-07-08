@@ -162,26 +162,32 @@ TDNFRepoGetUserPass(
 uint32_t
 TDNFRepoGetRpmCacheDir(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     char** ppszRpmCacheDir
+    );
+
+uint32_t
+TDNFRepoRemoveCacheDir(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
 TDNFRepoRemoveCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
 TDNFRemoveRpmCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
 TDNFRemoveLastRefreshMarker(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
@@ -192,13 +198,13 @@ TDNFRemoveTmpRepodata(
 uint32_t
 TDNFRemoveSolvCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
 TDNFRemoveKeysCache(
     PTDNF pTdnf,
-    const char* pszRepoId
+    PTDNF_REPO_DATA pRepo
     );
 
 uint32_t
@@ -690,6 +696,15 @@ TDNFGetSkipDigestOption(
     PTDNF pTdnf,
     uint32_t *pdwSkipDigest
     );
+
+uint32_t
+TDNFGetCachePath(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo,
+    const char *pszSubDir,
+    const char *pszFileName,
+    char **ppszPath
+);
 
 uint32_t
 TDNFGetRepoById(

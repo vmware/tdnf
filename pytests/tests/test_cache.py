@@ -7,6 +7,7 @@
 #
 
 import os
+import fnmatch
 import pytest
 
 
@@ -42,6 +43,14 @@ def check_package_in_cache(utils, pkgname):
     if ret['stdout']:
         return True
     return False
+
+
+def find_cache_dir(utils, reponame):
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    for f in os.listdir(cache_dir):
+        if fnmatch.fnmatch(f, '{}-*'.format(reponame)):
+            return os.path.join(cache_dir, f)
+    return None
 
 
 def test_install_without_cache(utils):
@@ -86,8 +95,9 @@ def test_install_with_keepcache_false(utils):
 
 
 def test_disable_repo_make_cache(utils):
-    cache_dir = utils.tdnf_config.get('main', 'cachedir')
-    lastrefresh = os.path.join(cache_dir, 'photon-test/lastrefresh')
+    cache_dir = find_cache_dir(utils, 'photon-test')
+    assert(cache_dir is not None)
+    lastrefresh = os.path.join(cache_dir, 'lastrefresh')
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '--disablerepo=*', 'makecache'])
     after = os.path.getmtime(lastrefresh)
@@ -95,8 +105,9 @@ def test_disable_repo_make_cache(utils):
 
 
 def test_enable_repo_make_cache(utils):
-    cache_dir = utils.tdnf_config.get('main', 'cachedir')
-    lastrefresh = os.path.join(cache_dir, 'photon-test/lastrefresh')
+    cache_dir = find_cache_dir(utils, 'photon-test')
+    assert(cache_dir is not None)
+    lastrefresh = os.path.join(cache_dir, 'lastrefresh')
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)
@@ -105,8 +116,9 @@ def test_enable_repo_make_cache(utils):
 
 # -v (verbose) prints progress data
 def test_enable_repo_make_cache_verbose(utils):
-    cache_dir = utils.tdnf_config.get('main', 'cachedir')
-    lastrefresh = os.path.join(cache_dir, 'photon-test/lastrefresh')
+    cache_dir = find_cache_dir(utils, 'photon-test')
+    assert(cache_dir is not None)
+    lastrefresh = os.path.join(cache_dir, 'lastrefresh')
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '-v', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)

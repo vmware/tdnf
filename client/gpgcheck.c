@@ -564,6 +564,7 @@ TDNFFetchRemoteGPGKey(
     char* pszRealTopKeyCacheDir = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszKeyLocation = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if(!pTdnf || IsNullOrEmptyString(pszRepoName || IsNullOrEmptyString(pszUrlGPGKey)))
     {
@@ -578,12 +579,12 @@ TDNFFetchRemoteGPGKey(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFJoinPath(
-                  &pszTopKeyCacheDir,
-                  pTdnf->pConf->pszCacheDir,
-                  pszRepoName,
-                  "keys",
-                  NULL);
+    dwError = TDNFFindRepoById(pTdnf, pszRepoName, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               "keys", NULL,
+                               &pszTopKeyCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFNormalizePath(pszTopKeyCacheDir,

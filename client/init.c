@@ -284,11 +284,9 @@ TDNFRefreshSack(
            unless requested to ignore. lMetadataExpire < 0 means never expire. */
         if(pRepo->lMetadataExpire >= 0 && !pTdnf->pArgs->nCacheOnly)
         {
-            dwError = TDNFJoinPath(
-                          &pszRepoCacheDir,
-                          pTdnf->pConf->pszCacheDir,
-                          pRepo->pszId,
-                          NULL);
+            dwError = TDNFGetCachePath(pTdnf, pRepo,
+                                       NULL, NULL,
+                                       &pszRepoCacheDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFShouldSyncMetadata(
@@ -316,14 +314,14 @@ TDNFRefreshSack(
                 goto cleanup;
             }
 
-            dwError = TDNFRepoRemoveCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRepoRemoveCache(pTdnf, pRepo);
             if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
                 dwError = 0;//Ignore non existent folders
             }
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFRemoveSolvCache(pTdnf, pRepo->pszId);
+            dwError = TDNFRemoveSolvCache(pTdnf, pRepo);
             if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
                 dwError = 0;//Ignore non existent folders
