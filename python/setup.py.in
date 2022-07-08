@@ -10,11 +10,7 @@ from setuptools import setup
 from distutils.core import Extension
 
 cflags = [
-    '-I@PYTDNF_INC_DIR@'
-]
-
-link_args = [
-    '-Wl,-rpath=@PYTDNF_LIB_DIR@'
+    '-I@PYTDNF_INC_DIR@',
 ]
 
 pytdnf_sources = [
@@ -29,8 +25,7 @@ tdnfmodule = Extension('tdnf._tdnf',
                        libraries=['tdnf'],
                        library_dirs=['${PYTDNF_LIB_DIR}'],
                        sources=pytdnf_sources,
-                       extra_compile_args=cflags,
-                       extra_link_args=link_args)
+                       extra_compile_args=cflags)
 
 setup(name='@PYTDNF_PACKAGE_NAME@',
        version='@PYTDNF_VERSION@',
