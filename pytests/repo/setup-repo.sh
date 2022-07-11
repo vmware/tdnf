@@ -12,11 +12,20 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
-fix_dir_perms()
+function fix_dir_perms()
 {
   chmod 755 ${TEST_REPO_DIR}
   find ${TEST_REPO_DIR} -type d -exec chmod 0755 {} \;
   find ${TEST_REPO_DIR} -type f -exec chmod 0644 {} \;
+}
+
+## used to check return code for each command.
+function check_err {
+  rc=$?
+  if [ $rc -ne 0 ]; then
+      echo $1
+      exit $rc
+  fi
 }
 
 TEST_REPO_DIR=$1
@@ -56,6 +65,7 @@ EOF
 #generate a key non interactively. this is used in testing
 #repogpgcheck plugin
 gpg --batch --generate-key ${TEST_REPO_DIR}/gpgkeydata
+check_err "Failed to generate gpg key."
 
 cat << EOF > ~/.rpmmacros
 %_gpg_name tdnftest@tdnf.test
@@ -69,8 +79,10 @@ done
 echo building packages
 rpmbuild  --define "_topdir ${BUILD_PATH}" \
 	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec
+check_err "Failed to build packages."
 rpmsign --addsign ${BUILD_PATH}/RPMS/*/*.rpm
 cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
+check_err "Failed to sign built packages."
 
 # save key to later be imported:
 mkdir -p ${PUBLISH_PATH}/keys
@@ -79,12 +91,15 @@ gpg --armor --export tdnftest@tdnf.test > ${PUBLISH_PATH}/keys/pubkey.asc
 createrepo ${PUBLISH_PATH} > /dev/null 2>&1
 
 modifyrepo ${REPO_SRC_DIR}/updateinfo-1.xml ${PUBLISH_PATH}/repodata
+check_err "Failed to modify repo with updateinfo-1.xml."
 modifyrepo ${REPO_SRC_DIR}/updateinfo-2.xml ${PUBLISH_PATH}/repodata
+check_err "Failed to modify repo with updateinfo-2.xml."
 
 #gpg sign repomd.xml
 gpg --batch --passphrase-fd 0 \
 --pinentry-mode loopback \
 --detach-sign --armor ${PUBLISH_PATH}/repodata/repomd.xml
+check_err "Failed to gpg sign repomd.xml."
 
 cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test.repo
 [photon-test]

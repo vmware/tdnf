@@ -101,7 +101,12 @@ class TestUtils(object):
             self.config.update(cli_args)
         self.config['distribution'] = os.environ.get('DIST', 'photon')
         script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
-        self.run(['sh', script, self.config['repo_path']])
+        ret = self.run(['sh', script, self.config['repo_path']])
+        if ret['retval']:
+            pytest.exit("An error occured while running {}, stdout: \n{}".format(
+                script,
+                "\n".join(ret['stdout'])
+            ))
         self.tdnf_config = configparser.ConfigParser()
         self.tdnf_config.read(os.path.join(self.config['repo_path'],
                                            'tdnf.conf'))
