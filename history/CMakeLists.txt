@@ -6,6 +6,6 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-add_library(${LIB_TDNF_HISTORY}
+add_library(${LIB_TDNF_HISTORY} STATIC
     history.c
 )

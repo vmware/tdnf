@@ -8,7 +8,7 @@
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_library(${LIB_TDNF_SOLV}
+add_library(${LIB_TDNF_SOLV} STATIC
     tdnfpackage.c
     tdnfpool.c
     tdnfquery.c

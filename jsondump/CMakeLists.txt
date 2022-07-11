@@ -12,7 +12,7 @@ add_executable(${TDNF_JSON_BIN}
     test.c
 )
 
-add_library(${LIB_TDNF_JSONDUMP}
+add_library(${LIB_TDNF_JSONDUMP} STATIC
     jsondump.c
 )
 
