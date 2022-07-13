@@ -56,23 +56,25 @@ def setup_test(utils):
 
     global pkgname
     pkgname = utils.config['sglversion_pkgname']
-    build_dir = utils.config['build_dir']
-    test_dir = build_dir + '/pytests'
-    bin_dir = build_dir + '/bin'
-    tdnf_bin = build_dir + '/bin/tdnf'
-    lib_dir = build_dir + '/lib'
 
-    dirs = ''
-    path = []
-    for ele in build_dir.split(os.sep):
-        if not ele:
-            continue
-        dirs += '/' + ele
-        path.append(dirs)
+    if not utils.config.get('installed', False):
+        build_dir = utils.config['build_dir']
+        test_dir = build_dir + '/pytests'
+        bin_dir = utils.config['bin_dir']
+        tdnf_bin = os.path.join(bin_dir, 'tdnf')
+        lib_dir = build_dir + '/lib'
 
-    path += [bin_dir, test_dir, lib_dir, tdnf_bin]
-    run_bash_cmd(['chmod', '755'] + path, 0, bash_cmd=True)
-    os.system('chmod 644 ' + build_dir + '/lib/*')
+        dirs = ''
+        path = []
+        for ele in build_dir.split(os.sep):
+            if not ele:
+                continue
+            dirs += '/' + ele
+            path.append(dirs)
+
+        path += [bin_dir, test_dir, lib_dir, tdnf_bin]
+        run_bash_cmd(['chmod', '755'] + path, 0, bash_cmd=True)
+        os.system('chmod 644 ' + build_dir + '/lib/*')
 
     utils.run(['tdnf', 'makecache'])
 

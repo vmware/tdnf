@@ -12,3 +12,7 @@ install(FILES "tdnf.conf" "automatic.conf"
     DESTINATION "${SYSCONFDIR}/tdnf"
     COMPONENT etc
 )
+
+install(FILES "automatic.conf"
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/tdnf/pytests/repo
+)

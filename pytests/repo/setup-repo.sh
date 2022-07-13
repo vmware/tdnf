@@ -7,9 +7,9 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-if [ $# -ne 1 ]; then
-	echo "Usage: $0 <repo_path>"
-	exit 1
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <repo_path> <specs_dir>"
+    exit 1
 fi
 
 function fix_dir_perms()
@@ -29,24 +29,32 @@ function check_err {
 }
 
 TEST_REPO_DIR=$1
-if [ -d $1 ]; then
-	echo "Repo already exists"
-  fix_dir_perms
-	exit 0
+if [ -d ${TEST_REPO_DIR} ]; then
+    echo "Repo already exists"
+    fix_dir_perms
+    exit 0
 fi
 
-REPO_SRC_DIR=$(dirname "$0")
+REPO_SRC_DIR=$2
+if [ ! -d ${REPO_SRC_DIR} ]; then
+    echo "specs dir does not exist"
+    exit 1
+fi
+
+export GNUPGHOME=${TEST_REPO_DIR}/gnupg
+
 BUILD_PATH=${TEST_REPO_DIR}/build
 PUBLISH_PATH=${TEST_REPO_DIR}/photon-test
-
 ARCH=$(uname -m)
 
 mkdir -p -m 755 ${BUILD_PATH}/BUILD \
-	 ${BUILD_PATH}/SRPMS \
-	 ${BUILD_PATH}/RPMS/${ARCH} \
-	 ${BUILD_PATH}/RPMS/noarch \
-	 ${PUBLISH_PATH} \
-	 ${TEST_REPO_DIR}/yum.repos.d
+    ${BUILD_PATH}/SOURCES \
+    ${BUILD_PATH}/SRPMS \
+    ${BUILD_PATH}/RPMS/${ARCH} \
+    ${BUILD_PATH}/RPMS/noarch \
+    ${PUBLISH_PATH} \
+    ${TEST_REPO_DIR}/yum.repos.d \
+    ${GNUPGHOME}
 
 #gpgkey data for unattended key generation
 cat << EOF > ${TEST_REPO_DIR}/gpgkeydata
@@ -72,13 +80,14 @@ cat << EOF > ~/.rpmmacros
 %__gpg /usr/bin/gpg
 EOF
 
+
 for d in conflicts enhances obsoletes provides recommends requires suggests supplements ; do
-    sed s/@@dep@@/$d/ < ${REPO_SRC_DIR}/tdnf-repoquery-deps.spec.in > ${REPO_SRC_DIR}/tdnf-repoquery-$d.spec
+    sed s/@@dep@@/$d/ < ${REPO_SRC_DIR}/tdnf-repoquery-deps.spec.in > ${BUILD_PATH}/SOURCES/tdnf-repoquery-$d.spec
 done
 
 echo building packages
 rpmbuild  --define "_topdir ${BUILD_PATH}" \
-	  -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec
+    -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec ${BUILD_PATH}/SOURCES/*.spec
 check_err "Failed to build packages."
 rpmsign --addsign ${BUILD_PATH}/RPMS/*/*.rpm
 cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
@@ -134,5 +143,7 @@ cat << EOF > ${PUBLISH_PATH}/metalink
  </files>
 </metalink>
 EOF
+
+cp ${REPO_SRC_DIR}/automatic.conf ${TEST_REPO_DIR}
 
 fix_dir_perms

@@ -17,6 +17,10 @@ jobs:
               working-directory: ${{ github.workspace }}
               run: |
                 docker run --rm -e DIST -v$(pwd):/build -w/build ${DIST}/tdnf-build ./ci/build-rpms.sh
+            - name: run pytests package
+              working-directory: ${{ github.workspace }}
+              run: |
+                docker run --rm -v$(pwd)/rpms:/rpms ${DIST} /bin/sh -c 'tdnf -y --repofrompath=tdnf,/rpms install tdnf-pytests && pytest /usr/share/tdnf/pytests/'
             - name: upload RPMs
               uses: actions/upload-artifact@v2
               with:
