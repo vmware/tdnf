@@ -499,6 +499,43 @@ error:
 }
 
 uint32_t
+SolvGetPkgDownloadSizeFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    uint32_t* pdwSize)
+{
+    uint32_t dwError = 0;
+    uint32_t dwDownloadSize = 0;
+    Solvable *pSolv = NULL;
+
+    if(!pSack || !pdwSize)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwDownloadSize = solvable_lookup_num(pSolv, SOLVABLE_DOWNLOADSIZE, 0);
+    *pdwSize = dwDownloadSize;
+
+cleanup:
+    return dwError;
+
+error:
+    if(pdwSize)
+    {
+        *pdwSize = 0;
+    }
+    goto cleanup;;
+}
+
+uint32_t
 SolvGetPkgSummaryFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,

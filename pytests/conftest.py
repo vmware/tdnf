@@ -298,6 +298,28 @@ ui_repoid_vars=basearch
         with open(filename, "w") as f:
             f.write(templ.format(name=name, baseurl=baseurl))
 
+    def _get_stdout_total_download_size(self, stdout):
+        key = "Total download size"
+        for line in stdout:
+            if key in line:
+                return line.split()[-1]
+
+    def download_size_to_bytes(self, stdout):
+        size_chars = 'bkMG'
+        raw_str = self._get_stdout_total_download_size(stdout)
+        size, unit = float(raw_str[:-1]), raw_str[-1]
+        return size * (1024 ** size_chars.index(unit))
+
+    def get_cached_package_sizes(self, cache_dir):
+        ret = self.run(['find', cache_dir, '-name', '*.rpm'])
+        pkg_size_map = {}
+        for rpm in ret['stdout']:
+            pkg_size_map[rpm] = os.path.getsize(rpm)
+        return pkg_size_map
+
+    def floats_approx_equal(self, x, y, tol=500):
+        return abs(x - y) <= tol
+
 
 @pytest.fixture(scope='session')
 def utils():

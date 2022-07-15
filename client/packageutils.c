@@ -161,9 +161,20 @@ TDNFPopulatePkgInfoArray(
                           &pPkgInfo->dwInstallSizeBytes);
             BAIL_ON_TDNF_ERROR(dwError);
 
+            dwError = SolvGetPkgDownloadSizeFromId(
+                        pSack,
+                        dwPkgId,
+                        &pPkgInfo->dwDownloadSizeBytes);
+            BAIL_ON_TDNF_ERROR(dwError);
+
             dwError = TDNFUtilsFormatSize(
                           pPkgInfo->dwInstallSizeBytes,
                           &pPkgInfo->pszFormattedSize);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFUtilsFormatSize(
+                          pPkgInfo->dwDownloadSizeBytes,
+                          &pPkgInfo->pszFormattedDownloadSize);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = SolvGetPkgSummaryFromId(
@@ -934,6 +945,82 @@ error:
 }
 
 uint32_t
+TDNFGetAvailableCacheBytes(
+    PTDNF_CONF pConf,
+    uint64_t* pqwAvailCacheDirBytes
+    )
+{
+    uint32_t dwError = 0;
+    struct statfs tmpStatfsBuffer = {0};
+
+    if(!pConf || !pConf->pszCacheDir || !pqwAvailCacheDirBytes)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (statfs(pConf->pszCacheDir, &tmpStatfsBuffer) != 0)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    *pqwAvailCacheDirBytes = tmpStatfsBuffer.f_bsize * tmpStatfsBuffer.f_bavail;
+
+cleanup:
+    return dwError;
+
+error:
+    if(pqwAvailCacheDirBytes)
+    {
+        *pqwAvailCacheDirBytes = 0;
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFCheckDownloadCacheBytes(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    uint64_t qwAvailCacheBytes
+    )
+{
+    uint32_t dwError = 0;
+    uint64_t qwTotalDownloadSizeBytes = 0;
+    uint8_t byPkgIndex = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+
+    if(!pSolvedPkgInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    PTDNF_PKG_INFO ppPkgsNeedDownload[4] = {
+        pSolvedPkgInfo->pPkgsToInstall,
+        pSolvedPkgInfo->pPkgsToDowngrade,
+        pSolvedPkgInfo->pPkgsToUpgrade,
+        pSolvedPkgInfo->pPkgsToReinstall
+    };
+
+    for (byPkgIndex = 0; byPkgIndex < ARRAY_SIZE(ppPkgsNeedDownload); byPkgIndex++)
+    {
+        pPkgInfo = ppPkgsNeedDownload[byPkgIndex];
+        while(pPkgInfo) {
+            qwTotalDownloadSizeBytes += pPkgInfo->dwDownloadSizeBytes;
+            if (qwTotalDownloadSizeBytes > qwAvailCacheBytes)
+            {
+                dwError = ERROR_TDNF_CACHE_DIR_OUT_OF_DISK_SPACE;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            pPkgInfo = pPkgInfo->pNext;
+        }
+    }
+
+error:
+    return dwError;
+}
+
+uint32_t
 TDNFPopulatePkgInfos(
     PSolvSack pSack,
     PSolvPackageList pPkgList,
@@ -1004,12 +1091,22 @@ TDNFPopulatePkgInfos(
                       pSack,
                       dwPkgId,
                       &pPkgInfo->dwInstallSizeBytes);
+        BAIL_ON_TDNF_ERROR(dwError);
 
+        dwError = SolvGetPkgDownloadSizeFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->dwDownloadSizeBytes);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFUtilsFormatSize(
                       pPkgInfo->dwInstallSizeBytes,
                       &pPkgInfo->pszFormattedSize);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFUtilsFormatSize(
+                      pPkgInfo->dwDownloadSizeBytes,
+                      &pPkgInfo->pszFormattedDownloadSize);
         BAIL_ON_TDNF_ERROR(dwError);
 
         pPkgInfo->pNext = pPkgInfos;

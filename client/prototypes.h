@@ -439,6 +439,19 @@ TDNFCheckProtectedPkgs(
     );
 
 uint32_t
+TDNFGetAvailableCacheBytes(
+    PTDNF_CONF pConf,
+    uint64_t* pqwAvailCacheBytes
+    );
+
+uint32_t
+TDNFCheckDownloadCacheBytes(
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    uint64_t qwAvailCacheBytes
+    );
+
+
+uint32_t
 TDNFPopulatePkgInfoArrayDependencies(
     PSolvSack pSack,
     PSolvPackageList pPkgList,

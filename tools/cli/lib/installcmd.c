@@ -602,12 +602,14 @@ PrintAction(
     PTDNF_PKG_INFO pPkgInfo = NULL;
 
     uint32_t dwTotalInstallSize = 0;
+    uint32_t dwTotalDownloadSize = 0;
     char* pszTotalInstallSize = NULL;
+    char* pszTotalDownloadSize = NULL;
     char  *pszEmptyString = "";
 
-    #define COL_COUNT 5
-    //Name | Arch | [Epoch:]Version-Release | Repository | Install Size
-    int nColPercents[COL_COUNT] = {30, 15, 20, 15, 10};
+    #define COL_COUNT 6
+    //Name | Arch | [Epoch:]Version-Release | Repository | Install Size | Download Size
+    int nColPercents[COL_COUNT] = {20, 15, 20, 15, 10, 10};
     int nColWidths[COL_COUNT] = {0};
 
     #define MAX_COL_LEN 256
@@ -653,6 +655,7 @@ PrintAction(
     while(pPkgInfo)
     {
         dwTotalInstallSize += pPkgInfo->dwInstallSizeBytes;
+        dwTotalDownloadSize += pPkgInfo->dwDownloadSizeBytes;
         memset(szEpochVersionRelease, 0, MAX_COL_LEN);
         if(pPkgInfo->dwEpoch)
         {
@@ -691,8 +694,10 @@ PrintAction(
                                  pszEmptyString : pPkgInfo->pszRepoName;
         ppszInfoToPrint[4] = pPkgInfo->pszFormattedSize == NULL ?
                                  pszEmptyString : pPkgInfo->pszFormattedSize;
+        ppszInfoToPrint[5] = pPkgInfo->pszFormattedDownloadSize == NULL ?
+                                 pszEmptyString : pPkgInfo->pszFormattedDownloadSize;
         pr_info(
-            "%-*s %-*s %-*s %-*s %*s\n",
+            "%-*s %-*s %-*s %-*s %-*s %*s\n",
             nColWidths[0],
             ppszInfoToPrint[0],
             nColWidths[1],
@@ -702,18 +707,23 @@ PrintAction(
             nColWidths[3],
             ppszInfoToPrint[3],
             nColWidths[4],
-            ppszInfoToPrint[4]);
+            ppszInfoToPrint[4],
+            nColWidths[5],
+            ppszInfoToPrint[5]);
         pPkgInfo = pPkgInfo->pNext;
     }
 
-    TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
+    dwError = TDNFUtilsFormatSize(dwTotalInstallSize, &pszTotalInstallSize);
+    BAIL_ON_TDNF_ERROR(dwError);
     pr_info("\nTotal installed size: %s\n", pszTotalInstallSize);
 
+    dwError = TDNFUtilsFormatSize(dwTotalDownloadSize, &pszTotalDownloadSize);
+    BAIL_ON_TDNF_ERROR(dwError);
+    pr_info("Total download size: %s\n", pszTotalDownloadSize);
+
 cleanup:
-    if (pszTotalInstallSize)
-    {
-        free(pszTotalInstallSize);
-    }
+    TDNFFreeMemory(pszTotalInstallSize);
+    TDNFFreeMemory(pszTotalDownloadSize);
     return dwError;
 
 error:
