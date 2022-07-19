@@ -178,13 +178,10 @@ error:
 uint32_t
 TDNFAlterCommand(
     PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
     )
 {
     uint32_t dwError = 0;
-
-    UNUSED(nAlterType);
 
     if(!pTdnf || !pSolvedInfo)
     {

@@ -273,11 +273,11 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
 TDNFCliAskAndAlter(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
 )
 {
@@ -295,7 +295,6 @@ TDNFCliAskAndAlter(
 
     dwError = pContext->pFnAlter(
                 pContext,
-                nAlterType,
                 pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
@@ -347,7 +346,7 @@ TDNFCliAlterCommand(
                   &pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
-    dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, nAlterType, pSolvedPkgInfo);
+    dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
 cleanup:

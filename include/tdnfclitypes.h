@@ -46,7 +46,6 @@ typedef struct _TDNF_UPDATEINFO_ARGS
 typedef uint32_t
 (*PFN_TDNF_ALTER)(
     PTDNF_CLI_CONTEXT,
-    TDNF_ALTERTYPE,
     PTDNF_SOLVED_PKG_INFO);
 
 typedef uint32_t

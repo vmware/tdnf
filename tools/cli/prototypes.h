@@ -25,7 +25,6 @@
 uint32_t
 TDNFCliInvokeAlter(
     PTDNF_CLI_CONTEXT pContext,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 

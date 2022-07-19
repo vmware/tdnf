@@ -361,11 +361,10 @@ TDNFCliInvokeCount(
 uint32_t
 TDNFCliInvokeAlter(
     PTDNF_CLI_CONTEXT pContext,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     )
 {
-    return TDNFAlterCommand(pContext->hTdnf, nAlterType, pSolvedPkgInfo);
+    return TDNFAlterCommand(pContext->hTdnf, pSolvedPkgInfo);
 }
 
 uint32_t

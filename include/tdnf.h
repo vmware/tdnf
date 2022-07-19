@@ -201,7 +201,6 @@ TDNFResolve(
 uint32_t
 TDNFAlterCommand(
     PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
     );
 
