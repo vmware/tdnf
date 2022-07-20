@@ -79,7 +79,11 @@ static struct option pstOptions[] =
     {"urls",          no_argument, 0, 0},
     // repoquery option
     // repoquery select options
+    {"available",     no_argument, 0, 0},
+    {"extras",        no_argument, 0, 0},
     {"file",          required_argument, 0, 0},
+    {"userinstalled", no_argument, 0, 0},
+    {"upgrades",      no_argument, 0, 0},
     {"whatdepends",   required_argument, 0, 0},
     {"whatprovides",  required_argument, 0, 0},
     {"whatobsoletes", required_argument, 0, 0},
@@ -90,13 +94,11 @@ static struct option pstOptions[] =
     {"whatsupplements", required_argument, 0, 0},
     {"whatenhances",  required_argument, 0, 0},
     // repoquery query options
-    {"available",     no_argument, 0, 0},
     {"changelogs",    no_argument, 0, 0},
     {"conflicts",     no_argument, 0, 0},
     {"depends",       no_argument, 0, 0},
     {"duplicates",    no_argument, 0, 0},
     {"enhances",      no_argument, 0, 0},
-    {"extras",        no_argument, 0, 0},
     {"installed",     no_argument, 0, 0},
     {"list",          no_argument, 0, 0},
     {"obsoletes",     no_argument, 0, 0},
@@ -106,7 +108,6 @@ static struct option pstOptions[] =
     {"requires-pre",  no_argument, 0, 0},
     {"suggests",      no_argument, 0, 0},
     {"supplements",   no_argument, 0, 0},
-    {"upgrades",      no_argument, 0, 0},
     // update-info mode options (also 'list' from above)
     {"info",          no_argument, 0, 0},
     {"summary",       no_argument, 0, 0},
@@ -254,7 +255,7 @@ TDNFCliParseArgs(
     {
         pCmdArgs->nCmdCount = argc - optind;
         dwError = TDNFAllocateMemory(
-                      pCmdArgs->nCmdCount,
+                      pCmdArgs->nCmdCount + 1,
                       sizeof(char*),
                       (void**)&pCmdArgs->ppszCmds);
         BAIL_ON_CLI_ERROR(dwError);

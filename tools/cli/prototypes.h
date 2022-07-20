@@ -25,7 +25,6 @@
 uint32_t
 TDNFCliInvokeAlter(
     PTDNF_CLI_CONTEXT pContext,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
     );
 
@@ -132,6 +131,13 @@ TDNFCliInvokeHistoryResolve(
     PTDNF_HISTORY_ARGS pHistoryArgs,
     PTDNF_SOLVED_PKG_INFO *ppSolvedPkgInfo
 );
+
+uint32_t
+TDNFCliInvokeAlterHistory(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    );
 
 uint32_t
 TDNFCliUpdateInfoInfo(
@@ -391,4 +397,11 @@ TDNFCliUpdateInfoSummary(
 void
 TDNFFreeListArgs(
     PTDNF_LIST_ARGS pListArgs
+    );
+
+uint32_t
+TDNFCliInvokeMark(
+    PTDNF_CLI_CONTEXT pContext,
+    char **ppszPkgNameSpecs,
+    uint32_t nValue
     );

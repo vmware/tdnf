@@ -112,6 +112,10 @@ TDNFCliParseRepoQueryArgs(
         {
             pRepoqueryArgs->nUpgrades = 1;
         }
+        else if (strcasecmp(pSetOpt->pszOptName, "userinstalled") == 0)
+        {
+            pRepoqueryArgs->nUserInstalled = 1;
+        }
         else
         {
             REPOQUERY_DEP_KEY depKey;

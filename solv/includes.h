@@ -39,6 +39,7 @@
 #include "../common/defines.h"
 #include "../common/structs.h"
 #include "../common/prototypes.h"
+#include "../history/history.h"
 #include "prototypes.h"
 
 #endif /* __SOLV_INCLUDES_H__ */

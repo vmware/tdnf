@@ -192,3 +192,40 @@ def test_autoremove_conf_false_autoremove(utils):
     assert(not utils.check_package(pkgname))
     # actual test:
     assert(not utils.check_package(pkgname_req))
+
+
+# 'autoremve' without args cleans up all unneeded
+# auto installed pkgs
+def test_autoremove_noargs(utils):
+    pkgname = 'tdnf-test-cleanreq-leaf1'
+    pkgname_req = 'tdnf-test-cleanreq-required'
+
+    utils.install_package(pkgname)
+    assert(utils.check_package(pkgname_req))
+
+    utils.run(['tdnf', '-y', 'remove', '--noautoremove', pkgname])
+    assert(utils.check_package(pkgname_req))
+
+    utils.run(['tdnf', '-y', 'autoremove'])
+    assert(not utils.check_package(pkgname))
+
+    # actual test - required pkg should be gone
+    assert(not utils.check_package(pkgname_req))
+
+
+# do not accidentally remove all autoinstaled packages
+# those that are required by userinstalled pkgs should remain
+# and removing them would drag the user installed pkgs with them
+def test_autoremove_noargs2(utils):
+    pkgname = 'tdnf-test-cleanreq-leaf1'
+    pkgname_req = 'tdnf-test-cleanreq-required'
+
+    utils.install_package(pkgname)
+    assert(utils.check_package(pkgname_req))
+
+    utils.run(['tdnf', '-y', 'autoremove'])
+
+    # actual test - user installed pkg should still be there
+    assert(utils.check_package(pkgname))
+    # also check that the required pkg is still there
+    assert(utils.check_package(pkgname_req))

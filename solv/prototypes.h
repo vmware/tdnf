@@ -308,6 +308,19 @@ SolvGetChangeLogFromId(
     PTDNF_PKG_CHANGELOG_ENTRY *ppEntries
     );
 
+uint32_t
+SolvIdIsOrphaned(
+    PSolvSack pSack,
+    Id p,
+    int *pnIsOrphan
+);
+
+uint32_t
+SolvGetAutoInstalledOrphans(
+    PSolvSack pSack,
+    struct history_ctx *pHistoryCtx,
+    Queue *pQueueAutoInstalled);
+
 // tdnfpool.c
 uint32_t
 SolvCreateSack(
@@ -446,16 +459,10 @@ SolvAddPkgEraseJob(
     );
 
 uint32_t
-SolvAddPkgUserInstalledJob(
-    Queue* pQueueJobs,
-    Id dwId
-    );
-
-uint32_t
 SolvAddUserInstalledToJobs(
     Queue* pQueueJobs,
     Pool *pPool,
-    char **ppszAutoInstalled
+    struct history_ctx *pHistoryCtx
     );
 
 uint32_t
@@ -496,6 +503,11 @@ uint32_t
 SolvApplyFileProvidesFilter(
     PSolvQuery pQuery,
     char *pszFile);
+
+uint32_t
+SolvApplyUserInstalledFilter(
+    PSolvQuery pQuery,
+    struct history_ctx *pHistoryCtx);
 
 // tdnfrepo.c
 uint32_t

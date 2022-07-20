@@ -392,6 +392,11 @@ TDNFFilterPackages(
     );
 
 uint32_t
+TDNFGetAutoInstalledOrphans(
+    PTDNF pTdnf,
+    Queue* pQueueGoal);
+
+uint32_t
 TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,
@@ -499,7 +504,9 @@ TDNFMarkAutoInstalledSinglePkg(
 uint32_t
 TDNFMarkAutoInstalled(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO ppInfo
+    struct history_ctx *pHistoryCtx,
+    PTDNF_SOLVED_PKG_INFO ppInfo,
+    int nAutoOnly
     );
 
 uint32_t
@@ -900,8 +907,14 @@ TDNFAddNotResolved(
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pInfo,
-    TDNF_ALTERTYPE nAlterType
+    PTDNF_SOLVED_PKG_INFO pInfo
+    );
+
+uint32_t
+TDNFRpmExecHistoryTransaction(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
     );
 
 void*

@@ -201,8 +201,24 @@ TDNFResolve(
 uint32_t
 TDNFAlterCommand(
     PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    );
+
+/* Similar to TDNFAlterCommand() but for history
+   transactions like rollback, undo and redo
+*/
+uint32_t
+TDNFAlterHistoryCommand(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
+    );
+
+uint32_t
+TDNFMark(
+    PTDNF pTdnf,
+    char** ppszPackageNameSpecs,
+    uint32_t dwValue
     );
 
 //Show a descriptive error message

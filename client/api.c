@@ -178,8 +178,32 @@ error:
 uint32_t
 TDNFAlterCommand(
     PTDNF pTdnf,
-    TDNF_ALTERTYPE nAlterType,
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    )
+{
+    uint32_t dwError = 0;
+
+    if(!pTdnf || !pSolvedInfo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFAlterHistoryCommand(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
+    PTDNF_HISTORY_ARGS pHistoryArgs
     )
 {
     uint32_t dwError = 0;
@@ -189,7 +213,7 @@ TDNFAlterCommand(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo, nAlterType);
+    dwError = TDNFRpmExecHistoryTransaction(pTdnf, pSolvedInfo, pHistoryArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
@@ -1401,6 +1425,7 @@ TDNFRepoQuery(
     int nDetail;
     uint32_t dwCount = 0;
     TDNF_SCOPE nScope = SCOPE_ALL;
+    struct history_ctx *pHistoryCtx = NULL;
 
     if(!pTdnf || !pTdnf->pSack || !pRepoqueryArgs ||
        !ppPkgInfo || !pdwCount)
@@ -1424,6 +1449,12 @@ TDNFRepoQuery(
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* userinstalled implies installed */
+    if (pRepoqueryArgs->nUserInstalled)
+    {
+        pRepoqueryArgs->nInstalled = 1;
     }
 
     dwError = TDNFRefresh(pTdnf);
@@ -1472,6 +1503,15 @@ TDNFRepoQuery(
     else if (pRepoqueryArgs->nDuplicates)
     {
         dwError = SolvApplyDuplicatesFilter(pQuery);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pRepoqueryArgs->nUserInstalled)
+    {
+        dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 0);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvApplyUserInstalledFilter(pQuery, pHistoryCtx);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -1543,6 +1583,10 @@ cleanup:
     if(pPkgList)
     {
         SolvFreePackageList(pPkgList);
+    }
+    if (pHistoryCtx)
+    {
+        destroy_history_ctx(pHistoryCtx);
     }
     return dwError;
 error:
@@ -1937,6 +1981,7 @@ TDNFHistoryResolve(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
     struct history_ctx *ctx = NULL;
     struct history_delta *hd = NULL;
+    struct history_flags_delta *hfd;
     struct history_nevra_map *hnm = NULL;
     rpmts ts = NULL;
     Queue qInstall = {0};
@@ -2012,12 +2057,15 @@ TDNFHistoryResolve(
             goto cleanup;
         case HISTORY_CMD_ROLLBACK:
             hd = history_get_delta(ctx, pHistoryArgs->nTo);
+            hfd = history_get_flags_delta(ctx, ctx->trans_id, pHistoryArgs->nTo - 1);
             break;
         case HISTORY_CMD_UNDO:
             hd = history_get_delta_range(ctx, pHistoryArgs->nFrom - 1, pHistoryArgs->nTo);
+            hfd = history_get_flags_delta(ctx, pHistoryArgs->nTo, pHistoryArgs->nFrom - 1);
             break;
         case HISTORY_CMD_REDO:
             hd = history_get_delta_range(ctx, pHistoryArgs->nTo, pHistoryArgs->nFrom - 1);
+            hfd = history_get_flags_delta(ctx, pHistoryArgs->nFrom - 1, pHistoryArgs->nTo);
             break;
         default:
             dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -2133,6 +2181,12 @@ TDNFHistoryResolve(
         pSolvedPkgInfo->pPkgsToReinstall;
 
     pSolvedPkgInfo->ppszPkgsNotResolved = ppszPkgsNotResolved;
+
+    /* if there is no action, maybe there is a flags change */
+    if (!pSolvedPkgInfo->nNeedAction)
+    {
+        pSolvedPkgInfo->nNeedAction = (hfd->count > 0);
+    }
 
     *ppSolvedPkgInfo = pSolvedPkgInfo;
 
@@ -2273,6 +2327,98 @@ error:
     {
         TDNFFreeHistoryInfoItems(pHistoryInfoItems, count);
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFMark(
+    PTDNF pTdnf,
+    char** ppszPackageNameSpecs,
+    uint32_t dwValue
+    )
+{
+    uint32_t dwError = 0;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+    struct history_ctx *ctx = NULL;
+    char *pszCmdLine = NULL;
+    char *pszName = NULL;
+
+    if(!pTdnf || !pTdnf->pSack || !ppszPackageNameSpecs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFApplyScopeFilter(pQuery, SCOPE_INSTALLED);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyPackageFilter(pQuery, ppszPackageNameSpecs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pPkgList->queuePackages.count > 0)
+    {
+        dwError = TDNFJoinArrayToString(&(pTdnf->pArgs->ppszArgv[1]),
+                                        " ",
+                                        pTdnf->pArgs->nArgc,
+                                        &pszCmdLine);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFGetHistoryCtx(pTdnf, &ctx, 1);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        history_add_transaction(ctx, pszCmdLine);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        for (int i = 0; i < pPkgList->queuePackages.count; i++)
+        {
+            int rc;
+
+            dwError = SolvGetPkgNameFromId(pTdnf->pSack,
+                                           pPkgList->queuePackages.elements[i],
+                                           &pszName);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            pr_info("marking %s as %sinstalled\n", pszName, dwValue ? "auto" : "user");
+
+            rc = history_set_auto_flag(ctx, pszName, dwValue);
+            if (rc != 0)
+            {
+                dwError = ERROR_TDNF_HISTORY_ERROR;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            TDNF_SAFE_FREE_MEMORY(pszName);
+        }
+    }
+    else
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszCmdLine);
+    TDNF_SAFE_FREE_MEMORY(pszName);
+    destroy_history_ctx(ctx);
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    if(pPkgList)
+    {
+        SolvFreePackageList(pPkgList);
+    }
+    return dwError;
+error:
     goto cleanup;
 }
 

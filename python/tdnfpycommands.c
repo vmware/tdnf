@@ -190,7 +190,7 @@ _TDNFPyAlter(TDNF_ALTERTYPE alterType, PyObject *self, PyObject *args, PyObject 
 
     if (pSolvedInfo && pSolvedInfo->nNeedAction)
     {
-        dwError = TDNFAlterCommand(pTDNF, alterType, pSolvedInfo);
+        dwError = TDNFAlterCommand(pTDNF, pSolvedInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
