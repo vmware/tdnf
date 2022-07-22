@@ -49,7 +49,7 @@ TDNFCliParseRepoSyncArgs(
         {
             if (pReposyncArgs->ppszArchs == NULL)
             {
-                TDNFAllocateMemory(TDNF_REPOSYNC_MAXARCHS+1, sizeof(char *),
+                dwError = TDNFAllocateMemory(TDNF_REPOSYNC_MAXARCHS+1, sizeof(char *),
                     (void **)&pReposyncArgs->ppszArchs);
                 BAIL_ON_CLI_ERROR(dwError);
             }

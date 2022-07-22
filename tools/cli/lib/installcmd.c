@@ -309,7 +309,7 @@ cleanup:
     return dwError;
 
 error:
-    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
+    if (pCmdArgs && pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_OPERATION_ABORTED)
     {
         dwError = 0;
     }
@@ -371,12 +371,13 @@ JDPkgList(
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pPkgInfo;
     struct json_dump *jd_list = jd_create(0);
+    struct json_dump *jd_pkg = NULL;
     CHECK_JD_NULL(jd_list);
 
     jd_list_start(jd_list);
     for(pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
-        struct json_dump *jd_pkg = jd_create(0);
+        jd_pkg = jd_create(0);
         CHECK_JD_NULL(jd_pkg);
 
         CHECK_JD_RC(jd_map_start(jd_pkg));
@@ -393,6 +394,7 @@ JDPkgList(
 cleanup:
     return dwError;
 error:
+    JD_SAFE_DESTROY(jd_pkg);
     JD_SAFE_DESTROY(jd_list);
     goto cleanup;
 }

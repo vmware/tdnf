@@ -393,7 +393,7 @@ SolvCreateRepoCacheName(
     Chksum *pChkSum = NULL;
     unsigned char pCookie[SOLV_COOKIE_LEN] = {0};
     char pszCookie[9] = {0};
-    char *pszCacheName;
+    char *pszCacheName = NULL;
 
     if (!pszName || !pszUrl || !ppszCacheName)
     {

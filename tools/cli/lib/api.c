@@ -629,7 +629,7 @@ TDNFCliRepoSyncCommand(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPOSYNC_ARGS pReposyncArgs;
+    PTDNF_REPOSYNC_ARGS pReposyncArgs = NULL;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoSync)
     {
@@ -761,7 +761,7 @@ TDNFCliRepoQueryCommand(
 
                     if (strftime(szTime, 20, "%a %b %d %Y", localtime(&pEntry->timeTime)))
                     {
-                        jd_map_add_string(jd_entry, "Time", szTime);
+                        CHECK_JD_RC(jd_map_add_string(jd_entry, "Time", szTime));
                     }
                     CHECK_JD_RC(jd_map_add_string(jd_entry, "Author", pEntry->pszAuthor));
                     CHECK_JD_RC(jd_map_add_string(jd_entry, "Text", pEntry->pszText));

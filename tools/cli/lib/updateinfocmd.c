@@ -125,7 +125,7 @@ TDNFCliUpdateInfoSummary(
         jd_map_start(jd);
         for(i = UPDATE_UNKNOWN; i <= UPDATE_ENHANCEMENT; ++i)
         {
-            jd_map_add_int(jd, TDNFGetUpdateInfoType(pSummary[i].nType), pSummary[i].nCount);
+            CHECK_JD_RC(jd_map_add_int(jd, TDNFGetUpdateInfoType(pSummary[i].nType), pSummary[i].nCount));
         }
         pr_json(jd->buf);
         JD_SAFE_DESTROY(jd);

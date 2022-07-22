@@ -324,6 +324,7 @@ struct history_nevra_map *db_string_map(sqlite3 *db, const char *table_name)
     sqlite3_stmt *res = NULL;
     char sql_find[256];
     int count = 0;
+    char *nevra = NULL;
 
     snprintf(sql_find, sizeof(sql_find), "SELECT * FROM %s;", table_name);
 
@@ -342,7 +343,7 @@ struct history_nevra_map *db_string_map(sqlite3 *db, const char *table_name)
     check_db_rc(db, rc);
     for(int step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
         int id = sqlite3_column_int(res, COLUMN_RPMS_ID);
-        char *nevra = strdup((const char *)sqlite3_column_text(res, COLUMN_RPMS_NEVRA));
+        nevra = strdup((const char *)sqlite3_column_text(res, COLUMN_RPMS_NEVRA));
         check_ptr(nevra);
         check_cond((id > 0 && id <= count));
         /* map is zero based, rpm ids start with 1 */
@@ -353,6 +354,7 @@ error:
         sqlite3_finalize(res);
     if (rc) {
         db_free_nevra_map(hnm); hnm = NULL;
+        safe_free(nevra);
     }
     return hnm;
 }
@@ -620,7 +622,7 @@ int db_update_rpms(rpmts ts, sqlite3 *db, int **pids, int *pcount)
         check_db_rc(db, rc);
         safe_free(nevra);
     }
-    rpmdbFreeIterator(mi);
+    rpmdbFreeIterator(mi); mi = NULL;
 
     if (pids && pcount) {
         sort_array(ids, count);
@@ -628,12 +630,12 @@ int db_update_rpms(rpmts ts, sqlite3 *db, int **pids, int *pcount)
         *pids = ids;
         *pcount = count;
     }
-    return rc;
+
 error:
     safe_free(nevra);
     if (mi)
         rpmdbFreeIterator(mi);
-    if (ids)
+    if (rc && ids)
         free(ids);
     return rc;
 }
@@ -746,7 +748,6 @@ int db_set_auto_flag(sqlite3 *db, int trans_id, const char *name, int value)
 {
     int rc = 0;
     int name_id;
-    sqlite3_stmt *res = NULL;
 
     rc = sqlite3_exec(db, SQL_CREATE_TABLE_NAMES,
         0, 0, NULL);
@@ -763,8 +764,6 @@ int db_set_auto_flag(sqlite3 *db, int trans_id, const char *name, int value)
     check_rc(rc);
 
 error:
-    if (res)
-        sqlite3_finalize(res);
     return rc;
 }
 
@@ -810,7 +809,6 @@ int db_get_auto_flag(sqlite3 *db, int trans_id, const char *name, int *pvalue)
 {
     int rc = 0;
     int name_id;
-    sqlite3_stmt *res = NULL;
 
     rc = db_table_exists(db, "flag_set");
     if (rc == SQLITE_DONE) { /* no table */
@@ -839,8 +837,6 @@ int db_get_auto_flag(sqlite3 *db, int trans_id, const char *name, int *pvalue)
     check_db_rc(db, rc);
 
 error:
-    if (res)
-        sqlite3_finalize(res);
     return rc;
 }
 
@@ -953,7 +949,7 @@ error:
     return rc;
 }
 
-void free_history_flags_delta(struct history_flags_delta * hfd)
+void history_free_flags_delta(struct history_flags_delta * hfd)
 {
     if (hfd){
         if (hfd->changed_ids) free(hfd->changed_ids);
@@ -1011,7 +1007,7 @@ history_get_flags_delta(struct history_ctx *ctx, int from, int to)
     }
 error:
     if (rc) {
-        free_history_flags_delta(hfd);
+        history_free_flags_delta(hfd);
         hfd = NULL;
     }
     return hfd;
@@ -1469,9 +1465,10 @@ int history_update_state(struct history_ctx *ctx, rpmts ts, const char *cmdline)
     history_set_cookie(ctx, cookie);
     ctx->trans_id = trans_id;
 error:
-    if (rc)
+    if (rc) {
         sqlite3_exec(ctx->db, "ROLLBACK;", 0, 0, NULL);
-    else
+        safe_free(current_ids);
+    } else
         sqlite3_exec(ctx->db, "COMMIT;", 0, 0, NULL);
     safe_free(added_ids);
     safe_free(removed_ids);

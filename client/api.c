@@ -1080,6 +1080,7 @@ _rm_rpms(
         else
         {
             /* marker file can be removed now */
+            /* coverity[toctou] */
             if(remove(pszKeepFile) < 0)
             {
                 pr_crit("unable to remove %s: %s\n", pszKeepFile, strerror(errno));
@@ -1234,7 +1235,7 @@ TDNFRepoSync(
             if (!pReposyncArgs->nNoRepoPath)
             {
                 dwError = TDNFJoinPath(&pszDir,
-                                       strcmp(pszRootPath, "/") ? pszRootPath : "",
+                                       pszRootPath && strcmp(pszRootPath, "/") ? pszRootPath : "",
                                        pPkgInfo->pszRepoName,
                                        NULL);
                 BAIL_ON_TDNF_ERROR(dwError);
@@ -1321,7 +1322,7 @@ TDNFRepoSync(
 
             /* no need to check nNoRepoPath since we wouldn't get here */
             dwError = TDNFJoinPath(&pszRepoDir,
-                                   strcmp(pszRootPath, "/") ? pszRootPath : "",
+                                   pszRootPath && strcmp(pszRootPath, "/") ? pszRootPath : "",
                                    pRepo->pszId,
                                    NULL);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -1356,7 +1357,7 @@ TDNFRepoSync(
                                 pReposyncArgs->pszMetaDataPath : pszRootPath;
 
                 dwError = TDNFJoinPath(&pszRepoDir,
-                                       strcmp(pszBasePath, "/") ? pszBasePath : "",
+                                       pszBasePath && strcmp(pszBasePath, "/") ? pszBasePath : "",
                                        pRepo->pszId,
                                        NULL);
                 BAIL_ON_TDNF_ERROR(dwError);
@@ -1981,7 +1982,7 @@ TDNFHistoryResolve(
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
     struct history_ctx *ctx = NULL;
     struct history_delta *hd = NULL;
-    struct history_flags_delta *hfd;
+    struct history_flags_delta *hfd = NULL;
     struct history_nevra_map *hnm = NULL;
     rpmts ts = NULL;
     Queue qInstall = {0};
@@ -2193,6 +2194,7 @@ TDNFHistoryResolve(
 cleanup:
     history_free_nevra_map(hnm);
     history_free_delta(hd);
+    history_free_flags_delta(hfd);
     destroy_history_ctx(ctx);
     queue_free(&queueGoal);
     queue_free(&qInstall);
