@@ -62,4 +62,5 @@
     {ERROR_TDNF_CLI_NO_SUCH_CMD,             "ERROR_TDNF_CLI_NO_SUCH_CMD",            "Please check your command"}, \
     {ERROR_TDNF_CLI_DOWNLOADDIR_REQUIRES_DOWNLOADONLY, "ERROR_TDNF_CLI_DOWNLOADDIR_REQUIRES_DOWNLOADONLY", "--downloaddir requires --downloadonly"}, \
     {ERROR_TDNF_CLI_ONE_DEP_ONLY,             "ERROR_TDNF_CLI_ONE_DEP_ONLY",          "only one dependency allowed"}, \
+    {ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY, "ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY", "--alldeps requires --downloadonly"}, \
 };
