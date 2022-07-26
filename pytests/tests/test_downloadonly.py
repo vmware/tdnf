@@ -59,3 +59,20 @@ def test_install_downloaddir_no_downloadonly(utils):
     ret = utils.run(['tdnf', 'install', '-y', '--downloaddir', DOWNLOADDIR, pkgname])
     assert ret['retval'] != 0
     assert not utils.check_package(pkgname)
+
+
+# normally an installed requirement will not be downloaded, but with --alldeps it should:
+def test_install_download_only_alldeps(utils):
+    pkgname = 'tdnf-test-cleanreq-leaf1'
+    pkgname_req = 'tdnf-test-cleanreq-required'
+
+    utils.install_package(pkgname_req)
+    assert utils.check_package(pkgname_req)
+
+    os.makedirs(DOWNLOADDIR, exist_ok=True)
+
+    ret = utils.run(['tdnf', 'install', '-y', '--downloadonly', '--downloaddir', DOWNLOADDIR, '--alldeps', pkgname])
+
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+    assert len(glob.glob('{}/{}*.rpm'.format(DOWNLOADDIR, pkgname_req))) > 0

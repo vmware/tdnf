@@ -67,7 +67,8 @@ uint32_t
 SolvInitSack(
     PSolvSack *ppSack,
     const char* pszCacheDir,
-    const char* pszRootDir
+    const char* pszRootDir,
+    int nInstallAllDeps
     )
 {
     uint32_t dwError = 0;
@@ -115,9 +116,19 @@ SolvInitSack(
     pool_setarch(pPool, systemInfo.machine);
     pool_set_flag(pPool, POOL_FLAG_ADDFILEPROVIDESFILTERED, 1);
 
-    dwError = SolvReadInstalledRpms(pPool, &pRepo, pszCacheDir);
+    if(nInstallAllDeps)
+    {
+        pRepo = repo_create(pPool, SYSTEM_REPO_NAME);
+        if(pRepo == NULL)
+        {
+           dwError = ERROR_TDNF_INVALID_PARAMETER;
+        }
+    }
+    else
+    {
+        dwError = SolvReadInstalledRpms(pPool, &pRepo, pszCacheDir);
+    }
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-
     pool_set_installed(pPool, pRepo);
     pool_createwhatprovides(pPool);
 
