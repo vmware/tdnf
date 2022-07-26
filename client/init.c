@@ -37,6 +37,7 @@ TDNFCloneCmdArgs(
                   (void**)&pCmdArgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    pCmdArgs->nAllDeps       = pCmdArgsIn->nAllDeps;
     pCmdArgs->nAllowErasing  = pCmdArgsIn->nAllowErasing;
     pCmdArgs->nAssumeNo      = pCmdArgsIn->nAssumeNo;
     pCmdArgs->nAssumeYes     = pCmdArgsIn->nAssumeYes;

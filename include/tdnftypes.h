@@ -219,6 +219,7 @@ typedef struct _TDNF_CMD_ARGS
     //Represent options in the dnf cmd line.
     //All options are one to one maps to dnf command line
     //options (incomplete)
+    int nAllDeps;          //download all dependencies even if already installed
     int nAllowErasing;     //allow erasures when solving
     int nAssumeNo;         //assume no for all questions
     int nAssumeYes;        //assume yes for all questions
