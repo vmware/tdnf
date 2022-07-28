@@ -112,7 +112,8 @@ set_progress_cb(
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
     memset(&pData, 0, sizeof(pcb_data));
-    strcpy(pData.pszData, pszData);
+    strncpy(pData.pszData, pszData, sizeof(pData.pszData) - 1);
+    /* coverity[bad_sizeof] */
     dwError = curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, &pData);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
@@ -368,12 +369,19 @@ TDNFCheckRepoMDFileHashFromMetalink(
         hashInfo = currHashInfo;
     }
 
-    dwError = TDNFChecksumFromHexDigest(hashInfo->value, digest);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (hashInfo != NULL)
+    {
+        dwError = TDNFChecksumFromHexDigest(hashInfo->value, digest);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFCheckHash(pszFile, digest, hash_Type);
-    BAIL_ON_TDNF_ERROR(dwError);
-
+        dwError = TDNFCheckHash(pszFile, digest, hash_Type);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = ERROR_TDNF_INVALID_REPO_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 cleanup:
     return dwError;
 error:
@@ -1006,7 +1014,7 @@ TDNFDownloadPackageToDirectory(
 
     pszFileName = basename(pszRemotePath);
 
-    TDNFJoinPath(&pszFilePath, pszDirectory, pszFileName, NULL);
+    dwError = TDNFJoinPath(&pszFilePath, pszDirectory, pszFileName, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,

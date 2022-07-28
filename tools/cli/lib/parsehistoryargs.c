@@ -108,6 +108,7 @@ TDNFCliParseHistoryArgs(
 
     *ppHistoryArgs = pHistoryArgs;
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(ppszRange);
     return dwError;
 error:
     if (pHistoryArgs)

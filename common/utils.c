@@ -824,10 +824,10 @@ TDNFJoinPath(char **ppszPath, ...)
 
         TDNF_SAFE_FREE_MEMORY(pszNodeCopy);
     }
-    va_end(ap);
 
     *ppszPath = pszResult;
 cleanup:
+    va_end(ap);
     return dwError;
 error:
     TDNF_SAFE_FREE_MEMORY(pszResult);

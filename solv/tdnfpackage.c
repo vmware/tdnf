@@ -1917,6 +1917,10 @@ SolvGetNevraFromId(
     {
         *ppszEVR = pszEVR;
     }
+    else
+    {
+        TDNF_SAFE_FREE_MEMORY(pszEVR);
+    }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszEpoch);
     return dwError;
@@ -2212,9 +2216,18 @@ cleanup:
     return dwError;
 
 error:
-    *ppszName = NULL;
-    *ppszArch = NULL;
-    *ppszEVR = NULL;
+    if (ppszName)
+    {
+        *ppszName = NULL;
+    }
+    if (ppszArch)
+    {
+        *ppszArch = NULL;
+    }
+    if (ppszEVR)
+    {
+        *ppszEVR = NULL;
+    }
     TDNF_SAFE_FREE_MEMORY(pszName);
     TDNF_SAFE_FREE_MEMORY(pszArch);
     TDNF_SAFE_FREE_MEMORY(pszEVR);
@@ -2283,6 +2296,8 @@ cleanup:
     return dwError;
 
 error:
+    /* Coverity false positive, low impact if any */
+    /* coverity[overwrite_var] */
     for (pEntry = pEntries; pEntry; pEntry = pEntryNext)
     {
         pEntryNext = pEntry->pNext;

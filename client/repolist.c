@@ -55,7 +55,8 @@ TDNFLoadRepoData(
     {
         if(strcmp(pSetOpt->pszOptName, "repofrompath") == 0)
         {
-            TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszUrlIdTuple);
+            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszUrlIdTuple);
+            BAIL_ON_TDNF_ERROR(dwError);
             if ((ppszUrlIdTuple[0] == NULL) || ppszUrlIdTuple[1] == NULL)
             {
                 dwError = ERROR_TDNF_INVALID_PARAMETER;

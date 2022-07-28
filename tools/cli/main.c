@@ -262,19 +262,25 @@ TDNFCliShowVersion(
     PTDNF_CMD_ARGS pCmdArgs
     )
 {
+    uint32_t dwError = 0;
+    struct json_dump *jd = NULL;
+
     if (pCmdArgs->nJsonOutput)
     {
-        struct json_dump *jd = jd_create(0);
+        jd = jd_create(0);
         jd_map_start(jd);
-        jd_map_add_string(jd, "Name", TDNFGetPackageName());
-        jd_map_add_string(jd, "Version", TDNFGetVersion());
+        CHECK_JD_NULL(jd);
+        CHECK_JD_RC(jd_map_add_string(jd, "Name", TDNFGetPackageName()));
+        CHECK_JD_RC(jd_map_add_string(jd, "Version", TDNFGetVersion()));
         pr_json(jd->buf);
-        jd_destroy(jd);
     }
     else
     {
         pr_info("%s: %s\n", TDNFGetPackageName(), TDNFGetVersion());
     }
+error:
+    JD_SAFE_DESTROY(jd);
+    return;
 }
 
 uint32_t

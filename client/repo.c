@@ -839,7 +839,7 @@ TDNFGetRepoMD(
 
                 //check if the repomd file downloaded using metalink have the same checksum
                 //as mentioned in the metalink file.
-                dwError = TDNFCheckRepoMDFileHashFromMetalink(pszTmpRepoMDFile , ml_ctx);
+                dwError = TDNFCheckRepoMDFileHashFromMetalink(pszTmpRepoMDFile, ml_ctx);
                 BAIL_ON_TDNF_ERROR(dwError);
 
                 dwError = TDNFRepoSetBaseUrl(pTdnf, pRepoData, pszTempBaseUrlFile);
@@ -1527,6 +1527,9 @@ cleanup:
     dataiterator_free(&di);
     return dwError;
 error:
+    TDNF_SAFE_FREE_MEMORY(pszPartUrl);
+    TDNF_SAFE_FREE_MEMORY(pszPartPath);
+
     goto cleanup;
 }
 

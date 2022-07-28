@@ -46,8 +46,10 @@ char *_alloc_vsprintf(const char *fmt, va_list ap)
 
     size++;             /* For '\0' */
     p = (char *)calloc(1, size);
-    if (p == NULL)
+    if (p == NULL) {
+        va_end(aq);
         return NULL;
+    }
 
     size = vsnprintf(p, size, fmt, aq);
     va_end(aq);
