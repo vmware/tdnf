@@ -230,6 +230,7 @@ systemctl try-restart %{name}-cache-updateinfo.timer >/dev/null 2>&1 || :
 %{_bindir}/tyum
 %{_bindir}/yum
 %{_bindir}/tdnfj
+%{_bindir}/tdnf-config
 %{_bindir}/tdnf-cache-updateinfo
 %{_libdir}/libtdnf.so.*
 %{_libdir}/tdnf/tdnf-history-util
