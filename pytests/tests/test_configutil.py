@@ -10,6 +10,7 @@
 import os
 import configparser
 import pytest
+import json
 
 
 def remove_repofile(utils):
@@ -101,3 +102,16 @@ def test_removerepo(utils):
 
     ret = utils.run(['tdnf', 'repolist'])
     assert 'Foo' not in "\n".join(ret['stdout'])
+
+
+def test_json(utils):
+    ret = utils.run(['tdnf-config', 'create', 'foo', 'name=Foo', 'baseurl=http://foo.bar.com', 'enabled=0'])
+    assert ret['retval'] == 0
+
+    ret = utils.run(['tdnf-config', '-j', 'dump', 'foo'])
+    assert ret['retval'] == 0
+
+    repomap = json.loads("\n".join(ret['stdout']))
+    assert 'foo' in repomap
+    assert 'enabled' in repomap['foo']
+    assert repomap['foo']['enabled'] == '0'

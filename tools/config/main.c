@@ -15,12 +15,15 @@
 #include "../../llconf/ini.h"
 #include "../../llconf/strutils.h"
 
+#include "../../jsondump/jsondump.h"
+
 
 #define ERR_CMDLINE     1
 #define ERR_SYSTEM      2
 #define ERR_NO_REPO     3
 #define ERR_NO_SETTING  4
 #define ERR_REPO_EXISTS 5
+#define ERR_JSON        6
 
 #define pr_err(fmt, ...) \
     fprintf(stderr, fmt, ##__VA_ARGS__)
@@ -43,6 +46,12 @@
         __FUNCTION__, __LINE__); \
     rc = -1; \
     ((void)(rc)); /* suppress "set but not used" warning */ \
+    goto error; \
+}
+
+#define check_rc(rc) if((rc) != 0) { \
+    pr_err("check_rc failed in %s line %d\n", \
+        __FUNCTION__, __LINE__); \
     goto error; \
 }
 
@@ -116,7 +125,7 @@ void remove_repo(struct cnfnode *cn_root, const char *repo)
     struct cnfnode *cn_repo = find_child(cn_root, repo);
     if (cn_repo) {
         unlink_node(cn_repo);
-        destroy_cnfnode(cn_repo);
+        destroy_cnftree(cn_repo);
     } else
         fail(ERR_NO_REPO, "repo '%s' not found\n", repo);
 }
@@ -196,6 +205,7 @@ struct cnfnode *get_repo_root(const char *main_config, const char *repo, char **
         char *repodir = get_repodir(main_config);
 
         cn_root = find_repo(repodir, repo, pfilename);
+        safe_free(repodir);
         if (cn_root == NULL)
             fail(ERR_NO_REPO, "repo '%s' not found\n", repo);
     }
@@ -218,11 +228,38 @@ error:
     return rc;
 }
 
+static
+struct json_dump *cnftree2json(struct cnfnode *cn_root)
+{
+    int rc = 0;
+    struct json_dump *jd = jd_create(0);
+
+    jd_map_start(jd);
+    if (cn_root->first_child) {
+        struct json_dump *jd_child = cnftree2json(cn_root->first_child);
+        check_ptr(jd_child);
+        rc = jd_map_add_child(jd, cn_root->name, jd_child);
+        check_rc(rc);
+        jd_destroy(jd_child);
+    } else {
+        for (struct cnfnode *cn = cn_root; cn; cn = cn->next) {
+            rc = jd_map_add_string(jd, cn->name, cn->value);
+            check_rc(rc);
+        }
+    }
+error:
+    if (rc && jd){
+        jd_destroy(jd);
+        jd = NULL;
+    }
+    return jd;
+}
+
 int main(int argc, char *argv[])
 {
     char *main_config = TDNF_CONF_FILE;
     char *repo_config = NULL;
-
+    int do_json = 0;
     int rc = 0;
 
     while(1) {
@@ -231,10 +268,11 @@ int main(int argc, char *argv[])
         static struct option long_options[] = {
             {"config", 1, 0, 'c'},
             {"file", 1, 0, 'f'},
+            {"json", 1, 0, 'j'},
             {0, 0, 0, 0}
         };
 
-        c = getopt_long(argc, argv, "c:f:",
+        c = getopt_long(argc, argv, "c:f:j",
             long_options, NULL);
 
         if (c == -1)
@@ -246,7 +284,9 @@ int main(int argc, char *argv[])
             break;
         case 'f':
             repo_config = optarg;
-            printf("repo_config=%s\n", repo_config);
+            break;
+        case 'j':
+            do_json = 1;
             break;
         case '?':
         default:
@@ -312,6 +352,7 @@ int main(int argc, char *argv[])
 
                     } else
                         fail(ERR_REPO_EXISTS, "repo '%s' already exists\n", repo);
+                    safe_free(repodir);
                 } else
                     fail(ERR_CMDLINE, "invalid repo name 'main'\n");
             }
@@ -400,10 +441,37 @@ int main(int argc, char *argv[])
                     safe_free(filename);
                 } else
                     cnfmodule_unparse(mod_ini, stdout, cn_root);
+                destroy_cnftree(cn_root);
+            }
+        } else if (strcmp(action, "dump") == 0) {
+            if (argcount < 2)
+                fail(ERR_CMDLINE, "expected main or repo name\n");
 
+            repo = argv[optind+1];
+
+            cn_root = get_repo_root(main_config, repo, &filename);
+
+            if (cn_root) {
+                struct cnfnode *cn_repo = find_child(cn_root, repo);
+
+                if (!do_json)
+                    cnfmodule_unparse(mod_ini, stdout, cn_root);
+                else {
+                    struct json_dump *jd = cnftree2json(cn_repo);
+                    unlink_node(cn_repo); /* do not dump siblings */
+                    if (jd) {
+                        printf(jd->buf);
+                        jd_destroy(jd);
+                    } else
+                        fail(ERR_JSON, "failed to generate json\n");
+                     /* we unlinked this so need to free explicitely */
+                    destroy_cnftree(cn_repo);
+                }
                 destroy_cnftree(cn_root);
             }
         } else
             fail(ERR_CMDLINE, "Unknown command '%s'\n", action);
+
+        safe_free(filename);
     }
 }

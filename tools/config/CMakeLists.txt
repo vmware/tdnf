@@ -14,6 +14,7 @@ add_executable(${TDNF_CONFIG_BIN}
 
 target_link_libraries(${TDNF_CONFIG_BIN}
     ${LIB_TDNF_LLCONF}
+    ${LIB_TDNF_JSONDUMP}
     ${CMAKE_DL_LIBS}
 )
 
