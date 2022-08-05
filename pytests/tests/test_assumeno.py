@@ -27,12 +27,12 @@ def teardown_test(utils):
 def test_assumeno_install(utils):
     pkgname = utils.config['sglversion_pkgname']
     utils.run(['tdnf', '--assumeno', 'install', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
 
 def test_assumeno_erase(utils):
     pkgname = utils.config['sglversion_pkgname']
     utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
     utils.run(['tdnf', '--assumeno', 'erase', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)

@@ -172,7 +172,7 @@ class TestUtils(object):
         else:
             pkg = pkgname
         self.run(['tdnf', 'erase', '-y', pkg])
-        assert(not self.check_package(pkgname))
+        assert not self.check_package(pkgname)
 
     def install_package(utils, pkgname, pkgversion=None):
         if pkgversion:
@@ -180,7 +180,7 @@ class TestUtils(object):
         else:
             pkg = pkgname
         utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkg])
-        assert(utils.check_package(pkgname))
+        assert utils.check_package(pkgname)
 
     def _requests_get(self, url, verify):
         try:

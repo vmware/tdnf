@@ -52,13 +52,13 @@ def test_autoremove(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
     utils.install_package(pkgname)
 
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(not utils.check_package(pkgname_req))
+    assert not utils.check_package(pkgname_req)
 
 
 # When the required package is installed first, removing the
@@ -69,14 +69,14 @@ def test_autoremove_req_is_user_installed(utils):
     utils.install_package(pkgname_req)
     utils.install_package(pkgname)
 
-    assert(utils.check_package(pkgname_req))
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname_req)
+    assert utils.check_package(pkgname)
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
 
 # When the required package has been installed as a dependency
@@ -88,14 +88,14 @@ def test_autoremove_req_is_user_installed2(utils):
     utils.install_package(pkgname)
     utils.install_package(pkgname_req)
 
-    assert(utils.check_package(pkgname))
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname)
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
 
 # leaf1 pulls in a dependency. leaf2 has the same dependency.
@@ -110,15 +110,15 @@ def test_autoremove2(utils):
     utils.install_package(pkgname2)
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
     # actual test:
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname2])
 
     # actual test:
-    assert(not utils.check_package(pkgname_req))
+    assert not utils.check_package(pkgname_req)
 
 
 # like autoremove, but in config file
@@ -130,13 +130,13 @@ def test_autoremove_conf_true(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
 
     utils.install_package(pkgname)
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', '-c', conffile, 'remove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(not utils.check_package(pkgname_req))
+    assert not utils.check_package(pkgname_req)
 
 
 # autoremove disabled in config file
@@ -148,13 +148,13 @@ def test_autoremove_conf_false(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
 
     utils.install_package(pkgname)
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', '-c', conffile, 'remove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
 
 # autoremove enabled in config file, but --noautoremove in cmd line
@@ -166,13 +166,13 @@ def test_autoremove_conf_noautoremove(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
 
     utils.install_package(pkgname)
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', '-c', conffile, '--noautoremove', 'remove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
 
 # autoremove disabled in config file, 'autoremove' should still
@@ -185,13 +185,13 @@ def test_autoremove_conf_false_autoremove(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
 
     utils.install_package(pkgname)
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', '-c', conffile, 'autoremove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test:
-    assert(not utils.check_package(pkgname_req))
+    assert not utils.check_package(pkgname_req)
 
 
 # 'autoremve' without args cleans up all unneeded
@@ -201,16 +201,16 @@ def test_autoremove_noargs(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
 
     utils.install_package(pkgname)
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', 'remove', '--noautoremove', pkgname])
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', 'autoremove'])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
     # actual test - required pkg should be gone
-    assert(not utils.check_package(pkgname_req))
+    assert not utils.check_package(pkgname_req)
 
 
 # do not accidentally remove all autoinstaled packages
@@ -221,11 +221,11 @@ def test_autoremove_noargs2(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
 
     utils.install_package(pkgname)
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     utils.run(['tdnf', '-y', 'autoremove'])
 
     # actual test - user installed pkg should still be there
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
     # also check that the required pkg is still there
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)

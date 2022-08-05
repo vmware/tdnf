@@ -93,7 +93,7 @@ def test_install_without_cache(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
 
-    assert(not check_package_in_cache(utils, pkgname))
+    assert not check_package_in_cache(utils, pkgname)
 
 
 def test_install_with_cache(utils):
@@ -106,7 +106,7 @@ def test_install_with_cache(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
 
-    assert(check_package_in_cache(utils, pkgname))
+    assert check_package_in_cache(utils, pkgname)
 
 
 def test_install_with_keepcache_false(utils):
@@ -121,38 +121,38 @@ def test_install_with_keepcache_false(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
 
-    assert(not check_package_in_cache(utils, pkgname))
+    assert not check_package_in_cache(utils, pkgname)
 
 
 def test_disable_repo_make_cache(utils):
     cache_dir = find_cache_dir(utils, 'photon-test')
-    assert(cache_dir is not None)
+    assert cache_dir is not None
     lastrefresh = os.path.join(cache_dir, 'lastrefresh')
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '--disablerepo=*', 'makecache'])
     after = os.path.getmtime(lastrefresh)
-    assert(before == after)
+    assert before == after
 
 
 def test_enable_repo_make_cache(utils):
     cache_dir = find_cache_dir(utils, 'photon-test')
-    assert(cache_dir is not None)
+    assert cache_dir is not None
     lastrefresh = os.path.join(cache_dir, 'lastrefresh')
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)
-    assert(before < after)
+    assert before < after
 
 
 # -v (verbose) prints progress data
 def test_enable_repo_make_cache_verbose(utils):
     cache_dir = find_cache_dir(utils, 'photon-test')
-    assert(cache_dir is not None)
+    assert cache_dir is not None
     lastrefresh = os.path.join(cache_dir, 'lastrefresh')
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '-v', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)
-    assert(before < after)
+    assert before < after
 
 
 def test_download_vs_cache_size_single_package(utils):
@@ -167,7 +167,7 @@ def test_download_vs_cache_size_single_package(utils):
     down_bytes = utils.download_size_to_bytes(ret['stdout'])
     cached_rpm_bytes = sum(utils.get_cached_package_sizes(cache_dir).values())
 
-    assert(utils.floats_approx_equal(down_bytes, cached_rpm_bytes))
+    assert utils.floats_approx_equal(down_bytes, cached_rpm_bytes)
 
 
 def test_download_vs_cache_size_multiple_packages(utils):
@@ -189,7 +189,7 @@ def test_download_vs_cache_size_multiple_packages(utils):
     down_bytes = utils.download_size_to_bytes(ret['stdout'])
     cached_rpm_bytes = sum(utils.get_cached_package_sizes(cache_dir).values())
 
-    assert(utils.floats_approx_equal(down_bytes, cached_rpm_bytes))
+    assert utils.floats_approx_equal(down_bytes, cached_rpm_bytes)
 
 
 @pytest.mark.skipif(try_mount_small_cache() != 0, reason="Failed to mount small cache directory.")
@@ -209,4 +209,4 @@ def test_cache_directory_out_of_disk_space(utils):
     switch_cache_path(utils, utils.tdnf_config.get('main', 'cachedir'))
     clean_cache(utils)
     clean_small_cache(utils)
-    assert(ret['retval'] == 1036)
+    assert ret['retval'] == 1036

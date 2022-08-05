@@ -23,7 +23,7 @@ def teardown_test(utils):
 
 def test_update_invalid_arg(utils):
     ret = utils.run(['tdnf', 'update', '-y', 'invalid_package'])
-    assert(ret['retval'] == 1011)
+    assert ret['retval'] == 1011
 
 
 def test_update_single_version_package(utils):
@@ -31,7 +31,7 @@ def test_update_single_version_package(utils):
     if not utils.check_package(spkg):
         utils.install_package(spkg)
     ret = utils.run(['tdnf', 'update', '-y', spkg])
-    assert(ret['stderr'][0] == 'Nothing to do.')
+    assert ret['stderr'][0] == 'Nothing to do.'
 
 
 def test_update_multi_version_package(utils):
@@ -46,8 +46,8 @@ def test_update_multi_version_package(utils):
 
     # perform an upgrade
     ret = utils.run(['tdnf', 'update', '-y', '--nogpgcheck', mpkg])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
 
     # Verify that it cannot be further upgraded
     ret = utils.run(['tdnf', 'update', '-y', mpkg])
-    assert(ret['stderr'][0] == 'Nothing to do.')
+    assert ret['stderr'][0] == 'Nothing to do.'

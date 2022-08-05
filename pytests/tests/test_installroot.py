@@ -74,7 +74,7 @@ def erase_package(utils, pkgname, installroot=INSTALLROOT, pkgversion=None):
                '--installroot', installroot,
                '--releasever=4.0',
                'erase', '-y', pkg])
-    assert(not check_package(utils, pkgname))
+    assert not check_package(utils, pkgname)
 
 
 def find_cache_dir(reponame):
@@ -94,8 +94,8 @@ def test_install(utils):
                      '-y', '--nogpgcheck',
                      '--installroot', INSTALLROOT,
                      '--releasever=4.0', pkgname], noconfig=True)
-    assert(ret['retval'] == 0)
-    assert(check_package(utils, pkgname))
+    assert ret['retval'] == 0
+    assert check_package(utils, pkgname)
 
     shutil.rmtree(INSTALLROOT)
 
@@ -106,8 +106,8 @@ def test_makecache(utils):
                      '-y', '--nogpgcheck',
                      '--installroot', INSTALLROOT,
                      '--releasever=4.0'], noconfig=True)
-    assert(ret['retval'] == 0)
-    assert(find_cache_dir('photon-test') is not None)
+    assert ret['retval'] == 0
+    assert find_cache_dir('photon-test') is not None
 
     shutil.rmtree(INSTALLROOT)
 
@@ -124,6 +124,6 @@ def test_setopt_reposdir_with_installroot(utils):
                      '--releasever=4.0',
                      '--setopt=reposdir={}'.format(REPODIR),
                      'repolist'])
-    assert(REPONAME in "\n".join(ret['stdout']))
+    assert REPONAME in "\n".join(ret['stdout'])
 
     shutil.rmtree(INSTALLROOT)

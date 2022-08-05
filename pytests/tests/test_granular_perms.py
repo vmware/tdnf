@@ -29,15 +29,15 @@ def run_bash_cmd(cmd, rc, bash_cmd=False):
     print('stdout:', out, '\nstderr:', err)
 
     if bash_cmd:
-        assert(rc == (not not proc.returncode))
+        assert rc == (not not proc.returncode)
         return
 
     if not rc:
-        assert('You have to be root' not in err)
+        assert 'You have to be root' not in err
     else:
-        assert('You have to be root' in err)
+        assert 'You have to be root' in err
 
-    assert(rc == (not not proc.returncode))
+    assert rc == (not not proc.returncode)
     return [out, err]
 
 

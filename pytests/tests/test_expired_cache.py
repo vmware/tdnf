@@ -50,7 +50,7 @@ def test_cached_expired(utils):
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'makecache'])
     time.sleep(expire + 2)
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'list'])
-    assert("Refreshing metadata" in "\n".join(ret['stdout']))
+    assert "Refreshing metadata" in "\n".join(ret['stdout'])
 
 
 def test_cached_not_expired(utils):
@@ -61,7 +61,7 @@ def test_cached_not_expired(utils):
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'makecache'])
     time.sleep(5)
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'list'])
-    assert("Refreshing metadata" not in "\n".join(ret['stdout']))
+    assert "Refreshing metadata" not in "\n".join(ret['stdout'])
 
 
 def test_cached_never_expired(utils):
@@ -72,7 +72,7 @@ def test_cached_never_expired(utils):
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'makecache'])
     time.sleep(5)
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'list'])
-    assert("Refreshing metadata" not in "\n".join(ret['stdout']))
+    assert "Refreshing metadata" not in "\n".join(ret['stdout'])
 
 
 def test_cached_expired_cacheonly(utils):
@@ -83,7 +83,7 @@ def test_cached_expired_cacheonly(utils):
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'makecache'])
     time.sleep(expire + 2)
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), '-C', 'list'])
-    assert("Refreshing metadata" not in "\n".join(ret['stdout']))
+    assert "Refreshing metadata" not in "\n".join(ret['stdout'])
 
 
 # test for issue #302 - refresh marker was reset for any command
@@ -97,4 +97,4 @@ def test_cached_expired_no_reset(utils):
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'list'])
     time.sleep(expire / 2 + 2)
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'list'])
-    assert("Refreshing metadata" in "\n".join(ret['stdout']))
+    assert "Refreshing metadata" in "\n".join(ret['stdout'])
