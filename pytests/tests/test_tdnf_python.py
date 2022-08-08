@@ -42,8 +42,8 @@ def setup_test(utils):
 def teardown_test(utils):
     utils.run(['tdnf', 'erase', '-y', sglpkgname])
     utils.run(['tdnf', 'erase', '-y', mulpkgname])
-    assert(not utils.check_package(sglpkgname))
-    assert(not utils.check_package(mulpkgname))
+    assert not utils.check_package(sglpkgname)
+    assert not utils.check_package(mulpkgname)
 
 
 def tdnf_py_erase(pkgs, quiet=False, refresh=False, cfg=None):
@@ -94,77 +94,77 @@ def test_tdnf_python_install_single(utils):
     pkgs = [sglpkgname]
 
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
+    assert not utils.check_package(sglpkgname)
     tdnf_py_install(pkgs=pkgs)
-    assert(utils.check_package(sglpkgname))
+    assert utils.check_package(sglpkgname)
 
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
+    assert not utils.check_package(sglpkgname)
     tdnf_py_install(pkgs=pkgs, refresh=True)
-    assert(utils.check_package(sglpkgname))
+    assert utils.check_package(sglpkgname)
 
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
+    assert not utils.check_package(sglpkgname)
     tdnf_py_install(pkgs=pkgs, refresh=True, quiet=True)
-    assert(utils.check_package(sglpkgname))
+    assert utils.check_package(sglpkgname)
 
 
 def test_tdnf_python_install_multiple(utils):
     pkgs = [sglpkgname, mulpkgname]
 
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
-    assert(not utils.check_package(mulpkgname))
+    assert not utils.check_package(sglpkgname)
+    assert not utils.check_package(mulpkgname)
     tdnf_py_install(pkgs=pkgs)
-    assert(utils.check_package(sglpkgname))
-    assert(utils.check_package(mulpkgname))
+    assert utils.check_package(sglpkgname)
+    assert utils.check_package(mulpkgname)
 
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
-    assert(not utils.check_package(mulpkgname))
+    assert not utils.check_package(sglpkgname)
+    assert not utils.check_package(mulpkgname)
     tdnf_py_install(pkgs=pkgs, refresh=True)
-    assert(utils.check_package(sglpkgname))
-    assert(utils.check_package(mulpkgname))
+    assert utils.check_package(sglpkgname)
+    assert utils.check_package(mulpkgname)
 
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
-    assert(not utils.check_package(mulpkgname))
+    assert not utils.check_package(sglpkgname)
+    assert not utils.check_package(mulpkgname)
     tdnf_py_install(pkgs=pkgs, refresh=True, quiet=True)
-    assert(utils.check_package(sglpkgname))
-    assert(utils.check_package(mulpkgname))
+    assert utils.check_package(sglpkgname)
+    assert utils.check_package(mulpkgname)
 
 
 def test_tdnf_python_erase_single(utils):
     pkgs = [sglpkgname]
 
     tdnf_py_install(pkgs=pkgs)
-    assert(utils.check_package(sglpkgname))
+    assert utils.check_package(sglpkgname)
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
+    assert not utils.check_package(sglpkgname)
 
 
 def test_tdnf_python_erase_multiple(utils):
     pkgs = [sglpkgname, mulpkgname]
 
     tdnf_py_install(pkgs=pkgs)
-    assert(utils.check_package(sglpkgname))
-    assert(utils.check_package(mulpkgname))
+    assert utils.check_package(sglpkgname)
+    assert utils.check_package(mulpkgname)
     tdnf_py_erase(pkgs=pkgs)
-    assert(not utils.check_package(sglpkgname))
-    assert(not utils.check_package(mulpkgname))
+    assert not utils.check_package(sglpkgname)
+    assert not utils.check_package(mulpkgname)
 
 
 def check_repodata(data, filter=0):
     if filter != 2:
-        assert(data.enabled == 1)
-        assert(data.name.decode('utf-8') == 'basic')
-        assert(data.id.decode('utf-8') == 'photon-test')
-        assert(data.baseurl.decode('utf-8') == 'http://localhost:8080/photon-test')
+        assert data.enabled == 1
+        assert data.name.decode('utf-8') == 'basic'
+        assert data.id.decode('utf-8') == 'photon-test'
+        assert data.baseurl.decode('utf-8') == 'http://localhost:8080/photon-test'
     else:
-        assert(data.enabled == 0)
-        assert(data.name.decode('utf-8') == '@cmdline')
-        assert(data.id.decode('utf-8') == '@cmdline')
-        assert(not hasattr(data, 'baseurl'))
+        assert data.enabled == 0
+        assert data.name.decode('utf-8') == '@cmdline'
+        assert data.id.decode('utf-8') == '@cmdline'
+        assert not hasattr(data, 'baseurl')
 
 
 def test_tdnf_python_repolist(utils):
@@ -224,6 +224,6 @@ def test_tdnf_python_distro_sync(utils):
 
 
 def test_tdnf_python_repofilter(utils):
-    assert(tdnf.REPOLISTFILTER_ALL == 0)
-    assert(tdnf.REPOLISTFILTER_ENABLED == 1)
-    assert(tdnf.REPOLISTFILTER_DISABLED == 2)
+    assert tdnf.REPOLISTFILTER_ALL == 0
+    assert tdnf.REPOLISTFILTER_ENABLED == 1
+    assert tdnf.REPOLISTFILTER_DISABLED == 2

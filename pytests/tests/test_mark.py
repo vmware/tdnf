@@ -30,16 +30,16 @@ def test_mark_install(utils):
     pkgname_req = 'tdnf-test-cleanreq-required'
     utils.install_package(pkgname)
 
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     ret = utils.run(['tdnf', 'mark', 'install', pkgname_req])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test - pkg should still be there:
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
 
 # dependency already installed, hence would not be removed
@@ -50,13 +50,13 @@ def test_mark_remove(utils):
     utils.install_package(pkgname_req)
     utils.install_package(pkgname)
 
-    assert(utils.check_package(pkgname_req))
+    assert utils.check_package(pkgname_req)
 
     ret = utils.run(['tdnf', 'mark', 'remove', pkgname_req])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
 
     utils.run(['tdnf', '-y', 'autoremove', pkgname])
 
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     # actual test - pkg should be removed:
-    assert(not utils.check_package(pkgname_req))
+    assert not utils.check_package(pkgname_req)

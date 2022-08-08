@@ -23,11 +23,11 @@ def test_version(utils):
     expected_version_string = utils.config['project_name'] + ': ' + \
         utils.config['project_version']
     ret = utils.run(['tdnf', '--version'])
-    assert(ret['retval'] == 0)
-    assert(ret['stdout'][0] == expected_version_string)
+    assert ret['retval'] == 0
+    assert ret['stdout'][0] == expected_version_string
 
 
 # memcheck
 def test_version_memcheck(utils):
     ret = utils.run_memcheck(['tdnf', '--version'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0

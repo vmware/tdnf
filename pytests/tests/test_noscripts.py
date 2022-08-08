@@ -24,11 +24,11 @@ def teardown_test(utils):
 def test_install_normal(utils):
     pkgname = 'tdnf-bad-pre'
     ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(ret['retval'] == 1525)
+    assert ret['retval'] == 1525
 
 
 def test_install_noscripts(utils):
     pkgname = 'tdnf-bad-pre'
     ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck',
                      '--setopt=tsflags=noscripts', pkgname])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0

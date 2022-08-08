@@ -49,7 +49,7 @@ def run_tdnf_blocking_cmd(utils, pkgname):
         out = out.decode().strip().split('\n')
         err = err.decode().strip().split('\n')
         print('\n\n\n', out, err)
-        assert('Installing:' in out)
+        assert 'Installing:' in out
     except Exception:
         global t1_failed
         t1_failed = True
@@ -62,8 +62,8 @@ def run_tdnf_search_cmd(utils, pkgname):
     t2_started = True
     ret = utils.run(cmd)  # this gets blocked till install finishes
     try:
-        assert(expected_str in ret['stdout'])
-        assert('tdnf-test-one : basic install test file.' in ret['stdout'])
+        assert expected_str in ret['stdout']
+        assert 'tdnf-test-one : basic install test file.' in ret['stdout']
     except Exception:
         global t2_failed
         t2_failed = True
@@ -77,8 +77,8 @@ def run_tdnf_info_cmd(utils, pkgname):
     ret = utils.run(cmd)  # this gets blocked till install finishes
     print(ret['stdout'])
     try:
-        assert(expected_str in ret['stdout'])
-        assert('Name          : tdnf-test-one' in ret['stdout'])
+        assert expected_str in ret['stdout']
+        assert 'Name          : tdnf-test-one' in ret['stdout']
     except Exception:
         global t3_failed
         t3_failed = True
@@ -110,4 +110,4 @@ def test_lock_basic(utils):
     t2.join()
     t3.join()
 
-    assert(not t1_failed and not t2_failed and not t3_failed)
+    assert not t1_failed and not t2_failed and not t3_failed

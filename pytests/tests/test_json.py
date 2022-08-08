@@ -34,7 +34,7 @@ def test_list(utils):
         if info['Name'] == "glibc":
             glibc_found = True
             break
-    assert(glibc_found)
+    assert glibc_found
 
 
 def test_list_tdnfj(utils):
@@ -47,7 +47,7 @@ def test_list_tdnfj(utils):
         if info['Name'] == "glibc":
             glibc_found = True
             break
-    assert(glibc_found)
+    assert glibc_found
 
 
 def test_info(utils):
@@ -59,7 +59,7 @@ def test_info(utils):
         if info['Name'] == "glibc":
             glibc_found = True
             break
-    assert(glibc_found)
+    assert glibc_found
 
 
 def test_install(utils):
@@ -68,7 +68,7 @@ def test_install(utils):
     ret = utils.run(['tdnf',
                      '-j', '-y', '--nogpgcheck',
                      'install', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
     install_info = json.loads("\n".join(ret['stdout']))
 
     pkg_found = False
@@ -77,7 +77,7 @@ def test_install(utils):
         if p['Name'] == pkgname:
             pkg_found = True
             break
-    assert(pkg_found)
+    assert pkg_found
 
 
 def test_erase(utils):
@@ -86,7 +86,7 @@ def test_erase(utils):
     ret = utils.run(['tdnf',
                      '-j', '-y', '--nogpgcheck',
                      'erase', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
     install_info = json.loads("\n".join(ret['stdout']))
 
     pkg_found = False
@@ -95,13 +95,13 @@ def test_erase(utils):
         if p['Name'] == pkgname:
             pkg_found = True
             break
-    assert(pkg_found)
+    assert pkg_found
 
 
 def test_check_update(utils):
     ret = utils.run(['tdnf', '-j', 'check-update'])
     d = json.loads("\n".join(ret['stdout']))
-    assert(type(d) == list)
+    assert type(d) == list
 
 
 def test_repolist(utils):
@@ -112,42 +112,42 @@ def test_repolist(utils):
     for repo in repolist:
         if repo['Repo'] == 'photon-test':
             repo_found = True
-            assert(repo['Enabled'])
+            assert repo['Enabled']
             break
-    assert(repo_found)
+    assert repo_found
 
 
 def test_repoquery(utils):
     ret = utils.run(['tdnf', '-j', 'repoquery'])
     d = json.loads("\n".join(ret['stdout']))
-    assert(type(d) == list)
+    assert type(d) == list
 
 
 def test_updateinfo(utils):
     ret = utils.run(['tdnf', '-j', 'updateinfo'])
     d = json.loads("\n".join(ret['stdout']))
-    assert(type(d) == dict)
+    assert type(d) == dict
 
 
 def test_updateinfo_info(utils):
     ret = utils.run(['tdnf', '-j', 'updateinfo', '--info'])
     d = json.loads("\n".join(ret['stdout']))
-    assert(type(d) == list)
+    assert type(d) == list
 
 
 def test_history_info(utils):
     ret = utils.run(['tdnf', '-j', 'history', '--info'])
     d = json.loads("\n".join(ret['stdout']))
-    assert(type(d) == list)
+    assert type(d) == list
 
 
 def test_jsondump(utils):
     cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
     ret = utils.run([cmd])
-    assert("FAIL" not in "\n".join(ret['stdout']))
+    assert "FAIL" not in "\n".join(ret['stdout'])
 
 
 def test_jsondump_memcheck(utils):
     cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
     ret = utils.run_memcheck([cmd])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0

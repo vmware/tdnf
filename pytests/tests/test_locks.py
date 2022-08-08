@@ -52,11 +52,11 @@ def test_locks_conf_erase(utils):
     utils.install_package(pkgname)
 
     # sanity check
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
     # test - uninstalling should fail
     utils.run(['tdnf', '-y', '--nogpgcheck', 'remove', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_locks_conf_update(utils):
@@ -65,8 +65,8 @@ def test_locks_conf_update(utils):
     set_locks_file(utils, pkgname)
 
     utils.install_package(pkgname, pkgversion=version_low)
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
     # test - update should fail
     utils.run(['tdnf', '-y', '--nogpgcheck', 'update', pkgname])
-    assert(utils.check_package(pkgname, version=version_low))
+    assert utils.check_package(pkgname, version=version_low)

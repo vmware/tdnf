@@ -64,9 +64,9 @@ def test_tdnfrepogpgcheck_plugin_load(utils):
     enable_plugins(utils)
     ret = utils.run(['tdnf', 'repolist'])
     # we should load the plugin
-    assert(ret['stdout'][0].startswith('Loaded plugin: tdnfrepogpgcheck'))  # nosec
+    assert ret['stdout'][0].startswith('Loaded plugin: tdnfrepogpgcheck')  # nosec
     # we should also pass the repolist command
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # make sure libtdnfrepogpgcheck.so is used to validate repo signature
@@ -74,5 +74,5 @@ def test_tdnfrepogpgcheck_plugin_validatesignature(utils):
     set_repo_flag_repo_gpgcheck(utils, "1")
     ret = utils.run(['tdnf', 'repolist', '--refresh'])
     # we should load the plugin
-    assert(ret['stdout'][0].startswith('Loaded plugin: tdnfrepogpgcheck'))  # nosec
-    assert(ret['retval'] == 0)
+    assert ret['stdout'][0].startswith('Loaded plugin: tdnfrepogpgcheck')  # nosec
+    assert ret['retval'] == 0

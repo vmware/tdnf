@@ -13,7 +13,7 @@ def run_cmd(utils, opt, retval):
     cmd = ['tdnf', 'check']
     cmd.extend(opt)
     ret = utils.run(cmd)
-    assert(ret['retval'] == retval)
+    assert ret['retval'] == retval
 
 
 @pytest.fixture(scope='module', autouse=True)
