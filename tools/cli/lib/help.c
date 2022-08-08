@@ -40,6 +40,7 @@ static const char *help_msg =
  "           [--skipdigest]\n"
  "           [--skipsignature]\n"
  "           [--skipobsoletes]\n"
+ "           [--testonly]\n"
  "           [--version]\n\n"
  "repoquery select options:\n"
  "           [--available]\n"
