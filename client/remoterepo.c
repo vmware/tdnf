@@ -796,7 +796,7 @@ TDNFDownloadPackage(
                                    pszPackageFile,
                                    pszPkgName);
     }
-    else
+    else if(dwError == 0)
     {
         pr_info("%s package already downloaded", pszPkgName);
     }
