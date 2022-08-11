@@ -678,9 +678,9 @@ SolvCreateMetaDataCache(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    if (rename (pszTempSolvFile, pszCacheFilePath))
+    if (rename(pszTempSolvFile, pszCacheFilePath) == -1)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        dwError = ERROR_TDNF_SYSTEM_BASE + errno;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
     unlink(pszTempSolvFile);
