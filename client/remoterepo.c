@@ -668,10 +668,16 @@ TDNFDownloadFile(
     }
     else
     {
-        dwError = rename(pszFileTmp, pszFile);
-        BAIL_ON_TDNF_ERROR(dwError);
-        dwError = chmod(pszFile, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (rename(pszFileTmp, pszFile) == -1)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        if (chmod(pszFile, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) == -1)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
     }
 
 cleanup:
@@ -796,7 +802,7 @@ TDNFDownloadPackage(
                                    pszPackageFile,
                                    pszPkgName);
     }
-    else
+    else if(dwError == 0)
     {
         pr_info("%s package already downloaded", pszPkgName);
     }

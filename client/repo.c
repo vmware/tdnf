@@ -1345,9 +1345,11 @@ TDNFReplaceFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
     /* coverity[toctou] */
-    dwError = rename (pszSrcFile, pszDstFile);
-    BAIL_ON_TDNF_ERROR(dwError);
-
+    if (rename(pszSrcFile, pszDstFile) == -1)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
 cleanup:
     return dwError;
 error:

@@ -162,6 +162,8 @@ int main(int argc, char **argv)
         {
             TDNFCliShowUsage();
         }
+        dwError = ERROR_TDNF_CLI_NO_SUCH_CMD;
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
 cleanup:

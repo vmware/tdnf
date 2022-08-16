@@ -417,12 +417,12 @@ TDNFCliRepoListCommand(
     {
         if(pRepoList)
         {
-            pr_crit("%-20s%-40s%-10s\n", "repo id", "repo name", "status");
+            pr_crit("%-20s%-41s%-9s\n", "repo id", "repo name", "status");
         }
         for(pRepo = pRepoList; pRepo; pRepo = pRepo->pNext)
         {
             pr_crit(
-                "%-20s%-40s%-10s\n",
+                "%-19s %-40s %-9s\n",
                 pRepo->pszId,
                 pRepo->pszName,
                 pRepo->nEnabled ? "enabled" : "disabled");
