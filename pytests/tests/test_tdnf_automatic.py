@@ -31,7 +31,11 @@ def setup_test(utils):
     automatic_cmd = utils.config['automatic_script']
     repo_file = get_repo_file_path()
     os.system('cp ' + repo_file + ' ' + repo_file + '.bak')
-    os.environ['PATH'] += os.pathsep + utils.config['build_dir'] + '/bin'
+
+    # make sure to use the built tdnf binary, not the installed one by
+    # prefixing the build/bin directory
+    os.environ['PATH'] = utils.config['build_dir'] + '/bin' + ':' + os.environ['PATH']
+
     cleanup_env(utils)
     yield
     teardown_test(utils)
