@@ -246,6 +246,10 @@ TDNFCliParseArgs(
                       pszDefaultInstallRoot,
                       &pCmdArgs->pszInstallRoot);
                       BAIL_ON_CLI_ERROR(dwError);
+    } else if (pCmdArgs->pszInstallRoot[0] != '/') {
+        pr_crit("Install root must be an absolute path.\n");
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
     }
 
     dwError = TDNFCopyOptions(&_opt, pCmdArgs);
