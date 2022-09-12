@@ -53,10 +53,10 @@ def check_synced_repo(utils, reponame, synced_dir):
                     os.listdir(local_dir)))
 
     # make sure we aren't confused which directory to check
-    assert(len(local_rpms) > 0)
+    assert len(local_rpms) > 0
 
     for rpm in local_rpms:
-        assert(os.path.isfile(os.path.join(synced_dir, 'RPMS', ARCH, rpm)))
+        assert os.path.isfile(os.path.join(synced_dir, 'RPMS', ARCH, rpm))
 
 
 # reposync with no options - sync to local directory
@@ -69,9 +69,9 @@ def test_reposync(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
+    assert os.path.isdir(synced_dir)
 
     check_synced_repo(utils, reponame, synced_dir)
 
@@ -83,13 +83,13 @@ def test_reposync_download_path(utils):
     reponame = TESTREPO
     downloaddir = DOWNLOADDIR
     utils.makedirs(downloaddir)
-    assert(os.path.isdir(downloaddir))
+    assert os.path.isdir(downloaddir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-path={}'.format(downloaddir),
                      'reposync'])
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(os.path.join(downloaddir, reponame)))
+    assert ret['retval'] == 0
+    assert os.path.isdir(os.path.join(downloaddir, reponame))
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
 
@@ -100,13 +100,13 @@ def test_reposync_download_path_slash(utils):
     reponame = TESTREPO
     downloaddir = DOWNLOADDIR + '/'
     utils.makedirs(downloaddir)
-    assert(os.path.isdir(downloaddir))
+    assert os.path.isdir(downloaddir)
 
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-path={}'.format(downloaddir),
                      'reposync'])
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(os.path.join(downloaddir, reponame)))
+    assert ret['retval'] == 0
+    assert os.path.isdir(os.path.join(downloaddir, reponame))
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
 
@@ -119,8 +119,8 @@ def test_reposync_download_path_root(utils):
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--download-path={}'.format(downloaddir),
                      'reposync'])
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(os.path.join(downloaddir, reponame)))
+    assert ret['retval'] == 0
+    assert os.path.isdir(os.path.join(downloaddir, reponame))
 
     check_synced_repo(utils, reponame, os.path.join(downloaddir, reponame))
 
@@ -133,8 +133,8 @@ def test_reposync_workdir_root(utils):
     ret = utils.run(['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(os.path.join(workdir, reponame)))
+    assert ret['retval'] == 0
+    assert os.path.isdir(os.path.join(workdir, reponame))
 
     check_synced_repo(utils, reponame, os.path.join(workdir, reponame))
 
@@ -148,8 +148,8 @@ def test_reposync_download_path_norepopath(utils):
                      '--download-path={}'.format(downloaddir),
                      '--norepopath',
                      'reposync'])
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(downloaddir))
+    assert ret['retval'] == 0
+    assert os.path.isdir(downloaddir)
 
     check_synced_repo(utils, reponame, downloaddir)
 
@@ -164,7 +164,7 @@ def test_reposync_download_path_norepopath_delete(utils):
                      '--norepopath',
                      '--delete',
                      'reposync'])
-    assert(ret['retval'] == 1622)
+    assert ret['retval'] == 1622
 
 
 # reposync excluding the repo name and multiple repos is incompatible
@@ -174,7 +174,7 @@ def xxxtest_reposync_download_path_norepopath_multiple_repos(utils):
                      '--download-path={}'.format(downloaddir),
                      '--norepopath',
                      'reposync'])
-    assert(ret['retval'] == 1622)
+    assert ret['retval'] == 1622
 
 
 # reposync with metadata
@@ -187,11 +187,11 @@ def test_reposync_metadata(utils):
                      '--download-metadata',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
-    assert(os.path.isdir(os.path.join(synced_dir, 'repodata')))
-    assert(os.path.isfile(os.path.join(synced_dir, 'repodata', 'repomd.xml')))
+    assert os.path.isdir(synced_dir)
+    assert os.path.isdir(os.path.join(synced_dir, 'repodata'))
+    assert os.path.isfile(os.path.join(synced_dir, 'repodata', 'repomd.xml'))
 
     check_synced_repo(utils, reponame, synced_dir)
 
@@ -211,10 +211,10 @@ def test_reposync_metadata_path(utils):
                      '--metadata-path={}'.format(mdatadir),
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
-    assert(os.path.isfile(os.path.join(mdatadir, reponame, 'repodata', 'repomd.xml')))
+    assert os.path.isdir(synced_dir)
+    assert os.path.isfile(os.path.join(mdatadir, reponame, 'repodata', 'repomd.xml'))
 
     check_synced_repo(utils, reponame, synced_dir)
 
@@ -234,20 +234,20 @@ def test_reposync_delete(utils):
     with open(faked_rpm, 'w') as f:
         f.write('fake package')
 
-    assert(os.path.isfile(faked_rpm))
+    assert os.path.isfile(faked_rpm)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      '--delete',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(synced_dir))
+    assert ret['retval'] == 0
+    assert os.path.isdir(synced_dir)
 
     check_synced_repo(utils, reponame, synced_dir)
 
     # file should be gone
-    assert(not os.path.isfile(faked_rpm))
+    assert not os.path.isfile(faked_rpm)
 
     shutil.rmtree(synced_dir)
 
@@ -265,19 +265,19 @@ def test_reposync_no_delete(utils):
     with open(faked_rpm, 'w') as f:
         f.write('fake package')
 
-    assert(os.path.isfile(faked_rpm))
+    assert os.path.isfile(faked_rpm)
 
     ret = utils.run(['tdnf',
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(synced_dir))
+    assert ret['retval'] == 0
+    assert os.path.isdir(synced_dir)
 
     check_synced_repo(utils, reponame, synced_dir)
 
     # file should still be there
-    assert(os.path.isfile(faked_rpm))
+    assert os.path.isfile(faked_rpm)
 
     shutil.rmtree(synced_dir)
 
@@ -293,9 +293,9 @@ def test_reposync_gpgcheck(utils):
                      '--gpgcheck',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
+    assert os.path.isdir(synced_dir)
 
     check_synced_repo(utils, reponame, synced_dir)
 
@@ -313,9 +313,9 @@ def test_reposync_urls(utils):
                      '--urls',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(not os.path.isdir(synced_dir))
+    assert not os.path.isdir(synced_dir)
 
 
 # reposync a repo and install from it
@@ -328,11 +328,11 @@ def test_reposync_create_repo(utils):
                      '--download-metadata',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
-    assert(os.path.isdir(os.path.join(synced_dir, 'repodata')))
-    assert(os.path.isfile(os.path.join(synced_dir, 'repodata', 'repomd.xml')))
+    assert os.path.isdir(synced_dir)
+    assert os.path.isdir(os.path.join(synced_dir, 'repodata'))
+    assert os.path.isfile(os.path.join(synced_dir, 'repodata', 'repomd.xml'))
 
     check_synced_repo(utils, reponame, synced_dir)
 
@@ -345,7 +345,7 @@ def test_reposync_create_repo(utils):
                      '--disablerepo=*', '--enablerepo=synced-repo',
                      'makecache'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
 
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
@@ -354,7 +354,7 @@ def test_reposync_create_repo(utils):
                      '--disablerepo=*', '--enablerepo=synced-repo',
                      'install', pkgname],
                     cwd=workdir)
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 # reposync with arch option should not sync other archs
@@ -372,12 +372,12 @@ def test_reposync_arch(utils):
                      '--arch', ARCH,
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(synced_dir))
+    assert ret['retval'] == 0
+    assert os.path.isdir(synced_dir)
 
     check_synced_repo(utils, reponame, synced_dir)
 
-    assert(not os.path.isdir(os.path.join(synced_dir, 'RPMS', 'noarch')))
+    assert not os.path.isdir(os.path.join(synced_dir, 'RPMS', 'noarch'))
     shutil.rmtree(synced_dir)
 
 
@@ -399,12 +399,12 @@ def test_reposync_arch_others(utils):
                      '--arch', ARCH,
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
-    assert(os.path.isdir(synced_dir))
+    assert ret['retval'] == 0
+    assert os.path.isdir(synced_dir)
 
     check_synced_repo(utils, reponame, synced_dir)
 
-    assert(not os.path.isdir(os.path.join(synced_dir, 'RPMS', 'noarch')))
+    assert not os.path.isdir(os.path.join(synced_dir, 'RPMS', 'noarch'))
     shutil.rmtree(synced_dir)
 
 
@@ -419,16 +419,16 @@ def test_reposync_newest(utils):
                      '--newest-only',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
+    assert os.path.isdir(synced_dir)
 
     mulversion_pkgname_found = False
     for f in os.listdir(os.path.join(synced_dir, 'RPMS', ARCH)):
         if f.startswith(utils.config['mulversion_pkgname']):
-            assert(not utils.config['mulversion_lower'] in f)
+            assert not utils.config['mulversion_lower'] in f
             mulversion_pkgname_found = True
 
-    assert(mulversion_pkgname_found)
+    assert mulversion_pkgname_found
 
     shutil.rmtree(synced_dir)

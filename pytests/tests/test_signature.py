@@ -52,8 +52,8 @@ def test_install_skipsignature(utils):
     set_repo_key(utils, DEFAULT_KEY)
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', '--skipsignature', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
 
 
 # import key prior to install, expect success
@@ -64,8 +64,8 @@ def test_install_with_key(utils):
     utils.run(['rpm', '--import', keypath])
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
 
 
 # import local, correct key during install from repo config, expect success
@@ -75,8 +75,8 @@ def test_install_local_key(utils):
     set_repo_key(utils, 'file://{}'.format(keypath))
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
 
 
 # import remote, correct key during install from repo config, expect success
@@ -85,8 +85,8 @@ def test_install_remote_key(utils):
     set_repo_key(utils, 'http://localhost:8080/photon-test/keys/pubkey.asc')
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
 
 
 # -v (verbose) prints progress data
@@ -95,8 +95,8 @@ def test_install_remote_key_verbose(utils):
     set_repo_key(utils, 'http://localhost:8080/photon-test/keys/pubkey.asc')
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-v', '-y', pkgname])
-    assert(ret['retval'] == 0)
-    assert(utils.check_package(pkgname))
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
 
 
 # import remote key with url containing a directory traversal, expect fail
@@ -105,7 +105,7 @@ def test_install_remote_key_no_traversal(utils):
     set_repo_key(utils, 'http://localhost:8080/../photon-test/keys/pubkey.asc')
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] != 0)
+    assert ret['retval'] != 0
 
 
 # import remote key with url containing a directory traversal, expect fail
@@ -114,7 +114,7 @@ def test_install_remote_key_no_traversal2(utils):
     set_repo_key(utils, 'http://localhost:8080/photon-test/keys/../../../pubkey.asc')
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] != 0)
+    assert ret['retval'] != 0
 
 
 # test with gpgcheck enabled but no key entry, expect fail
@@ -123,8 +123,8 @@ def test_install_nokey(utils):
     set_repo_key(utils, None)
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] == 1523)
-    assert(not utils.check_package(pkgname))
+    assert ret['retval'] == 1523
+    assert not utils.check_package(pkgname)
 
 
 # 'wrong' key in repo config, expect fail
@@ -133,5 +133,5 @@ def test_install_nokey1(utils):
     set_repo_key(utils, DEFAULT_KEY)
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
-    assert(ret['retval'] == 1514)
-    assert(not utils.check_package(pkgname))
+    assert ret['retval'] == 1514
+    assert not utils.check_package(pkgname)

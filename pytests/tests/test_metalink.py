@@ -136,12 +136,12 @@ def test_with_metalink_and_url(utils):
     set_sha512(utils, False)
     set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 # comment out baseurl
@@ -153,12 +153,12 @@ def test_metalink_without_baseurl(utils):
     set_sha1(utils, False)
     set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 # comment out metalink
@@ -171,12 +171,12 @@ def test_url_without_metalink(utils):
     set_sha1(utils, False)
     set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 # comment out both metalink and baseurl
@@ -189,7 +189,7 @@ def test_without_url_and_metalink(utils):
     set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
     print(ret['stderr'][0])
-    assert(ret['stderr'][0].startswith('Error: Cannot find a valid base URL for repo'))
+    assert ret['stderr'][0].startswith('Error: Cannot find a valid base URL for repo')
 
 
 def test_md5_digest(utils):
@@ -200,12 +200,12 @@ def test_md5_digest(utils):
     set_sha256(utils, False)
     set_sha512(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_sha1_digest(utils):
@@ -216,11 +216,11 @@ def test_sha1_digest(utils):
     set_sha256(utils, False)
     set_sha512(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_sha256_digest(utils):
@@ -231,12 +231,12 @@ def test_sha256_digest(utils):
     set_sha256(utils, True)
     set_sha512(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_sha512_digest(utils):
@@ -247,12 +247,12 @@ def test_sha512_digest(utils):
     set_sha256(utils, False)
     set_sha512(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_invalid_md5_digest(utils):
@@ -264,10 +264,10 @@ def test_invalid_md5_digest(utils):
     set_sha512(utils, False)
     set_invalid_md5(utils)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['stderr'][0].startswith('Error: Validating metalink'))
+    assert ret['stderr'][0].startswith('Error: Validating metalink')
     cache_dir = utils.tdnf_config.get('main', 'cachedir')
     tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
-    assert(not os.path.isdir(tmp_dir))
+    assert not os.path.isdir(tmp_dir)
 
 
 def test_invalid_sha1_digest(utils):
@@ -279,10 +279,10 @@ def test_invalid_sha1_digest(utils):
     set_sha512(utils, False)
     set_invalid_sha1(utils)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['stderr'][0].startswith('Error: Validating metalink'))
+    assert ret['stderr'][0].startswith('Error: Validating metalink')
     cache_dir = utils.tdnf_config.get('main', 'cachedir')
     tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
-    assert(not os.path.isdir(tmp_dir))
+    assert not os.path.isdir(tmp_dir)
 
 
 def test_invalid_sha256_digest(utils):
@@ -294,10 +294,10 @@ def test_invalid_sha256_digest(utils):
     set_sha512(utils, False)
     set_invalid_sha256(utils)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['stderr'][0].startswith('Error: Validating metalink'))
+    assert ret['stderr'][0].startswith('Error: Validating metalink')
     cache_dir = utils.tdnf_config.get('main', 'cachedir')
     tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
-    assert(not os.path.isdir(tmp_dir))
+    assert not os.path.isdir(tmp_dir)
 
 
 def test_invalid_sha256_valid_sha1(utils):
@@ -310,12 +310,12 @@ def test_invalid_sha256_valid_sha1(utils):
     set_invalid_sha256_length(utils)
     set_sha1(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_invalid_sha512_valid_sha1(utils):
@@ -328,12 +328,12 @@ def test_invalid_sha512_valid_sha1(utils):
     set_invalid_sha512_length(utils)
     set_sha1(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_invalid_sha1_valid_md5(utils):
@@ -346,9 +346,9 @@ def test_invalid_sha1_valid_md5(utils):
     set_invalid_sha1_length(utils)
     set_md5(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)

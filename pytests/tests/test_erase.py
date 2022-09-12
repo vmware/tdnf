@@ -21,12 +21,12 @@ def teardown_test(utils):
 
 def test_erase_no_arg(utils):
     ret = utils.run(['tdnf', 'erase'])
-    assert(ret['retval'] == 1001)
+    assert ret['retval'] == 1001
 
 
 def test_erase_invalid_package(utils):
     ret = utils.run(['tdnf', 'erase', 'invalid_package'])
-    assert(ret['retval'] == 1011)
+    assert ret['retval'] == 1011
 
 
 def test_erase_package_with_version_suffix(utils):
@@ -35,7 +35,7 @@ def test_erase_package_with_version_suffix(utils):
     utils.install_package(pkgname, pkgversion)
 
     utils.run(['tdnf', 'erase', '-y', pkgname + '-' + pkgversion])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
 
 def test_erase_package_without_version_suffix(utils):
@@ -43,7 +43,7 @@ def test_erase_package_without_version_suffix(utils):
     utils.install_package(pkgname)
 
     utils.run(['tdnf', 'erase', '-y', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
 
 def test_erase_memcheck(utils):
@@ -51,4 +51,4 @@ def test_erase_memcheck(utils):
     utils.install_package(pkgname)
 
     utils.run_memcheck(['tdnf', 'erase', '-y', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)

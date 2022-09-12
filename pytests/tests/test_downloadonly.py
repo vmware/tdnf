@@ -36,9 +36,9 @@ def check_package_in_cache(utils, pkgname):
 def test_install_download_only(utils):
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', '--downloadonly', pkgname])
-    assert(ret['retval'] == 0)
-    assert(not utils.check_package(pkgname))
-    assert(check_package_in_cache(utils, pkgname))
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+    assert check_package_in_cache(utils, pkgname)
 
 
 # download only to cache dir - must succeed but not install, file must
@@ -48,9 +48,9 @@ def test_install_download_only_to_directory(utils):
     os.makedirs(DOWNLOADDIR, exist_ok=True)
     ret = utils.run(['tdnf', 'install', '-y', '--downloadonly', '--downloaddir', DOWNLOADDIR, pkgname])
     print(ret)
-    assert(ret['retval'] == 0)
-    assert(not utils.check_package(pkgname))
-    assert(len(glob.glob('{}/{}*.rpm'.format(DOWNLOADDIR, pkgname))) > 0)
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+    assert len(glob.glob('{}/{}*.rpm'.format(DOWNLOADDIR, pkgname))) > 0
 
 
 # --downloaddir option without --downloadonly should fail
