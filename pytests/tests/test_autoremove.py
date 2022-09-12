@@ -196,7 +196,7 @@ def test_autoremove_conf_false_autoremove(utils):
 
 # check issues with the 'autoinstalled' file not existing
 # or the directory (PR #316)
-def test_no_autoinstalled_dir(utils):
+def xxx_test_no_autoinstalled_dir(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.install_package(pkgname)
     os.rename('/var/lib/tdnf', '/var/lib/tdnf.away')
