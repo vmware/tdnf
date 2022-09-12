@@ -27,6 +27,7 @@ static struct option pstOptions[] =
 {
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
     {"6",             no_argument, 0, '6'},                //-4 resolve to IPv4 addresses only
+    {"alldeps",       no_argument, &_opt.nAllDeps, 1},
     {"allowerasing",  no_argument, &_opt.nAllowErasing, 1},//--allowerasing
     {"assumeno",      no_argument, &_opt.nAssumeNo, 1},    //--assumeno
     {"assumeyes",     no_argument, 0, 'y'},                //--assumeyes
@@ -110,6 +111,7 @@ static struct option pstOptions[] =
     {"suggests",      no_argument, 0, 0},
     {"supplements",   no_argument, 0, 0},
     // update-info mode options (also 'list' from above)
+    {"all",           no_argument, 0, 0},
     {"info",          no_argument, 0, 0},
     {"summary",       no_argument, 0, 0},
     // scope options for list and update-info
@@ -275,6 +277,11 @@ TDNFCliParseArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    if (pCmdArgs->nAllDeps && !pCmdArgs->nDownloadOnly) {
+        dwError = ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
@@ -306,6 +313,7 @@ TDNFCopyOptions(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    pArgs->nAllDeps       = pOptionArgs->nAllDeps;
     pArgs->nAllowErasing  = pOptionArgs->nAllowErasing;
     pArgs->nAssumeNo      = pOptionArgs->nAssumeNo;
     pArgs->nAssumeYes     = pOptionArgs->nAssumeYes;
