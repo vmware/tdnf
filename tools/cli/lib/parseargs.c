@@ -45,6 +45,7 @@ static TDNF_CMD_ARGS _opt = {0};
 //options - incomplete
 static struct option pstOptions[] =
 {
+    {"alldeps",       no_argument, &_opt.nAllDeps, 1},
     {"allowerasing",  no_argument, &_opt.nAllowErasing, 1},//--allowerasing
     {"assumeno",      no_argument, &_opt.nAssumeNo, 1},    //--assumeno
     {"assumeyes",     no_argument, 0, 'y'},                //--assumeyes
@@ -233,6 +234,11 @@ TDNFCliParseArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    if (pCmdArgs->nAllDeps && !pCmdArgs->nDownloadOnly) {
+        dwError = ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
@@ -264,6 +270,7 @@ TDNFCopyOptions(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    pArgs->nAllDeps       = pOptionArgs->nAllDeps;
     pArgs->nAllowErasing  = pOptionArgs->nAllowErasing;
     pArgs->nAssumeNo      = pOptionArgs->nAssumeNo;
     pArgs->nAssumeYes     = pOptionArgs->nAssumeYes;
