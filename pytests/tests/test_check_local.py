@@ -27,18 +27,18 @@ def teardown_test(utils):
 
 def test_check_local_no_args(utils):
     ret = utils.run(['tdnf', 'check-local'])
-    assert(ret['retval'] == 906)
+    assert ret['retval'] == 906
 
 
 def test_check_local_with_invalid_dir(utils):
     ret = utils.run(['tdnf', 'check-local', '/home/invalid_dir'])
-    assert(ret['retval'] == 1602)
+    assert ret['retval'] == 1602
 
 
 def test_check_local_empty_directory(utils):
     temp_dir = tempfile.TemporaryDirectory()
     ret = utils.run(['tdnf', 'check-local', temp_dir.name])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
 
 
 def test_check_local_with_local_rpm(utils):
@@ -48,4 +48,4 @@ def test_check_local_with_local_rpm(utils):
         shutil.copyfile(src, dest)
 
         ret = utils.run(['tdnf', 'check-local', tmpdir])
-        assert(ret['retval'] == 0)
+        assert ret['retval'] == 0

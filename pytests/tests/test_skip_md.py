@@ -69,7 +69,7 @@ def check_skip_md_part(utils, mdpart, skipped):
     utils.run(['tdnf', '--repoid={}'.format(REPOID), 'makecache'])
 
     md_dir = os.path.join(get_cache_dir(utils), REPOID, 'repodata')
-    assert((len(glob.glob('{}/*{}*'.format(md_dir, mdpart))) == 0) == skipped)
+    assert (len(glob.glob('{}/*{}*'.format(md_dir, mdpart))) == 0) == skipped
 
 
 def test_skip_md_parts(utils):
@@ -88,12 +88,12 @@ def test_install_conflict_file(utils):
 
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'install', '-y', '--nogpgcheck', pkg0])
     print(ret)
-    assert(utils.check_package(pkg0))
+    assert utils.check_package(pkg0)
 
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'install', '-y', '--nogpgcheck', pkg1])
     print(ret)
-    assert(ret['retval'] == 1525)
-    assert(not utils.check_package(pkg1))
+    assert ret['retval'] == 1525
+    assert not utils.check_package(pkg1)
 
 
 def test_install_conflict_file_atonce(utils):
@@ -102,6 +102,6 @@ def test_install_conflict_file_atonce(utils):
 
     ret = utils.run(['tdnf', '--repoid={}'.format(REPOID), 'install', '-y', '--nogpgcheck', pkg0, pkg1])
     print(ret)
-    assert(ret['retval'] == 1525)
-    assert(not utils.check_package(pkg0))
-    assert(not utils.check_package(pkg1))
+    assert ret['retval'] == 1525
+    assert not utils.check_package(pkg0)
+    assert not utils.check_package(pkg1)

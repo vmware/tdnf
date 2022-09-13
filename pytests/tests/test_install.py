@@ -22,12 +22,12 @@ def teardown_test(utils):
 
 def test_install_no_arg(utils):
     ret = utils.run(['tdnf', 'install'])
-    assert(ret['retval'] == 1001)
+    assert ret['retval'] == 1001
 
 
 def test_install_invalid_arg(utils):
     ret = utils.run(['tdnf', 'install', 'invalid_package'])
-    assert(ret['retval'] == 1011)
+    assert ret['retval'] == 1011
 
 
 def test_install_package_with_version_suffix(utils):
@@ -36,7 +36,7 @@ def test_install_package_with_version_suffix(utils):
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_install_package_without_version_suffix(utils):
@@ -44,7 +44,7 @@ def test_install_package_without_version_suffix(utils):
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 # -v (verbose) prints progress data
@@ -52,7 +52,7 @@ def test_install_package_verbose(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
     utils.run(['tdnf', 'install', '-y', '-v', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)
 
 
 def test_dummy_requires(utils):
@@ -66,4 +66,4 @@ def test_install_memcheck(utils):
     utils.erase_package(pkgname)
 
     utils.run_memcheck(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)

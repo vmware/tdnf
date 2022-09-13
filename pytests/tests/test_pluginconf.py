@@ -50,9 +50,9 @@ def test_plugin_conf(utils):
     enable_plugins(utils)
     ret = utils.run(['tdnf', 'repolist'])
     # should attempt a plugin load
-    assert(ret['stderr'][0].startswith('Error loading plugin'))  # nosec
+    assert ret['stderr'][0].startswith('Error loading plugin')  # nosec
     # plugin load failure should not affect command result
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # even when config file has plugins=1, --noplugins
@@ -61,9 +61,9 @@ def test_plugin_conf_override_no_plugins(utils):
     set_plugin_flag_in_conf(utils, '1')
     ret = utils.run(['tdnf', 'repolist', '--noplugins'])
     # expect no standard error lines - this corresponds to plugin load
-    assert(len(ret['stderr']) == 0)  # nosec
+    assert len(ret['stderr']) == 0  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # if plugins=0 in config, no plugins should be loaded.
@@ -71,9 +71,9 @@ def test_plugin_conf_disable_plugins_in_conf(utils):
     set_plugin_flag_in_conf(utils, '0')
     ret = utils.run(['tdnf', 'repolist'])
     # expect no standard error lines
-    assert(len(ret['stderr']) == 0)  # nosec
+    assert len(ret['stderr']) == 0  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # if all plugins are deactivated using wildcard,
@@ -82,9 +82,9 @@ def test_plugin_command_line_disable_with_glob(utils):
     set_plugin_flag_in_conf(utils, '1')
     ret = utils.run(['tdnf', 'repolist', '--disableplugin=*'])
     # expect no standard error lines - this corresponds to plugin load
-    assert(len(ret['stderr']) == 0)  # nosec
+    assert len(ret['stderr']) == 0  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # enable all plugins by command line glob
@@ -93,9 +93,9 @@ def test_plugin_command_line_enable_with_glob(utils):
     set_plugin_flag_in_conf(utils, '1')
     ret = utils.run(['tdnf', 'repolist', '--enableplugin=*'])
     # stderr should have an attempted load
-    assert(ret['stderr'][0].startswith('Error loading plugin'))  # nosec
+    assert ret['stderr'][0].startswith('Error loading plugin')  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # enable a specific plugin
@@ -104,9 +104,9 @@ def test_plugin_command_line_enable_single(utils):
     set_plugin_flag_in_conf(utils, '1')
     ret = utils.run(['tdnf', 'repolist', '--disableplugin=*', '--enableplugin=test_plugin'])
     # stderr should have an attempted load
-    assert(ret['stderr'][0].startswith('Error loading plugin'))  # nosec
+    assert ret['stderr'][0].startswith('Error loading plugin')  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # deactivate individual plugin via plugin config
@@ -116,9 +116,9 @@ def test_plugin_disable_via_plugin_config(utils):
     set_plugin_config_enabled_flag(utils, '0')
     ret = utils.run(['tdnf', 'repolist'])
     # stderr should not have an attempted load
-    assert(len(ret['stderr']) == 0)  # nosec
+    assert len(ret['stderr']) == 0  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec
 
 
 # deactivate individual plugin via plugin config
@@ -128,6 +128,6 @@ def test_plugin_enable_disabled_plugin_via_cmdline_override(utils):
     set_plugin_config_enabled_flag(utils, '0')
     ret = utils.run(['tdnf', 'repolist', '--enableplugin=test_plugin'])
     # stderr should have an attempted load
-    assert(ret['stderr'][0].startswith('Error loading plugin'))  # nosec
+    assert ret['stderr'][0].startswith('Error loading plugin')  # nosec
     # command should pass
-    assert(ret['retval'] == 0)  # nosec
+    assert ret['retval'] == 0  # nosec

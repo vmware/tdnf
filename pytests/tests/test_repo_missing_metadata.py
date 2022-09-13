@@ -38,19 +38,19 @@ def test_repo_no_filelists(utils):
                      '--download-metadata',
                      'reposync'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert(os.path.isdir(synced_dir))
-    assert(os.path.isdir(os.path.join(synced_dir, 'repodata')))
-    assert(os.path.isfile(os.path.join(synced_dir, 'repodata', 'repomd.xml')))
+    assert os.path.isdir(synced_dir)
+    assert os.path.isdir(os.path.join(synced_dir, 'repodata'))
+    assert os.path.isfile(os.path.join(synced_dir, 'repodata', 'repomd.xml'))
 
     for file in ['filelists', 'filelists_db']:
         ret = utils.run(['modifyrepo', '--remove', file, os.path.join(synced_dir, 'repodata')])
-        assert(ret['retval'] == 0)
+        assert ret['retval'] == 0
 
     ret = utils.run(['tdnf',
                      '--repofrompath=synced-repo,{}'.format(synced_dir),
                      '--repo=synced-repo',
                      'makecache'],
                     cwd=workdir)
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0

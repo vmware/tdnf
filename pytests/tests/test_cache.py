@@ -54,7 +54,7 @@ def test_install_without_cache(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
 
-    assert(not check_package_in_cache(utils, pkgname))
+    assert not check_package_in_cache(utils, pkgname)
 
 
 def test_install_with_cache(utils):
@@ -67,7 +67,7 @@ def test_install_with_cache(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
 
-    assert(check_package_in_cache(utils, pkgname))
+    assert check_package_in_cache(utils, pkgname)
 
 
 def test_install_with_keepcache_false(utils):
@@ -82,7 +82,7 @@ def test_install_with_keepcache_false(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
 
-    assert(not check_package_in_cache(utils, pkgname))
+    assert not check_package_in_cache(utils, pkgname)
 
 
 def test_disable_repo_make_cache(utils):
@@ -91,7 +91,7 @@ def test_disable_repo_make_cache(utils):
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '--disablerepo=*', 'makecache'])
     after = os.path.getmtime(lastrefresh)
-    assert(before == after)
+    assert before == after
 
 
 def test_enable_repo_make_cache(utils):
@@ -100,7 +100,7 @@ def test_enable_repo_make_cache(utils):
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)
-    assert(before < after)
+    assert before < after
 
 
 # -v (verbose) prints progress data
@@ -110,4 +110,4 @@ def test_enable_repo_make_cache_verbose(utils):
     before = os.path.getmtime(lastrefresh)
     utils.run(['tdnf', '-v', '--disablerepo=*', '--enablerepo=photon-test', 'makecache'])
     after = os.path.getmtime(lastrefresh)
-    assert(before < after)
+    assert before < after

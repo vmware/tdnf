@@ -21,14 +21,14 @@ def teardown_test(utils):
 
 def test_provides_no_arg(utils):
     ret = utils.run(['tdnf', 'provides'])
-    assert(ret['retval'] == 907)
+    assert ret['retval'] == 907
 
 
 def test_provides_valid_pkg_name(utils):
     ret = utils.run(['tdnf', 'provides', 'tdnf'])
-    assert(ret['retval'] == 0)
+    assert ret['retval'] == 0
 
 
 def test_provides_invalid_pkg_name(utils):
     ret = utils.run(['tdnf', 'provides', 'invalid_pkg_name'])
-    assert(ret['stderr'][0] == 'No data available')
+    assert ret['stderr'][0] == 'No data available'

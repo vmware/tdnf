@@ -28,7 +28,7 @@ def test_install_package_with_version_suffix(utils):
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '--exclude=', pkgname, '-y', '--nogpgcheck', pkgname + '-' + pkgversion])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
 
 # basic test (negative test)
@@ -37,7 +37,7 @@ def test_install_package_without_version_suffix(utils):
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '--exclude=', pkgname, '-y', '--nogpgcheck', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
 
 # excluded dependency (negative test)
@@ -48,7 +48,7 @@ def test_install_package_with_excluded_dependency(utils):
     utils.erase_package(pkgname_required)
 
     utils.run(['tdnf', 'install', '--exclude=', pkgname_required, '-y', '--nogpgcheck', pkgname])
-    assert(not utils.check_package(pkgname))
+    assert not utils.check_package(pkgname)
 
 
 # an update should skip an excluded package (negative test)
@@ -65,11 +65,11 @@ def test_update_package(utils):
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion1])
-    assert(utils.check_package(pkgname, pkgversion1))
+    assert utils.check_package(pkgname, pkgversion1)
 
     utils.run(['tdnf', 'update', '--exclude=', pkgname, '-y', '--nogpgcheck', pkgname + '-' + pkgversion2])
-    assert(not utils.check_package(pkgname, pkgversion2))
-    assert(utils.check_package(pkgname, pkgversion1))
+    assert not utils.check_package(pkgname, pkgversion2)
+    assert utils.check_package(pkgname, pkgversion1)
 
 
 # removing an excluded package should fail (dnf behavior) (negative test)
@@ -78,4 +78,4 @@ def test_remove_package(utils):
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
     utils.run(['tdnf', 'remove', '--exclude=', pkgname, '-y', '--nogpgcheck', pkgname])
     # package should still be there
-    assert(utils.check_package(pkgname))
+    assert utils.check_package(pkgname)

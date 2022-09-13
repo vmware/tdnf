@@ -99,7 +99,7 @@ def prepare_and_run_test_cmd(utils, opt, retval, retstr=''):
     if '-c' not in opt and '--config' not in opt:
         tmp += ['-c', tmp_auto_conf]
     ret = run_test_cmd(utils, tmp + opt)
-    assert(ret['retval'] == retval)
+    assert ret['retval'] == retval
 
     if not retstr:
         return 0
@@ -112,7 +112,7 @@ def prepare_and_run_test_cmd(utils, opt, retval, retstr=''):
             found = True
             break
 
-    assert(found)
+    assert found
 
 
 def test_tdnf_automatic_show_help(utils):
@@ -205,7 +205,7 @@ def test_emit_to_file(utils):
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0)
     with open(emit_file) as f:
-        assert('System upto date' in f.read())
+        assert 'System upto date' in f.read()
 
     prepare_and_run_test_cmd(utils, [], 0)
     glob.glob(emit_file + '*.bak')
@@ -225,7 +225,7 @@ def test_tdnf_automatic_show_updates(utils):
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'The following updates are available on')
     with open(emit_file) as f:
-        assert(pkgname in f.read())
+        assert pkgname in f.read()
 
 
 def test_tdnf_automatic_apply_updates(utils):
@@ -242,7 +242,7 @@ def test_tdnf_automatic_apply_updates(utils):
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'The following updates are applied on')
     with open(emit_file) as f:
-        assert(pkgname in f.read())
+        assert pkgname in f.read()
 
 
 def test_tdnf_automatic_same_show_apply_updates(utils):
@@ -257,12 +257,12 @@ def test_tdnf_automatic_same_show_apply_updates(utils):
     ini_set('commands', 'apply_updates', 'yes')
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'The following updates are available on')
-    assert(not os.path.isfile(emit_file))
+    assert not os.path.isfile(emit_file)
     ini_set('commands', 'show_updates', 'no')
     ini_set('commands', 'apply_updates', 'no')
     set_base_conf_and_store(tmp_auto_conf)
     prepare_and_run_test_cmd(utils, [], 0, 'The following updates are available on')
-    assert(not os.path.isfile(emit_file))
+    assert not os.path.isfile(emit_file)
 
 
 def test_tdnf_automatic_hostname(utils):
@@ -279,4 +279,4 @@ def test_tdnf_automatic_hostname(utils):
         set_base_conf_and_store(tmp_auto_conf)
         prepare_and_run_test_cmd(utils, [], 0, 'The following updates are available on - ' + i)
         with open(emit_file) as f:
-            assert(i in f.read())
+            assert i in f.read()
