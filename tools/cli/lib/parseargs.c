@@ -61,6 +61,7 @@ static struct option pstOptions[] =
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {"security",      no_argument, 0, 0},                  //--security
     {"setopt",        required_argument, 0, 0},            //--set or override options
+    {"skip-broken",   no_argument, &_opt.nSkipBroken, 1},
     {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
     {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
@@ -335,6 +336,7 @@ TDNFCopyOptions(
     pArgs->nNoAutoRemove  = pOptionArgs->nNoAutoRemove;
     pArgs->nJsonOutput    = pOptionArgs->nJsonOutput;
     pArgs->nTestOnly      = pOptionArgs->nTestOnly;
+    pArgs->nSkipBroken    = pOptionArgs->nSkipBroken;
 
 cleanup:
     return dwError;

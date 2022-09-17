@@ -345,9 +345,13 @@ TDNFPrepareSinglePkg(
     if (dwError == ERROR_TDNF_NO_MATCH)
     {
         pr_err("%s package not found or not installed\n", pszPkgName);
+        if (pTdnf->pArgs->nSkipBroken)
+        {
+            dwError = 0;
+        }
     }
-
     BAIL_ON_TDNF_ERROR(dwError);
+
     if (dwCount == 0)
     {
         dwError = ERROR_TDNF_NO_SEARCH_RESULTS;

@@ -406,7 +406,6 @@ TDNFSolv(
     {
         dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
-
         dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
         BAIL_ON_TDNF_ERROR(dwError);
     }
