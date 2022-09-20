@@ -640,12 +640,12 @@ TDNFGetRepoMD(
     char *pszMetaLinkFile = NULL;
     char *pszBaseUrlFile = NULL;
     char *pszTempBaseUrlFile = NULL;
-    char *pszRepoMetalink = NULL;
     char *pszTmpRepoMetalinkFile = NULL;
     char* pszLastRefreshMarker = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
     PTDNF_REPO_METADATA pRepoMD = NULL;
-    unsigned char pszCookie[SOLV_COOKIE_LEN] = {0};
+    unsigned char pszMDCookie[SOLV_COOKIE_LEN] = {0};
+    unsigned char pszMLCookie[SOLV_COOKIE_LEN] = {0};
     unsigned char pszTmpCookie[SOLV_COOKIE_LEN] = {0};
     int nNeedDownload = 0;
     int nNewRepoMDFile = 0;
@@ -713,6 +713,7 @@ TDNFGetRepoMD(
                            TDNF_REPO_BASEURL_FILE_NAME,
                            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
+
     if (metalink)
     {
         /* if metalink OR baseurl file is not present, set flag to download */
@@ -726,45 +727,27 @@ TDNFGetRepoMD(
             nNeedDownload = 1;
         }
     }
-    else
+
+    /* if repomd.xml file is not present, set flag to download */
+    if (access(pszRepoMDFile, F_OK))
     {
-        /* if repomd.xml file is not present, set flag to download */
-        if (access(pszRepoMDFile, F_OK))
+        if (errno != ENOENT)
         {
-            if (errno != ENOENT)
-            {
-                dwError = errno;
-                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-            }
-            nNeedDownload = 1;
-        }
-    }
-    /* if refresh flag is set, get shasum of existing repomd file */
-    if (pTdnf->pArgs->nRefresh)
-    {
-        if (metalink)
-        {
-            if (!access(pszMetaLinkFile, F_OK))
-            {
-                dwError = SolvCalculateCookieForFile(pszMetaLinkFile, pszCookie);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-        }
-        else
-        {
-            if (!access(pszRepoMDFile, F_OK))
-            {
-                dwError = SolvCalculateCookieForFile(pszRepoMDFile, pszCookie);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
         nNeedDownload = 1;
     }
 
-    if (metalink)
+    /* if refresh flag is set, get shasum of existing repomd file */
+    if (pTdnf->pArgs->nRefresh)
     {
-        dwError = TDNFAllocateString(pRepoData->pszMetaLink, &pszRepoMetalink);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if (!access(pszRepoMDFile, F_OK))
+        {
+            dwError = SolvCalculateCookieForFile(pszRepoMDFile, pszMDCookie);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        nNeedDownload = 1;
     }
 
     /* download repomd.xml to tmp */
@@ -792,6 +775,12 @@ TDNFGetRepoMD(
         BAIL_ON_TDNF_ERROR(dwError);
         if (metalink)
         {
+            if (!access(pszMetaLinkFile, F_OK))
+            {
+                dwError = SolvCalculateCookieForFile(pszMetaLinkFile, pszMLCookie);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+
             dwError = TDNFJoinPath(&pszTmpRepoMetalinkFile,
                                    pszTmpRepoDataDir,
                                    TDNF_REPO_METALINK_FILE_NAME,
@@ -802,7 +791,7 @@ TDNFGetRepoMD(
                                    TDNF_REPO_BASEURL_FILE_NAME,
                                    NULL);
             BAIL_ON_TDNF_ERROR(dwError);
-            dwError = TDNFDownloadFile(pTdnf, pRepoData->pszId, pszRepoMetalink,
+            dwError = TDNFDownloadFile(pTdnf, pRepoData->pszId, pRepoData->pszMetaLink,
                                        pszTmpRepoMetalinkFile, pRepoData->pszId);
             BAIL_ON_TDNF_ERROR(dwError);
 
@@ -815,12 +804,12 @@ TDNFGetRepoMD(
             BAIL_ON_TDNF_ERROR(dwError);
 
             nReplaceRepoMD = 1;
-            if (pszCookie[0])
+            if (pszMLCookie[0])
             {
                 dwError = SolvCalculateCookieForFile(pszTmpRepoMetalinkFile, pszTmpCookie);
                 BAIL_ON_TDNF_ERROR(dwError);
 
-                if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+                if (!memcmp (pszMLCookie, pszTmpCookie, sizeof(pszTmpCookie)))
                 {
                     nReplaceRepoMD = 0;
                 }
@@ -849,13 +838,10 @@ TDNFGetRepoMD(
 
                 if (!access(pszRepoMDFile, F_OK))
                 {
-                    memset(pszCookie, 0, SOLV_COOKIE_LEN);
                     memset(pszTmpCookie, 0, SOLV_COOKIE_LEN);
-                    dwError = SolvCalculateCookieForFile(pszRepoMDFile, pszCookie);
-                    BAIL_ON_TDNF_ERROR(dwError);
                     dwError = SolvCalculateCookieForFile(pszTmpRepoMDFile, pszTmpCookie);
                     BAIL_ON_TDNF_ERROR(dwError);
-                    if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+                    if (!memcmp (pszMDCookie, pszTmpCookie, sizeof(pszTmpCookie)))
                     {
                         nReplaceRepoMD = 0;
                     }
@@ -878,11 +864,11 @@ TDNFGetRepoMD(
                               pRepoData->pszId);
             BAIL_ON_TDNF_ERROR(dwError);
             nReplaceRepoMD = 1;
-            if (pszCookie[0])
+            if (pszMDCookie[0])
             {
                 dwError = SolvCalculateCookieForFile(pszTmpRepoMDFile, pszTmpCookie);
                 BAIL_ON_TDNF_ERROR(dwError);
-                if (!memcmp (pszCookie, pszTmpCookie, sizeof(pszTmpCookie)))
+                if (!memcmp (pszMDCookie, pszTmpCookie, sizeof(pszTmpCookie)))
                 {
                     nReplaceRepoMD = 0;
                 }
@@ -974,7 +960,6 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszRepoMDFile);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDUrl);
     TDNF_SAFE_FREE_MEMORY(pszMetaLinkFile);
-    TDNF_SAFE_FREE_MEMORY(pszRepoMetalink);
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoMetalinkFile);
     TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
