@@ -150,7 +150,7 @@ TDNFRepoSetBaseUrl(
 uint32_t
 TDNFRepoGetUserPass(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     char** ppszUserPass
     );
 
@@ -287,7 +287,7 @@ TDNFDownloadPackage(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     const char* pszRpmCacheDir
     );
 
@@ -296,7 +296,7 @@ TDNFDownloadPackageToCache(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     char** ppszFilePath
     );
 
@@ -305,7 +305,7 @@ TDNFDownloadPackageToTree(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     char* pszNormalRpmCacheDir,
     char** ppszFilePath
     );
@@ -315,7 +315,7 @@ TDNFDownloadPackageToDirectory(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszDirectory,
     char** ppszFilePath
     );
@@ -954,7 +954,7 @@ TDNFTransAddInstallPkg(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     int nUpgrade
     );
 

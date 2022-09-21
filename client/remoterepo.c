@@ -575,7 +575,10 @@ TDNFDownloadFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRepoGetUserPass(pTdnf, pszRepo, &pszUserPass);
+    dwError = TDNFFindRepoById(pTdnf, pszRepo, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRepoGetUserPass(pTdnf, pRepo, &pszUserPass);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(!IsNullOrEmptyString(pszUserPass))
@@ -586,9 +589,6 @@ TDNFDownloadFile(
                       pszUserPass);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = TDNFFindRepoById(pTdnf, pszRepo, &pRepo);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -758,7 +758,7 @@ TDNFDownloadPackage(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszRpmCacheDir
     )
 {
@@ -772,13 +772,13 @@ TDNFDownloadPackage(
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszPackageLocation) ||
        IsNullOrEmptyString(pszPkgName) ||
-       IsNullOrEmptyString(pszRepoName))
+       !pRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFCreatePackageUrl(pTdnf, pszRepoName, pszPackageLocation, &pszPackageUrl);
+    dwError = TDNFCreatePackageUrl(pTdnf, pRepo->pszId, pszPackageLocation, &pszPackageUrl);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateString(pszPackageLocation,
@@ -797,7 +797,7 @@ TDNFDownloadPackage(
     if ((dwError == ERROR_TDNF_FILE_NOT_FOUND) || (nSize == 0))
     {
         dwError = TDNFDownloadFile(pTdnf,
-                                   pszRepoName,
+                                   pRepo->pszId,
                                    pszPackageUrl,
                                    pszPackageFile,
                                    pszPkgName);
@@ -825,7 +825,7 @@ TDNFDownloadPackageToCache(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     char** ppszFilePath
     )
 {
@@ -836,7 +836,7 @@ TDNFDownloadPackageToCache(
     if(!pTdnf ||
        IsNullOrEmptyString(pszPackageLocation) ||
        IsNullOrEmptyString(pszPkgName) ||
-       IsNullOrEmptyString(pszRepoName) ||
+       !pRepo ||
        !ppszFilePath)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -845,7 +845,7 @@ TDNFDownloadPackageToCache(
 
     dwError = TDNFJoinPath(&pszRpmCacheDir,
                            pTdnf->pConf->pszCacheDir,
-                           pszRepoName,
+                           pRepo->pszId,
                            "rpms",
                            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -857,7 +857,7 @@ TDNFDownloadPackageToCache(
     dwError = TDNFDownloadPackageToTree(pTdnf,
                                         pszPackageLocation,
                                         pszPkgName,
-                                        pszRepoName,
+                                        pRepo,
                                         pszNormalRpmCacheDir,
                                         ppszFilePath);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -883,7 +883,7 @@ TDNFDownloadPackageToTree(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     char* pszNormalRpmCacheDir,
     char** ppszFilePath
     )
@@ -898,7 +898,7 @@ TDNFDownloadPackageToTree(
     if(!pTdnf ||
        IsNullOrEmptyString(pszPackageLocation) ||
        IsNullOrEmptyString(pszPkgName) ||
-       IsNullOrEmptyString(pszRepoName) ||
+       !pRepo ||
        IsNullOrEmptyString(pszNormalRpmCacheDir) ||
        !ppszFilePath)
     {
@@ -959,7 +959,7 @@ TDNFDownloadPackageToTree(
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
         dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
-            pszRepoName, pszDownloadCacheDir);
+            pRepo, pszDownloadCacheDir);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -990,7 +990,7 @@ TDNFDownloadPackageToDirectory(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszDirectory,
     char** ppszFilePath
     )
@@ -1003,7 +1003,7 @@ TDNFDownloadPackageToDirectory(
     if(!pTdnf ||
        IsNullOrEmptyString(pszPackageLocation) ||
        IsNullOrEmptyString(pszPkgName) ||
-       IsNullOrEmptyString(pszRepoName) ||
+       !pRepo ||
        IsNullOrEmptyString(pszDirectory) ||
        !ppszFilePath)
     {
@@ -1024,7 +1024,7 @@ TDNFDownloadPackageToDirectory(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
-                                  pszRepoName, pszDirectory);
+                                  pRepo, pszDirectory);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszFilePath = pszFilePath;

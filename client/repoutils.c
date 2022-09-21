@@ -105,46 +105,27 @@ error:
 uint32_t
 TDNFRepoGetUserPass(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     char** ppszUserPass
     )
 {
     uint32_t dwError = 0;
     char* pszUserPass = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !ppszUserPass)
+    if(!pTdnf || !pRepo || !ppszUserPass)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    if(!pTdnf->pRepos)
-    {
-        dwError = ERROR_TDNF_NO_REPOS;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
-    for (pRepos = pTdnf->pRepos; pRepos; pRepos = pRepos->pNext)
-    {
-        if (!strcmp(pszRepo, pRepos->pszId))
-        {
-            break;
-        }
-    }
-    if (!pRepos)
-    {
-        dwError = ERROR_TDNF_REPO_NOT_FOUND;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(!IsNullOrEmptyString(pRepos->pszUser) &&
-       !IsNullOrEmptyString(pRepos->pszPass))
+    if(!IsNullOrEmptyString(pRepo->pszUser) &&
+       !IsNullOrEmptyString(pRepo->pszPass))
     {
         dwError = TDNFAllocateStringPrintf(
                       &pszUserPass,
                       "%s:%s",
-                      pRepos->pszUser,
-                      pRepos->pszPass);
+                      pRepo->pszUser,
+                      pRepo->pszPass);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

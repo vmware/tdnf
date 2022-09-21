@@ -518,19 +518,8 @@ TDNFStoreBaseURLFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    for (pRepo = pTdnf->pRepos; pRepo; pRepo = pRepo->pNext)
-    {
-        if(!strcmp(pszRepo, pRepo->pszId))
-        {
-            break;
-        }
-    }
-
-    if (!pRepo)
-    {
-        dwError = ERROR_TDNF_NO_REPOS;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFFindRepoById(pTdnf, pszRepo, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetCachePath(pTdnf, pRepo,
                                "tmp", TDNF_REPO_BASEURL_FILE_NAME,
