@@ -133,19 +133,6 @@ TDNFRefreshCache(
     );
 
 //repoutils.c
-uint32_t
-TDNFRepoGetBaseUrl(
-    PTDNF pTdnf,
-    const char* pszRepo,
-    char** ppszBaseUrl
-    );
-
-uint32_t
-TDNFRepoSetBaseUrl(
-    PTDNF pTdnf,
-    PTDNF_REPO_DATA pszRepo,
-    const char *pszBaseUrlFile
-    );
 
 uint32_t
 TDNFRepoGetUserPass(
@@ -260,10 +247,18 @@ TDNFCheckRepoMDFileHashFromMetalink(
 uint32_t
 TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
-    const char *pszRepo,
     const char *pszFile,
     TDNF_ML_CTX *ml_ctx
     );
+
+uint32_t
+TDNFDownloadFileFromRepo(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo,
+    const char *pszLocation,
+    const char *pszFile,
+    const char *pszProgressData
+);
 
 uint32_t
 TDNFDownloadFile(

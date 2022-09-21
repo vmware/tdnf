@@ -207,6 +207,9 @@ TDNFCreateRepoFromPath(
     dwError = TDNFSafeAllocateString(pszId, &pRepo->pszName);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFAllocateMemory(sizeof(char **), 2, (void **)&pRepo->ppszBaseUrls);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     /* '/some/dir' => 'file:///some/dir */
     if (pszPath[0] == '/')
     {
@@ -215,7 +218,7 @@ TDNFCreateRepoFromPath(
 
         if (nIsDir)
         {
-            dwError = TDNFAllocateStringPrintf(&pRepo->pszBaseUrl, "file://%s", pszPath);
+            dwError = TDNFAllocateStringPrintf(&pRepo->ppszBaseUrls[0], "file://%s", pszPath);
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
@@ -225,7 +228,7 @@ TDNFCreateRepoFromPath(
         dwError = TDNFUriIsRemote(pszPath, &nDummy);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFSafeAllocateString(pszPath, &pRepo->pszBaseUrl);
+        dwError = TDNFSafeAllocateString(pszPath, &pRepo->ppszBaseUrls[0]);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppRepo = pRepo;
@@ -416,11 +419,10 @@ TDNFLoadReposFromFile(
                       &pRepo->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFReadKeyValue(
+        dwError = TDNFReadKeyValueStringArray(
                       pSections,
                       TDNF_REPO_KEY_BASEURL,
-                      NULL,
-                      &pRepo->pszBaseUrl);
+                      &pRepo->ppszBaseUrls);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadKeyValue(
@@ -654,10 +656,13 @@ TDNFRepoListFinalize(
             dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszName);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        if(pRepo->pszBaseUrl)
+        if(pRepo->ppszBaseUrls)
         {
-            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszBaseUrl);
-            BAIL_ON_TDNF_ERROR(dwError);
+            for (int i = 0; pRepo->ppszBaseUrls[i]; i++)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &(pRepo->ppszBaseUrls[i]));
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
         }
         if(pRepo->pszMetaLink)
         {
@@ -671,10 +676,10 @@ TDNFRepoListFinalize(
                                               pRepo->pszMetaLink,
                                               &pRepo->pszCacheName);
         }
-        else if (pRepo->pszBaseUrl)
+        else if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0])
         {
             dwError = SolvCreateRepoCacheName(pRepo->pszId,
-                                              pRepo->pszBaseUrl,
+                                              pRepo->ppszBaseUrls[0],
                                               &pRepo->pszCacheName);
         }
         BAIL_ON_TDNF_ERROR(dwError);
@@ -759,8 +764,10 @@ TDNFCloneRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     /* python needs also pszBaseUrl and pszMetaLink */
-    dwError = TDNFSafeAllocateString(pRepoIn->pszBaseUrl, &pRepo->pszBaseUrl);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pRepoIn->ppszBaseUrls && pRepoIn->ppszBaseUrls[0]) {
+        dwError = TDNFAllocateStringArray(pRepoIn->ppszBaseUrls, &pRepo->ppszBaseUrls);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFSafeAllocateString(
                   pRepoIn->pszMetaLink,
@@ -795,7 +802,7 @@ TDNFFreeReposInternal(
         pRepo = pRepos;
         TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszBaseUrl);
+        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszBaseUrls);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);

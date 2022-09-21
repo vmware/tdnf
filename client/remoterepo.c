@@ -493,7 +493,6 @@ error:
 uint32_t
 TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
-    const char *pszRepo,
     const char *pszFile,
     TDNF_ML_CTX *ml_ctx
     )
@@ -502,8 +501,6 @@ TDNFParseAndGetURLFromMetalink(
     uint32_t dwError = 0;
 
     if (!pTdnf ||
-       !pTdnf->pArgs ||
-       IsNullOrEmptyString(pszRepo) ||
        IsNullOrEmptyString(pszFile) ||
        !ml_ctx)
     {
@@ -533,6 +530,57 @@ cleanup:
     {
         close(fd);
     }
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadFileFromRepo(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo,
+    const char *pszLocation,
+    const char *pszFile,
+    const char *pszProgressData
+)
+{
+    uint32_t dwError = 0;
+    char *pszUrl = NULL;
+
+    if(!pTdnf ||
+       !pTdnf->pArgs || !pRepo ||
+       IsNullOrEmptyString(pszLocation) ||
+       IsNullOrEmptyString(pszFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0]) {
+        /* Try one base URL after the other until we succeed */
+        /* Note: this can be improved:
+         * 1) we could start with the last good URL next time instead of
+         *    starting with 0 each time
+         * 2) we could store a list of known bad/good URLs
+         */
+        for (int i = 0; pRepo->ppszBaseUrls[i]; i++) {
+            dwError = TDNFJoinPath(&pszUrl, pRepo->ppszBaseUrls[i], pszLocation, NULL);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszUrl, pszFile, pszProgressData);
+            if (dwError == 0) {
+                break;
+            }
+        }
+    } else {
+        /* If there is no base url, pszLocation should contain the whole URL.
+           This is the case for packages from the command line. */
+        dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszLocation, pszFile, pszProgressData);
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszUrl);
     return dwError;
 error:
     goto cleanup;
@@ -711,30 +759,30 @@ error:
 uint32_t
 TDNFCreatePackageUrl(
     PTDNF pTdnf,
-    const char* pszRepoName,
+    const char* pszRepoId,
     const char* pszPackageLocation,
     char **ppszPackageUrl
     )
 {
     uint32_t dwError = 0;
-    char* pszBaseUrl = NULL;
     char *pszPackageUrl = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
        IsNullOrEmptyString(pszPackageLocation) ||
-       IsNullOrEmptyString(pszRepoName) ||
+       IsNullOrEmptyString(pszRepoId) ||
        !ppszPackageUrl)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRepoGetBaseUrl(pTdnf, pszRepoName, &pszBaseUrl);
+    dwError = TDNFFindRepoById(pTdnf, pszRepoId, &pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pszBaseUrl) {
-        dwError = TDNFJoinPath(&pszPackageUrl, pszBaseUrl, pszPackageLocation, NULL);
+    if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0]) {
+        dwError = TDNFJoinPath(&pszPackageUrl, pRepo->ppszBaseUrls[0], pszPackageLocation, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else
@@ -745,9 +793,7 @@ TDNFCreatePackageUrl(
     *ppszPackageUrl = pszPackageUrl;
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszBaseUrl);
     return dwError;
-
 error:
     TDNF_SAFE_FREE_MEMORY(pszPackageUrl);
     goto cleanup;
@@ -763,7 +809,6 @@ TDNFDownloadPackage(
     )
 {
     uint32_t dwError = 0;
-    char *pszPackageUrl = NULL;
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
     int nSize;
@@ -777,9 +822,6 @@ TDNFDownloadPackage(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = TDNFCreatePackageUrl(pTdnf, pRepo->pszId, pszPackageLocation, &pszPackageUrl);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateString(pszPackageLocation,
                                  &pszCopyOfPackageLocation);
@@ -796,9 +838,9 @@ TDNFDownloadPackage(
     dwError = TDNFGetFileSize(pszPackageFile, &nSize);
     if ((dwError == ERROR_TDNF_FILE_NOT_FOUND) || (nSize == 0))
     {
-        dwError = TDNFDownloadFile(pTdnf,
-                                   pRepo->pszId,
-                                   pszPackageUrl,
+        dwError = TDNFDownloadFileFromRepo(pTdnf,
+                                   pRepo,
+                                   pszPackageLocation,
                                    pszPackageFile,
                                    pszPkgName);
     }
@@ -811,7 +853,6 @@ TDNFDownloadPackage(
     pr_info("\n");
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszPackageUrl);
     TDNF_SAFE_FREE_MEMORY(pszCopyOfPackageLocation);
     TDNF_SAFE_FREE_MEMORY(pszPackageFile);
     return dwError;
