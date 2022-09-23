@@ -176,6 +176,7 @@ TDNFVerifySignature(
     uint32_t dwError = 0;
     char *pszRepoMDSigUrl = NULL;
     char *pszRepoMDSigFile = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if (!pHandle || !pHandle->pTdnf || IsNullOrEmptyString(pcszRepoId) ||
         IsNullOrEmptyString(pcszRepoMDUrl) ||
@@ -197,8 +198,11 @@ TDNFVerifySignature(
                   TDNF_REPO_METADATA_SIG_EXT);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFFindRepoById(pHandle->pTdnf, pcszRepoId, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFDownloadFile(pHandle->pTdnf,
-                               pcszRepoId,
+                               pRepo,
                                pszRepoMDSigUrl,
                                pszRepoMDSigFile,
                                pcszRepoId);

@@ -86,7 +86,7 @@ uint32_t
 TDNFGPGCheckPackage(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszFilePath,
     Header *pRpmHeader
     );
@@ -94,7 +94,7 @@ TDNFGPGCheckPackage(
 uint32_t
 TDNFFetchRemoteGPGKey(
     PTDNF pTdnf,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszUrlGPGKey,
     char** ppszKeyLocation
     );
@@ -263,7 +263,7 @@ TDNFDownloadFileFromRepo(
 uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
-    const char *pszRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszFileUrl,
     const char *pszFile,
     const char *pszProgressData
@@ -677,7 +677,7 @@ TDNFGetGPGCheck(
 uint32_t
 TDNFGetGPGSignatureCheck(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     int* pnGPGSigCheck,
     char*** ppszUrlGPGKeys
     );

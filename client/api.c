@@ -1236,7 +1236,7 @@ TDNFRepoSync(
                delete the package */
             if (pReposyncArgs->nGPGCheck)
             {
-                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgInfo->pszRepoName, pszFilePath, NULL);
+                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pRepo, pszFilePath, NULL);
                 if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
                 {
                     BAIL_ON_TDNF_ERROR(dwError);

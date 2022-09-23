@@ -567,15 +567,16 @@ TDNFDownloadFileFromRepo(
             dwError = TDNFJoinPath(&pszUrl, pRepo->ppszBaseUrls[i], pszLocation, NULL);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszUrl, pszFile, pszProgressData);
+            dwError = TDNFDownloadFile(pTdnf, pRepo, pszUrl, pszFile, pszProgressData);
             if (dwError == 0) {
                 break;
             }
+            TDNF_SAFE_FREE_MEMORY(pszUrl);
         }
     } else {
         /* If there is no base url, pszLocation should contain the whole URL.
            This is the case for packages from the command line. */
-        dwError = TDNFDownloadFile(pTdnf, pRepo->pszId, pszLocation, pszFile, pszProgressData);
+        dwError = TDNFDownloadFile(pTdnf, pRepo, pszLocation, pszFile, pszProgressData);
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -589,7 +590,7 @@ error:
 uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
-    const char *pszRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszFileUrl,
     const char *pszFile,
     const char *pszProgressData
@@ -602,15 +603,13 @@ TDNFDownloadFile(
     char *pszFileTmp = NULL;
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
-    PTDNF_REPO_DATA pRepo;
     int i;
 
     /* TDNFFetchRemoteGPGKey sends pszProgressData as NULL */
     if(!pTdnf ||
-       !pTdnf->pArgs ||
+       !pRepo ||
        IsNullOrEmptyString(pszFileUrl) ||
-       IsNullOrEmptyString(pszFile) ||
-       IsNullOrEmptyString(pszRepo))
+       IsNullOrEmptyString(pszFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -622,9 +621,6 @@ TDNFDownloadFile(
         dwError = ERROR_TDNF_CURL_INIT;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = TDNFFindRepoById(pTdnf, pszRepo, &pRepo);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFRepoGetUserPass(pTdnf, pRepo, &pszUserPass);
     BAIL_ON_TDNF_ERROR(dwError);

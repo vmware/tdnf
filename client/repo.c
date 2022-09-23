@@ -330,18 +330,17 @@ error:
 uint32_t
 TDNFGetGPGSignatureCheck(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     int* pnGPGSigCheck,
     char*** pppszUrlGPGKeys
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPO_DATA pRepo = NULL;
     int nGPGSigCheck = 0;
     uint32_t dwSkipSignature = 0;
     char** ppszUrlGPGKeys = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pnGPGSigCheck)
+    if(!pTdnf || !pRepo || !pnGPGSigCheck)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -352,13 +351,7 @@ TDNFGetGPGSignatureCheck(
 
     if(!(pTdnf->pArgs->nNoGPGCheck || dwSkipSignature))
     {
-        dwError = TDNFGetRepoById(pTdnf, pszRepo, &pRepo);
-        if(dwError == ERROR_TDNF_NO_DATA)
-        {
-            dwError = 0;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
-        if(pRepo && pRepo->nGPGCheck)
+        if(pRepo->nGPGCheck)
         {
             nGPGSigCheck = 1;
             if (pppszUrlGPGKeys != NULL)
@@ -369,9 +362,9 @@ TDNFGetGPGSignatureCheck(
                     dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
-		dwError = TDNFAllocateStringArray(
-                             pRepo->ppszUrlGPGKeys,
-			     &ppszUrlGPGKeys);
+                dwError = TDNFAllocateStringArray(
+                    pRepo->ppszUrlGPGKeys,
+                    &ppszUrlGPGKeys);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
@@ -492,50 +485,6 @@ error:
 }
 
 uint32_t
-TDNFStoreBaseURLFromMetalink(
-    PTDNF pTdnf,
-    const char *pszRepo,
-    const char *pszRepoMDURL
-    )
-{
-    uint32_t dwError = 0;
-    char *pszBaseUrlFile = NULL;
-    PTDNF_REPO_DATA pRepo = NULL;
-
-    if (!pTdnf ||
-        !pTdnf->pConf ||
-        IsNullOrEmptyString(pszRepo) ||
-        IsNullOrEmptyString(pszRepoMDURL))
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if (!pTdnf->pRepos)
-    {
-        dwError = ERROR_TDNF_NO_REPOS;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFFindRepoById(pTdnf, pszRepo, &pRepo);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGetCachePath(pTdnf, pRepo,
-                               "tmp", TDNF_REPO_BASEURL_FILE_NAME,
-                               &pszBaseUrlFile);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFCreateAndWriteToFile(pszBaseUrlFile, pszRepoMDURL);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
 TDNFGetUrlsFromMLCtx(
     PTDNF pTdnf,
     TDNF_ML_CTX *ml_ctx,
@@ -645,7 +594,7 @@ TDNFGetRepoMD(
             }
             BAIL_ON_TDNF_ERROR(dwError);
         
-            dwError = TDNFDownloadFile(pTdnf, pRepoData->pszId, pRepoData->pszMetaLink,
+            dwError = TDNFDownloadFile(pTdnf, pRepoData, pRepoData->pszMetaLink,
                                        pszMetaLinkFile, pRepoData->pszId);
             BAIL_ON_TDNF_ERROR(dwError);
         }

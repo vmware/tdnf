@@ -787,7 +787,7 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    dwError = TDNFGPGCheckPackage(pTS, pTdnf, pRepo->pszId, pszFilePath, &rpmHeader);
+    dwError = TDNFGPGCheckPackage(pTS, pTdnf, pRepo, pszFilePath, &rpmHeader);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetGPGCheck(pTdnf, pRepo->pszId, &nGPGCheck);
