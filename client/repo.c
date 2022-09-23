@@ -441,7 +441,6 @@ uint32_t
 TDNFEventRepoMDDownloadEnd(
     PTDNF pTdnf,
     const char *pcszRepoId,
-    const char *pcszRepoMDUrl,
     const char *pcszRepoMDFile
     )
 {
@@ -450,7 +449,6 @@ TDNFEventRepoMDDownloadEnd(
 
     if (!pTdnf ||
         IsNullOrEmptyString(pcszRepoId) ||
-        IsNullOrEmptyString(pcszRepoMDUrl) ||
         IsNullOrEmptyString(pcszRepoMDFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -464,10 +462,6 @@ TDNFEventRepoMDDownloadEnd(
     dwError = TDNFAddEventDataString(&stContext,
                   TDNF_EVENT_ITEM_REPO_ID,
                   pcszRepoId);
-    BAIL_ON_TDNF_ERROR(dwError);
-    dwError = TDNFAddEventDataString(&stContext,
-                  TDNF_EVENT_ITEM_REPO_MD_URL,
-                  pcszRepoMDUrl);
     BAIL_ON_TDNF_ERROR(dwError);
     dwError = TDNFAddEventDataString(&stContext,
                   TDNF_EVENT_ITEM_REPO_MD_FILE,
@@ -734,7 +728,6 @@ TDNFGetRepoMD(
             dwError = TDNFEventRepoMDDownloadEnd(
                           pTdnf,
                           pRepoData->pszId,
-                          pszRepoMDUrl,
                           pszTmpRepoMDFile);
             BAIL_ON_TDNF_ERROR(dwError);
         }
