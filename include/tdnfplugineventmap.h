@@ -27,6 +27,7 @@ TDNFPluginGetEventMapVersion(
 #define TDNF_EVENT_ITEM_TDNF_HANDLE  "tdnf.handle"
 #define TDNF_EVENT_ITEM_REPO_SECTION "repo.section"
 #define TDNF_EVENT_ITEM_REPO_ID      "repo.id"
+#define TDNF_EVENT_ITEM_REPO_DATADIR "repo.datadir"
 #define TDNF_EVENT_ITEM_REPO_MD_URL  "repomd.url"
 #define TDNF_EVENT_ITEM_REPO_MD_FILE "repomd.file"
 
@@ -76,6 +77,7 @@ typedef struct _TDNF_PLUGIN_EVENT_MAP_
                           TDNF_PLUGIN_EVENT_PHASE_END),\
         {\
             {TDNF_EVENT_ITEM_TYPE_STRING,    TDNF_EVENT_ITEM_REPO_ID},\
+            {TDNF_EVENT_ITEM_TYPE_STRING,    TDNF_EVENT_ITEM_REPO_DATADIR},\
             {TDNF_EVENT_ITEM_TYPE_STRING,    TDNF_EVENT_ITEM_REPO_BASEURL},\
             {TDNF_EVENT_ITEM_TYPE_STRING,    TDNF_EVENT_ITEM_REPO_MD_FILE}\
         }\

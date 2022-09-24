@@ -20,6 +20,8 @@ configure_file(
 add_library(${PROJECT_NAME} SHARED
     api.c
     metalink.c
+    utils.c
+    list.c
 )
 
 target_link_libraries(${PROJECT_NAME}

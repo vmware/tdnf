@@ -39,8 +39,6 @@ add_library(${LIB_TDNF} SHARED
     rpmtrans.c
     updateinfo.c
     utils.c
-    metalink.c
-    list.c
     history.c
 )
 

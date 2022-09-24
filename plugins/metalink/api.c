@@ -179,16 +179,15 @@ TDNFMetalinkEvent(
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
-    /*
     else if (nEventType == TDNF_PLUGIN_EVENT_TYPE_REPO_MD)
     {
         if (nEventState == TDNF_PLUGIN_EVENT_STATE_DOWNLOAD &&
-            nEventPhase == TDNF_PLUGIN_EVENT_PHASE_END)
+            nEventPhase == TDNF_PLUGIN_EVENT_PHASE_START)
         {
-            dwError = TDNFRepoMDCheckSignature(pHandle, pContext);
+            dwError = TDNFMetalinkRepoMDDownloadStart(pHandle, pContext);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-    }*/
+    }
     else
     {
         pr_err("Unexpected event %d in %s plugin\n",
