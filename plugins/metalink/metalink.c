@@ -87,6 +87,9 @@ TDNFMetalinkReadConfig(
         dwError = TDNFAllocateString(pszMetalink, &pData->pszMetalink);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        dwError = TDNFConfigReplaceVars(pHandle->pTdnf, &pData->pszMetalink);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         pData->pNext = pHandle->pData;
         pHandle->pData = pData;
     }
@@ -144,6 +147,66 @@ error:
     goto cleanup;
 }
 
+static
+uint32_t
+TDNFGetUrlsFromMLCtx(
+    PTDNF pTdnf,
+    TDNF_ML_CTX *ml_ctx,
+    char ***pppszBaseUrls
+    )
+{
+    uint32_t dwError = 0;
+    TDNF_ML_URL_LIST *urlList = NULL;
+    TDNF_ML_URL_INFO *urlInfo = NULL;
+    char **ppszBaseUrls = NULL;
+    char buf[BUFSIZ] = {0};
+    int i, count = 0;
+
+    if (!pTdnf || !ml_ctx || !pppszBaseUrls)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (urlList = ml_ctx->urls; urlList; urlList = urlList->next) {
+        count++;
+    }
+
+    dwError = TDNFAllocateMemory(sizeof(char **), count+1, (void **)&ppszBaseUrls);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (urlList = ml_ctx->urls, i = 0; urlList; urlList = urlList->next, i++) {
+        urlInfo = urlList->data;
+        if (urlInfo == NULL)
+        {
+            dwError = ERROR_TDNF_INVALID_REPO_FILE;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        dwError = TDNFStringEndsWith(urlInfo->url, TDNF_REPO_METADATA_FILE_PATH);
+        if (dwError)
+        {
+            dwError = ERROR_TDNF_INVALID_REPO_FILE;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        strncpy(buf, urlInfo->url, BUFSIZ-1);
+        buf[BUFSIZ-1] = '\0'; // force terminate
+        dwError = TDNFTrimSuffix(buf, TDNF_REPO_METADATA_FILE_PATH);
+        BAIL_ON_TDNF_ERROR(dwError);
+        
+        dwError = TDNFAllocateString(buf, &ppszBaseUrls[i]);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    *pppszBaseUrls = ppszBaseUrls;
+cleanup:
+    return dwError;
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszBaseUrls);
+    goto cleanup;
+}
+
+static
 uint32_t
 TDNFMetalinkGetBaseURLs(
     PTDNF_PLUGIN_HANDLE pHandle,
@@ -216,6 +279,8 @@ TDNFMetalinkGetBaseURLs(
     dwError = TDNFGetUrlsFromMLCtx(pTdnf, ml_ctx, &pRepo->ppszBaseUrls);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    pData->ml_ctx = ml_ctx;
+
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszMetaLinkFile);
     return dwError;
@@ -265,6 +330,104 @@ TDNFMetalinkRepoMDDownloadStart(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFMetalinkGetBaseURLs(pHandle, pcszRepoId, pcszRepoDataDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+static
+uint32_t
+TDNFCheckRepoMDFileHash(
+    PTDNF_PLUGIN_HANDLE pHandle,
+    const char *pcszRepoId,
+    const char *pcszRepoMDFile
+)
+{
+    uint32_t dwError = 0;
+    PTDNF pTdnf;
+    PTDNF_REPO_DATA pRepo = NULL;
+    PTDNF_METALINK_DATA pData = NULL;
+    TDNF_ML_CTX *ml_ctx = NULL;
+
+    if (!pHandle || !pHandle->pTdnf || IsNullOrEmptyString(pcszRepoId) ||
+        IsNullOrEmptyString(pcszRepoMDFile))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pTdnf = pHandle->pTdnf;
+
+    dwError = TDNFFindRepoById(pTdnf, pcszRepoId, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(pData = pHandle->pData; pData; pData = pData->pNext)
+    {
+        if (strcmp(pData->pszRepoId, pcszRepoId) == 0)
+        {
+            ml_ctx = pData->ml_ctx;
+            break;
+        }
+    }
+    if (ml_ctx == NULL) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFCheckRepoMDFileHashFromMetalink(pcszRepoMDFile, ml_ctx);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+error:
+    pr_err("Error: %s %u\n", __FUNCTION__, dwError);
+    goto cleanup;
+}
+
+uint32_t
+TDNFMetalinkRepoMDDownloadEnd(
+    PTDNF_PLUGIN_HANDLE pHandle,
+    PTDNF_EVENT_CONTEXT pContext
+    )
+{
+    uint32_t dwError = 0;
+    const char *pcszRepoId = NULL;
+    const char *pcszRepoMDFile = NULL;
+    int nHasRepo = 0;
+
+    if (!pHandle || !pHandle->pTdnf || !pContext)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* we are looking for repo id first */
+    dwError = TDNFEventContextGetItemString(
+                  pContext,
+                  TDNF_EVENT_ITEM_REPO_ID,
+                  (const char **)&pcszRepoId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* check if this repo id is in list for metalink */
+    dwError = TDNFHasRepo(pHandle, pcszRepoId, &nHasRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* if repo is not in list, return immediately */
+    if (nHasRepo == 0)
+    {
+        goto cleanup;
+    }
+
+    dwError = TDNFEventContextGetItemString(
+                  pContext,
+                  TDNF_EVENT_ITEM_REPO_MD_FILE,
+                  (const char **)&pcszRepoMDFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFCheckRepoMDFileHash(pHandle, pcszRepoId, pcszRepoMDFile);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:

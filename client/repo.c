@@ -521,64 +521,6 @@ error:
 }
 
 uint32_t
-TDNFGetUrlsFromMLCtx(
-    PTDNF pTdnf,
-    TDNF_ML_CTX *ml_ctx,
-    char ***pppszBaseUrls
-    )
-{
-    uint32_t dwError = 0;
-    TDNF_ML_URL_LIST *urlList = NULL;
-    TDNF_ML_URL_INFO *urlInfo = NULL;
-    char **ppszBaseUrls = NULL;
-    char buf[BUFSIZ] = {0};
-    int i, count = 0;
-
-    if (!pTdnf || !ml_ctx || !pppszBaseUrls)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    for (urlList = ml_ctx->urls; urlList; urlList = urlList->next) {
-        count++;
-    }
-
-    dwError = TDNFAllocateMemory(sizeof(char **), count+1, (void **)&ppszBaseUrls);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for (urlList = ml_ctx->urls, i = 0; urlList; urlList = urlList->next, i++) {
-        urlInfo = urlList->data;
-        if (urlInfo == NULL)
-        {
-            dwError = ERROR_TDNF_INVALID_REPO_FILE;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-
-        dwError = TDNFStringEndsWith(urlInfo->url, TDNF_REPO_METADATA_FILE_PATH);
-        if (dwError)
-        {
-            dwError = ERROR_TDNF_INVALID_REPO_FILE;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-
-        strncpy(buf, urlInfo->url, BUFSIZ-1);
-        buf[BUFSIZ-1] = '\0'; // force terminate
-        dwError = TDNFTrimSuffix(buf, TDNF_REPO_METADATA_FILE_PATH);
-        BAIL_ON_TDNF_ERROR(dwError);
-        
-        dwError = TDNFAllocateString(buf, &ppszBaseUrls[i]);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    *pppszBaseUrls = ppszBaseUrls;
-cleanup:
-    return dwError;
-error:
-    TDNF_SAFE_FREE_STRINGARRAY(ppszBaseUrls);
-    goto cleanup;
-}
-
-uint32_t
 TDNFGetRepoMD(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepoData,

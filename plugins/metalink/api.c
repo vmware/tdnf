@@ -187,6 +187,12 @@ TDNFMetalinkEvent(
             dwError = TDNFMetalinkRepoMDDownloadStart(pHandle, pContext);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        else if (nEventState == TDNF_PLUGIN_EVENT_STATE_DOWNLOAD &&
+            nEventPhase == TDNF_PLUGIN_EVENT_PHASE_END)
+        {
+            dwError = TDNFMetalinkRepoMDDownloadEnd(pHandle, pContext);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
     else
     {

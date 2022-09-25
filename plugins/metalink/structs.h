@@ -14,11 +14,12 @@ typedef struct _TDNF_METALINK_DATA_
     struct _TDNF_METALINK_DATA_ *pNext;
     char *pszRepoId;
     char *pszMetalink;
-}TDNF_METALINK_DATA, *PTDNF_METALINK_DATA;
+    TDNF_ML_CTX *ml_ctx;
+} TDNF_METALINK_DATA, *PTDNF_METALINK_DATA;
 
 typedef struct _TDNF_PLUGIN_HANDLE_
 {
     PTDNF pTdnf;
     uint32_t nError; /* last error set by this plugin */
     PTDNF_METALINK_DATA pData;
-}TDNF_PLUGIN_HANDLE, *PTDNF_PLUGIN_HANDLE;
+} TDNF_PLUGIN_HANDLE, *PTDNF_PLUGIN_HANDLE;
