@@ -428,45 +428,6 @@ error:
 }
 
 uint32_t
-TDNFAppendPackages(
-    PTDNF_PKG_INFO* ppDest,
-    PTDNF_PKG_INFO  pSource
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_PKG_INFO pDest = NULL;
-
-    if(!ppDest || !pSource)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pDest = *ppDest;
-    if(!pDest)
-    {
-        *ppDest = pSource;
-    }
-    else
-    {
-        while(pDest->pNext)
-        {
-            pDest = pDest->pNext;
-        }
-        pDest->pNext = pSource;
-    }
-
-cleanup:
-    return dwError;
-
-error:
-    if(ppDest)
-    {
-        *ppDest = NULL;
-    }
-    goto cleanup;
-}
-
-uint32_t
 TDNFPackageGetDowngrade(
     Id dwInstalled,
     PSolvSack pSack,

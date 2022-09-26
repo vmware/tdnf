@@ -722,16 +722,6 @@ error:
 }
 
 uint32_t
-TDNFTransAddReInstallPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
-    )
-{
-    return TDNFTransAddInstallPkgs(pTS, pTdnf, pInfo);
-}
-
-uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,

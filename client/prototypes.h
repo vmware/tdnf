@@ -134,11 +134,6 @@ TDNFRefreshCache(
 
 //repoutils.c
 uint32_t
-TDNFRepoMakeCacheDirs(
-    const char* pszRepo
-    );
-
-uint32_t
 TDNFRepoGetBaseUrl(
     PTDNF pTdnf,
     const char* pszRepo,
@@ -363,12 +358,6 @@ TDNFPopulatePkgInfoArray(
     );
 
 uint32_t
-TDNFAppendPackages(
-    PTDNF_PKG_INFO* ppDest,
-    PTDNF_PKG_INFO pSource
-    );
-
-uint32_t
 TDNFPackageGetDowngrade(
     Id dwInstalled,
     PSolvSack pSack,
@@ -565,13 +554,6 @@ TDNFGetErasePackages(
 uint32_t
 TDNFGetObsoletedPackages(
     Transaction* pTrans,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO* pPkgInfo
-    );
-
-uint32_t
-TDNFGetUnneededPackages(
-    Solver* pSolv,
     PTDNF pTdnf,
     PTDNF_PKG_INFO* pPkgInfo
     );
@@ -1145,20 +1127,10 @@ TDNFAppendPath(
     char **ppszPath
     );
 
-uint32_t
-TDNFReadAutoInstalled(
-    PTDNF pTdnf,
-    char ***pppszAutoInstalled
-    );
-
 //validate.c
 uint32_t
 TDNFValidateCmdArgs(
     PTDNF pTdnf
-    );
-
-uint32_t
-TDNFIsInitialized(
     );
 
 uint32_t

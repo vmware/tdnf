@@ -136,53 +136,6 @@ TDNFGetObsoletedPackages(
 }
 
 uint32_t
-TDNFGetUnneededPackages(
-    Solver* pSolv,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO* pPkgInfo)
-{
-    uint32_t dwError = 0;
-    PSolvPackageList pPkgList = NULL;
-    Queue queueResult = {0};
-
-    if(!pTdnf || !pTdnf->pSack|| !pSolv || !pPkgInfo)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    queue_init(&queueResult);
-    solver_get_unneeded(pSolv, &queueResult, 0);
-
-    if(queueResult.count > 0)
-    {
-        dwError = SolvQueueToPackageList(&queueResult, &pPkgList);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFPopulatePkgInfos(
-                      pTdnf->pSack,
-                      pPkgList,
-                      pPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    if(pPkgList)
-    {
-        SolvFreePackageList(pPkgList);
-    }
-    queue_free(&queueResult);
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
 TDNFGetDownGradePackages(
     Transaction* pTrans,
     PTDNF pTdnf,

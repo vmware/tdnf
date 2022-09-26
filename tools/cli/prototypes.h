@@ -242,10 +242,6 @@ TDNFCliValidateOptions(
     );
 
 //output.c
-void
-ShowConsoleProps(
-    void
-    );
 
 uint32_t
 GetConsoleWidth(

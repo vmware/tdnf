@@ -23,7 +23,6 @@ configure_file(
 
 add_library(${LIB_TDNF} SHARED
     api.c
-    clean.c
     client.c
     config.c
     eventdata.c
