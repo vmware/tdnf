@@ -225,25 +225,13 @@ TDNFFreeHistoryInfoItems(
     int nCount
 );
 
-//remoterepo.c
-uint32_t
-TDNFCheckHexDigest(
-    const char *hex_digest,
-    int digest_length
-    );
-
-uint32_t
-TDNFChecksumFromHexDigest(
-    const char *hex_digest,
-    unsigned char *ppdigest
-    );
-
 uint32_t
 TDNFCheckRepoMDFileHashFromMetalink(
-    char *pszFile,
+    const char *pszFile,
     TDNF_ML_CTX *ml_ctx
     );
 
+//remoterepo.c
 uint32_t
 TDNFDownloadFileFromRepo(
     PTDNF pTdnf,

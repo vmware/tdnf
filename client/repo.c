@@ -654,15 +654,6 @@ TDNFGetRepoMD(
                           pRepoData->pszId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        /*
-        if (ml_ctx) {
-            //check if the repomd file downloaded using metalink have the same checksum
-            //as mentioned in the metalink file.
-            dwError = TDNFCheckRepoMDFileHashFromMetalink(pszTmpRepoMDFile, ml_ctx);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        */
-
         nReplaceRepoMD = 1;
         if (pszMDCookie[0])
         {
@@ -747,12 +738,6 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszError);
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
-    /*
-    if (ml_ctx)
-    {
-        TDNFMetalinkFree(ml_ctx);
-        ml_ctx = NULL;
-    }*/
     return dwError;
 
 error:

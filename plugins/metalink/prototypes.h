@@ -105,29 +105,41 @@ FreePluginHandle(
     PTDNF_PLUGIN_HANDLE pHandle
     );
 
-/* Metalink.c */
+// list.c
+void
+TDNFSortListOnPreference(
+    TDNF_ML_LIST** headUrl
+);
+
+uint32_t
+TDNFAppendList(
+    TDNF_ML_LIST** head_ref,
+    void *new_data
+);
+
+void
+TDNFDeleteList(
+    TDNF_ML_LIST** head_ref,
+    TDNF_ML_FREE_FUNC free_func
+);
+
+/* metalink.c */
 uint32_t
 TDNFMetalinkReadConfig(
     PTDNF_PLUGIN_HANDLE pHandle,
     PTDNF_EVENT_CONTEXT pContext
     );
 
-    // list.c
-    void
-    TDNFSortListOnPreference(
-        TDNF_ML_LIST** headUrl
+uint32_t
+TDNFMetalinkRepoMDDownloadStart(
+    PTDNF_PLUGIN_HANDLE pHandle,
+    PTDNF_EVENT_CONTEXT pContext
     );
 
-    uint32_t
-    TDNFAppendList(
-        TDNF_ML_LIST** head_ref,
-        void *new_data
-    );
-
-    void
-    TDNFDeleteList(
-        TDNF_ML_LIST** head_ref,
-        TDNF_ML_FREE_FUNC free_func
+uint32_t
+TDNFMetalinkRepoMDDownloadEnd(
+    PTDNF_PLUGIN_HANDLE pHandle,
+    PTDNF_EVENT_CONTEXT pContext
     );
 
 #endif /* __PLUGINS_Metalink_PROTOTYPES_H__ */

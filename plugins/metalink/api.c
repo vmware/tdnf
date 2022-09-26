@@ -89,6 +89,7 @@ TDNFFreeMetalinkData(
         pTemp = pData->pNext;
         TDNF_SAFE_FREE_MEMORY(pData->pszRepoId);
         TDNF_SAFE_FREE_MEMORY(pData->pszMetalink);
+        TDNFMetalinkFree(pData->ml_ctx);
         TDNFFreeMemory(pData);
         pData = pTemp;
     }
@@ -217,9 +218,6 @@ TDNFMetalinkGetErrorString(
 {
     uint32_t dwError = 0;
     char *pszError = NULL;
-    char *pszErrorPre = NULL;
-    const char *pszGPGError = NULL;
-    TDNF_ERROR_DESC arErrorDesc[] = METALINK_ERROR_TABLE;
 
     if (!pHandle || !ppszError)
     {

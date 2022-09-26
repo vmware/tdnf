@@ -251,10 +251,114 @@ error:
     goto cleanup;
 }
 
+/* Returns nonzero if hex_digest is properly formatted; that is each
+   letter is in [0-9A-Za-z] and the length of the string equals to the
+   result length of digest * 2. */
+static
+uint32_t
+TDNFCheckHexDigest(
+    const char *hex_digest,
+    int digest_length
+    )
+{
+    int i = 0;
+    if(IsNullOrEmptyString(hex_digest) ||
+       (digest_length <= 0))
+    {
+        return 0;
+    }
+    for(i = 0; hex_digest[i]; ++i)
+    {
+        if(!isxdigit(hex_digest[i]))
+        {
+            return 0;
+        }
+    }
+    return digest_length * 2 == i;
+}
+
+static
+uint32_t
+TDNFHexToUint(
+    const char *hex_digest,
+    unsigned char *uintValue
+    )
+{
+    uint32_t dwError = 0;
+    char buf[3] = {0};
+    unsigned long val = 0;
+
+    if(IsNullOrEmptyString(hex_digest) ||
+       !uintValue)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    buf[0] = hex_digest[0];
+    buf[1] = hex_digest[1];
+
+    errno = 0;
+    val = strtoul(buf, NULL, 16);
+    if(errno)
+    {
+        pr_err("Error: strtoul call failed\n");
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    *uintValue = (unsigned char)(val&0xff);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+static
+uint32_t
+TDNFChecksumFromHexDigest(
+    const char *hex_digest,
+    unsigned char *ppdigest
+    )
+{
+    uint32_t dwError = 0;
+    unsigned char *pdigest = NULL;
+    size_t i = 0;
+    size_t len = 0;
+    unsigned char uintValue = 0;
+
+    if(IsNullOrEmptyString(hex_digest) ||
+       !ppdigest)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    len = strlen(hex_digest);
+
+    dwError = TDNFAllocateMemory(1, len/2, (void **)&pdigest);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(i = 0; i < len; i += 2)
+    {
+        dwError = TDNFHexToUint(hex_digest + i, &uintValue);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        pdigest[i>>1] = uintValue;
+    }
+    memcpy( ppdigest, pdigest, len>>1 );
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pdigest);
+    return dwError;
+
+error:
+    goto cleanup;
+}
 
 uint32_t
 TDNFCheckRepoMDFileHashFromMetalink(
-    char *pszFile,
+    const char *pszFile,
     TDNF_ML_CTX *ml_ctx
     )
 {
@@ -310,108 +414,6 @@ TDNFCheckRepoMDFileHashFromMetalink(
     }
 cleanup:
     return dwError;
-error:
-    goto cleanup;
-}
-
-/* Returns nonzero if hex_digest is properly formatted; that is each
-   letter is in [0-9A-Za-z] and the length of the string equals to the
-   result length of digest * 2. */
-uint32_t
-TDNFCheckHexDigest(
-    const char *hex_digest,
-    int digest_length
-    )
-{
-    int i = 0;
-    if(IsNullOrEmptyString(hex_digest) ||
-       (digest_length <= 0))
-    {
-        return 0;
-    }
-    for(i = 0; hex_digest[i]; ++i)
-    {
-        if(!isxdigit(hex_digest[i]))
-        {
-            return 0;
-        }
-    }
-    return digest_length * 2 == i;
-}
-
-uint32_t
-TDNFHexToUint(
-    const char *hex_digest,
-    unsigned char *uintValue
-    )
-{
-    uint32_t dwError = 0;
-    char buf[3] = {0};
-    unsigned long val = 0;
-
-    if(IsNullOrEmptyString(hex_digest) ||
-       !uintValue)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    buf[0] = hex_digest[0];
-    buf[1] = hex_digest[1];
-
-    errno = 0;
-    val = strtoul(buf, NULL, 16);
-    if(errno)
-    {
-        pr_err("Error: strtoul call failed\n");
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-    *uintValue = (unsigned char)(val&0xff);
-
-cleanup:
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFChecksumFromHexDigest(
-    const char *hex_digest,
-    unsigned char *ppdigest
-    )
-{
-    uint32_t dwError = 0;
-    unsigned char *pdigest = NULL;
-    size_t i = 0;
-    size_t len = 0;
-    unsigned char uintValue = 0;
-
-    if(IsNullOrEmptyString(hex_digest) ||
-       !ppdigest)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    len = strlen(hex_digest);
-
-    dwError = TDNFAllocateMemory(1, len/2, (void **)&pdigest);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for(i = 0; i < len; i += 2)
-    {
-        dwError = TDNFHexToUint(hex_digest + i, &uintValue);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        pdigest[i>>1] = uintValue;
-    }
-    memcpy( ppdigest, pdigest, len>>1 );
-
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pdigest);
-    return dwError;
-
 error:
     goto cleanup;
 }
