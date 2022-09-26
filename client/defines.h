@@ -267,8 +267,3 @@ typedef void (*TDNF_ML_FREE_FUNC) (void* data);
 #define TAG_NAME_HASH "hash"
 #define TAG_NAME_URL  "url"
 
-#define ATTR_NAME       (xmlChar*)"name"
-#define ATTR_PROTOCOL   (xmlChar*)"protocol"
-#define ATTR_TYPE       (xmlChar*)"type"
-#define ATTR_LOCATION   (xmlChar*)"location"
-#define ATTR_PREFERENCE (xmlChar*)"preference"

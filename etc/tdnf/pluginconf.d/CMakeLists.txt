@@ -6,7 +6,7 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-install(FILES "tdnfrepogpgcheck.conf" "tdnfrepogpgcheck.conf"
+install(FILES "tdnfrepogpgcheck.conf" "tdnfmetalink.conf"
     DESTINATION "${SYSCONFDIR}/tdnf/pluginconf.d"
     COMPONENT etc
 )

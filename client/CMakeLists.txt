@@ -50,7 +50,6 @@ target_link_libraries(${LIB_TDNF}
     ${LibSolv_LIBRARIES}
     ${CURL_LIBRARIES}
     ${OPENSSL_LIBRARIES}
-    ${LIBXML2_LIBRARIES}
     ${SQLITE3_LIBRARIES}
 )
 

@@ -22,6 +22,8 @@
 #include <tdnfplugineventmap.h>
 #include <tdnf-common-defines.h>
 
+#include <libxml/parser.h>
+
 //libcurl
 #include <curl/curl.h>
 

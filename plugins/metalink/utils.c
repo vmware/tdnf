@@ -19,6 +19,13 @@
  */
 
 #include "includes.h"
+
+#define ATTR_NAME       (xmlChar*)"name"
+#define ATTR_PROTOCOL   (xmlChar*)"protocol"
+#define ATTR_TYPE       (xmlChar*)"type"
+#define ATTR_LOCATION   (xmlChar*)"location"
+#define ATTR_PREFERENCE (xmlChar*)"preference"
+
 typedef struct _hash_op {
     char *hash_type;
     unsigned int length;

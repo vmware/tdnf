@@ -46,7 +46,6 @@
 
 //libcurl
 #include <curl/curl.h>
-#include <libxml/parser.h>
 
 #include "../history/history.h"
 
