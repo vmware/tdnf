@@ -218,6 +218,8 @@ TDNFMetalinkGetErrorString(
 {
     uint32_t dwError = 0;
     char *pszError = NULL;
+    char *pszErrorPre = NULL;
+    TDNF_ERROR_DESC arErrorDesc[] = METALINK_ERROR_TABLE;
 
     if (!pHandle || !ppszError)
     {
@@ -225,7 +227,22 @@ TDNFMetalinkGetErrorString(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* TODO */
+    if (nErrorCode > ERROR_TDNF_METALINK_START && nErrorCode < ERROR_TDNF_METALINK_END)
+    {
+        for(size_t i = 0; i < ARRAY_SIZE(arErrorDesc); ++i)
+        {
+            if (nErrorCode == (uint32_t)arErrorDesc[i].nCode)
+            {
+                pszErrorPre = arErrorDesc[i].pszDesc;
+                break;
+            }
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = TDNFAllocateStringPrintf(
+                  &pszError, "%s: %s\n",
+                  METALINK_PLUGIN_ERROR, pszErrorPre);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     *ppszError = pszError;
 

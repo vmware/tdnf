@@ -251,15 +251,6 @@ typedef enum
     {ERROR_TDNF_CURLE_FAILED_INIT,                   "ERROR_TDNF_CURLE_FAILED_INIT",                   "Curl Init Failed"},\
     {ERROR_TDNF_CURLE_URL_MALFORMAT,                 "ERROR_TDNF_CURLE_URL_MALFORMAT",                 "URL seems to be corrupted. Please clean all and makecache"},\
     {ERROR_TDNF_SYSTEM_BASE,                         "ERROR_TDNF_SYSTEM_BASE",                         "unknown system error"},\
-    {ERROR_TDNF_ML_PARSER_INVALID_DOC_OBJECT,        "ERROR_TDNF_ML_PARSER_INVALID_DOC_OBJECT",        "Failed to parse and create document tree"},\
-    {ERROR_TDNF_ML_PARSER_INVALID_ROOT_ELEMENT,      "ERROR_TDNF_ML_PARSER_INVALID_ROOT_ELEMENT",      "Root element not found"},\
-    {ERROR_TDNF_ML_PARSER_MISSING_FILE_ATTR,         "ERROR_TDNF_ML_PARSER_MISSING_FILE_ATTR",         "Missing filename in metalink file"},\
-    {ERROR_TDNF_ML_PARSER_INVALID_FILE_NAME,         "ERROR_TDNF_ML_PARSER_INVALID_FILE_NAME",         "Invalid filename present"},\
-    {ERROR_TDNF_ML_PARSER_MISSING_FILE_SIZE,         "ERROR_TDNF_ML_PARSER_MISSING_FILE_SIZE",         "Missing file size in metalink file"},\
-    {ERROR_TDNF_ML_PARSER_MISSING_HASH_ATTR,         "ERROR_TDNF_ML_PARSER_MISSING_HASH_ATTR",         "Missing attribute in hash tag"},\
-    {ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT,      "ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT",      "Missing content in hash tag value"},\
-    {ERROR_TDNF_ML_PARSER_MISSING_URL_ATTR,          "ERROR_TDNF_ML_PARSER_MISSING_URL_ATTR",          "Missing attribute in url tag"},\
-    {ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT,      "ERROR_TDNF_ML_PARSER_MISSING_URL_CONTENT",       "Missing content in url tag value"},\
     {ERROR_TDNF_HISTORY_NODB,                        "ERROR_TDNF_HISTORY_ERROR",                       "History database error"},\
     {ERROR_TDNF_HISTORY_NODB,                        "ERROR_TDNF_HISTORY_NODB",                        "History database does not exist"},\
 };

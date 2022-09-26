@@ -485,7 +485,7 @@ TDNFParseFileTag(
     if (!xmlPropValue)
     {
         pr_err("%s: Missing attribute \"name\" of file element", __func__);
-        dwError = ERROR_TDNF_ML_PARSER_MISSING_FILE_ATTR;
+        dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_ATTR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -493,7 +493,7 @@ TDNFParseFileTag(
     if (strcmp(name, filename))
     {
         pr_err("%s: Invalid filename from metalink file:%s", __func__, name);
-        dwError = ERROR_TDNF_ML_PARSER_INVALID_FILE_NAME;
+        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_FILE_NAME;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -534,7 +534,7 @@ TDNFParseHashTag(
     xmlPropValue = xmlGetProp(node, ATTR_TYPE);
     if (!xmlPropValue)
     {
-        dwError = ERROR_TDNF_ML_PARSER_MISSING_HASH_ATTR;
+        dwError = ERROR_TDNF_METALINK_PARSER_MISSING_HASH_ATTR;
         pr_err("XML Parser Error:HASH element doesn't have attribute \"type\"");
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -551,7 +551,7 @@ TDNFParseHashTag(
     xmlContValue = xmlNodeGetContent(node);
     if(!xmlContValue)
     {
-        dwError = ERROR_TDNF_ML_PARSER_MISSING_HASH_CONTENT;
+        dwError = ERROR_TDNF_METALINK_PARSER_MISSING_HASH_CONTENT;
         pr_err("XML Parser Error:HASH value is not present in HASH element", value);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -651,7 +651,7 @@ TDNFParseUrlTag(
 
         if (prefValue < 0 || prefValue > 100)
         {
-            dwError = ERROR_TDNF_ML_PARSER_MISSING_URL_ATTR;
+            dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_ATTR;
             pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\""
                    "attribute in url element (should be in range 0-100)", value);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -667,7 +667,7 @@ TDNFParseUrlTag(
     xmlContValue = xmlNodeGetContent(node);
     if(!xmlContValue)
     {
-        dwError = ERROR_TDNF_ML_PARSER_MISSING_URL_CONTENT;
+        dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_CONTENT;
         pr_err("URL is no present in URL element", value);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -736,7 +736,7 @@ TDNFXmlParseData(
                 xmlContValue = xmlNodeGetContent(node);
                 if(!xmlContValue)
                 {
-                    dwError = ERROR_TDNF_ML_PARSER_MISSING_FILE_SIZE;
+                    dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_SIZE;
                     pr_err("XML Parser Error:File size is missing: %s", size);
                     BAIL_ON_TDNF_ERROR(dwError);
                 }
@@ -797,7 +797,7 @@ TDNFMetalinkParseFile(
     if (doc == NULL)
     {
         pr_err("%s: Error while reading xml from fd:%d \n", __func__, fd);
-        dwError = ERROR_TDNF_ML_PARSER_INVALID_DOC_OBJECT;
+        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -807,7 +807,7 @@ TDNFMetalinkParseFile(
     if (root_element == NULL)
     {
         pr_err("%s: Error to fetch root element of xml tree\n", __func__);
-        dwError = ERROR_TDNF_ML_PARSER_INVALID_ROOT_ELEMENT;
+        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_ROOT_ELEMENT;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
