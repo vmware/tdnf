@@ -40,26 +40,27 @@ char *_alloc_vsprintf(const char *fmt, va_list ap)
 
     /* Determine required size */
     size = vsnprintf(p, size, fmt, ap);
-
     if (size < 0)
-        return NULL;
+        goto err;
 
     size++;             /* For '\0' */
     p = (char *)calloc(1, size);
-    if (p == NULL) {
-        va_end(aq);
-        return NULL;
-    }
+    if (p == NULL)
+        goto err;
 
     size = vsnprintf(p, size, fmt, aq);
+    if (size < 0)
+        goto err;
+
     va_end(aq);
-
-    if (size < 0) {
-        free(p);
-        return NULL;
-    }
-
     return p;
+
+err:
+    if (p)
+        free(p);
+
+    va_end(aq);
+    return NULL;
 }
 
 /*
