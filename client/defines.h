@@ -227,6 +227,7 @@ typedef enum
     {ERROR_TDNF_RPM_GPG_NO_MATCH,   "ERROR_TDNF_RPM_GPG_NO_MATCH",     "RPM is signed but failed to match with known keys. Use --nogpgcheck to ignore."}, \
     {ERROR_TDNF_AUTOERASE_UNSUPPORTED,"ERROR_TDNF_AUTOERASE_UNSUPPORTED","autoerase / autoremove is not supported."}, \
     {ERROR_TDNF_RPM_CHECK,           "ERROR_TDNF_RPM_CHECK",           "rpm check reported errors"}, \
+    {ERROR_TDNF_RPMTS_BAD_ROOT_DIR,  "ERROR_TDNF_RPMTS_BAD_ROOT_DIR",  "Bad root directory"}, \
     {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
     {ERROR_TDNF_SELF_ERASE, "ERROR_TDNF_SELF_ERASE", "The operation would result in removing the protected package : tdnf"},\
     {ERROR_TDNF_DOWNGRADE_NOT_ALLOWED,\
