@@ -50,49 +50,6 @@ error:
     goto cleanup;
 }
 
-uint32_t TDNFParseScheme(
-    const char* pszKeyUrl,
-    char** ppszScheme)
-{
-    uint32_t dwError = 0;
-    char* pszScheme = NULL;
-    const char* pszTmpStr = NULL;
-    int nLen = 0;
-    int i = 0;
-    if(IsNullOrEmptyString(pszKeyUrl) || !ppszScheme)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pszTmpStr = strchr(pszKeyUrl, ':');
-    if(pszTmpStr == NULL)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    nLen = pszTmpStr - pszKeyUrl;
-    dwError = TDNFAllocateMemory(
-                  nLen + 1,
-                  sizeof(char),
-                  (void**)&pszScheme);
-    BAIL_ON_TDNF_ERROR(dwError);
-    for(i = 0; i < nLen; i ++)
-    {
-        pszScheme[i] = pszKeyUrl[i];
-    }
-    *ppszScheme = pszScheme;
-cleanup:
-    return dwError;
-
-error:
-    if(ppszScheme)
-    {
-        *ppszScheme = NULL;
-    }
-    TDNF_SAFE_FREE_MEMORY(pszScheme);
-    goto cleanup;
-}
-
 uint32_t
 ReadGPGKeyFile(
     const char* pszFile,

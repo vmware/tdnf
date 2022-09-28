@@ -21,25 +21,6 @@
 #include "includes.h"
 
 uint32_t
-TDNFRepoMakeCacheDirs(
-    const char* pszRepo
-    )
-{
-    uint32_t dwError = 0;
-    if(IsNullOrEmptyString(pszRepo))
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
-uint32_t
 TDNFRepoSetBaseUrl(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepo,

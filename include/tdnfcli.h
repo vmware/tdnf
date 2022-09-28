@@ -350,10 +350,6 @@ PrintAction(
 
 
 //output.c
-void
-ShowConsoleProps(
-    );
-
 uint32_t
 GetConsoleWidth(
     int* pConsoleWidth
