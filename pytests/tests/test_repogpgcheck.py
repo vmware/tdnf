@@ -9,6 +9,8 @@
 import os
 import pytest
 
+PLUGIN_NAME = 'tdnfrepogpgcheck'
+
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
@@ -17,46 +19,41 @@ def setup_test(utils):
 
 
 def teardown_test(utils):
-    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/plugins/d', tdnf_conf])
-    utils.run(['sed', '-i', '/pluginconfpath/d', tdnf_conf])
+    utils.edit_config({'plugins': '0',
+                       'pluginconfpath': None,
+                       'pluginpath': None})
     plugin_conf_path = os.path.join(utils.config['repo_path'], 'pluginconf.d')
-    plugin_conf = os.path.join(plugin_conf_path, 'tdnfrepogpgcheck.conf')
+    plugin_conf = os.path.join(plugin_conf_path, PLUGIN_NAME + '.conf')
     os.remove(plugin_conf)
-    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
-    utils.run(['sed', '-i', '/repo_gpgcheck/d', tdnf_repo])
+    utils.edit_config({'repo_gpgcheck': None}, repo='photon-test')
 
 
 def enable_plugins(utils):
     # write a plugin config file
-    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '2iplugins=1', tdnf_conf])
     plugin_conf_path = os.path.join(utils.config['repo_path'], 'pluginconf.d')
-    utils.run(['mkdir', '-p', plugin_conf_path])
-    utils.run(['sed', '-i', '2ipluginconfpath=' + plugin_conf_path, tdnf_conf])
     plugin_path = utils.config['plugin_path']
-    utils.run(['sed', '-i', '2ipluginpath=' + plugin_path, tdnf_conf])
-    plugin_conf = os.path.join(plugin_conf_path, 'tdnfrepogpgcheck.conf')
+    utils.makedirs(plugin_conf_path)
+
+    utils.edit_config({'plugins': '1',
+                       'pluginconfpath': plugin_conf_path,
+                       'pluginpath': plugin_path})
+
+    plugin_conf = os.path.join(plugin_conf_path, PLUGIN_NAME + '.conf')
     with open(plugin_conf, 'w') as plugin_conf_file:
         plugin_conf_file.write('[main]\nenabled=1\n')
 
 
 def set_plugin_flag_in_conf(utils, flag):
-    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/plugins/d', tdnf_conf])
-    utils.run(['sed', '-i', '2iplugins=' + flag, tdnf_conf])
+    utils.edit_config({'plugins': flag})
 
 
 def set_plugin_config_enabled_flag(utils, flag):
-    tdnfrepogpgcheck_plugin_conf = os.path.join(utils.config['repo_path'], 'pluginconf.d/tdnfrepogpgcheck.conf')
-    utils.run(['sed', '-i', '/enabled/d', tdnfrepogpgcheck_plugin_conf])
-    utils.run(['sed', '-i', '2ienabled=' + flag, tdnfrepogpgcheck_plugin_conf])
+    plugin_conf = os.path.join(utils.config['repo_path'], 'pluginconf.d', PLUGIN_NAME + '.conf')
+    utils.edit_config({'enabled': flag}, filename=plugin_conf, section='main')
 
 
 def set_repo_flag_repo_gpgcheck(utils, flag):
-    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
-    utils.run(['sed', '-i', '2irepo_gpgcheck=' + flag, tdnf_repo])
-    utils.run(['sed', '-i', '2iskip_if_unavailable=False', tdnf_repo])
+    utils.edit_config({'repo_gpgcheck': flag, 'skip_if_unavailable': 'False'}, repo='photon-test')
 
 
 # make sure libtdnfrepogpgcheck.so is loaded without issues

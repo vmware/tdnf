@@ -9,6 +9,8 @@
 import os
 import pytest
 
+PLUGIN_NAME = 'test_plugin'
+
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
@@ -17,33 +19,28 @@ def setup_test(utils):
 
 
 def teardown_test(utils):
-    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/plugins/d', tdnf_conf])
-    utils.run(['sed', '-i', '/pluginconfpath/d', tdnf_conf])
+    utils.edit_config({'plugins': None, 'pluginconfpath': None})
 
 
 def enable_plugins(utils):
     # write a plugin config file
-    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '2iplugins=1', tdnf_conf])
     plugin_conf_path = os.path.join(utils.config['repo_path'], 'pluginconf.d')
-    utils.run(['mkdir', '-p', plugin_conf_path])
-    utils.run(['sed', '-i', '2ipluginconfpath=' + plugin_conf_path, tdnf_conf])
+    utils.makedirs(plugin_conf_path)
+
+    utils.edit_config({'plugins': '1', 'pluginconfpath': plugin_conf_path})
+
     plugin_conf = os.path.join(plugin_conf_path, 'test_plugin.conf')
     with open(plugin_conf, 'w') as plugin_conf_file:
         plugin_conf_file.write('[main]\nenabled=1\n')
 
 
 def set_plugin_flag_in_conf(utils, flag):
-    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/plugins/d', tdnf_conf])
-    utils.run(['sed', '-i', '2iplugins=' + flag, tdnf_conf])
+    utils.edit_config({'plugins': flag})
 
 
 def set_plugin_config_enabled_flag(utils, flag):
-    test_plugin_conf = os.path.join(utils.config['repo_path'], 'pluginconf.d/test_plugin.conf')
-    utils.run(['sed', '-i', '/enabled/d', test_plugin_conf])
-    utils.run(['sed', '-i', '2ienabled=' + flag, test_plugin_conf])
+    plugin_conf = os.path.join(utils.config['repo_path'], 'pluginconf.d', PLUGIN_NAME + '.conf')
+    utils.edit_config({'enabled': flag}, filename=plugin_conf, section='main')
 
 
 def test_plugin_conf(utils):

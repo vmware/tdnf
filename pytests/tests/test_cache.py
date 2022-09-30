@@ -34,20 +34,15 @@ def clean_cache(utils):
 
 
 def enable_cache(utils):
-    tdnf_config = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/keepcache/d', tdnf_config])
-    utils.run(['sed', '-i', '$ a keepcache=true', tdnf_config])
+    utils.edit_config({'keepcache': 'true'})
 
 
 def disable_cache(utils):
-    tdnf_config = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/keepcache/d', tdnf_config])
+    utils.edit_config({'keepcache': None})
 
 
 def switch_cache_path(utils, new_path):
-    tdnf_config = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '/cachedir/d', tdnf_config])
-    utils.run(['sed', '-i', '$ a cachedir={}'.format(new_path), tdnf_config])
+    utils.edit_conf({'cachedir': new_path})
 
 
 def clean_small_cache(utils):
@@ -112,8 +107,6 @@ def test_install_with_cache(utils):
 def test_install_with_keepcache_false(utils):
     clean_cache(utils)
     disable_cache(utils)
-    tdnf_config = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    utils.run(['sed', '-i', '$ a keepcache=false', tdnf_config])
 
     pkgname = utils.config["sglversion_pkgname"]
     if utils.check_package(pkgname):

@@ -32,18 +32,11 @@ def teardown_test(utils):
 
 
 def set_gpgcheck(utils, enabled):
-    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
-    if enabled:
-        utils.run(['sed', '-i', '/gpgcheck/s/.*/gpgcheck=1/g', tdnf_repo])
-    else:
-        utils.run(['sed', '-i', '/gpgcheck/s/.*/gpgcheck=0/g', tdnf_repo])
+    utils.edit_config({'gpgcheck': '1' if enabled else '0'}, repo='photon-test')
 
 
 def set_repo_key(utils, url):
-    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
-    utils.run(['sed', '-i', '/gpgkey/s/.*/#gpgkey=/g', tdnf_repo])
-    if url:
-        utils.run(['sed', '-i', '/gpgkey/s@.*@gpgkey={}@g'.format(url), tdnf_repo])
+    utils.edit_config({'gpgkey': url}, repo='photon-test')
 
 
 # 'wrong' key in repo config, but skip signature, expect success
