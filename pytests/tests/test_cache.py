@@ -42,7 +42,7 @@ def disable_cache(utils):
 
 
 def switch_cache_path(utils, new_path):
-    utils.edit_conf({'cachedir': new_path})
+    utils.edit_config({'cachedir': new_path})
 
 
 def clean_small_cache(utils):
