@@ -135,7 +135,6 @@ class TestUtils(object):
                 filename = os.path.join(self.config['repo_path'], 'yum.repos.d', repo + '.repo')
                 if section is None:
                     section = repo
-        print("filename={}\n".format(filename))
         if config is None:
             config = configparser.ConfigParser()
             config.read(filename)
