@@ -8,7 +8,6 @@
 
 import os
 import pytest
-import errno
 import shutil
 
 TESTREPO = 'photon-test'
@@ -28,32 +27,16 @@ def teardown_test(utils):
     if os.path.isdir(dirname):
         shutil.rmtree(dirname)
 
-    utils.tdnf_config.remove_option('main', 'minversions')
-    filename = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    with open(filename, 'w') as f:
-        utils.tdnf_config.write(f, space_around_delimiters=False)
-
-
-# helper to create directory tree without complains when it exists:
-def makedirs(d):
-    try:
-        os.makedirs(d)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+    utils.edit_config({'minversions': None})
 
 
 def set_minversions_conf(utils, value):
-    utils.tdnf_config['main']['minversions'] = value
-    filename = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    with open(filename, 'w') as f:
-        utils.tdnf_config.write(f, space_around_delimiters=False)
+    utils.edit_config({'minversions': value})
 
 
 def set_minversions_file(utils, value):
-    utils.tdnf_config['main']['minversions'] = value
     dirname = os.path.join(utils.config['repo_path'], 'minversions.d')
-    makedirs(dirname)
+    utils.makedirs(dirname)
     filename = os.path.join(dirname, 'test.conf')
     with open(filename, 'w') as f:
         f.write(value)

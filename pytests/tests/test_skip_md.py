@@ -33,36 +33,30 @@ def teardown_test(utils):
 
 def generate_repofile_skip_md(utils, newconfig, repoid, mdpart, value):
     orig_repoconf = os.path.join(utils.config['repo_path'], "yum.repos.d", "photon-test.repo")
+
     option = "skip_md_{}".format(mdpart)
 
+    # no easy way to rename a section with configparser
     with open(orig_repoconf, 'r') as fin:
         with open(newconfig, 'w') as fout:
             for line in fin:
                 if line.startswith('['):
                     fout.write("[{}]\n".format(repoid))
-                elif line.startswith('enabled'):
-                    # we will enable this with the --repoid option
-                    fout.write('enabled=0\n')
-                elif not line.startswith(option):
+                else:
                     fout.write(line)
-            fout.write('{}={}\n'.format(option, '1' if value else '0'))
 
-    with open(newconfig, 'r') as fin:
-        for line in fin:
-            print(line)
+    utils.edit_config({
+        option: '1' if value else '0',
+        'enabled': '0'},  # we will enable this with the --repoid option
+        repo=REPOID)
 
 
 def get_cache_dir(utils):
-    conffile = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-    with open(conffile, 'r') as fin:
-        for line in fin:
-            if line.startswith("cachedir"):
-                return line.split('=')[1].strip()
-    return '/var/cache/tdnf/'
+    return utils.tdnf_config.get('main', 'cachedir')
 
 
 def find_cache_dir(utils, reponame):
-    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    cache_dir = get_cache_dir(utils)
     for f in os.listdir(cache_dir):
         if fnmatch.fnmatch(f, '{}-*'.format(reponame)):
             return os.path.join(cache_dir, f)

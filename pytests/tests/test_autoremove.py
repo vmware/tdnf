@@ -30,19 +30,8 @@ def teardown_test(utils):
 
 
 def generate_config_cleanreq(utils, newconfig, value):
-    orig_conffile = os.path.join(utils.config['repo_path'], 'tdnf.conf')
-
-    with open(orig_conffile, 'r') as fin:
-        with open(newconfig, 'w') as fout:
-            for line in fin:
-                if not line.startswith('clean_requirements_on_remove'):
-                    fout.write(line)
-                else:
-                    fout.write('clean_requirements_on_remove={}\n'.format('1' if value else '0'))
-
-    with open(newconfig, 'r') as fin:
-        for line in fin:
-            print(line)
+    shutil.copy(os.path.join(utils.config['repo_path'], 'tdnf.conf'), newconfig)
+    utils.edit_config({'clean_requirements_on_remove': '1' if value else '0'}, section='main', filename=newconfig)
 
 
 # leaf1 pulls in a dependency, this should be removed when leaf1 is
@@ -194,7 +183,7 @@ def test_autoremove_conf_false_autoremove(utils):
     assert not utils.check_package(pkgname_req)
 
 
-# 'autoremve' without args cleans up all unneeded
+# 'autoremove' without args cleans up all unneeded
 # auto installed pkgs
 def test_autoremove_noargs(utils):
     pkgname = 'tdnf-test-cleanreq-leaf1'
@@ -213,7 +202,7 @@ def test_autoremove_noargs(utils):
     assert not utils.check_package(pkgname_req)
 
 
-# do not accidentally remove all autoinstaled packages
+# do not accidentally remove all autoinstalled packages
 # those that are required by userinstalled pkgs should remain
 # and removing them would drag the user installed pkgs with them
 def test_autoremove_noargs2(utils):
