@@ -9,6 +9,7 @@
 import os
 import glob
 import pytest
+import shutil
 import socket
 import configparser
 
@@ -27,14 +28,14 @@ ini = configparser.ConfigParser()
 def setup_test(utils):
     global automatic_conf, tdnf_conf, automatic_cmd
     automatic_conf = utils.config['automatic_conf']
-    tdnf_conf = utils.config['repo_path'] + '/tdnf.conf'
+    tdnf_conf = os.path.join(utils.config['repo_path'], 'tdnf.conf')
     automatic_cmd = utils.config['automatic_script']
     repo_file = get_repo_file_path()
-    os.system('cp ' + repo_file + ' ' + repo_file + '.bak')
+    shutil.copy(repo_file, repo_file + '.bak')
 
     # make sure to use the built tdnf binary, not the installed one by
     # prefixing the build/bin directory
-    os.environ['PATH'] = utils.config['build_dir'] + '/bin' + ':' + os.environ['PATH']
+    os.environ['PATH'] = os.path.join(utils.config['build_dir'], 'bin') + ':' + os.environ['PATH']
 
     cleanup_env(utils)
     yield
@@ -43,19 +44,23 @@ def setup_test(utils):
 
 def teardown_test(utils):
     repo_file = get_repo_file_path()
-    os.system('mv ' + repo_file + '.bak' + ' ' + repo_file)
+    os.rename(repo_file + '.bak', repo_file)
     cleanup_env(utils)
 
 
 def cleanup_env(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
-    os.system('rm -f ' + tmp_auto_conf + ' ' + emit_file + '*')
+    if os.path.exists(tmp_auto_conf):
+        os.unlink(tmp_auto_conf)
+    files = glob.glob(emit_file + '*')
+    for f in files:
+        os.unlink(f)
 
 
 def get_repo_file_path():
     ini_load(tdnf_conf)
-    return ini['main']['repodir'] + '/' + repo_name + '.repo'
+    return os.path.join(ini['main']['repodir'], repo_name + '.repo')
 
 
 def ini_load(ini_file):
