@@ -57,12 +57,6 @@ TDNFInitRepo(
                   NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetRepoMD(pTdnf,
-                            pRepoData,
-                            pszRepoDataDir,
-                            &pRepoMD);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     dwError = TDNFAllocateMemory(
                   1,
                   sizeof(SOLV_REPO_INFO_INTERNAL),
@@ -70,7 +64,6 @@ TDNFInitRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pRepo = repo_create(pPool, pRepoData->pszId);
-
     if (!pRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -80,21 +73,32 @@ TDNFInitRepo(
     pSolvRepoInfo->pszRepoCacheDir = pszRepoCacheDir;
     pRepo->appdata = pSolvRepoInfo;
 
-    dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    pSolvRepoInfo->nCookieSet = 1;
-    dwError = SolvUseMetaDataCache(pSack, pSolvRepoInfo, &nUseMetaDataCache);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (nUseMetaDataCache == 0)
-    {
-        dwError = TDNFInitRepoFromMetadata(pSolvRepoInfo->pRepo, pRepoData->pszId, pRepoMD);
+    if (pRepoData->nHasMetaData) {
+        dwError = TDNFGetRepoMD(pTdnf,
+                                pRepoData,
+                                pszRepoDataDir,
+                                &pRepoMD);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvCreateMetaDataCache(pSack, pSolvRepoInfo);
+        dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
+        BAIL_ON_TDNF_ERROR(dwError);
+        pSolvRepoInfo->nCookieSet = 1;
+
+        dwError = SolvUseMetaDataCache(pSack, pSolvRepoInfo, &nUseMetaDataCache);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (nUseMetaDataCache == 0) {
+            dwError = TDNFInitRepoFromMetadata(pRepo, pRepoData->pszId, pRepoMD);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = SolvCreateMetaDataCache(pSack, pSolvRepoInfo);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    } else {
+        dwError = SolvReadRpmsFromDirectory(pRepo, pRepoData->ppszBaseUrls[0]);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
     pool_createwhatprovides(pPool);
 
 cleanup:

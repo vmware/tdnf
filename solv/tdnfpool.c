@@ -116,19 +116,19 @@ SolvInitSack(
     pool_setarch(pPool, systemInfo.machine);
     pool_set_flag(pPool, POOL_FLAG_ADDFILEPROVIDESFILTERED, 1);
 
-    if(nInstallAllDeps)
+    pRepo = repo_create(pPool, SYSTEM_REPO_NAME);
+    if(pRepo == NULL)
     {
-        pRepo = repo_create(pPool, SYSTEM_REPO_NAME);
-        if(pRepo == NULL)
-        {
-           dwError = ERROR_TDNF_INVALID_PARAMETER;
-        }
+       dwError = ERROR_TDNF_INVALID_PARAMETER;
+       BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    else
+
+    if(!nInstallAllDeps)
     {
-        dwError = SolvReadInstalledRpms(pPool, &pRepo, pszCacheDir);
+        dwError = SolvReadInstalledRpms(pRepo, pszCacheDir);
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
     pool_set_installed(pPool, pRepo);
     pool_createwhatprovides(pPool);
 
@@ -139,6 +139,10 @@ cleanup:
     return dwError;
 
 error:
+    if(pRepo)
+    {
+        repo_free(pRepo, 1);
+    }
     if(pPool)
     {
         pool_free(pPool);

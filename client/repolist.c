@@ -76,6 +76,23 @@ TDNFLoadRepoData(
             TDNF_SAFE_FREE_STRINGARRAY(ppszUrlIdTuple);
             ppszUrlIdTuple = NULL;
         }
+        else if(strcmp(pSetOpt->pszOptName, "repofromdir") == 0)
+        {
+            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszUrlIdTuple);
+            BAIL_ON_TDNF_ERROR(dwError);
+            if ((ppszUrlIdTuple[0] == NULL) || ppszUrlIdTuple[1] == NULL)
+            {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            dwError = TDNFCreateRepoFromDirectory(&pReposAll,
+                                                  ppszUrlIdTuple[0],
+                                                  ppszUrlIdTuple[1]);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            TDNF_SAFE_FREE_STRINGARRAY(ppszUrlIdTuple);
+            ppszUrlIdTuple = NULL;
+        }
     }
 
     pDir = opendir(pConf->pszRepoDir);
@@ -157,6 +174,7 @@ TDNFCreateCmdLineRepo(
 
     dwError = TDNFCreateRepo(&pRepo, CMDLINE_REPO_NAME);
     BAIL_ON_TDNF_ERROR(dwError);
+    pRepo->nHasMetaData = 0;
 
     dwError = TDNFSafeAllocateString(CMDLINE_REPO_NAME, &pRepo->pszName);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -165,6 +183,64 @@ TDNFCreateCmdLineRepo(
 cleanup:
     return dwError;
 error:
+    if(pRepo)
+    {
+        TDNFFreeReposInternal(pRepo);
+    }
+    goto cleanup;
+}
+
+uint32_t
+TDNFCreateRepoFromDirectory(
+    PTDNF_REPO_DATA* ppRepo,
+    const char *pszId,
+    const char *pszPath
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_DATA pRepo = NULL;
+    int nIsDir = 0;
+
+    if(!ppRepo || !pszId || !pszPath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFCreateRepo(&pRepo, pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+    pRepo->nHasMetaData = 0;
+
+    /* we want it enabled, or there was no point in adding it */
+    pRepo->nEnabled = 1;
+
+    dwError = TDNFSafeAllocateString(pszId, &pRepo->pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFIsDir(pszPath, &nIsDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (!nIsDir)
+    {
+        pr_err("%s is not a directory\n", pszPath);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(sizeof(char **), 2, (void **)&pRepo->ppszBaseUrls);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFSafeAllocateString(pszPath, &pRepo->ppszBaseUrls[0]);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppRepo = pRepo;
+cleanup:
+    return dwError;
+error:
+    if(ppRepo)
+    {
+        *ppRepo = NULL;
+    }
     if(pRepo)
     {
         TDNFFreeReposInternal(pRepo);
@@ -263,6 +339,7 @@ TDNFCreateRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pRepo->nEnabled = TDNF_REPO_DEFAULT_ENABLED;
+    pRepo->nHasMetaData = 1;
     pRepo->nSkipIfUnavailable = TDNF_REPO_DEFAULT_SKIP;
     pRepo->nGPGCheck = TDNF_REPO_DEFAULT_GPGCHECK;
     pRepo->nSSLVerify = TDNF_REPO_DEFAULT_SSLVERIFY;
@@ -393,6 +470,7 @@ TDNFLoadReposFromFile(
                       sizeof(TDNF_REPO_DATA),
                       (void**)&pRepo);
         BAIL_ON_TDNF_ERROR(dwError);
+        pRepo->nHasMetaData = 1;
 
         dwError = TDNFAllocateString(pszRepo, &pRepo->pszId);
         BAIL_ON_TDNF_ERROR(dwError);

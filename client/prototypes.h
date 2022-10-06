@@ -785,6 +785,13 @@ TDNFCreateRepoFromPath(
     );
 
 uint32_t
+TDNFCreateRepoFromDirectory(
+    PTDNF_REPO_DATA* ppRepo,
+    const char *pzsId,
+    const char *pszPath
+    );
+
+uint32_t
 TDNFCreateRepo(
     PTDNF_REPO_DATA* ppRepo,
     const char *pszId

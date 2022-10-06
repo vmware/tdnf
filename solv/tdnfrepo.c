@@ -267,26 +267,107 @@ error:
 
 }
 
+static
 uint32_t
-SolvReadInstalledRpms(
-    Pool* pPool,
-    Repo** ppRepo,
-    const char*  pszCacheFileName
+readRpmsFromDir(
+    Repo *pRepo,
+    const char *pszDir
+)
+{
+    uint32_t dwError = 0;
+    DIR *pDir = NULL;
+    struct dirent *pEnt = NULL;
+    char *pszPath = NULL;
+
+    pDir = opendir(pszDir);
+    if(pDir == NULL) {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    while ((pEnt = readdir (pDir)) != NULL ) {
+        int isDir;
+
+        if (pEnt->d_name[0] == '.') {
+            /* skip '.', '..', but also any dir name starting with '.' */
+            continue;
+        }
+
+        dwError = TDNFJoinPath(
+                      &pszPath,
+                      pszDir,
+                      pEnt->d_name,
+                      NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFIsDir(pszPath, &isDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (isDir) {
+            dwError = readRpmsFromDir(pRepo, pszPath);
+            BAIL_ON_TDNF_ERROR(dwError);
+        } else if (strcmp(&pEnt->d_name[strlen(pEnt->d_name)-4], ".rpm") == 0) {
+            if(!repo_add_rpm(pRepo,
+                             pszPath,
+                             REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE)) {
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        TDNF_SAFE_FREE_MEMORY(pszPath);
+    }
+cleanup:
+    if(pDir) {
+        closedir(pDir);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszPath);
+
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvReadRpmsFromDirectory(
+    Repo *pRepo,
+    const char *pszDir
     )
 {
     uint32_t dwError = 0;
-    Repo *pRepo = NULL;
-    FILE *pCacheFile = NULL;
-    int  dwFlags = 0;
 
-    if(!pPool || !ppRepo)
+    if(!pRepo || IsNullOrEmptyString(pszDir))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    pRepo = repo_create(pPool, SYSTEM_REPO_NAME);
-    if(pRepo == NULL)
+    dwError = readRpmsFromDir(pRepo, pszDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    repo_internalize(pRepo);
+
+    if (dwError) {
+        dwError = ERROR_TDNF_SOLV_IO;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+SolvReadInstalledRpms(
+    Repo* pRepo,
+    const char *pszCacheFileName
+    )
+{
+    uint32_t dwError = 0;
+    FILE *pCacheFile = NULL;
+    int  dwFlags = 0;
+
+    if(!pRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -312,7 +393,6 @@ SolvReadInstalledRpms(
         dwError = ERROR_TDNF_SOLV_IO;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    *ppRepo = pRepo;
 
 cleanup:
     if (pCacheFile)
@@ -320,10 +400,6 @@ cleanup:
     return dwError;
 
 error:
-    if(pRepo)
-    {
-        repo_free(pRepo, 1);
-    }
     goto cleanup;
 }
 
@@ -538,7 +614,7 @@ SolvUseMetaDataCache(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
     pRepo = pSolvRepoInfo->pRepo;
-    pszCookie = pSolvRepoInfo->nCookieSet ? pSolvRepoInfo->cookie : 0;
+    pszCookie = pSolvRepoInfo->nCookieSet ? pSolvRepoInfo->cookie : NULL;
 
     dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, pSack, &pszCacheFilePath);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -604,7 +680,7 @@ SolvCreateMetaDataCache(
     char *pszCacheFilePath = NULL;
     mode_t mask = 0;
 
-    if (!pSack || !pSolvRepoInfo|| !pSolvRepoInfo->nCookieSet)
+    if (!pSack || !pSolvRepoInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -617,6 +693,7 @@ SolvCreateMetaDataCache(
                   TDNF_SOLVCACHE_DIR_NAME,
                   NULL);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+
     if (access(pszSolvCacheDir, W_OK | X_OK))
     {
         if(errno != ENOENT)
@@ -654,11 +731,16 @@ SolvCreateMetaDataCache(
         dwError = ERROR_TDNF_REPO_WRITE;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
-    if (fwrite(pSolvRepoInfo->cookie, SOLV_COOKIE_LEN, 1, fp) != 1)
+
+    if (pSolvRepoInfo->nCookieSet)
     {
-        dwError = ERROR_TDNF_SOLV_IO;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+        if (fwrite(pSolvRepoInfo->cookie, SOLV_COOKIE_LEN, 1, fp) != 1)
+        {
+            dwError = ERROR_TDNF_SOLV_IO;
+            BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+        }
     }
+
     if (fclose(fp))
     {
         fp = NULL;/* so that error branch will not attempt to close again */

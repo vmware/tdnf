@@ -55,6 +55,7 @@ static struct option pstOptions[] =
     {"releasever",    required_argument, 0, 0},            //--releasever
     {"reboot-required", no_argument, 0, 0},                //--reboot-required
     {"repo",          required_argument, 0, 0},            //--repo
+    {"repofromdir",   required_argument, 0, 0},            //--repofromdir
     {"repofrompath",  required_argument, 0, 0},            //--repofrompath
     {"repoid",        required_argument, 0, 0},            //--repoid (same as --repo)
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity

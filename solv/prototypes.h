@@ -534,11 +534,16 @@ SolvCountPackages(
     );
 
 uint32_t
+SolvReadRpmsFromDirectory(
+    Repo *pRepo,
+    const char *pszDir
+);
+
+uint32_t
 SolvReadInstalledRpms(
-    Pool* pPool,
-    Repo** ppRepo,
-    const char* pszCacheFileName
-    );
+    Repo* pRepo,
+    const char *pszCacheFileName
+);
 
 uint32_t
 SolvLoadRepomd(
