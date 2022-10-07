@@ -335,10 +335,8 @@ uint32_t
 SolvInitSack(
     PSolvSack *ppSack,
     const char* pszCacheDir,
-    const char* pszRootDir,
-    int nInstallAllDeps
-    );
-
+    const char* pszRootDir
+);
 
 // tdnfquery.c
 uint32_t

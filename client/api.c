@@ -693,9 +693,14 @@ TDNFOpenHandle(
     dwError = SolvInitSack(
                   &pSack,
                   pTdnf->pConf->pszCacheDir,
-                  pTdnf->pArgs->pszInstallRoot,
-                  pArgs->nAllDeps);
+                  pTdnf->pArgs->pszInstallRoot);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!pArgs->nAllDeps)
+    {
+        dwError = SolvReadInstalledRpms(pSack->pPool->installed, pszCacheDir);
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
 
     dwError = TDNFLoadRepoData(
                   pTdnf,
