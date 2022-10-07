@@ -231,6 +231,7 @@ typedef struct _TDNF_CMD_ARGS
     int nSkipBroken;
     int nSource;
     int nBuildDeps;
+    int nInstallToDir;
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location
