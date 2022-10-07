@@ -628,7 +628,8 @@ TDNFRepoListFinalize(
                           0,
                           pSetOpt->pszOptValue);
         }
-        else if(strcmp(pSetOpt->pszOptName, "repoid") == 0)
+        else if((strcmp(pSetOpt->pszOptName, "repo") == 0) ||
+                (strcmp(pSetOpt->pszOptName, "repoid") == 0))
         {
             if (!nRepoidSeen)
             {

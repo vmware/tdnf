@@ -45,6 +45,19 @@ def test_repoid(utils):
     assert REPONAME in "\n".join(ret['stdout'])
 
 
+def test_repo(utils):
+    utils.makedirs(REPODIR)
+    utils.create_repoconf(os.path.join(REPODIR, REPOFILENAME),
+                          "http://foo.bar.com/packages",
+                          REPONAME)
+    ret = utils.run(['tdnf',
+                     '--setopt=reposdir={}'.format(REPODIR),
+                     '--repo={}'.format(REPONAME),
+                     'repolist'])
+    assert ret['retval'] == 0
+    assert REPONAME in "\n".join(ret['stdout'])
+
+
 # reposync a repo and install from it
 def test_repoid_created_repo(utils):
     reponame = 'photon-test'
