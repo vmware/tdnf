@@ -291,6 +291,7 @@ TDNFFreeSolvedPackageInfo(
     TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsToReinstall);
     TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsObsoleted);
     TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByDowngrade);
+    TDNF_SAFE_FREE_PKGINFO(pSolvedPkgInfo->pPkgsRemovedByUpgrade);
 
     TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsNotResolved);
     TDNF_SAFE_FREE_STRINGARRAY(pSolvedPkgInfo->ppszPkgsUserInstall);

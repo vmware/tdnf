@@ -792,7 +792,7 @@ error:
     }
     if(ppszLocation)
     {
-        ppszLocation = NULL;
+        *ppszLocation = NULL;
     }
     TDNF_SAFE_FREE_MEMORY(pszLocation);
     goto cleanup;

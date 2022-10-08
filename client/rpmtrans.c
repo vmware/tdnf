@@ -365,6 +365,29 @@ error:
     goto cleanup;
 }
 
+static
+uint32_t
+TDNFDeletePackages(PTDNF_PKG_INFO pInfoList)
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pInfo = NULL;
+
+    for (pInfo = pInfoList;
+         pInfo;
+         pInfo = pInfo->pNext) {
+        if (pInfo->pszLocation) {
+            if(unlink(pInfo->pszLocation)) {
+               dwError = errno;
+               BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+    }
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFPopulateTransaction(
     PTDNFRPMTS pTS,
@@ -430,9 +453,17 @@ TDNFPopulateTransaction(
         }
     }
 
+    if (pTdnf->pArgs->nInstallToDir) {
+        dwError = TDNFDeletePackages(pSolvedInfo->pPkgsRemovedByUpgrade);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFDeletePackages(pSolvedInfo->pPkgsRemovedByDowngrade);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFDeletePackages(pSolvedInfo->pPkgsObsoleted);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
 cleanup:
     return dwError;
-
 error:
     goto cleanup;
 }

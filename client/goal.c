@@ -107,19 +107,6 @@ TDNFGetReinstallPackages(
 }
 
 uint32_t
-TDNFGetUpgradePackages(
-    Transaction* pTrans,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO* pPkgInfo)
-{
-    return TDNFGetPackagesWithSpecifiedType(
-               pTrans,
-               pTdnf,
-               pPkgInfo,
-               SOLVER_TRANSACTION_UPGRADE);
-}
-
-uint32_t
 TDNFGetErasePackages(
     Transaction* pTrans,
     PTDNF pTdnf,
@@ -146,11 +133,12 @@ TDNFGetObsoletedPackages(
 }
 
 uint32_t
-TDNFGetDownGradePackages(
+TDNFGetUpDowngradePackages(
     Transaction* pTrans,
     PTDNF pTdnf,
     PTDNF_PKG_INFO* pPkgInfo,
-    PTDNF_PKG_INFO* pRemovePkgInfo)
+    PTDNF_PKG_INFO* pRemovePkgInfo,
+    int nIsUpgrade)
 {
     uint32_t dwError = 0;
     PSolvPackageList pInstalledPkgList = NULL;
@@ -170,7 +158,7 @@ TDNFGetDownGradePackages(
                   pTrans,
                   pTdnf,
                   pPkgInfo,
-                  SOLVER_TRANSACTION_DOWNGRADE);
+                  nIsUpgrade ? SOLVER_TRANSACTION_UPGRADE : SOLVER_TRANSACTION_DOWNGRADE);
     BAIL_ON_TDNF_ERROR(dwError);
     pInfo = *pPkgInfo;
     if(!pInfo)
@@ -869,17 +857,20 @@ TDNFGoalGetAllResultsIgnoreNoData(
                   &pInfo->pPkgsToInstall);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetUpgradePackages(
+    dwError = TDNFGetUpDowngradePackages(
                   pTrans,
                   pTdnf,
-                  &pInfo->pPkgsToUpgrade);
+                  &pInfo->pPkgsToUpgrade,
+                  &pInfo->pPkgsRemovedByUpgrade,
+                  1);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetDownGradePackages(
+    dwError = TDNFGetUpDowngradePackages(
                   pTrans,
                   pTdnf,
                   &pInfo->pPkgsToDowngrade,
-                  &pInfo->pPkgsRemovedByDowngrade);
+                  &pInfo->pPkgsRemovedByDowngrade,
+                  0);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetErasePackages(
