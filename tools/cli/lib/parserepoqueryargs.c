@@ -74,7 +74,25 @@ TDNFCliParseRepoQueryArgs(
          pSetOpt;
          pSetOpt = pSetOpt->pNext)
     {
-        if (strcasecmp(pSetOpt->pszOptName, "file") == 0)
+        if (strcasecmp(pSetOpt->pszOptName, "arch") == 0)
+        {
+            int i;
+            if (pRepoqueryArgs->ppszArchs == NULL)
+            {
+                dwError = TDNFAllocateMemory(TDNF_REPOQUERY_MAXARCHS+1, sizeof(char *),
+                    (void **)&pRepoqueryArgs->ppszArchs);
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+            for (i = 0; i < TDNF_REPOQUERY_MAXARCHS && pRepoqueryArgs->ppszArchs[i]; i++);
+            if (i < TDNF_REPOQUERY_MAXARCHS)
+            {
+                dwError = TDNFAllocateString(
+                    pSetOpt->pszOptValue,
+                    &(pRepoqueryArgs->ppszArchs[i]));
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+        }
+        else if (strcasecmp(pSetOpt->pszOptName, "file") == 0)
         {
             dwError = TDNFAllocateString(pSetOpt->pszOptValue,
                                          &pRepoqueryArgs->pszFile);
@@ -187,6 +205,7 @@ TDNFCliFreeRepoQueryArgs(
 {
     if(pRepoqueryArgs)
     {
+        TDNF_CLI_SAFE_FREE_STRINGARRAY(pRepoqueryArgs->ppszArchs);
         if (pRepoqueryArgs->pppszWhatKeys)
         {
             int i;

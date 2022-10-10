@@ -375,6 +375,8 @@ typedef enum {
     REPOQUERY_DEP_KEY_COUNT
 }REPOQUERY_DEP_KEY;
 
+#define TDNF_REPOQUERY_MAXARCHS 10
+
 typedef struct _TDNF_REPOQUERY_ARGS
 {
     char *pszSpec;
@@ -388,6 +390,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int nUserInstalled;
     char *pszFile;         /* packages that own this file */
     char ***pppszWhatKeys;
+    char **ppszArchs;
 
     /* query options */
     int nChangeLogs;
