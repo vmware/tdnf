@@ -182,9 +182,9 @@ TDNFPyMakeRepoData(
         pPyRepoData->name = PyBytes_FromString(pRepoData->pszName);
     }
 
-    if (pRepoData->pszBaseUrl)
+    if (pRepoData->ppszBaseUrls && pRepoData->ppszBaseUrls[0])
     {
-        pPyRepoData->baseurl = PyBytes_FromString(pRepoData->pszBaseUrl);
+        pPyRepoData->baseurl = PyBytes_FromString(pRepoData->ppszBaseUrls[0]);
     }
 
     if (pRepoData->pszMetaLink)

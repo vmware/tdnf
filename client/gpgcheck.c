@@ -348,7 +348,7 @@ uint32_t
 TDNFGPGCheckPackage(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszFilePath,
     Header *pRpmHeader
     )
@@ -365,7 +365,7 @@ TDNFGPGCheckPackage(
     int i;
     int nMatched = 0;
 
-    dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, NULL);
+    dwError = TDNFGetGPGSignatureCheck(pTdnf, pRepo, &nGPGSigCheck, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     fp = Fopen (pszFilePath, "r.ufdio");
@@ -390,7 +390,7 @@ TDNFGPGCheckPackage(
     }
     else if(nGPGSigCheck)
     {
-        dwError = TDNFGetGPGSignatureCheck(pTdnf, pszRepoName, &nGPGSigCheck, &ppszUrlGPGKeys);
+        dwError = TDNFGetGPGSignatureCheck(pTdnf, pRepo, &nGPGSigCheck, &ppszUrlGPGKeys);
         BAIL_ON_TDNF_ERROR(dwError);
 
         for (i = 0; ppszUrlGPGKeys[i]; i++) {
@@ -413,7 +413,7 @@ TDNFGPGCheckPackage(
 
             if (nRemote)
             {
-                dwError = TDNFFetchRemoteGPGKey(pTdnf, pszRepoName, ppszUrlGPGKeys[i], &pszLocalGPGKey);
+                dwError = TDNFFetchRemoteGPGKey(pTdnf, pRepo, ppszUrlGPGKeys[i], &pszLocalGPGKey);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             else
@@ -508,7 +508,7 @@ error:
 uint32_t
 TDNFFetchRemoteGPGKey(
     PTDNF pTdnf,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszUrlGPGKey,
     char** ppszKeyLocation
     )
@@ -521,9 +521,8 @@ TDNFFetchRemoteGPGKey(
     char* pszRealTopKeyCacheDir = NULL;
     char* pszDownloadCacheDir = NULL;
     char* pszKeyLocation = NULL;
-    PTDNF_REPO_DATA pRepo = NULL;
 
-    if(!pTdnf || IsNullOrEmptyString(pszRepoName || IsNullOrEmptyString(pszUrlGPGKey)))
+    if(!pTdnf || !pRepo || IsNullOrEmptyString(pszUrlGPGKey))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -534,9 +533,6 @@ TDNFFetchRemoteGPGKey(
     {
         dwError = ERROR_TDNF_KEYURL_INVALID;
     }
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFFindRepoById(pTdnf, pszRepoName, &pRepo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFGetCachePath(pTdnf, pRepo,
@@ -589,7 +585,7 @@ TDNFFetchRemoteGPGKey(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFDownloadFile(pTdnf, pszRepoName, pszUrlGPGKey, pszFilePath,
+    dwError = TDNFDownloadFile(pTdnf, pRepo, pszUrlGPGKey, pszFilePath,
                                basename(pszFilePath));
     BAIL_ON_TDNF_ERROR(dwError);
 

@@ -689,24 +689,31 @@ uint32_t
 TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNF_PKG_INFO pInfos
     )
 {
     uint32_t dwError = 0;
-    if(!pInfo)
+    PTDNF_PKG_INFO pInfo;
+
+    if(!pInfos)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    while(pInfo)
+
+    for (pInfo = pInfos; pInfo; pInfo = pInfo->pNext)
     {
+        PTDNF_REPO_DATA pRepo = NULL;
+
+        dwError = TDNFFindRepoById(pTdnf, pInfo->pszRepoName, &pRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFTransAddInstallPkg(
                       pTS,
                       pTdnf,
                       pInfo->pszLocation,
                       pInfo->pszName,
-                      pInfo->pszRepoName, 0);
-        pInfo = pInfo->pNext;
+                      pRepo, 0);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -727,7 +734,7 @@ TDNFTransAddInstallPkg(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     int nUpgrade
     )
 {
@@ -753,7 +760,7 @@ TDNFTransAddInstallPkg(
                           pTdnf,
                           pszPackageLocation,
                           pszPkgName,
-                          pszRepoName,
+                          pRepo,
                           &pszFilePath
             );
         }
@@ -763,7 +770,7 @@ TDNFTransAddInstallPkg(
                           pTdnf,
                           pszPackageLocation,
                           pszPkgName,
-                          pszRepoName,
+                          pRepo,
                           pTdnf->pArgs->pszDownloadDir,
                           &pszFilePath
             );
@@ -780,10 +787,10 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    dwError = TDNFGPGCheckPackage(pTS, pTdnf, pszRepoName, pszFilePath, &rpmHeader);
+    dwError = TDNFGPGCheckPackage(pTS, pTdnf, pRepo, pszFilePath, &rpmHeader);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetGPGCheck(pTdnf, pszRepoName, &nGPGCheck);
+    dwError = TDNFGetGPGCheck(pTdnf, pRepo->pszId, &nGPGCheck);
     BAIL_ON_TDNF_ERROR(dwError);
     if (!nGPGCheck)
     {
@@ -836,27 +843,33 @@ uint32_t
 TDNFTransAddUpgradePkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo)
+    PTDNF_PKG_INFO pInfos)
 {
     uint32_t dwError = 0;
-    if(!pInfo)
+    PTDNF_PKG_INFO pInfo;
+
+    if(!pInfos)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    while(pInfo)
+
+    for(pInfo = pInfos; pInfo; pInfo = pInfo->pNext)
     {
+        PTDNF_REPO_DATA pRepo = NULL;
+
+        dwError = TDNFFindRepoById(pTdnf, pInfo->pszRepoName, &pRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFTransAddInstallPkg(
                       pTS,
                       pTdnf,
                       pInfo->pszLocation,
                       pInfo->pszName,
-                      pInfo->pszRepoName,
+                      pRepo,
                       1);
-        pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
 cleanup:
     return dwError;
 

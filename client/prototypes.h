@@ -86,7 +86,7 @@ uint32_t
 TDNFGPGCheckPackage(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszFilePath,
     Header *pRpmHeader
     );
@@ -94,7 +94,7 @@ TDNFGPGCheckPackage(
 uint32_t
 TDNFFetchRemoteGPGKey(
     PTDNF pTdnf,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszUrlGPGKey,
     char** ppszKeyLocation
     );
@@ -133,24 +133,11 @@ TDNFRefreshCache(
     );
 
 //repoutils.c
-uint32_t
-TDNFRepoGetBaseUrl(
-    PTDNF pTdnf,
-    const char* pszRepo,
-    char** ppszBaseUrl
-    );
-
-uint32_t
-TDNFRepoSetBaseUrl(
-    PTDNF pTdnf,
-    PTDNF_REPO_DATA pszRepo,
-    const char *pszBaseUrlFile
-    );
 
 uint32_t
 TDNFRepoGetUserPass(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     char** ppszUserPass
     );
 
@@ -260,15 +247,23 @@ TDNFCheckRepoMDFileHashFromMetalink(
 uint32_t
 TDNFParseAndGetURLFromMetalink(
     PTDNF pTdnf,
-    const char *pszRepo,
     const char *pszFile,
     TDNF_ML_CTX *ml_ctx
     );
 
 uint32_t
+TDNFDownloadFileFromRepo(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo,
+    const char *pszLocation,
+    const char *pszFile,
+    const char *pszProgressData
+);
+
+uint32_t
 TDNFDownloadFile(
     PTDNF pTdnf,
-    const char *pszRepo,
+    PTDNF_REPO_DATA pRepo,
     const char *pszFileUrl,
     const char *pszFile,
     const char *pszProgressData
@@ -287,7 +282,7 @@ TDNFDownloadPackage(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     const char* pszRpmCacheDir
     );
 
@@ -296,7 +291,7 @@ TDNFDownloadPackageToCache(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     char** ppszFilePath
     );
 
@@ -305,7 +300,7 @@ TDNFDownloadPackageToTree(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     char* pszNormalRpmCacheDir,
     char** ppszFilePath
     );
@@ -315,7 +310,7 @@ TDNFDownloadPackageToDirectory(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     const char* pszDirectory,
     char** ppszFilePath
     );
@@ -682,7 +677,7 @@ TDNFGetGPGCheck(
 uint32_t
 TDNFGetGPGSignatureCheck(
     PTDNF pTdnf,
-    const char* pszRepo,
+    PTDNF_REPO_DATA pRepo,
     int* pnGPGSigCheck,
     char*** ppszUrlGPGKeys
     );
@@ -954,7 +949,7 @@ TDNFTransAddInstallPkg(
     PTDNF pTdnf,
     const char* pszPackageLocation,
     const char* pszPkgName,
-    const char* pszRepoName,
+    PTDNF_REPO_DATA pRepo,
     int nUpgrade
     );
 

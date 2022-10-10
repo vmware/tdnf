@@ -833,16 +833,21 @@ TDNFAddCmdLinePackages(
             }
             else
             {
+                PTDNF_REPO_DATA pRepo = NULL;
+
                 /* remote URL, we need to download */
                 dwError = TDNFAllocateString(pszPkgName,
                                              &pszCopyOfPkgName);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                dwError = TDNFFindRepoById(pTdnf, CMDLINE_REPO_NAME, &pRepo);
                 BAIL_ON_TDNF_ERROR(dwError);
 
                 dwError = TDNFDownloadPackageToCache(
                               pTdnf,
                               pszPkgName,
                               basename(pszCopyOfPkgName),
-                              CMDLINE_REPO_NAME,
+                              pRepo,
                               &pszRPMPath
                           );
                 BAIL_ON_TDNF_ERROR(dwError);
@@ -1199,6 +1204,8 @@ TDNFRepoSync(
 
         if (!pReposyncArgs->nPrintUrlsOnly)
         {
+            PTDNF_REPO_DATA pRepo = NULL;
+
             if (!pReposyncArgs->nNoRepoPath)
             {
                 dwError = TDNFJoinPath(&pszDir,
@@ -1216,9 +1223,12 @@ TDNFRepoSync(
             dwError = TDNFUtilsMakeDir(pszDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
+            dwError = TDNFFindRepoById(pTdnf, pPkgInfo->pszRepoName, &pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
+
             dwError = TDNFDownloadPackageToTree(pTdnf,
                             pPkgInfo->pszLocation, pPkgInfo->pszName,
-                            pPkgInfo->pszRepoName, pszDir,
+                            pRepo, pszDir,
                             &pszFilePath);
             BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1226,7 +1236,7 @@ TDNFRepoSync(
                delete the package */
             if (pReposyncArgs->nGPGCheck)
             {
-                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgInfo->pszRepoName, pszFilePath, NULL);
+                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pRepo, pszFilePath, NULL);
                 if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
                 {
                     BAIL_ON_TDNF_ERROR(dwError);

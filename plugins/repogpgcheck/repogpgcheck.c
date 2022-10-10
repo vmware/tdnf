@@ -169,25 +169,24 @@ uint32_t
 TDNFVerifySignature(
     PTDNF_PLUGIN_HANDLE pHandle,
     const char *pcszRepoId,
-    const char *pcszRepoMDUrl,
     const char *pcszRepoMDFile
     )
 {
     uint32_t dwError = 0;
-    char *pszRepoMDSigUrl = NULL;
     char *pszRepoMDSigFile = NULL;
+    char *pszRepoMDSigLocation = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
 
     if (!pHandle || !pHandle->pTdnf || IsNullOrEmptyString(pcszRepoId) ||
-        IsNullOrEmptyString(pcszRepoMDUrl) ||
         IsNullOrEmptyString(pcszRepoMDFile))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateStringPrintf(&pszRepoMDSigUrl,
+    dwError = TDNFAllocateStringPrintf(&pszRepoMDSigLocation,
                   "%s%s",
-                  pcszRepoMDUrl,
+                  TDNF_REPO_METADATA_FILE_PATH,
                   TDNF_REPO_METADATA_SIG_EXT);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -197,11 +196,14 @@ TDNFVerifySignature(
                   TDNF_REPO_METADATA_SIG_EXT);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFDownloadFile(pHandle->pTdnf,
-                               pcszRepoId,
-                               pszRepoMDSigUrl,
-                               pszRepoMDSigFile,
-                               pcszRepoId);
+    dwError = TDNFFindRepoById(pHandle->pTdnf, pcszRepoId, &pRepo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFDownloadFileFromRepo(pHandle->pTdnf,
+                                       pRepo,
+                                       pszRepoMDSigLocation,
+                                       pszRepoMDSigFile,
+                                       pcszRepoId);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFVerifyRepoMDSignature(pHandle, pcszRepoMDFile, pszRepoMDSigFile);
@@ -212,7 +214,7 @@ cleanup:
     {
         unlink(pszRepoMDSigFile);
     }
-    TDNF_SAFE_FREE_MEMORY(pszRepoMDSigUrl);
+    TDNF_SAFE_FREE_MEMORY(pszRepoMDSigLocation);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDSigFile);
     return dwError;
 
@@ -262,7 +264,6 @@ TDNFRepoMDCheckSignature(
 {
     uint32_t dwError = 0;
     const char *pcszRepoId = NULL;
-    const char *pcszRepoMDUrl = NULL;
     const char *pcszRepoMDFile = NULL;
     int nHasRepo = 0;
 
@@ -291,11 +292,6 @@ TDNFRepoMDCheckSignature(
 
     dwError = TDNFEventContextGetItemString(
                   pContext,
-                  TDNF_EVENT_ITEM_REPO_MD_URL,
-                  (const char **)&pcszRepoMDUrl);
-    BAIL_ON_TDNF_ERROR(dwError);
-    dwError = TDNFEventContextGetItemString(
-                  pContext,
                   TDNF_EVENT_ITEM_REPO_MD_FILE,
                   (const char **)&pcszRepoMDFile);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -304,7 +300,6 @@ TDNFRepoMDCheckSignature(
     */
     dwError = TDNFVerifySignature(pHandle,
                   pcszRepoId,
-                  pcszRepoMDUrl,
                   pcszRepoMDFile);
     BAIL_ON_TDNF_ERROR(dwError);
 

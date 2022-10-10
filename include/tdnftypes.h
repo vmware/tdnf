@@ -266,7 +266,7 @@ typedef struct _TDNF_REPO_DATA
     long lMetadataExpire;
     char* pszId;
     char* pszName;
-    char* pszBaseUrl;
+    char** ppszBaseUrls;
     char* pszMetaLink;
     char** ppszUrlGPGKeys;
     int nSSLVerify;
