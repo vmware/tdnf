@@ -7,7 +7,9 @@
 #
 
 import pytest
+import platform
 
+ARCH = platform.machine()
 BASE_PKG = 'tdnf-repoquery-base'
 
 
@@ -229,3 +231,13 @@ def test_userinstalled(utils):
 
     ret = utils.run(['tdnf', 'repoquery', '--userinstalled', pkgname])
     assert pkgname not in "\n".join(ret['stdout'])
+
+
+def test_arch(utils):
+    ret = utils.run(['tdnf', 'repoquery', '--arch', ARCH])
+    assert 'noarch' not in "\n".join(ret['stdout'])
+    assert ARCH in "\n".join(ret['stdout'])
+
+    ret = utils.run(['tdnf', 'repoquery', '--arch', 'noarch'])
+    assert 'noarch' in "\n".join(ret['stdout'])
+    assert ARCH not in "\n".join(ret['stdout'])
