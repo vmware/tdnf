@@ -8,6 +8,12 @@
 
 import os
 import pytest
+import configparser
+
+REPO_ID = 'photon-test'
+REPO_FILENAME = 'photon-test.repo'
+BASEURL = 'http://localhost:8080/photon-test'
+METALINK = 'http://localhost:8080/photon-test/metalink'
 
 metalink_file_path = 'photon-test/metalink'
 repomd_file_path = 'photon-test/repodata/repomd.xml'
@@ -15,6 +21,7 @@ repomd_file_path = 'photon-test/repodata/repomd.xml'
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
+    enable_plugin(utils)
     yield
     teardown_test(utils)
 
@@ -29,22 +36,72 @@ def teardown_test(utils):
     set_sha512(utils, False)
     pkgname = utils.config["mulversion_pkgname"]
     utils.run(['tdnf', 'erase', '-y', pkgname])
+    disable_plugin(utils)
 
 
 def set_baseurl(utils, enabled):
-    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
+    repo_file = os.path.join(utils.tdnf_config.get('main', 'repodir'), REPO_FILENAME)
+    repo_config = configparser.ConfigParser()
+    repo_config.read(repo_file)
     if enabled:
-        utils.run(['sed', '-i', '/baseurl/s/^#//g', tdnf_repo])
+        repo_config[REPO_ID]['baseurl'] = BASEURL
     else:
-        utils.run(['sed', '-e', '/baseurl/ s/^#*/#/g', '-i', tdnf_repo])
+        repo_config.remove_option(REPO_ID, 'baseurl')
+    with open(repo_file, 'w') as f:
+        repo_config.write(f, space_around_delimiters=False)
 
 
 def set_metalink(utils, enabled):
-    tdnf_repo = os.path.join(utils.tdnf_config.get('main', 'repodir'), 'photon-test.repo')
+    repo_file = os.path.join(utils.tdnf_config.get('main', 'repodir'), REPO_FILENAME)
+    repo_config = configparser.ConfigParser()
+    repo_config.read(repo_file)
     if enabled:
-        utils.run(['sed', '-i', '/metalink/s/^#//g', tdnf_repo])
+        repo_config[REPO_ID]['metalink'] = METALINK
     else:
-        utils.run(['sed', '-e', '/metalink/ s/^#*/#/g', '-i', tdnf_repo])
+        repo_config.remove_option(REPO_ID, 'metalink')
+    with open(repo_file, 'w') as f:
+        repo_config.write(f, space_around_delimiters=False)
+
+
+def disable_plugin(utils):
+    # write a plugin config file
+    conf_file = os.path.join(utils.config['repo_path'], 'tdnf.conf')
+    tdnf_config = configparser.ConfigParser()
+    tdnf_config.read(conf_file)
+
+    plugin_conf_path = os.path.join(utils.config['repo_path'], 'pluginconf.d')
+
+    tdnf_config['main']['plugins'] = '0'
+    with open(conf_file, 'w') as f:
+        tdnf_config.write(f, space_around_delimiters=False)
+
+    utils.makedirs(plugin_conf_path)
+
+    plugin_file = os.path.join(plugin_conf_path, 'tdnfmetalink.conf')
+    with open(plugin_file, 'w') as f:
+        f.write('[main]\nenabled=0\n')
+
+
+def enable_plugin(utils):
+    # write a plugin config file
+    conf_file = os.path.join(utils.config['repo_path'], 'tdnf.conf')
+    tdnf_config = configparser.ConfigParser()
+    tdnf_config.read(conf_file)
+
+    plugin_conf_path = os.path.join(utils.config['repo_path'], 'pluginconf.d')
+    plugin_path = utils.config['plugin_path']
+
+    tdnf_config['main']['plugins'] = '1'
+    tdnf_config['main']['pluginconfpath'] = plugin_conf_path
+    tdnf_config['main']['pluginpath'] = plugin_path
+    with open(conf_file, 'w') as f:
+        tdnf_config.write(f, space_around_delimiters=False)
+
+    utils.makedirs(plugin_conf_path)
+
+    plugin_file = os.path.join(plugin_conf_path, 'tdnfmetalink.conf')
+    with open(plugin_file, 'w') as f:
+        f.write('[main]\nenabled=1\n')
 
 
 def set_md5(utils, enabled):

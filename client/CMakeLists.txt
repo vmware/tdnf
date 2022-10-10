@@ -39,8 +39,6 @@ add_library(${LIB_TDNF} SHARED
     rpmtrans.c
     updateinfo.c
     utils.c
-    metalink.c
-    list.c
     history.c
 )
 
@@ -51,9 +49,7 @@ target_link_libraries(${LIB_TDNF}
     ${RPM_LIBRARIES}
     ${LibSolv_LIBRARIES}
     ${CURL_LIBRARIES}
-    ${METALINK_LIBRARIES}
     ${OPENSSL_LIBRARIES}
-    ${LIBXML2_LIBRARIES}
     ${SQLITE3_LIBRARIES}
 )
 
