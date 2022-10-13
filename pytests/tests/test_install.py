@@ -69,6 +69,50 @@ def test_install_testonly(utils):
     assert not utils.check_package(pkgname)
 
 
+# install multiple packages, one that doesn't exist
+# expect other pkg will be installed if invoked with --skip-broken
+def test_install_skip_broken_missing_pkg(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    pkgname_missing = "missing"
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', '--skip-broken', pkgname, pkgname_missing])
+    assert utils.check_package(pkgname)
+
+
+# install multiple packages, one that doesn't exist
+# expect fail if invoked without --skip-broken
+def test_install_missing_pkg(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    pkgname_missing = "missing"
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname, pkgname_missing])
+    assert not utils.check_package(pkgname)
+
+
+# install multiple packages, one with a missing dependency
+# expect other pkg will be installed if invoked with --skip-broken
+def test_install_skip_broken_missing_dep(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    pkgname_missing = "tdnf-missing-dep"
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', '--skip-broken', pkgname, pkgname_missing])
+    assert utils.check_package(pkgname)
+
+
+# install multiple packages, one with a missing dependency
+# expect fail if invoked without --skip-broken
+def test_install_missing_dep(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    pkgname_missing = "tdnf-missing-dep"
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname, pkgname_missing])
+    assert not utils.check_package(pkgname)
+
+
 def test_install_memcheck(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)

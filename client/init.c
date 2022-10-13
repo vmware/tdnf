@@ -60,6 +60,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nNoAutoRemove  = pCmdArgsIn->nNoAutoRemove;
     pCmdArgs->nJsonOutput    = pCmdArgsIn->nJsonOutput;
     pCmdArgs->nTestOnly      = pCmdArgsIn->nTestOnly;
+    pCmdArgs->nSkipBroken    = pCmdArgsIn->nSkipBroken;
 
     pCmdArgs->nArgc = pCmdArgsIn->nArgc;
     pCmdArgs->ppszArgv = pCmdArgsIn->ppszArgv;

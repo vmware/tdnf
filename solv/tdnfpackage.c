@@ -1576,6 +1576,12 @@ SkipBasedOnType(
                  type == SOLVER_RULE_PKG_INSTALLED_OBSOLETES;
     }
 
+    if (dwSkipProblem & SKIPPROBLEM_BROKEN)
+    {
+        /* see https://github.com/openSUSE/libsolv/blob/master/src/rules.h */
+        result = result || type & SOLVER_RULE_PKG;
+    }
+
     if (dwSkipProblem & SKIPPROBLEM_DISABLED)
     {
         /**
@@ -1686,11 +1692,6 @@ SolvReportProblems(
         type = solver_ruleinfo(pSolv, dwProblemId,
                                &dwSource, &dwTarget, &dwDep);
 
-        if (SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
-        {
-            continue;
-        }
-
         pszProblem = solver_problemruleinfo2str(pSolv, type, dwSource,
                                                 dwTarget, dwDep);
 
@@ -1703,7 +1704,11 @@ SolvReportProblems(
             }
         }
 
-        dwError = ERROR_TDNF_SOLV_FAILED;
+        if (!SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
+        {
+            dwError = ERROR_TDNF_SOLV_FAILED;
+        }
+        
         pr_err("%u. %s\n", ++total_prblms, pszProblem);
     }
 
