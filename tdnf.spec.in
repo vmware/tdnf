@@ -149,6 +149,17 @@ find %{buildroot} -name '*.pyc' -delete
 
 %post
 /sbin/ldconfig
+
+%posttrans
+# must be postrans because we read the rpm db
+# cannot use tdnf because that is still running even in postrans
+[ -d /var/lib/tdnf ] || mkdir -p /var/lib/tdnf
+[ -f /var/lib/tdnf/history.db ] || %{_libdir}/tdnf/tdnf-history-util init
+if [ -f /var/lib/tdnf/autoinstalled ] ; then
+    %{_libdir}/tdnf/tdnf-history-util mark remove $(cat /var/lib/tdnf/autoinstalled) && \
+        rm /var/lib/tdnf/autoinstalled
+fi
+
 %triggerin -- motd
 [ $2 -eq 1 ] || exit 0
 if [ $1 -eq 1 ]; then
@@ -160,7 +171,6 @@ elif [ $1 -eq 2 ]; then
   systemctl daemon-reload >/dev/null 2>&1 || :
 fi
 
-%preun
 %triggerun -- motd
 [ $1 -eq 1 ] && [ $2 -eq 1 ] && exit 0
 echo "detected uninstall of tdnf/motd, disabling tdnf-cache-updateinfo.timer" >&2
@@ -200,6 +210,7 @@ systemctl try-restart tdnf-cache-updateinfo.timer >/dev/null 2>&1 || :
 %{_bindir}/yum
 %{_bindir}/tdnf-cache-updateinfo
 %{_libdir}/libtdnf.so.*
+%{_libdir}/tdnf/tdnf-history-util
 %config(noreplace) %{_sysconfdir}/tdnf/tdnf.conf
 %config %{_unitdir}/tdnf-cache-updateinfo.service
 %config(noreplace) %{_unitdir}/tdnf-cache-updateinfo.timer
