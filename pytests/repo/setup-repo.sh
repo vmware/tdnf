@@ -86,9 +86,12 @@ for d in conflicts enhances obsoletes provides recommends requires suggests supp
 done
 
 echo building packages
-rpmbuild  --define "_topdir ${BUILD_PATH}" \
-    -r ${BUILD_PATH} -ba ${REPO_SRC_DIR}/*.spec ${BUILD_PATH}/SOURCES/*.spec
-check_err "Failed to build packages."
+for spec in ${REPO_SRC_DIR}/*.spec ${BUILD_PATH}/SOURCES/*.spec ; do
+    echo "building ${spec}"
+    rpmbuild  --define "_topdir ${BUILD_PATH}" \
+        -r ${BUILD_PATH} -ba ${spec} 2>&1
+    check_err "failed to build ${spec}"
+done
 rpmsign --addsign ${BUILD_PATH}/RPMS/*/*.rpm
 cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
 check_err "Failed to sign built packages."
