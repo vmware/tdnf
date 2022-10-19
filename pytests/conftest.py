@@ -114,6 +114,40 @@ class TestUtils(object):
         # check execution environment and enable valgrind if suitable
         self.check_valgrind()
 
+    # Change tdnf config file, repo or any ini style file
+    # Takes a dictionary as input and sets the keys to the values. If the
+    # value is None, the entry will be removed.
+    # By default, the tdnf.conf file will be edited
+    # To edit a repo, set repo
+    # By default, the section name is 'main' for tdnf.conf and the repo
+    # name if repo is set, unless filename is set
+    # By default, the filename is the path to tdnf.conf, or the repo file if set.
+    # If filename is set, the section needs to be set as well
+    def edit_config(self, changes, repo=None, section=None, filename=None):
+        config = None
+        if filename is None:
+            if repo is None:
+                filename = os.path.join(self.config['repo_path'], 'tdnf.conf')
+                config = self.tdnf_config
+                if section is None:
+                    section = 'main'
+            else:
+                filename = os.path.join(self.config['repo_path'], 'yum.repos.d', repo + '.repo')
+                if section is None:
+                    section = repo
+        if config is None:
+            config = configparser.ConfigParser()
+            config.read(filename)
+
+        for k, v in changes.items():
+            if v is not None:
+                config[section][k] = v
+            else:
+                config.remove_option(section, k)
+
+        with open(filename, 'w') as f:
+            config.write(f, space_around_delimiters=False)
+
     def version_str_to_int(self, version):
         version_parts = version.split('.')
         return version_parts[0] * 1000 + version_parts[1] * 100 + version_parts[2]
@@ -174,13 +208,13 @@ class TestUtils(object):
         self.run(['tdnf', 'erase', '-y', pkg])
         assert not self.check_package(pkgname)
 
-    def install_package(utils, pkgname, pkgversion=None):
+    def install_package(self, pkgname, pkgversion=None):
         if pkgversion:
             pkg = pkgname + '-' + pkgversion
         else:
             pkg = pkgname
-        utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkg])
-        assert utils.check_package(pkgname)
+        self.run(['tdnf', 'install', '-y', '--nogpgcheck', pkg])
+        assert self.check_package(pkgname)
 
     def _requests_get(self, url, verify):
         try:
