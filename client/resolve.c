@@ -341,7 +341,7 @@ TDNFPrepareSinglePkg(
     pSack = pTdnf->pSack;
 
     //Check if this is a known package. If not add to unresolved
-    dwError = SolvCountPkgByName(pSack, pszPkgName, &dwCount);
+    dwError = SolvCountPkgByName(pSack, pszPkgName, pTdnf->pArgs->nSource, &dwCount);
     if (dwError == ERROR_TDNF_NO_MATCH)
     {
         pr_err("%s package not found or not installed\n", pszPkgName);
@@ -388,10 +388,13 @@ TDNFPrepareSinglePkg(
     }
     else if (nAlterType == ALTER_INSTALL)
     {
+        int nSource = pTdnf->pArgs->nSource;
+
         dwError = TDNFAddPackagesForInstall(
                       pSack,
                       queueGoal,
-                      pszPkgName);
+                      pszPkgName,
+                      nSource);
         if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
         {
             /* the package may have been already installed as a dependency,

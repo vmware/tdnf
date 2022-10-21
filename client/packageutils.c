@@ -657,7 +657,8 @@ uint32_t
 TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,
-    const char* pszPkgName
+    const char* pszPkgName,
+    int nSource
     )
 {
     uint32_t dwError = 0;
@@ -673,6 +674,7 @@ TDNFAddPackagesForInstall(
     dwError = SolvFindHighestAvailable(
                   pSack,
                   pszPkgName,
+                  nSource,
                   &dwHighestAvailable);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -771,6 +773,7 @@ TDNFAddPackagesForUpgrade(
     dwError = SolvFindHighestAvailable(
                   pSack,
                   pszPkgName,
+                  0,
                   &dwHighestAvailable);
     BAIL_ON_TDNF_ERROR(dwError);
 

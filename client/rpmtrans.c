@@ -21,6 +21,8 @@
 #include "includes.h"
 #include <sys/resource.h>
 
+#include "rpm/rpmcli.h"
+
 uint32_t
 TDNFRpmCleanupTS(PTDNF pTdnf,
                  PTDNFRPMTS pTS)
@@ -888,13 +890,20 @@ TDNFTransAddInstallPkg(
         rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
     }
 
-    dwError = rpmtsAddInstallElement(
-                  pTS->pTS,
-                  rpmHeader,
-                  (fnpyKey)pszFilePath,
-                  nUpgrade,
-                  NULL);
-    BAIL_ON_TDNF_RPM_ERROR(dwError);
+    if (headerIsSource(rpmHeader)) {
+        if (!pTdnf->pArgs->nDownloadOnly && !pTdnf->pArgs->nTestOnly) {
+            dwError = rpmInstallSource(pTS->pTS, pszFilePath, NULL, NULL);
+            BAIL_ON_TDNF_RPM_ERROR(dwError);
+        }
+    } else {
+        dwError = rpmtsAddInstallElement(
+                      pTS->pTS,
+                      rpmHeader,
+                      (fnpyKey)pszFilePath,
+                      nUpgrade,
+                      NULL);
+        BAIL_ON_TDNF_RPM_ERROR(dwError);
+    }
 
     /* add to cached array only when file is actually in cache dir */
     if(pTS->pCachedRpmsArray &&
@@ -1045,8 +1054,15 @@ TDNFRpmCB(
                 pr_info("%s", "Removing: ");
             }
             {
-                char* pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
-                pr_info("%s\n", pszNevra);
+                char* pszNevra = NULL;
+                if (!headerIsSource(pPkgHeader)) {
+                    pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVRA);
+                    pr_info("%s\n", pszNevra);
+                } else {
+                    /* don't confuse users with arch */
+                    pszNevra = headerGetAsString(pPkgHeader, RPMTAG_NEVR);
+                    pr_info("%s (source)\n", pszNevra);
+                }
                 free(pszNevra);
                 (void)fflush(stdout);
             }

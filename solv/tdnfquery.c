@@ -621,8 +621,15 @@ SolvApplyListQuery(
     }
 
     queue_init(&queueTmp);
-    nFlags = SELECTION_NAME | SELECTION_PROVIDES | SELECTION_GLOB;
-    nFlags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
+    nFlags = SELECTION_NAME |     /* foo */
+             SELECTION_PROVIDES |
+             SELECTION_GLOB |     /* foo* */
+             SELECTION_CANON |    /* foo-1.2-3.ph4.noarch */
+             SELECTION_REL;       /* foo>=1.2-3 */
+
+    if (pQuery->nScope == SCOPE_SOURCE) {
+        nFlags |= SELECTION_SOURCE_ONLY;
+    }
 
     dwError = SolvGenerateCommonJob(pQuery, nFlags);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);

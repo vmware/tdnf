@@ -980,6 +980,7 @@ uint32_t
 SolvCountPkgByName(
     PSolvSack pSack,
     const char* pszName,
+    int nSource,
     uint32_t* pdwCount
     )
 {
@@ -997,6 +998,10 @@ SolvCountPkgByName(
 
     dwError = SolvCreateQuery(pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if (nSource) {
+        pQuery->nScope = SCOPE_SOURCE;
+    }
 
     dwError = SolvApplySinglePackageFilter(pQuery, pszName);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -1177,6 +1182,56 @@ error:
 }
 
 uint32_t
+SolvFindAvailableSrcPkgByName(
+    PSolvSack pSack,
+    const char* pszName,
+    PSolvPackageList* ppPkgList
+    )
+{
+    uint32_t dwError = 0;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+
+    if(!pSack || IsNullOrEmptyString(pszName) || !ppPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvCreateQuery(pSack, &pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pQuery->nScope = SCOPE_SOURCE;
+
+    dwError = SolvAddAvailableRepoFilter(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplySinglePackageFilter(pQuery, pszName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvApplyListQuery(pQuery);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = SolvGetQueryResult(pQuery, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+    *ppPkgList = pPkgList;
+
+cleanup:
+    if(pQuery)
+    {
+        SolvFreeQuery(pQuery);
+    }
+    return dwError;
+
+error:
+    if(ppPkgList)
+    {
+        *ppPkgList = NULL;
+    }
+    goto cleanup;;
+}
+
+uint32_t
 SolvGetTransResultsWithType(
     Transaction *pTrans,
     Id dwType,
@@ -1327,6 +1382,7 @@ uint32_t
 SolvFindHighestAvailable(
     PSolvSack pSack,
     const char* pszPkgName,
+    int nSource,
     Id* pdwId
     )
 {
@@ -1340,14 +1396,21 @@ SolvFindHighestAvailable(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = SolvFindBestAvailable(pSack, pszPkgName, pdwId);
-    if (dwError == 0)
-        goto cleanup;
+    if (!nSource) {
+        dwError = SolvFindBestAvailable(pSack, pszPkgName, pdwId);
+        if (dwError == 0)
+            goto cleanup;
 
-    dwError = SolvFindAvailablePkgByName(
-                  pSack,
-                  pszPkgName,
-                  &pAvailablePkgList);
+        dwError = SolvFindAvailablePkgByName(
+                      pSack,
+                      pszPkgName,
+                      &pAvailablePkgList);
+    } else {
+        dwError = SolvFindAvailableSrcPkgByName(
+                      pSack,
+                      pszPkgName,
+                      &pAvailablePkgList);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     pqAvail = &pAvailablePkgList->queuePackages;

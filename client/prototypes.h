@@ -338,7 +338,8 @@ uint32_t
 TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,
-    const char* pszPkgName
+    const char* pszPkgName,
+    int nSource
     );
 
 uint32_t

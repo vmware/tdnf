@@ -210,6 +210,13 @@ SolvFindAvailablePkgByName(
     );
 
 uint32_t
+SolvFindAvailableSrcPkgByName(
+    PSolvSack pSack,
+    const char* pszName,
+    PSolvPackageList* ppPkgList
+    );
+
+uint32_t
 SolvFindInstalledPkgByName(
     PSolvSack pSack,
     const char* pszName,
@@ -227,6 +234,7 @@ uint32_t
 SolvCountPkgByName(
     PSolvSack pSack,
     const char* pszName,
+    int nSource,
     uint32_t * pdwCount
     );
 
@@ -242,6 +250,7 @@ uint32_t
 SolvFindHighestAvailable(
     PSolvSack pSack,
     const char* pszPkgName,
+    int nSource,
     Id* pdwId
     );
 

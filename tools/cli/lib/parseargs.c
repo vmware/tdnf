@@ -67,6 +67,7 @@ static struct option pstOptions[] =
     {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
+    {"source",        no_argument, &_opt.nSource, 1},
     {"testonly",      no_argument, &_opt.nTestOnly, 1},
     {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
@@ -79,7 +80,6 @@ static struct option pstOptions[] =
     {"metadata-path", required_argument, 0, 0},
     {"newest-only",   no_argument, 0, 0},
     {"norepopath",    no_argument, 0, 0},
-    {"source",        no_argument, 0, 0},
     {"urls",          no_argument, 0, 0},
     // repoquery option
     // repoquery select options
@@ -342,6 +342,7 @@ TDNFCopyOptions(
     pArgs->nJsonOutput    = pOptionArgs->nJsonOutput;
     pArgs->nTestOnly      = pOptionArgs->nTestOnly;
     pArgs->nSkipBroken    = pOptionArgs->nSkipBroken;
+    pArgs->nSource        = pOptionArgs->nSource;
 
 cleanup:
     return dwError;
