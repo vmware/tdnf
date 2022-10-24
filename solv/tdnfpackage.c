@@ -1692,6 +1692,11 @@ SolvReportProblems(
         type = solver_ruleinfo(pSolv, dwProblemId,
                                &dwSource, &dwTarget, &dwDep);
 
+       if (SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
+       {
+           continue;
+       }
+
         pszProblem = solver_problemruleinfo2str(pSolv, type, dwSource,
                                                 dwTarget, dwDep);
 
@@ -1704,11 +1709,7 @@ SolvReportProblems(
             }
         }
 
-        if (!SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
-        {
-            dwError = ERROR_TDNF_SOLV_FAILED;
-        }
-        
+        dwError = ERROR_TDNF_SOLV_FAILED;
         pr_err("%u. %s\n", ++total_prblms, pszProblem);
     }
 
