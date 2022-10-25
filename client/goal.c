@@ -418,6 +418,45 @@ error:
 }
 
 uint32_t
+TDNFGoalNoDeps(
+    PTDNF pTdnf,
+    Queue* pQueuePkgList,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
+    )
+{
+    uint32_t dwError = 0;
+    PSolvPackageList pPkgList = NULL;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_SOLVED_PKG_INFO pInfo = NULL;
+
+    if(!pTdnf || !ppInfo || !pQueuePkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvQueueToPackageList(pQueuePkgList, &pPkgList);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFPopulatePkgInfos(pTdnf->pSack, pPkgList, &pPkgInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_SOLVED_PKG_INFO),
+                  (void**)&pInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pInfo->pPkgsToInstall = pPkgInfo;
+    *ppInfo = pInfo;
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFGoal(
     PTDNF pTdnf,
     Queue* pQueuePkgList,
@@ -426,7 +465,6 @@ TDNFGoal(
     )
 {
     uint32_t dwError = 0;
-
     Queue queueJobs = {0};
     int nAllowErasing = 0;
     char** ppszExcludes = NULL;

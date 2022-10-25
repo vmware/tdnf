@@ -1611,11 +1611,18 @@ TDNFResolve(
                   &queueGoal);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGoal(
-                  pTdnf,
-                  &queueGoal,
-                  &pSolvedPkgInfo,
-                  nAlterType);
+    if (!pTdnf->pArgs->nSource) {
+        dwError = TDNFGoal(
+                      pTdnf,
+                      &queueGoal,
+                      &pSolvedPkgInfo,
+                      nAlterType);
+    } else {
+        dwError = TDNFGoalNoDeps(
+                      pTdnf,
+                      &queueGoal,
+                      &pSolvedPkgInfo);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
