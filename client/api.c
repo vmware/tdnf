@@ -1996,8 +1996,11 @@ TDNFHistoryResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRefresh(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
+    /* no need to refresh cache when initializing db */
+    if (pHistoryArgs->nCommand != HISTORY_CMD_INIT) {
+        dwError = TDNFRefresh(pTdnf);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     ts = rpmtsCreate();
     if(!ts)
