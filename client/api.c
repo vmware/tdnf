@@ -772,12 +772,30 @@ TDNFAddCmdLinePackages(
          * to our virtual @cmdline repo */
         pszPkgName = pCmdArgs->ppszCmds[nCmdIndex];
 
+        /* check if it's a package file or URL */
+        if (fnmatch("*.rpm", pszPkgName, 0) != 0) {
+            continue;
+        }
+
+        if (fnmatch("*.src.rpm", pszPkgName, 0) == 0) {
+            if (!pCmdArgs->nSource) {
+                pr_err("package '%s' appears to be a source rpm - use --source to install\n", pszPkgName);
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+            }
+        } else {
+            if (pCmdArgs->nSource) {
+                pr_err("package '%s' appears not to be a source rpm but --source was used\n", pszPkgName);
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+            }
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFIsFileOrSymlink(pszPkgName, &nIsFile);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        /* if it's a file and matches *.rpm it's to be installed
+        /* if it's a file it's to be installed
          * directly as a file. No need to download. */
-        if (nIsFile && (fnmatch("*.rpm", pszPkgName, 0) == 0))
+        if (nIsFile)
         {
             pszRPMPath = realpath(pszPkgName, NULL);
             if (pszRPMPath == NULL)
