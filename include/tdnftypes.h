@@ -229,6 +229,7 @@ typedef struct _TDNF_CMD_ARGS
     int nTestOnly;         //run test transaction only
     int nSkipBroken;
     int nSource;
+    int nBuildDeps;
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location

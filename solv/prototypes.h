@@ -626,6 +626,13 @@ SolvFindSolvablesByNevraStr(
     int installed
     );
 
+uint32_t
+SolvRequiresFromQueue(
+    Pool *pool,
+    Queue *pq_pkgs,  /* solvable ids */
+    Queue *pq_deps   /* string ids */
+);
+
 #ifdef __cplusplus
 }
 #endif

@@ -778,13 +778,13 @@ TDNFAddCmdLinePackages(
         }
 
         if (fnmatch("*.src.rpm", pszPkgName, 0) == 0) {
-            if (!pCmdArgs->nSource) {
-                pr_err("package '%s' appears to be a source rpm - use --source to install\n", pszPkgName);
+            if (!pCmdArgs->nSource && !pCmdArgs->nBuildDeps) {
+                pr_err("package '%s' appears to be a source rpm - use --source to install, or --builddeps to install its build depenfdencies\n", pszPkgName);
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
             }
         } else {
-            if (pCmdArgs->nSource) {
-                pr_err("package '%s' appears not to be a source rpm but --source was used\n", pszPkgName);
+            if (pCmdArgs->nSource || pCmdArgs->nBuildDeps) {
+                pr_err("package '%s' appears not to be a source rpm but --source or --builddeps was used\n", pszPkgName);
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
             }
         }
@@ -1587,6 +1587,9 @@ TDNFResolve(
     char** ppszPkgsNotResolved = NULL;
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
     uint64_t qwAvailCacheBytes = 0;
+    char **ppszPkgNames = NULL;
+    char **ppszPkgFiles = NULL; /* cmd line packages */
+    int i, iFiles = 0, iPkgs = 0;
 
     if(!pTdnf || !ppSolvedPkgInfo)
     {
@@ -1619,14 +1622,43 @@ TDNFResolve(
     dwError = TDNFAllocateMemory(
                   pTdnf->pArgs->nCmdCount,
                   sizeof(char*),
+                  (void**)&ppszPkgNames);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateMemory(
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
+                  (void**)&ppszPkgFiles);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 1; i < pTdnf->pArgs->nCmdCount; i++) {
+        char *pszPkgName = pTdnf->pArgs->ppszCmds[i];
+        if (fnmatch("*.rpm", pszPkgName, 0) == 0) {
+            ppszPkgFiles[iFiles++] = pszPkgName;
+        } else {
+            ppszPkgNames[iPkgs++] = pszPkgName;
+        }
+    }
+
+    dwError = TDNFAllocateMemory(
+                  pTdnf->pArgs->nCmdCount,
+                  sizeof(char*),
                   (void**)&ppszPkgsNotResolved);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFPrepareAllPackages(
-                  pTdnf,
-                  &nAlterType,
-                  ppszPkgsNotResolved,
-                  &queueGoal);
+    if (!pTdnf->pArgs->nBuildDeps) {
+        dwError = TDNFPrepareAllPackages(
+                      pTdnf,
+                      &nAlterType,
+                      ppszPkgsNotResolved,
+                      &queueGoal);
+    } else {
+        dwError = TDNFResolveBuildDependencies(
+                        pTdnf,
+                        ppszPkgNames,
+                        ppszPkgsNotResolved,
+                        &queueGoal);
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (!pTdnf->pArgs->nSource) {
@@ -1674,6 +1706,10 @@ TDNFResolve(
     *ppSolvedPkgInfo = pSolvedPkgInfo;
 
 cleanup:
+    /* only free the pointers */
+    TDNF_SAFE_FREE_MEMORY(ppszPkgNames);
+    TDNF_SAFE_FREE_MEMORY(ppszPkgFiles);
+
     queue_free(&queueGoal);
     return dwError;
 
@@ -1686,10 +1722,7 @@ error:
     {
         TDNFFreeSolvedPackageInfo(pSolvedPkgInfo);
     }
-    if(ppszPkgsNotResolved)
-    {
-        TDNFFreeStringArray(ppszPkgsNotResolved);
-    }
+    TDNF_SAFE_FREE_STRINGARRAY(ppszPkgsNotResolved);
     goto cleanup;
 }
 

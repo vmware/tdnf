@@ -420,6 +420,13 @@ TDNFGoal(
     );
 
 uint32_t
+TDNFGoalNoDeps(
+    PTDNF pTdnf,
+    Queue* pQueuePkgList,
+    PTDNF_SOLVED_PKG_INFO* ppInfo
+    );
+
+uint32_t
 TDNFHistoryGoal(
     PTDNF pTdnf,
     Queue *pqInstall,
@@ -790,6 +797,14 @@ uint32_t
 TDNFAddNotResolved(
     char** ppszPkgsNotResolved,
     const char* pszPkgName
+    );
+
+uint32_t
+TDNFResolveBuildDependencies(
+    PTDNF pTdnf,
+    char **ppszPackageNameSpecs,
+    char **ppszPkgsNotResolved,
+    Queue* queueGoal
     );
 
 //rpmtrans.c

@@ -32,6 +32,7 @@ static struct option pstOptions[] =
     {"assumeno",      no_argument, &_opt.nAssumeNo, 1},    //--assumeno
     {"assumeyes",     no_argument, 0, 'y'},                //--assumeyes
     {"best",          no_argument, &_opt.nBest, 1},        //--best
+    {"builddeps",     no_argument, &_opt.nBuildDeps, 1},
     {"cacheonly",     no_argument, &_opt.nCacheOnly, 1}, //-C, --cacheonly
     {"config",        required_argument, 0, 'c'},          //-c, --config
     {"debuglevel",    required_argument, 0, 'd'},          //-d, --debuglevel
@@ -343,6 +344,7 @@ TDNFCopyOptions(
     pArgs->nTestOnly      = pOptionArgs->nTestOnly;
     pArgs->nSkipBroken    = pOptionArgs->nSkipBroken;
     pArgs->nSource        = pOptionArgs->nSource;
+    pArgs->nBuildDeps     = pOptionArgs->nBuildDeps;
 
 cleanup:
     return dwError;
