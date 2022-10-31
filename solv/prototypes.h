@@ -510,6 +510,11 @@ SolvApplyUserInstalledFilter(
     PSolvQuery pQuery,
     struct history_ctx *pHistoryCtx);
 
+uint32_t
+SolvApplyArchFilter(
+    PSolvQuery pQuery,
+    char **ppszArchs);
+
 // tdnfrepo.c
 uint32_t
 SolvReadYumRepo(

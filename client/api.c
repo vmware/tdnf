@@ -1472,7 +1472,14 @@ TDNFRepoQuery(
     dwError = SolvApplyListQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    /* now filter for extras or duplicates */
+    /* filter for arch(es) */
+    if (pRepoqueryArgs->ppszArchs)
+    {
+        dwError = SolvApplyArchFilter(pQuery, pRepoqueryArgs->ppszArchs);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* filter for extras or duplicates */
     if (pRepoqueryArgs->nExtras)
     {
         dwError = SolvApplyExtrasFilter(pQuery);

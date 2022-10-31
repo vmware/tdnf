@@ -1506,3 +1506,60 @@ error:
     goto cleanup;
 }
 
+uint32_t
+SolvApplyArchFilter(
+    PSolvQuery pQuery,
+    char **ppszArchs)
+{
+    uint32_t dwError = 0;
+    Pool *pPool;
+    Queue queueFiltered = {0};
+    Queue queueArches = {0};
+    int i, j;
+
+    if(!pQuery || !ppszArchs) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+    pPool = pQuery->pSack->pPool;
+
+    queue_init(&queueArches);
+    for (j = 0; ppszArchs[j]; j++) {
+        Id idArch;
+        idArch = pool_str2id(pPool, ppszArchs[j], 0);
+        if (idArch) {
+            queue_push(&queueArches, idArch);
+        }
+    }
+
+    queue_init(&queueFiltered);
+    for (i = 0; i < pQuery->queueResult.count; i++)
+    {
+        Id idPkg = pQuery->queueResult.elements[i];
+        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+        int nFound = 0;
+
+        if(!pSolvable)
+        {
+            dwError = ERROR_TDNF_NO_DATA;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        for (j = 0; j < queueArches.count; j++){
+            if (pSolvable->arch == queueArches.elements[j]) {
+                nFound = 1;
+            }
+        }
+        if (nFound) {
+            queue_push(&queueFiltered, idPkg);
+        }
+    }
+    queue_free(&pQuery->queueResult);
+    pQuery->queueResult = queueFiltered;
+cleanup:
+    queue_free(&queueArches);
+    return dwError;
+error:
+    queue_free(&queueFiltered);
+    goto cleanup;
+}
+
