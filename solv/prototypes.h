@@ -368,11 +368,6 @@ SolvApplyListQuery(
     );
 
 uint32_t
-SolvApplyDistroSyncQuery(
-    PSolvQuery pQuery
-    );
-
-uint32_t
 SolvApplyProvidesQuery(
     PSolvQuery pQuery
     );
@@ -383,22 +378,6 @@ SolvApplySearch(
     char** ppszSearchStrings,
     int dwStartIndex,
     int dwCount
-    );
-
-uint32_t
-SolvRunSolv(
-    PSolvQuery pQuery,
-    uint32_t dwMainMode,
-    uint32_t dwMode,
-    Queue* queueJobs,
-    Solver** ppSolv
-    );
-
-uint32_t
-SolvApplyAlterQuery(
-    PSolvQuery pQuery,
-    uint32_t dwMainMode,
-    uint32_t dwMode
     );
 
 uint32_t

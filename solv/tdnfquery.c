@@ -543,73 +543,6 @@ error:
 }
 
 uint32_t
-SolvRunSolv(
-    PSolvQuery pQuery,
-    uint32_t dwMainMode,
-    uint32_t dwMode,
-    Queue* queueJobs,
-    Solver** ppSolv)
-{
-    uint32_t dwError = 0;
-    int nJob = 0;
-    Solver *pSolv = NULL;
-
-    if(!queueJobs->count && (dwMainMode == MODE_UPDATE ||
-       dwMainMode == MODE_DISTUPGRADE ||
-       dwMainMode == MODE_VERIFY))
-    {
-        queue_push2(queueJobs, SOLVER_SOLVABLE_ALL, 0);
-    }
-
-    for (nJob = 0; nJob < queueJobs->count; nJob += 2)
-    {
-        queueJobs->elements[nJob] |= dwMode;
-        if (dwMode == SOLVER_UPDATE &&
-            pool_isemptyupdatejob(
-                pQuery->pSack->pPool,
-                queueJobs->elements[nJob],
-                queueJobs->elements[nJob + 1]))
-        {
-            queueJobs->elements[nJob] ^= SOLVER_UPDATE ^ SOLVER_INSTALL;
-        }
-    }
-    pSolv = solver_create(pQuery->pSack->pPool);
-    if(pSolv == NULL)
-    {
-        dwError = ERROR_TDNF_OUT_OF_MEMORY;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
-    solver_set_flag(pSolv, SOLVER_FLAG_SPLITPROVIDES, 1);
-    if (dwMainMode == MODE_ERASE)
-    {
-        solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
-    }
-
-    if(solver_solve(pSolv, queueJobs))
-    {
-        dwError = ERROR_TDNF_SOLV_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    *ppSolv = pSolv;
-cleanup:
-    return dwError;
-
-error:
-    if(ppSolv)
-    {
-        *ppSolv = NULL;
-    }
-    if(pSolv)
-    {
-        solver_free(pSolv);
-    }
-    goto cleanup;
-
-}
-
-uint32_t
 SolvApplyUpDownScope(
     PSolvQuery pQuery,
     int nUp
@@ -771,63 +704,6 @@ cleanup:
 
 error:
     goto cleanup;
-}
-
-uint32_t
-SolvApplyAlterQuery(
-    PSolvQuery pQuery,
-    uint32_t dwMainMode,
-    uint32_t dwMode
-    )
-{
-    uint32_t dwError = 0;
-    Solver *pSolv = NULL;
-    Transaction *pTrans = NULL;
-    uint32_t nFlags = 0;
-
-    nFlags = SELECTION_NAME | SELECTION_PROVIDES | SELECTION_GLOB;
-    nFlags |= SELECTION_CANON|SELECTION_DOTARCH|SELECTION_REL;
-
-    dwError = SolvGenerateCommonJob(pQuery, nFlags);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvRunSolv(
-                  pQuery,
-                  dwMainMode,
-                  dwMode,
-                  &pQuery->queueJob,
-                  &pSolv);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    pTrans = solver_create_transaction(pSolv);
-    if (!pTrans->steps.count)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    pQuery->pTrans = pTrans;
-    queue_insertn(&pQuery->queueResult,
-                  pQuery->queueResult.count,
-                  pTrans->steps.count,
-                  pTrans->steps.elements);
-
-cleanup:
-    if(pSolv)
-        solver_free(pSolv);
-    return dwError;
-
-error:
-    if(pTrans)
-        transaction_free(pTrans);
-    goto cleanup;
-}
-
-uint32_t
-SolvApplyDistroSyncQuery(
-    PSolvQuery pQuery
-    )
-{
-    return SolvApplyAlterQuery(pQuery, MODE_DISTUPGRADE, SOLVER_DISTUPGRADE);
 }
 
 uint32_t
