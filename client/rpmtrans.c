@@ -316,12 +316,31 @@ int
 doCheck(PTDNFRPMTS pTS)
 {
     int nResult = 0;
-    rpmpsi psi = NULL;
-    rpmProblem prob = NULL;
+
     nResult = rpmtsCheck(pTS->pTS);
-    char *pErrorStr = NULL;
 
     rpmps ps = rpmtsProblems(pTS->pTS);
+    if(ps)
+    {
+        int nProbs = rpmpsNumProblems(ps);
+        if(nProbs > 0)
+        {
+            nResult = ERROR_TDNF_RPM_CHECK;
+        }
+        rpmpsFree(ps);
+    }
+
+    return nResult;
+}
+
+void
+reportProblems(PTDNFRPMTS pTS)
+{
+    rpmps ps = NULL;
+    rpmpsi psi = NULL;
+    char *pErrorStr = NULL;
+
+    ps = rpmtsProblems(pTS->pTS);
     if(ps)
     {
         int nProbs = rpmpsNumProblems(ps);
@@ -332,7 +351,7 @@ doCheck(PTDNFRPMTS pTS)
             psi = rpmpsInitIterator(ps);
             while(rpmpsNextIterator(psi) >= 0)
             {
-                prob = rpmpsGetProblem(psi);
+                rpmProblem prob = rpmpsGetProblem(psi);
                 char *msg = rpmProblemString(prob);
                 if (strstr(msg, "no digest") != NULL)
                 {
@@ -344,24 +363,32 @@ doCheck(PTDNFRPMTS pTS)
                     if (rpmProblemGetType(prob) == RPMPROB_REQUIRES)
                     {
                         uint32_t dwError = 0;
+
                         dwError = TDNFAllocateString(rpmProblemGetStr(prob), &pErrorStr);
                         BAIL_ON_TDNF_ERROR(dwError);
 
                         dwError = TDNFDetectPreTransFailure(pTS->pTS, pErrorStr);
                         BAIL_ON_TDNF_ERROR(dwError);
+
+                        TDNF_SAFE_FREE_MEMORY(pErrorStr);
                     }
                 }
-                rpmProblemFree(prob);
             }
-            rpmpsFreeIterator(psi);
-            nResult = ERROR_TDNF_RPM_CHECK;
         }
     }
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pErrorStr);
-    return nResult;
+    if (psi)
+    {
+        rpmpsFreeIterator(psi);
+    }
+    if (ps)
+    {
+        rpmpsFree(ps);
+    }
+    return;
+
 error:
-    nResult = ERROR_TDNF_RPM_CHECK;
     goto cleanup;
 }
 
@@ -443,9 +470,9 @@ cleanup:
     return dwError;
 
 error:
-    if(pTS && dwError != ERROR_TDNF_RPM_CHECK)
+    if(pTS)
     {
-        doCheck(pTS);
+        reportProblems(pTS);
     }
     goto cleanup;
 }
