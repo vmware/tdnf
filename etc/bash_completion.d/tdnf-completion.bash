@@ -12,6 +12,10 @@ _tdnf__process_if_prev_is_option()
             COMPREPLY=( $(compgen -W "$opts" -- $cur) )
             return 0
             ;;
+        --downloaddir)
+            COMPREPLY=( $(compgen -d -- $cur) )
+            return 0
+            ;;
         --enablerepo)
             opts=`tdnf repolist disabled | awk '{if (NR > 1) print $1}'`
             COMPREPLY=( $(compgen -W "$opts" -- $cur) )
@@ -24,6 +28,11 @@ _tdnf__process_if_prev_is_option()
             ;;
         --installroot)
             COMPREPLY=( $(compgen -d -- $cur) )
+            return 0
+            ;;
+        --repo|repoid)
+            opts=`tdnf repolist all | awk '{if (NR > 1) print $1}'`
+            COMPREPLY=( $(compgen -W "$opts" -- $cur) )
             return 0
             ;;
         --rpmverbosity)
@@ -51,20 +60,28 @@ _tdnf__process_if_cmd()
                 opts="packages metadata dbcache plugins expire-cache all"
             ;;
         downgrade)
-            opts=`tdnf info downgrades | grep "^Name " | awk '{print $3}'`
+            opts=$(tdnf list --downgrades | awk '{print $1}' | cut -d'.' -f1)
             ;;
-        erase|reinstall|remove)
-            opts=`tdnf info installed | grep "^Name " | awk '{print $3}'`
+        autoerase|autoremove|erase|reinstall|remove)
+            opts=$(tdnf list --installed | awk '{print $1}' | cut -d'.' -f1)
+            ;;
+        history)
+            [ $1 -eq $(($COMP_CWORD - 1)) ] &&
+                opts="init update list rollback undo redo"
             ;;
         install)
-            opts=`tdnf info available | grep "^Name " | awk '{print $3}'`
+            opts="$(tdnf list --available | awk '{print $1}' | cut -d'.' -f1) $(compgen -d -G '*.rpm')"
+            ;;
+        mark)
+            [ $1 -eq $(($COMP_CWORD - 1)) ] &&
+                opts="install remove"
             ;;
         repolist)
             [ $1 -eq $(($COMP_CWORD - 1)) ] &&
                 opts="all enabled disabled"
             ;;
-        upgrade)
-            opts=`tdnf info upgrades | grep "^Name " | awk '{print $3}'`
+        update|upgrade)
+            opts=$(tdnf list --upgrades | awk '{print $1}' | cut -d'.' -f1)
             ;;
     esac
     COMPREPLY=( $(compgen -W "$opts" -- $cur) )
@@ -75,9 +92,8 @@ _tdnf()
 {
     local c=0 cur __opts __cmds
     COMPREPLY=()
-    __opts="--allowerasing --assumeno -y --assumeyes --best -C --cacheonly -c --config -d --debuglevel --debugsolver --disablerepo --enablerepo -e --errorlevel -h --help -i --installroot --nogpgcheck --refresh --rpmverbosity --setopt --showduplicates --version -v --verbose --releasever -4 -6"
-    __cmds="autoremove autoupdate check-local check-update clean count distro-sync downgrade erase help info install list makecache provides whatprovides remove reinstall repolist search updateinfo upgrade upgrade-to update update-to"
-
+    __opts="--assumeno --assumeyes --cacheonly --debugsolver --disableexcludes --disableplugin --disablerepo --downloaddir --downloadonly --enablerepo --enableplugin --exclude --installroot --noautoremove --nogpgcheck --noplugins --quiet --reboot --refresh --releasever --repo --repofrompath --repoid --rpmverbosity --security --sec --setopt --skip --skipconflicts --skipdigest --skipsignature --skipobsoletes --testonly --version --available --duplicates --extras --file --installed --whatdepends --whatrequires --whatenhances --whatobsoletes --whatprovides --whatrecommends --whatrequires --whatsuggests --whatsupplements --depends --enhances --list --obsoletes --provides --recommends --requires --requires --suggests --source --supplements --arch --delete --download --download --gpgcheck --metadata --newest --norepopath --source --urls"
+    __cmds="autoerase autoremove check check-local check-update clean distro-sync downgrade erase help history info install list makecache mark provides whatprovides reinstall remove repolist repoquery reposync search update update-to updateinfo upgrade upgrade-to"
     cur="${COMP_WORDS[COMP_CWORD]}"
     _tdnf__process_if_prev_is_option && return 0
     while [ $c -lt ${COMP_CWORD} ]; do
