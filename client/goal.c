@@ -961,14 +961,10 @@ TDNFSolvAddMinVersions(
                              sizeof(Map),
                              (void**)&pPool->considered);
         map_init(pPool->considered, pPool->nsolvables);
+        map_setall(pPool->considered);
     }
-    else
-    {
-        map_grow(pPool->considered, pPool->nsolvables);
-    }
-
-    map_setall(pPool->considered);
     map_subtract(pPool->considered, pMapMinVersions);
+
 cleanup:
     if(pMapMinVersions)
     {
