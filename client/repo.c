@@ -1263,15 +1263,18 @@ TDNFParseRepoMD(
                   pRepo,
                   TDNF_REPOMD_TYPE_FILELISTS,
                   &pRepoMD->pszFileLists);
+    /* filelists is not mandatory */
+    if(dwError == ERROR_TDNF_NO_DATA) {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFFindRepoMDPart(
                   pRepo,
                   TDNF_REPOMD_TYPE_UPDATEINFO,
                   &pRepoMD->pszUpdateInfo);
-    //updateinfo is not mandatory
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
+    /* updateinfo is not mandatory */
+    if(dwError == ERROR_TDNF_NO_DATA) {
         dwError = 0;
     }
     BAIL_ON_TDNF_ERROR(dwError);
