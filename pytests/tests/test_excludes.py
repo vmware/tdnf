@@ -7,6 +7,8 @@
 #
 
 import pytest
+import os
+import shutil
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -19,6 +21,20 @@ def teardown_test(utils):
     for pkg in ("mulversion_pkgname", "requiring_package", "required_package"):
         pkgname = utils.config[pkg]
         utils.run(['tdnf', 'erase', '-y', pkgname])
+
+    dirname = os.path.join(utils.config['repo_path'], 'minversions.d')
+    if os.path.isdir(dirname):
+        shutil.rmtree(dirname)
+
+    utils.edit_config({'minversions': None})
+
+
+def set_minversions_file(utils, value):
+    dirname = os.path.join(utils.config['repo_path'], 'minversions.d')
+    utils.makedirs(dirname)
+    filename = os.path.join(dirname, 'test.conf')
+    with open(filename, 'w') as f:
+        f.write(value)
 
 
 # specifying the version should not override the exclude (negative test)
@@ -79,3 +95,27 @@ def test_remove_package(utils):
     utils.run(['tdnf', 'remove', '--exclude=', pkgname, '-y', '--nogpgcheck', pkgname])
     # package should still be there
     assert utils.check_package(pkgname)
+
+
+# test for issue #367
+def test_with_minversion_existing(utils):
+    mverpkg = utils.config["sglversion_pkgname"]
+    set_minversions_file(utils, mverpkg + "=1.0.1-2\n")
+
+    pkgname = utils.config["mulversion_pkgname"]
+    pkgversion1 = utils.config["mulversion_lower"]
+    pkgversion2 = utils.config["mulversion_higher"]
+
+    if '-' in pkgversion1:
+        pkgversion1 = pkgversion1.split('-')[0]
+    if '-' in pkgversion2:
+        pkgversion2 = pkgversion2.split('-')[0]
+
+    utils.erase_package(pkgname)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion1])
+    assert utils.check_package(pkgname, pkgversion1)
+
+    utils.run(['tdnf', 'update', '--exclude=', '-y', '--nogpgcheck', pkgname + '-' + pkgversion2])
+    assert not utils.check_package(pkgname, pkgversion2)
+    assert utils.check_package(pkgname, pkgversion1)
