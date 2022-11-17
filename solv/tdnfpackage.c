@@ -1754,12 +1754,8 @@ SolvAddExcludes(
                               sizeof(Map),
                               (void**)&pPool->considered);
          map_init(pPool->considered, pPool->nsolvables);
+         map_setall(pPool->considered);
      }
-     else
-     {
-         map_grow(pPool->considered, pPool->nsolvables);
-     }
-     map_setall(pPool->considered);
      map_subtract(pPool->considered, pExcludes);
 
 cleanup:
@@ -1778,7 +1774,7 @@ SolvDataIterator(
 {
     Dataiterator di;
     Id keyname = SOLVABLE_NAME;
-    char **ppszPackagesTemp = NULL;
+    char **ppszPkg = NULL;
     uint32_t dwError = 0;
 
     if (!pPool || !ppszExcludes || !pMap)
@@ -1787,22 +1783,20 @@ SolvDataIterator(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ppszPackagesTemp = ppszExcludes;
-    while(ppszPackagesTemp && *ppszPackagesTemp)
+    for (ppszPkg = ppszExcludes; ppszPkg && *ppszPkg; ppszPkg++)
     {
           int flags = SEARCH_STRING;
-          if (SolvIsGlob(*ppszPackagesTemp))
+          if (SolvIsGlob(*ppszPkg))
           {
               flags = SEARCH_GLOB;
           }
-          dwError = dataiterator_init(&di, pPool, 0, 0, keyname, *ppszPackagesTemp, flags);
+          dwError = dataiterator_init(&di, pPool, 0, 0, keyname, *ppszPkg, flags);
           BAIL_ON_TDNF_ERROR(dwError);
           while (dataiterator_step(&di))
           {
               MAPSET(pMap, di.solvid);
           }
           dataiterator_free(&di);
-          ++ppszPackagesTemp;
     }
 cleanup:
     return dwError;
