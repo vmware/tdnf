@@ -141,6 +141,8 @@ class TestUtils(object):
 
         for k, v in changes.items():
             if v is not None:
+                if not config.has_section(section):
+                    config.add_section(section)
                 config[section][k] = v
             else:
                 config.remove_option(section, k)
