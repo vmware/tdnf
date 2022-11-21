@@ -766,7 +766,9 @@ TDNFXmlParseData(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
-        TDNFXmlParseData(ml_ctx, node->children, filename);
+        if (node->children) {
+            TDNFXmlParseData(ml_ctx, node->children, filename);
+        }
         node = node->next;
     }
 
