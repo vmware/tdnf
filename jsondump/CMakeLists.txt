@@ -12,6 +12,8 @@ add_executable(${TDNF_JSON_BIN}
     test.c
 )
 
+install(TARGETS ${TDNF_JSON_BIN} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary)
+
 add_library(${LIB_TDNF_JSONDUMP} STATIC
     jsondump.c
 )

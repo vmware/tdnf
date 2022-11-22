@@ -23,14 +23,15 @@ def setup_test(utils):
     global config
     config = utils.config['repo_path'] + '/tdnf.conf'
 
-    path = '{builddir}/python/build/lib.linux-{arch}-{pymajor}.{pyminor}'
+    if not utils.config.get('installed', False):
+        path = '{builddir}/python/build/lib.linux-{arch}-{pymajor}.{pyminor}'
 
-    path = path.format(builddir=utils.config['build_dir'],
-                       arch=os.uname().machine,
-                       pymajor=str(sys.version_info.major),
-                       pyminor=str(sys.version_info.minor))
+        path = path.format(builddir=utils.config['build_dir'],
+                           arch=os.uname().machine,
+                           pymajor=str(sys.version_info.major),
+                           pyminor=str(sys.version_info.minor))
 
-    sys.path.append(path)
+        sys.path.append(path)
 
     global tdnf
     import tdnf

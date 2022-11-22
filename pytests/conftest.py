@@ -101,7 +101,7 @@ class TestUtils(object):
             self.config.update(cli_args)
         self.config['distribution'] = os.environ.get('DIST', 'photon')
         script = os.path.join(self.config['test_path'], 'repo/setup-repo.sh')
-        ret = self.run(['sh', script, self.config['repo_path']])
+        ret = self.run(['sh', script, self.config['repo_path'], self.config['specs_dir']])
         if ret['retval']:
             pytest.exit("An error occured while running {}, stdout: \n{}".format(
                 script,
@@ -262,8 +262,8 @@ class TestUtils(object):
 
     def _decorate_tdnf_cmd_for_test(self, cmd, noconfig=False):
         if cmd[0] == 'tdnf':
-            if 'build_dir' in self.config:
-                cmd[0] = os.path.join(self.config['build_dir'], 'bin/tdnf')
+            if 'bin_dir' in self.config:
+                cmd[0] = os.path.join(self.config['bin_dir'], 'tdnf')
             if ('-c' not in cmd and '--config' not in cmd and not noconfig):
                 cmd.insert(1, '-c')
                 cmd.insert(2, os.path.join(self.config['repo_path'], 'tdnf.conf'))

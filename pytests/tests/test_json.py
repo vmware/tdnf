@@ -13,7 +13,7 @@ import os
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
-    tdnfj = os.path.join(utils.config['build_dir'], 'bin/tdnfj')
+    tdnfj = os.path.join(utils.config['bin_dir'], 'tdnfj')
     if not os.path.lexists(tdnfj):
         os.symlink('tdnf', tdnfj)
     yield
@@ -38,7 +38,7 @@ def test_list(utils):
 
 
 def test_list_tdnfj(utils):
-    tdnfj = os.path.join(utils.config['build_dir'], 'bin/tdnfj')
+    tdnfj = os.path.join(utils.config['bin_dir'], 'tdnfj')
     ret = utils.run([tdnfj, '-c', os.path.join(utils.config['repo_path'], 'tdnf.conf'), 'list'])
     infolist = json.loads("\n".join(ret['stdout']))
 
@@ -142,12 +142,12 @@ def test_history_info(utils):
 
 
 def test_jsondump(utils):
-    cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
+    cmd = os.path.join(utils.config['bin_dir'], 'jsondumptest')
     ret = utils.run([cmd])
     assert "FAIL" not in "\n".join(ret['stdout'])
 
 
 def test_jsondump_memcheck(utils):
-    cmd = os.path.join(utils.config['build_dir'], 'bin/jsondumptest')
+    cmd = os.path.join(utils.config['bin_dir'], 'jsondumptest')
     ret = utils.run_memcheck([cmd])
     assert ret['retval'] == 0

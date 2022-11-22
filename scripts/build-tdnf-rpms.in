@@ -19,7 +19,7 @@ project_version="@PROJECT_VERSION@"
 rpm_build_path="${project_dir}/rpmbuild"
 full_name="${project_name}-${project_version}"
 
-build_tools=(git tar gzip file)
+build_tools=(git tar gzip file findutils)
 if ! rpm -q ${build_tools[@]} > /dev/null; then
   echo "Installing required build tools..."
   if grep -w ID /etc/os-release | grep -i photon > /dev/null; then

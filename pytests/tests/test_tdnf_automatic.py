@@ -35,7 +35,7 @@ def setup_test(utils):
 
     # make sure to use the built tdnf binary, not the installed one by
     # prefixing the build/bin directory
-    os.environ['PATH'] = os.path.join(utils.config['build_dir'], 'bin') + ':' + os.environ['PATH']
+    os.environ['PATH'] = utils.config['bin_dir'] + ':' + os.environ['PATH']
 
     cleanup_env(utils)
     yield
