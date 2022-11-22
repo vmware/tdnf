@@ -28,7 +28,6 @@
 uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
-    TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
     )
 {
@@ -129,14 +128,6 @@ TDNFLoadRepoData(
         TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
         pszRepoFilePath = NULL;
 
-        //Apply filter
-        if((nFilter == REPOLISTFILTER_ENABLED && !(*ppRepoNext)->nEnabled) ||
-           (nFilter == REPOLISTFILTER_DISABLED && (*ppRepoNext)->nEnabled))
-        {
-            TDNFFreeReposInternal(*ppRepoNext);
-            *ppRepoNext = NULL;
-            continue;
-        }
         /* may have added multiple repos, go to last one */
         while (*ppRepoNext)
             ppRepoNext = &((*ppRepoNext)->pNext);

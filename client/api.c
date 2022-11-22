@@ -706,7 +706,6 @@ TDNFOpenHandle(
 
     dwError = TDNFLoadRepoData(
                   pTdnf,
-                  REPOLISTFILTER_ALL,
                   &pTdnf->pRepos);
     BAIL_ON_TDNF_ERROR(dwError);
 
