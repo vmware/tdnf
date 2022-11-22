@@ -549,9 +549,8 @@ _TDNFLoadPluginLibs(
         }
         dwError = TDNFAllocateStringPrintf(
                       &pszPlugin,
-                      "%s/%s/lib%s.so",
+                      "%s/lib%s.so",
                       pszLibPath,
-                      pPlugin->pszName,
                       pPlugin->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
