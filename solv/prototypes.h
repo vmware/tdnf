@@ -335,10 +335,8 @@ uint32_t
 SolvInitSack(
     PSolvSack *ppSack,
     const char* pszCacheDir,
-    const char* pszRootDir,
-    int nInstallAllDeps
-    );
-
+    const char* pszRootDir
+);
 
 // tdnfquery.c
 uint32_t
@@ -534,11 +532,16 @@ SolvCountPackages(
     );
 
 uint32_t
+SolvReadRpmsFromDirectory(
+    Repo *pRepo,
+    const char *pszDir
+);
+
+uint32_t
 SolvReadInstalledRpms(
-    Pool* pPool,
-    Repo** ppRepo,
-    const char* pszCacheFileName
-    );
+    Repo* pRepo,
+    const char *pszCacheFileName
+);
 
 uint32_t
 SolvLoadRepomd(

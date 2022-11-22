@@ -265,6 +265,7 @@ typedef struct _TDNF_REPO_DATA
     int nEnabled;
     int nSkipIfUnavailable;
     int nGPGCheck;
+    int nHasMetaData;
     long lMetadataExpire;
     char* pszId;
     char* pszName;

@@ -18,7 +18,6 @@ ARCH = platform.machine()
 
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
-    create_repo(utils)
     yield
     teardown_test(utils)
 
@@ -56,6 +55,8 @@ def test_repofrompath_created_repo(utils):
     reponame = 'photon-test'
     synced_dir = os.path.join(workdir, reponame)
 
+    create_repo(utils)
+
     ret = utils.run(['tdnf',
                      '--repofrompath=synced-repo,{}'.format(synced_dir),
                      '--repo=synced-repo',
@@ -82,6 +83,8 @@ def test_repofrompath_cmdline_repo(utils):
     reponame = 'photon-test'
     synced_dir = os.path.join(workdir, reponame)
 
+    create_repo(utils)
+
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
 
@@ -92,6 +95,40 @@ def test_repofrompath_cmdline_repo(utils):
                      '--repofrompath=synced-repo,{}'.format(synced_dir),
                      '--repo=synced-repo',
                      'install', path],
+                    cwd=workdir)
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
+
+
+# reposync a repo and install from it using repofromdir
+def test_repofromdir_created_repo(utils):
+    reponame = 'photon-test'
+    workdir = WORKDIR
+    utils.makedirs(workdir)
+
+    ret = utils.run(['tdnf', '--repo={}'.format(reponame),
+                     'reposync'],
+                    cwd=workdir)
+    assert ret['retval'] == 0
+    synced_dir = os.path.join(workdir, reponame)
+    assert os.path.isdir(synced_dir)
+    # repofromdir must work without repodata
+    assert not os.path.isdir(os.path.join(synced_dir, 'repodata'))
+
+    ret = utils.run(['tdnf',
+                     '--repofromdir=synced-repo,{}'.format(synced_dir),
+                     '--repo=synced-repo',
+                     'makecache'],
+                    cwd=workdir)
+    assert ret['retval'] == 0
+
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    ret = utils.run(['tdnf',
+                     '-y', '--nogpgcheck',
+                     '--repofromdir=synced-repo,{}'.format(synced_dir),
+                     '--repo=synced-repo',
+                     'install', pkgname],
                     cwd=workdir)
     assert ret['retval'] == 0
     assert utils.check_package(pkgname)

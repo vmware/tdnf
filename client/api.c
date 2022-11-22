@@ -261,16 +261,14 @@ TDNFCheckLocalPackages(
     )
 {
     uint32_t dwError = 0;
-    char* pszRPMPath = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
     Repo *pCmdlineRepo = 0;
-    Id    dwPkgAdded = 0;
     Queue queueJobs = {0};
     Solver *pSolv = NULL;
-    uint32_t dwPackagesFound = 0;
+    uint32_t count = 0;
     Pool *pCmdLinePool = NULL;
     TDNF_SKIPPROBLEM_TYPE dwSkipProblem = SKIPPROBLEM_NONE;
+    Solvable *s = NULL;
+    Id p;
 
     if(!pTdnf || !pTdnf->pSack || !pTdnf->pSack->pPool || !pszLocalPath)
     {
@@ -279,12 +277,7 @@ TDNFCheckLocalPackages(
     }
 
     queue_init(&queueJobs);
-    pDir = opendir(pszLocalPath);
-    if(pDir == NULL)
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
+
     pr_info("Checking all packages from: %s\n", pszLocalPath);
 
     pCmdLinePool = pool_create();
@@ -297,38 +290,14 @@ TDNFCheckLocalPackages(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while ((pEnt = readdir (pDir)) != NULL )
-    {
-        int nLenRpmExt = strlen(TDNF_RPM_EXT);
-        int nLen = strlen(pEnt->d_name);
-        if (nLen <= nLenRpmExt ||
-            strcmp(pEnt->d_name + nLen - nLenRpmExt, TDNF_RPM_EXT))
-        {
-            continue;
-        }
-        dwError = TDNFJoinPath(
-                      &pszRPMPath,
-                      pszLocalPath,
-                      pEnt->d_name,
-                      NULL);
-        BAIL_ON_TDNF_ERROR(dwError);
+    dwError = SolvReadRpmsFromDirectory(pCmdlineRepo, pszLocalPath);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-        dwPkgAdded = repo_add_rpm(
-                         pCmdlineRepo,
-                         pszRPMPath,
-                         REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE);
-        if(!dwPkgAdded)
-        {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        queue_push2(&queueJobs, SOLVER_SOLVABLE|SOLVER_INSTALL, dwPkgAdded);
-        dwPackagesFound++;
-        TDNF_SAFE_FREE_MEMORY(pszRPMPath);
-        pszRPMPath = NULL;
+    FOR_REPO_SOLVABLES(pCmdlineRepo, p, s) {
+        queue_push2(&queueJobs, SOLVER_SOLVABLE|SOLVER_INSTALL, p);
+        count++;
     }
-    repo_internalize(pCmdlineRepo);
-    pr_info("Found %u packages\n", dwPackagesFound);
+    pr_info("Found %u packages\n", count);
 
     pSolv = solver_create(pCmdLinePool);
     if(pSolv == NULL)
@@ -362,11 +331,6 @@ cleanup:
         solver_free(pSolv);
     }
     queue_free(&queueJobs);
-    if(pDir)
-    {
-        closedir(pDir);
-    }
-    TDNF_SAFE_FREE_MEMORY(pszRPMPath);
     return dwError;
 
 error:
@@ -729,9 +693,14 @@ TDNFOpenHandle(
     dwError = SolvInitSack(
                   &pSack,
                   pTdnf->pConf->pszCacheDir,
-                  pTdnf->pArgs->pszInstallRoot,
-                  pArgs->nAllDeps);
+                  pTdnf->pArgs->pszInstallRoot);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!pArgs->nAllDeps)
+    {
+        dwError = SolvReadInstalledRpms(pSack->pPool->installed, pszCacheDir);
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
 
     dwError = TDNFLoadRepoData(
                   pTdnf,

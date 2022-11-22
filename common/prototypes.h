@@ -273,6 +273,12 @@ TDNFReadFileToStringArray(
     char ***pppszArray
     );
 
+uint32_t
+TDNFIsDir(
+    const char* pszPath,
+    int* pnPathIsDir
+    );
+
 //setopt.c
 uint32_t
 AddSetOpt(
