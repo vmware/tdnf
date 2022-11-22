@@ -7,16 +7,56 @@
 #
 
 import pytest
+import os
+import json
 
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
+    # test multiple repos in one file
+    repofile_foo = os.path.join(utils.config['repo_path'], 'yum.repos.d', 'foo.repo')
+    utils.edit_config(
+        {
+            'name': 'Foo Repo',
+            'enabled': '1',
+            'baseurl': 'http://pkgs.foo.org/foo'
+        },
+        section='foo',
+        filename=repofile_foo
+    )
+    utils.edit_config(
+        {
+            'name': 'Foo Debug Repo',
+            'enabled': '0',
+            'baseurl': 'http://pkgs.foo.org/foo-debug'
+        },
+        section='foo-debug',
+        filename=repofile_foo
+    )
+    repofile_bar = os.path.join(utils.config['repo_path'], 'yum.repos.d', 'bar.repo')
+    utils.edit_config(
+        {
+            'name': 'Bar Repo',
+            'enabled': '1',
+            'baseurl': 'http://pkgs.bar.org/bar'
+        },
+        section='bar',
+        filename=repofile_bar
+    )
     yield
     teardown_test(utils)
 
 
 def teardown_test(utils):
-    pass
+    os.remove(os.path.join(utils.config['repo_path'], 'yum.repos.d', 'foo.repo'))
+    os.remove(os.path.join(utils.config['repo_path'], 'yum.repos.d', 'bar.repo'))
+
+
+def find_repo(repolist, id):
+    for repo in repolist:
+        if repo['Repo'] == id:
+            return True
+    return False
 
 
 def test_repolist(utils):
@@ -24,9 +64,38 @@ def test_repolist(utils):
     assert ret['retval'] == 0
 
 
+# -j returns a list of repos. Easier to parse.
+def test_repolist_json(utils):
+    ret = utils.run(['tdnf', 'repolist', '-j'])
+    assert ret['retval'] == 0
+    repolist = json.loads("\n".join(ret['stdout']))
+    assert find_repo(repolist, 'foo')
+    assert not find_repo(repolist, 'foo-debug')
+    assert find_repo(repolist, 'bar')
+
+
+# disabled repo should be listed when we enable it on the command line
+def test_repolist_json_enable_one(utils):
+    ret = utils.run(['tdnf', 'repolist', '--enablerepo=foo-debug', '-j'])
+    assert ret['retval'] == 0
+    repolist = json.loads("\n".join(ret['stdout']))
+    assert find_repo(repolist, 'foo')
+    assert find_repo(repolist, 'foo-debug')
+    assert find_repo(repolist, 'bar')
+
+
 def test_repolist_all(utils):
     ret = utils.run(['tdnf', 'repolist', 'all'])
     assert ret['retval'] == 0
+
+
+def test_repolist_json_all(utils):
+    ret = utils.run(['tdnf', 'repolist', 'all', '-j'])
+    assert ret['retval'] == 0
+    repolist = json.loads("\n".join(ret['stdout']))
+    assert find_repo(repolist, 'foo')
+    assert find_repo(repolist, 'foo-debug')
+    assert find_repo(repolist, 'bar')
 
 
 def test_repolist_enabled(utils):
@@ -37,6 +106,15 @@ def test_repolist_enabled(utils):
 def test_repolist_disabled(utils):
     ret = utils.run(['tdnf', 'repolist', 'disabled'])
     assert ret['retval'] == 0
+
+
+def test_repolist_json_disabled(utils):
+    ret = utils.run(['tdnf', 'repolist', 'disabled', '-j'])
+    assert ret['retval'] == 0
+    repolist = json.loads("\n".join(ret['stdout']))
+    assert not find_repo(repolist, 'foo')
+    assert find_repo(repolist, 'foo-debug')
+    assert not find_repo(repolist, 'bar')
 
 
 def test_repolist_invalid(utils):

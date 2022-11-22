@@ -116,7 +116,9 @@ TDNFLoadRepoData(
             *ppRepoNext = NULL;
             continue;
         }
-        ppRepoNext = &((*ppRepoNext)->pNext);
+        /* may habe added multiple repos, go to last one */
+        while (*ppRepoNext)
+            ppRepoNext = &((*ppRepoNext)->pNext);
     }
 
     *ppReposAll = pReposAll;
