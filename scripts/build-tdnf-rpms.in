@@ -13,19 +13,25 @@ fi
 arch="$(uname -m)"
 project_name="@PROJECT_NAME@"
 project_dir="@CMAKE_SOURCE_DIR@"
+rpmdir="${1:-rpms}"
 
 cd "${project_dir}"
 project_version="@PROJECT_VERSION@"
 rpm_build_path="${project_dir}/rpmbuild"
 full_name="${project_name}-${project_version}"
+specfile="${project_name}".spec
 
 build_tools=(git tar gzip file findutils)
+build_deps=$(rpmspec --parse $specfile | grep ^BuildRequires: | awk '{ print $2;}')
+
 if ! rpm -q ${build_tools[@]} > /dev/null; then
   echo "Installing required build tools..."
   if grep -w ID /etc/os-release | grep -i photon > /dev/null; then
     tdnf install -y ${build_tools[@]}
+    tdnf install -y ${build_deps}
   elif grep -w ID /etc/os-release | grep -i fedora > /dev/null; then
     dnf install -y ${build_tools[@]}
+    dnf install -y ${build_deps}
   fi
 fi
 
@@ -43,7 +49,6 @@ mv -f "${full_name}".tar.gz "${rpm_build_path}"/SOURCES
 dist=$(rpm -q glibc | cut -d'.' -f3)
 rpmbuild --nodeps -D "dist .${dist}" -D "_topdir ${rpm_build_path}" -bb "${project_name}".spec
 
-rpmdir="rpms"
 mkdir -p ${rpmdir}
 mv -f "${rpm_build_path}"/RPMS/"${arch}"/*.rpm ${rpmdir}
 echo -e "\n\n--- tdnf rpms are available at $(realpath ${rpmdir}) ---\n\n"
