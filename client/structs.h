@@ -81,40 +81,6 @@ typedef struct _TDNF_EVENT_DATA_
     struct _TDNF_EVENT_DATA_ *pNext;
 } TDNF_EVENT_DATA, *PTDNF_EVENT_DATA;
 
-//Metalink Structures.
-typedef struct _TDNF_ML_LIST_
-{
-    struct _TDNF_ML_LIST_ *next;
-    void* data;
-} TDNF_ML_LIST, TDNF_ML_URL_LIST, TDNF_ML_HASH_LIST;
-
-//Metalink hash info per hash type.
-typedef struct _TDNF_ML_HASH_INFO_
-{
-    char *type;
-    char *value;
-} TDNF_ML_HASH_INFO;
-
-//Metalink url info per hash type.
-typedef struct _TDNF_ML_URL_INFO_
-{
-    char *protocol;
-    char *type;
-    char *location;
-    char *url;
-    int  preference;
-} TDNF_ML_URL_INFO;
-
-//Metalink global parsed info.
-typedef struct _TDNF_ML_CTX_
-{
-    char           *filename;
-    signed long    timestamp;
-    signed long    size;
-    TDNF_ML_LIST   *hashes;
-    TDNF_ML_LIST   *urls;
-} TDNF_ML_CTX;
-
 typedef struct progress_cb_data {
     time_t cur_time;
     time_t prev_time;

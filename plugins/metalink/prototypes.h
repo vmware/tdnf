@@ -50,6 +50,12 @@ TDNFParseUrlTag(
     xmlNode *node
     );
 
+uint32_t
+TDNFCheckRepoMDFileHashFromMetalink(
+    const char *pszFile,
+    TDNF_ML_CTX *ml_ctx
+    );
+
 // api.c
 
 const char *
