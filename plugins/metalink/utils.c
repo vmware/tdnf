@@ -371,7 +371,6 @@ TDNFCheckRepoMDFileHashFromMetalink(
 {
     uint32_t dwError = 0;
     TDNF_ML_HASH_LIST *hashList = NULL;
-    TDNF_ML_HASH_INFO *hashInfo = NULL;
     unsigned char digest[EVP_MAX_MD_SIZE] = {0};
     int hash_Type = -1;
     TDNF_ML_HASH_INFO *currHashInfo = NULL;
@@ -383,6 +382,7 @@ TDNFCheckRepoMDFileHashFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    /* find best (highest) available hash type */
     for(hashList = ml_ctx->hashes; hashList; hashList = hashList->next)
     {
         int currHashType = TDNF_HASH_SENTINEL;
@@ -397,28 +397,42 @@ TDNFCheckRepoMDFileHashFromMetalink(
         dwError = TDNFGetResourceType(currHashInfo->type, &currHashType);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        if ((hash_Type > currHashType)||
-           (!TDNFCheckHexDigest(currHashInfo->value, hash_ops[currHashType].length)))
-        {
-            continue;
-        }
-        hash_Type = currHashType;
-        hashInfo = currHashInfo;
+        if (hash_Type < currHashType)
+            hash_Type = currHashType;
     }
 
-    if (hashInfo != NULL)
-    {
-        dwError = TDNFChecksumFromHexDigest(hashInfo->value, digest);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFCheckHash(pszFile, digest, hash_Type);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    else
-    {
+    if (hash_Type < 0) {
+        /* no hash type was found */
         dwError = ERROR_TDNF_INVALID_REPO_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    /* otherwise hash_Type is the best one */
+
+    /* now check for all best hash types. Test until one succeeds
+       or until we run out */
+    for(hashList = ml_ctx->hashes; hashList; hashList = hashList->next)
+    {
+        int currHashType = TDNF_HASH_SENTINEL;
+        currHashInfo = hashList->data;
+
+        dwError = TDNFGetResourceType(currHashInfo->type, &currHashType);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        /* filter for our best type and also check that the value is valid */
+        if (hash_Type == currHashType &&
+            TDNFCheckHexDigest(currHashInfo->value, hash_ops[currHashType].length)) {
+            dwError = TDNFChecksumFromHexDigest(currHashInfo->value, digest);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFCheckHash(pszFile, digest, hash_Type);
+            if (dwError != 0 && dwError != ERROR_TDNF_CHECKSUM_VALIDATION_FAILED) {
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            if (dwError == 0)
+                break;
+        }
+    }
+
 cleanup:
     return dwError;
 error:
