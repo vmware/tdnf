@@ -225,12 +225,6 @@ TDNFFreeHistoryInfoItems(
     int nCount
 );
 
-uint32_t
-TDNFCheckRepoMDFileHashFromMetalink(
-    const char *pszFile,
-    TDNF_ML_CTX *ml_ctx
-    );
-
 //remoterepo.c
 uint32_t
 TDNFDownloadFileFromRepo(
