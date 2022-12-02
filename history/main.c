@@ -77,7 +77,7 @@ void usage(const char *cmdname)
 
 int main(int argc, char *argv[])
 {
-    char *db_file = "/var/lib/tdnf/history.db";
+    char *db_file = HISTORY_DB_DIR"/"HISTORY_DB_FILE;
     char *rpm_root_dir = "/";
     rpmts ts = NULL;
     struct history_ctx *ctx = NULL;
