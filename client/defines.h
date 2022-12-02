@@ -129,7 +129,6 @@ typedef enum
 
 #define TDNF_AUTOINSTALLED_FILE           "autoinstalled"
 #define TDNF_HISTORY_DB_FILE              "history.db"
-#define TDNF_DEFAULT_DATA_LOCATION        "/var/lib/tdnf"
 
 // repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"

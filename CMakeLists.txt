@@ -37,6 +37,10 @@ if(NOT SYSTEMD_DIR)
     set(SYSTEMD_DIR /lib/systemd/system)
 endif()
 
+if(NOT HISTORY_DB_DIR)
+    set(HISTORY_DB_DIR /var/lib/tdnf)
+endif()
+
 ##
 ## C Flags
 ##

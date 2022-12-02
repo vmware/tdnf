@@ -1,0 +1,5 @@
+#pragma once
+
+#define HISTORY_DB_FILE "history.db"
+
+#cmakedefine HISTORY_DB_DIR "@HISTORY_DB_DIR@"
