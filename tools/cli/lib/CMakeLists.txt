@@ -8,8 +8,8 @@
 
 # configure pkgconfig file
 configure_file(
-    tdnfcli.pc.in
-    tdnfcli.pc @ONLY
+    tdnf-cli-libs.pc.in
+    tdnf-cli-libs.pc @ONLY
 )
 
 add_library(${LIB_TDNF_CLI} SHARED
@@ -38,5 +38,5 @@ set_target_properties(${LIB_TDNF_CLI} PROPERTIES
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${LIB_TDNF_CLI}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tdnf-cli-libs.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 install(TARGETS ${LIB_TDNF_CLI} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)

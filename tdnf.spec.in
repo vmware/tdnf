@@ -116,7 +116,7 @@ mkdir build && cd build
 cmake \
   -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-  -DCMAKE_INSTALL_LIBDIR:PATH=lib \
+  -DCMAKE_INSTALL_LIBDIR=%{_libdir} \
   -DSYSTEMD_DIR=%{_unitdir} \
   ..
 
@@ -130,15 +130,10 @@ cd build && make %{?_smp_mflags} check
 %install
 cd build && make DESTDIR=%{buildroot} install %{?_smp_mflags}
 find %{buildroot} -name '*.a' -delete
-mkdir -p %{buildroot}/var/cache/tdnf %{buildroot}%{_unitdir}
-ln -sf %{_bindir}/tdnf %{buildroot}%{_bindir}/tyum
-ln -sf %{_bindir}/tdnf %{buildroot}%{_bindir}/yum
-ln -sf %{_bindir}/tdnf %{buildroot}%{_bindir}/tdnfj
-mv %{buildroot}%{_libdir}/pkgconfig/tdnfcli.pc %{buildroot}%{_libdir}/pkgconfig/tdnf-cli-libs.pc
-mkdir -p %{buildroot}%{_tdnfpluginsdir}/tdnfmetalink
-mkdir -p %{buildroot}%{_tdnfpluginsdir}/tdnfrepogpgcheck
-mv %{buildroot}%{_tdnfpluginsdir}/libtdnfmetalink.so %{buildroot}%{_tdnfpluginsdir}/tdnfmetalink/
-mv %{buildroot}%{_tdnfpluginsdir}/libtdnfrepogpgcheck.so %{buildroot}%{_tdnfpluginsdir}/tdnfrepogpgcheck/
+mkdir -p %{buildroot}/var/cache/%{name} %{buildroot}%{_unitdir}
+ln -sfv %{name} %{buildroot}%{_bindir}/tyum
+ln -sfv %{name} %{buildroot}%{_bindir}/yum
+ln -sfv %{name} %{buildroot}%{_bindir}/tdnfj
 
 pushd python
 python3 setup.py install --skip-build --prefix=%{_prefix} --root=%{buildroot}
@@ -235,13 +230,13 @@ systemctl try-restart tdnf-cache-updateinfo.timer >/dev/null 2>&1 || :
 %defattr(-,root,root)
 %dir %{_sysconfdir}/tdnf/pluginconf.d
 %config(noreplace) %{_sysconfdir}/tdnf/pluginconf.d/tdnfmetalink.conf
-%{_tdnfpluginsdir}/tdnfmetalink/libtdnfmetalink.so
+%{_tdnfpluginsdir}/libtdnfmetalink.so
 
 %files plugin-repogpgcheck
 %defattr(-,root,root)
-%dir %{_sysconfdir}/tdnf/pluginconf.d
-%config(noreplace) %{_sysconfdir}/tdnf/pluginconf.d/tdnfrepogpgcheck.conf
-%{_tdnfpluginsdir}/tdnfrepogpgcheck/libtdnfrepogpgcheck.so
+%dir %{_sysconfdir}/%{name}/pluginconf.d
+%config(noreplace) %{_sysconfdir}/%{name}/pluginconf.d/tdnfrepogpgcheck.conf
+%{_tdnfpluginsdir}/libtdnfrepogpgcheck.so
 
 %files python
 %defattr(-,root,root)
