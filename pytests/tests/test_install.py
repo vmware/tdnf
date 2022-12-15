@@ -8,6 +8,10 @@
 
 import pytest
 
+PKGNAME_OBSED_VER = "tdnf-test-dummy-obsoleted=0.1"
+PKGNAME_OBSED = "tdnf-test-dummy-obsoleted"
+PKGNAME_OBSING = "tdnf-test-dummy-obsoleting"
+
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test(utils):
@@ -111,6 +115,35 @@ def test_install_missing_dep(utils):
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname, pkgname_missing])
     assert not utils.check_package(pkgname)
+
+
+# install an obsoleted package, expect the obsoleting package to be installed
+# the obsoleting package must also provide the obsoleted one
+def test_install_obsoletes(utils):
+    utils.erase_package(PKGNAME_OBSED)
+    utils.erase_package(PKGNAME_OBSING)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED])
+    assert utils.check_package(PKGNAME_OBSING)
+
+
+# install an obsoleted package with version - expect the obsoleted package to be installed
+def test_install_obsoleted_version(utils):
+    utils.erase_package(PKGNAME_OBSED_VER)
+    utils.erase_package(PKGNAME_OBSING)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED_VER])
+    assert utils.check_package(PKGNAME_OBSED)
+
+
+# same as test_install_obsoletes, but the obsoleted package already installed
+def test_install_obsoleted_installed(utils):
+    # make sure we install the obsoleted one by using version
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED_VER])
+    utils.erase_package(PKGNAME_OBSING)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED])
+    assert utils.check_package(PKGNAME_OBSING)
 
 
 def test_install_memcheck(utils):
