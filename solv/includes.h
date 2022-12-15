@@ -30,6 +30,7 @@
 #include <solv/solverdebug.h>
 #include <solv/testcase.h>
 #include <solv/chksum.h>
+#include <solv/policy.h>
 
 #include <tdnf.h>
 #include <tdnf-common-defines.h>
