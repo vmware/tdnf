@@ -249,6 +249,7 @@ typedef struct _TDNF_CONF
     int nKeepCache;
     char* pszRepoDir;
     char* pszCacheDir;
+    char* pszPersistDir;
     char* pszProxy;
     char* pszProxyUserPass;
     char* pszDistroVerPkg;

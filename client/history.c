@@ -28,7 +28,7 @@ TDNFGetHistoryCtx(
 
     dwError = TDNFJoinPath(&pszDataDir,
                            pTdnf->pArgs->pszInstallRoot,
-                           HISTORY_DB_DIR,
+                           pTdnf->pConf->pszPersistDir,
                            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
