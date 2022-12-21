@@ -79,6 +79,7 @@ typedef enum
 #define TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE "clean_requirements_on_remove"
 #define TDNF_CONF_KEY_REPODIR             "repodir"
 #define TDNF_CONF_KEY_CACHEDIR            "cachedir"
+#define TDNF_CONF_KEY_PERSISTDIR          "persistdir"
 #define TDNF_CONF_KEY_PROXY               "proxy"
 #define TDNF_CONF_KEY_PROXY_USER          "proxy_username"
 #define TDNF_CONF_KEY_PROXY_PASS          "proxy_password"
@@ -129,11 +130,15 @@ typedef enum
 
 #define TDNF_AUTOINSTALLED_FILE           "autoinstalled"
 #define TDNF_HISTORY_DB_FILE              "history.db"
-#define TDNF_DEFAULT_DATA_LOCATION        "/var/lib/tdnf"
 
 // repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
+
+/* pszPersistDir - default is configurable at build time,
+   and configurable with "persistdir" at run time */
+#define TDNF_DEFAULT_DB_LOCATION          HISTORY_DB_DIR
+
 #define TDNF_DEFAULT_DISTROVERPKG         "system-release"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"

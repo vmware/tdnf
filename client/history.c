@@ -28,13 +28,13 @@ TDNFGetHistoryCtx(
 
     dwError = TDNFJoinPath(&pszDataDir,
                            pTdnf->pArgs->pszInstallRoot,
-                           TDNF_DEFAULT_DATA_LOCATION,
+                           pTdnf->pConf->pszPersistDir,
                            NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFJoinPath(&pszHistoryDb,
             pszDataDir,
-            TDNF_HISTORY_DB_FILE,
+            HISTORY_DB_FILE,
             NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -50,7 +50,11 @@ TDNFGetHistoryCtx(
         }
     }
 
-    dwError = TDNFUtilsMakeDir(pszDataDir);
+    dwError = TDNFUtilsMakeDirs(pszDataDir);
+    if (dwError == ERROR_TDNF_ALREADY_EXISTS)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     ctx = create_history_ctx(pszHistoryDb);

@@ -120,6 +120,13 @@ TDNFReadConfig(
 
     dwError = TDNFReadKeyValue(
                   pSection,
+                  TDNF_CONF_KEY_PERSISTDIR,
+                  TDNF_DEFAULT_DB_LOCATION,
+                  &pConf->pszPersistDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadKeyValue(
+                  pSection,
                   TDNF_CONF_KEY_DISTROVERPKG,
                   TDNF_DEFAULT_DISTROVERPKG,
                   &pConf->pszDistroVerPkg);
@@ -321,6 +328,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
         TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
         TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszPersistDir);
         TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);

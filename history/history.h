@@ -11,6 +11,8 @@
 #include <sqlite3.h>
 #include <rpm/rpmlib.h>
 
+#include "config.h"
+
 #define HISTORY_TRANS_TYPE_BASE 0
 #define HISTORY_TRANS_TYPE_DELTA 1
 
