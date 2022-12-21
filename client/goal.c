@@ -332,7 +332,7 @@ TDNFSolv(
     dwError = TDNFSolvAddPkgLocks(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFSolvAddMinVersions(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
+    dwError = TDNFSolvAddMinVersions(pTdnf, pTdnf->pSack->pPool);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolv = solver_create(pTdnf->pSack->pPool);
@@ -893,7 +893,6 @@ error:
 uint32_t
 TDNFSolvAddMinVersions(
     PTDNF pTdnf,
-    Queue* pQueueJobs,
     Pool *pPool
     )
 {
@@ -903,7 +902,7 @@ TDNFSolvAddMinVersions(
     Map *pMapMinVersions = NULL;
     char *pszTmp = NULL;
 
-    if(!pTdnf || !pQueueJobs || !pPool)
+    if(!pTdnf || !pPool)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
