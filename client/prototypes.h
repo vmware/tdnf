@@ -553,7 +553,6 @@ TDNFSolvAddPkgLocks(
 uint32_t
 TDNFSolvAddMinVersions(
     PTDNF pTdnf,
-    Queue* pQueueJobs,
     Pool *pPool
     );
 
