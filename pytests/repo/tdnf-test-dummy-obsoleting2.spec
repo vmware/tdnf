@@ -1,5 +1,5 @@
-Summary:        Dummy obsoletes spec
-Name:           tdnf-test-dummy-obsoletes-1
+Summary:        Dummy obsoletes spec 2
+Name:           tdnf-test-dummy-obsoleting2
 Version:        0.1
 Release:        1
 Vendor:         VMware, Inc.
@@ -8,10 +8,11 @@ License:        VMware
 Url:            http://www.vmware.com
 Group:          Applications/tdnftest
 
-Obsoletes:      tdnf-test-dummy-obsoletes-0
+#Provides:      tdnf-test-dummy-obsoleted
+Obsoletes:      tdnf-test-dummy-obsoleted
 
 %description
-Part of tdnf test spec. Basic dummy obsoletes spec.
+Part of tdnf test spec. This is another package that obsoletes the -obsoleted package.
 
 %prep
 
