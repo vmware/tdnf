@@ -1203,6 +1203,80 @@ error:
     goto cleanup;
 }
 
+/* code based on mlschroe's suggestion in PR 378 */
+
+/* check if package s obsoletes is */
+static
+int
+is_obsoleting(Pool *pool, Solvable *s, Solvable *is)
+{
+    Id obs, *obsp;
+    Id n = is - pool->solvables;
+    if (!s->obsoletes)
+        return 0;
+    obsp = s->repo->idarraydata + s->obsoletes;
+    while ((obs = *obsp++) != 0) { /* for all obsoletes */
+        if (pool_match_nevr(pool, pool->solvables + n, obs)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+uint32_t
+SolvFindBestAvailable(
+    PSolvSack pSack,
+    const char* pszPkgName,
+    Id* pdwId
+    )
+{
+    uint32_t dwError = 0;
+    Pool *pool = pSack->pPool; /* FOR_PROVIDES needs this name */
+    Id idName = pool_str2id(pool, pszPkgName, 1);
+    Id p, pp;
+    Queue q = {0};
+
+    if(!pSack || IsNullOrEmptyString(pszPkgName) || !pdwId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    queue_init(&q);
+
+    /* step 1: look at packages with the specified name */
+    FOR_PROVIDES(p, pp, idName)
+    if (pool->solvables[p].name == idName)
+        queue_push(&q, p);
+    if (!q.count)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pool_best_solvables(pool, &q, 0);
+    queue_truncate(&q, 1);        /* use the first element */
+
+    /* step 2: check if a package has a provides/obsoletes combination
+    * for the best package */
+    FOR_PROVIDES(p, pp, idName)
+    {
+        if (pool->solvables[p].name == idName)
+            continue;               /* already done in step 1 */
+        if (!is_obsoleting(pool, pool->solvables + p, pool->solvables + q.elements[0]))
+            continue;
+        queue_push(&q, p);
+    }
+    pool_best_solvables(pool, &q, 0);
+
+    *pdwId = q.elements[0];
+
+cleanup:
+    queue_free(&q);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 SolvFindHighestAvailable(
     PSolvSack pSack,
@@ -1211,12 +1285,8 @@ SolvFindHighestAvailable(
     )
 {
     uint32_t dwError = 0;
-    int dwPkgIndex = 0;
-    int dwEvrCompare = 0;
-    Id  dwAvailableId = 0;
-    Id  dwHighestAvailable = 0;
     PSolvPackageList pAvailablePkgList = NULL;
-    uint32_t dwCount = 0;
+    Queue *pqAvail;
 
     if(!pSack || IsNullOrEmptyString(pszPkgName) || !pdwId)
     {
@@ -1224,38 +1294,25 @@ SolvFindHighestAvailable(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = SolvFindBestAvailable(pSack, pszPkgName, pdwId);
+    if (dwError == 0)
+        goto cleanup;
+
     dwError = SolvFindAvailablePkgByName(
                   pSack,
                   pszPkgName,
                   &pAvailablePkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetPackageId(pAvailablePkgList, 0, &dwHighestAvailable);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = SolvGetPackageListSize(pAvailablePkgList, &dwCount);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    for(dwPkgIndex = 1; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
-    {
-        dwError = SolvGetPackageId(
-                      pAvailablePkgList,
-                      dwPkgIndex,
-                      &dwAvailableId);
+    pqAvail = &pAvailablePkgList->queuePackages;
+    pool_best_solvables(pSack->pPool, pqAvail, 0);
+    if (pqAvail->count == 0) { /* can this happen? */
+        dwError = ERROR_TDNF_NO_MATCH;
         BAIL_ON_TDNF_ERROR(dwError);
-        dwError = SolvCmpEvr(
-                      pSack,
-                      dwAvailableId,
-                      dwHighestAvailable,
-                      &dwEvrCompare);
-        BAIL_ON_TDNF_ERROR(dwError);
-        if(dwEvrCompare > 0)
-        {
-            dwHighestAvailable = dwAvailableId;
-        }
     }
 
-    *pdwId = dwHighestAvailable;
+    *pdwId = pqAvail->elements[0];
+
 cleanup:
     if(pAvailablePkgList)
     {
