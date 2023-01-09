@@ -1173,7 +1173,7 @@ TDNFRepoSync(
 
         if (!pReposyncArgs->nPrintUrlsOnly)
         {
-            PTDNF_REPO_DATA pRepo = NULL;
+            PTDNF_REPO_DATA pPkgRepo = NULL;
 
             if (!pReposyncArgs->nNoRepoPath)
             {
@@ -1192,12 +1192,12 @@ TDNFRepoSync(
             dwError = TDNFUtilsMakeDir(pszDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = TDNFFindRepoById(pTdnf, pPkgInfo->pszRepoName, &pRepo);
+            dwError = TDNFFindRepoById(pTdnf, pPkgInfo->pszRepoName, &pPkgRepo);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFDownloadPackageToTree(pTdnf,
                             pPkgInfo->pszLocation, pPkgInfo->pszName,
-                            pRepo, pszDir,
+                            pPkgRepo, pszDir,
                             &pszFilePath);
             BAIL_ON_TDNF_ERROR(dwError);
 
@@ -1205,7 +1205,7 @@ TDNFRepoSync(
                delete the package */
             if (pReposyncArgs->nGPGCheck)
             {
-                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pRepo, pszFilePath, NULL);
+                dwError = TDNFGPGCheckPackage(&ts, pTdnf, pPkgRepo, pszFilePath, NULL);
                 if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
                 {
                     BAIL_ON_TDNF_ERROR(dwError);

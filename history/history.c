@@ -155,10 +155,10 @@ void sort_array(int *arr, int count)
  * created arrays are stored in ponly1_count and ponly2_count.
  */
 static
-int diff_arrays(int *arr1, int count1,
-                 int *arr2, int count2,
-                 int **ponly1, int *ponly1_count,
-                 int **ponly2, int *ponly2_count)
+int diff_arrays(const int *arr1, int count1,
+                const int *arr2, int count2,
+                int **ponly1, int *ponly1_count,
+                int **ponly2, int *ponly2_count)
 {
     int rc = 0;
     int i1 = 0, i2 = 0;
@@ -603,8 +603,7 @@ int db_update_rpms(rpmts ts, sqlite3 *db, int **pids, int *pcount)
 
     if (pids) {
         /* count installed packages */
-        rpmdbMatchIterator mi =
-            rpmtsInitIterator(ts, RPMDBI_PACKAGES, NULL, 0);
+        mi = rpmtsInitIterator(ts, RPMDBI_PACKAGES, NULL, 0);
         while ((h = rpmdbNextIterator(mi))) {
             count++;
         }
@@ -1024,7 +1023,7 @@ void history_set_cookie(struct history_ctx *ctx, const char *cookie)
 /* Helper to convert installed_map into list of ids.
    The list will be sorted. */
 static
-int *get_ids_from_map(char *map, int map_size, int *pcount)
+int *get_ids_from_map(const char *map, int map_size, int *pcount)
 {
     int rc = 0;
     int id;

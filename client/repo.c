@@ -670,15 +670,12 @@ TDNFGetRepoMD(
         }
         nNewRepoMDFile = 1;
 
-        if (nNewRepoMDFile)
-        {
-            /* plugin event indicating a repomd download happened */
-            dwError = TDNFEventRepoMDDownloadEnd(
-                          pTdnf,
-                          pRepoData->pszId,
-                          pszTmpRepoMDFile);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
+        /* plugin event indicating a repomd download happened */
+        dwError = TDNFEventRepoMDDownloadEnd(
+                      pTdnf,
+                      pRepoData->pszId,
+                      pszTmpRepoMDFile);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     if (nReplaceRepoMD)
