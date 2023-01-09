@@ -839,6 +839,7 @@ TDNFAddCmdLinePackages(
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszRPMPath);
+    TDNF_SAFE_FREE_MEMORY(pszCopyOfPkgName);
     return dwError;
 
 error:
