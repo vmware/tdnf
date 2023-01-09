@@ -300,7 +300,7 @@ TDNFSolv(
     int nFlags = 0;
     int nProblems = 0;
 
-    if(!pTdnf || !ppInfo || !ppInfo)
+    if(!pTdnf || !ppInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
