@@ -94,6 +94,7 @@ TDNFMetalinkReadConfig(
         pHandle->pData = pData;
     }
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszMetalink);
     return dwError;
 
 error:
@@ -219,7 +220,7 @@ TDNFMetalinkGetBaseURLs(
     PTDNF_REPO_DATA pRepo = NULL;
     PTDNF_METALINK_DATA pData = NULL;
     char *pszMetalink = NULL;
-    char *pszMetaLinkFile;
+    char *pszMetaLinkFile = NULL;
     TDNF_ML_CTX *ml_ctx = NULL;
 
     if (!pHandle || !pHandle->pTdnf || IsNullOrEmptyString(pcszRepoId) ||

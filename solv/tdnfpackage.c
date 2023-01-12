@@ -1268,8 +1268,8 @@ SolvFindBestAvailable(
     )
 {
     uint32_t dwError = 0;
-    Pool *pool = pSack->pPool; /* FOR_PROVIDES needs this name */
-    Id idName = pool_str2id(pool, pszPkgName, 1);
+    Pool *pool; /* FOR_PROVIDES needs this name */
+    Id idName;
     Id p, pp;
     Queue q = {0};
 
@@ -1278,6 +1278,9 @@ SolvFindBestAvailable(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    pool = pSack->pPool;
+    idName = pool_str2id(pool, pszPkgName, 1);
 
     queue_init(&q);
 
