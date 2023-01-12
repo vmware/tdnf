@@ -600,7 +600,6 @@ SolvCreateRepoCacheName(
 uint32_t
 SolvGetMetaDataCachePath(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
-    PSolvSack pSack,
     char** ppszCachePath
     );
 

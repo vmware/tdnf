@@ -428,7 +428,6 @@ error:
 uint32_t
 SolvGetMetaDataCachePath(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
-    PSolvSack pSack,
     char** ppszCachePath
     )
 {
@@ -436,7 +435,7 @@ SolvGetMetaDataCachePath(
     uint32_t dwError = 0;
     Repo *pRepo = NULL;
 
-    if (!pSolvRepoInfo || !pSack || !pSolvRepoInfo->pRepo || !ppszCachePath)
+    if (!pSolvRepoInfo || !pSolvRepoInfo->pRepo || !ppszCachePath)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
@@ -540,7 +539,7 @@ SolvUseMetaDataCache(
     pRepo = pSolvRepoInfo->pRepo;
     pszCookie = pSolvRepoInfo->nCookieSet ? pSolvRepoInfo->cookie : 0;
 
-    dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, pSack, &pszCacheFilePath);
+    dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, &pszCacheFilePath);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if (IsNullOrEmptyString(pszCacheFilePath))
@@ -669,7 +668,7 @@ SolvCreateMetaDataCache(
     dwError = SolvAddSolvMetaData(pSolvRepoInfo, pszTempSolvFile);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
-    dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, pSack, &pszCacheFilePath);
+    dwError = SolvGetMetaDataCachePath(pSolvRepoInfo, &pszCacheFilePath);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if (IsNullOrEmptyString(pszCacheFilePath))

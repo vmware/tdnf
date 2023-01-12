@@ -690,7 +690,6 @@ TDNFCliRepoQueryCommand(
 
         for (i = 0; i < (int)dwCount; i++)
         {
-            int j;
             jd_pkg = jd_create(0);
             CHECK_JD_NULL(jd_pkg);
 
