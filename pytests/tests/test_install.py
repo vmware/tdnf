@@ -146,6 +146,15 @@ def test_install_obsoleted_installed(utils):
     assert utils.check_package(PKGNAME_OBSING)
 
 
+# install a package with non-existing requirement, expect fail
+def test_install_no_providers(utils):
+    pkgname = utils.config['dummy_requires_pkgname']
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    # ERROR_TDNF_SOLV_FAILED - "Solv general runtime error"
+    assert ret['retval'] == 1301
+    assert "nothing provides" in '\n'.join(ret['stderr'])
+
+
 def test_install_memcheck(utils):
     pkgname = utils.config["mulversion_pkgname"]
     utils.erase_package(pkgname)
