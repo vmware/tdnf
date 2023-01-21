@@ -172,7 +172,7 @@ TDNFPopulateTransaction(
     }
     if(pSolvedInfo->pPkgsToReinstall)
     {
-        dwError = TDNFTransAddInstallPkgs(
+        dwError = TDNFTransAddUpgradePkgs(
                       pTS,
                       pTdnf,
                       pSolvedInfo->pPkgsToReinstall);
