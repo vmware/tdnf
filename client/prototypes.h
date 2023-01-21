@@ -899,12 +899,6 @@ TDNFTransAddErasePkgs(
     );
 
 uint32_t
-TDNFTransAddObsoletedPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo
-    );
-
-uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
     const char* pszPkgName
@@ -914,14 +908,8 @@ uint32_t
 TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
-    );
-
-uint32_t
-TDNFTransAddReInstallPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNF_PKG_INFO pInfo,
+    int nUpgrade
     );
 
 uint32_t
@@ -932,13 +920,6 @@ TDNFTransAddInstallPkg(
     const char* pszPkgName,
     PTDNF_REPO_DATA pRepo,
     int nUpgrade
-    );
-
-uint32_t
-TDNFTransAddUpgradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
     );
 
 uint32_t
