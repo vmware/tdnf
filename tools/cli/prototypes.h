@@ -139,11 +139,6 @@ TDNFCliInvokeAlterHistory(
     PTDNF_HISTORY_ARGS pHistoryArgs
     );
 
-uint32_t
-TDNFCliUpdateInfoInfo(
-    PTDNF_UPDATEINFO pInfo
-    );
-
 //help.c
 void
 TDNFCliShowUsage(
@@ -367,11 +362,6 @@ TDNFCliParseUpdateInfoArgs(
     PTDNF_UPDATEINFO_ARGS* ppUpdateInfoArgs
     );
 
-void
-TDNFFreeUpdateInfoArgs(
-    PTDNF_UPDATEINFO_ARGS pUpdateInfoArgs
-    );
-
 //updateinfocmd.c
 char*
 TDNFGetUpdateInfoType(
@@ -379,20 +369,10 @@ TDNFGetUpdateInfoType(
     );
 
 uint32_t
-TDNFCliUpdateInfoList(
-    PTDNF_UPDATEINFO pUpdateInfo
-    );
-
-uint32_t
 TDNFCliUpdateInfoSummary(
     PTDNF pTdnf,
     PTDNF_CMD_ARGS pCmdArgs,
     PTDNF_UPDATEINFO_ARGS pInfoArgs
-    );
-
-void
-TDNFFreeListArgs(
-    PTDNF_LIST_ARGS pListArgs
     );
 
 uint32_t

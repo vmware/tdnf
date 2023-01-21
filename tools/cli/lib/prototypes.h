@@ -55,11 +55,6 @@ TDNFGetUpdateInfoType(
     );
 
 uint32_t
-TDNFCliUpdateInfoList(
-    PTDNF_UPDATEINFO pUpdateInfo
-    );
-
-uint32_t
 TDNFCliUpdateInfoSummary(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs,
