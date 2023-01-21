@@ -33,7 +33,7 @@ TDNFMatchForReinstall(
     Id  dwAvailableId = 0;
     char* pszNevr = NULL;
     PSolvPackageList pInstalledPkgList = NULL;
-    PSolvPackageList pAvailabePkgList = NULL;
+    PSolvPackageList pAvailablePkgList = NULL;
 
     if(!pSack || !pQueueGoal || IsNullOrEmptyString(pszName))
     {
@@ -56,10 +56,10 @@ TDNFMatchForReinstall(
     dwError = SolvFindAvailablePkgByName(
                   pSack,
                   pszNevr,
-                  &pAvailabePkgList);
+                  &pAvailablePkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvGetPackageId(pAvailabePkgList,
+    dwError = SolvGetPackageId(pAvailablePkgList,
                                0,
                                &dwAvailableId);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -68,9 +68,9 @@ TDNFMatchForReinstall(
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszNevr);
-    if(pAvailabePkgList)
+    if(pAvailablePkgList)
     {
-        SolvFreePackageList(pAvailabePkgList);
+        SolvFreePackageList(pAvailablePkgList);
     }
     if(pInstalledPkgList)
     {
