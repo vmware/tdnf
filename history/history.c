@@ -281,10 +281,12 @@ int db_maxid(sqlite3 *db, const char *table_name, int *pmaxid)
     check_db_rc(db, rc);
 
     step = sqlite3_step(res);
-    check_cond(step == SQLITE_ROW);
-
-    *pmaxid = sqlite3_column_int(res, COLUMN_RPMS_ID);
-    sqlite3_finalize(res); res = NULL;
+    check_cond(step == SQLITE_ROW || step == SQLITE_DONE);
+    if (step == SQLITE_ROW) {
+        *pmaxid = sqlite3_column_int(res, COLUMN_RPMS_ID);
+    } else if (step == SQLITE_DONE) {
+        *pmaxid = 0;
+    }
 error:
     if (res)
         sqlite3_finalize(res);
