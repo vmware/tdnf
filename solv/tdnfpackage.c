@@ -1217,7 +1217,13 @@ SolvGetTransResultsWithType(
                 break;
         }
 
-        if (dwType == dwPkgType)
+        /* Solver uses SOLVER_TRANSACTION_CHANGE if a pkg has
+           the same nevra, but has differences. If the pkg is
+           completly identical it uses SOLVER_TRANSACTION_REINSTALL.
+           For our purposes we don't care. */
+        if ((dwType == dwPkgType) ||
+            (dwType == SOLVER_TRANSACTION_REINSTALL &&
+             dwPkgType == SOLVER_TRANSACTION_CHANGE))
             queue_push(&queueSolvedPackages, dwPkg);
     }
     dwError = SolvQueueToPackageList(&queueSolvedPackages, &pPkgList);

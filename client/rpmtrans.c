@@ -358,36 +358,6 @@ error:
 }
 
 uint32_t
-TDNFTransAddErasePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo)
-{
-    uint32_t dwError = 0;
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    while(pInfo)
-    {
-        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
-        pInfo = pInfo->pNext;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
-
-uint32_t
 TDNFPopulateTransaction(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
@@ -400,7 +370,7 @@ TDNFPopulateTransaction(
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToInstall);
+                      pSolvedInfo->pPkgsToInstall, 0);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToReinstall)
@@ -408,15 +378,17 @@ TDNFPopulateTransaction(
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToReinstall);
+                      pSolvedInfo->pPkgsToReinstall,
+                      1);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToUpgrade)
     {
-        dwError = TDNFTransAddUpgradePkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToUpgrade);
+                      pSolvedInfo->pPkgsToUpgrade,
+                      1);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToRemove)
@@ -428,7 +400,7 @@ TDNFPopulateTransaction(
     }
     if(pSolvedInfo->pPkgsObsoleted)
     {
-        dwError = TDNFTransAddObsoletedPkgs(
+        dwError = TDNFTransAddErasePkgs(
                       pTS,
                       pSolvedInfo->pPkgsObsoleted);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -438,7 +410,8 @@ TDNFPopulateTransaction(
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToDowngrade);
+                      pSolvedInfo->pPkgsToDowngrade,
+                      0);
         BAIL_ON_TDNF_ERROR(dwError);
         if(pSolvedInfo->pPkgsRemovedByDowngrade)
         {
@@ -716,7 +689,8 @@ uint32_t
 TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfos
+    PTDNF_PKG_INFO pInfos,
+    int nUpgrade
     )
 {
     uint32_t dwError = 0;
@@ -740,7 +714,8 @@ TDNFTransAddInstallPkgs(
                       pTdnf,
                       pInfo->pszLocation,
                       pInfo->pszName,
-                      pRepo, 0);
+                      pRepo,
+                      nUpgrade);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -867,10 +842,10 @@ error:
 }
 
 uint32_t
-TDNFTransAddUpgradePkgs(
+TDNFTransAddErasePkgs(
     PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfos)
+    PTDNF_PKG_INFO pInfos
+    )
 {
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pInfo;
@@ -883,49 +858,7 @@ TDNFTransAddUpgradePkgs(
 
     for(pInfo = pInfos; pInfo; pInfo = pInfo->pNext)
     {
-        PTDNF_REPO_DATA pRepo = NULL;
-
-        dwError = TDNFFindRepoById(pTdnf, pInfo->pszRepoName, &pRepo);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFTransAddInstallPkg(
-                      pTS,
-                      pTdnf,
-                      pInfo->pszLocation,
-                      pInfo->pszName,
-                      pRepo,
-                      1);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-cleanup:
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
-TDNFTransAddObsoletedPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo
-    )
-{
-    uint32_t dwError = 0;
-
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    while(pInfo)
-    {
         dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
-        pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
