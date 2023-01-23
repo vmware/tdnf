@@ -314,13 +314,6 @@ TDNFSetOpt(
     );
 
 uint32_t
-TDNFSetOptNoOverwrite(
-    PTDNF_CMD_ARGS pArgs,
-    const char *pszOptName,
-    const char *pszOptValue
-    );
-
-uint32_t
 TDNFGetCmdOptValue(
     PTDNF_CMD_ARGS pArgs,
     const char *pszOptName,

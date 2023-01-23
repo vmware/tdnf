@@ -28,13 +28,6 @@
 
 extern uid_t gEuid;
 
-//clean.c
-uint32_t
-TDNFCopyEnabledRepos(
-    PTDNF_REPO_DATA pRepoData,
-    char*** pppszReposUsed
-    );
-
 //client.c
 uint32_t
 TDNFApplyScopeFilter(
@@ -113,27 +106,13 @@ TDNFCloneSetOpts(
     );
 
 uint32_t
-TDNFRefreshRepo(
-    PTDNF pTdnf,
-    int nCleanMetadata,
-    PTDNF_REPO_DATA pRepo
-    );
-
-uint32_t
 TDNFRefreshSack(
     PTDNF pTdnf,
     PSolvSack pSack,
     int nCleanMetadata
     );
 
-//makecache.c
-uint32_t
-TDNFRefreshCache(
-    PTDNF pTdnf
-    );
-
 //repoutils.c
-
 uint32_t
 TDNFRepoGetUserPass(
     PTDNF pTdnf,
@@ -563,30 +542,6 @@ TDNFConfGetRpmVerbosity(
     );
 
 uint32_t
-TDNFConfSetFlag(
-    TDNF_CONF_FLAG nFlag,
-    int nValue //0 or 1
-    );
-
-uint32_t
-TDNFConfGetFlag(
-    TDNF_CONF_FLAG nFlag,
-    int nValue //0 or 1
-    );
-
-uint32_t
-TDNFConfSetValue(
-    TDNF_CONF_TYPE nType,
-    const char* pszValue
-    );
-
-uint32_t
-TDNFConfGetValue(
-    TDNF_CONF_TYPE nType,
-    char** ppszValue
-    );
-
-uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,
     const char* pszConfFile,
@@ -830,28 +785,11 @@ TDNFPrepareAllPackages(
     );
 
 uint32_t
-TDNFPrepareAndAddPkg(
-    PTDNF pTdnf,
-    const char* pszPkgName,
-    TDNF_ALTERTYPE nAlterType,
-    char** ppszPkgsNotResolved,
-    Queue* pQueueGoal
-    );
-
-uint32_t
 TDNFPrepareSinglePkg(
     PTDNF pTdnf,
     const char* pszPkgName,
     TDNF_ALTERTYPE nAlterType,
     char** ppszPkgsNotResolved,
-    Queue* pQueueGoal
-    );
-
-uint32_t
-TDNFAddFilteredPkgs(
-    PTDNF pTdnf,
-    int nScope,
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
     Queue* pQueueGoal
     );
 
@@ -1079,11 +1017,6 @@ TDNFAppendPath(
     );
 
 //validate.c
-uint32_t
-TDNFValidateCmdArgs(
-    PTDNF pTdnf
-    );
-
 uint32_t
 TDNFGetSkipProblemOption(
     PTDNF pTdnf,
