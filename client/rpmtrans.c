@@ -19,6 +19,7 @@
  */
 
 #include "includes.h"
+#include <sys/resource.h>
 
 uint32_t
 TDNFRpmExecTransaction(
@@ -390,6 +391,60 @@ error:
     goto cleanup;
 }
 
+/*
+ * Restrict number of open files. When rpm cannot access /proc
+ * it tries to set the close on exec flag for every possible
+ * fd, which may take a long time if the limit is very high.
+ * See also https://github.com/rpm-software-management/rpm/issues/2081.
+ * This can be disabled by setting "openmax=0" in the configuration.
+ */
+
+uint32_t
+TDNFSetOpenMax(PTDNF pTdnf)
+{
+    uint32_t dwError = 0;
+    char *pszProcPath = NULL;
+    int nIsDir = 0;
+
+    if(!pTdnf || !pTdnf->pConf || !pTdnf->pArgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* First, check if /proc is available - if rpm can
+       open it there is no issue. */
+    dwError = TDNFJoinPath(&pszProcPath,
+                           pTdnf->pArgs->pszInstallRoot ?
+                               pTdnf->pArgs->pszInstallRoot : "",
+                           "/proc/self/fd",
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFIsDir(pszProcPath, &nIsDir);
+    if (dwError == ERROR_TDNF_SYSTEM_BASE + ENOENT) {
+        nIsDir = 0;
+        dwError = 0;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (!nIsDir) {
+        int nOpenMax = pTdnf->pConf->nOpenMax;
+        struct rlimit rl = {nOpenMax, nOpenMax};
+        if (setrlimit(RLIMIT_NOFILE, &rl) != 0) {
+            /* shouldn't be fatal */
+            pr_err("warning: could not set rlimit: %s (%d)."
+		   "This may cause degraded performance.\n",
+	           strerror(errno), errno);
+        }
+    }
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszProcPath);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFRunTransaction(
     PTDNFRPMTS pTS,
@@ -402,7 +457,7 @@ TDNFRunTransaction(
     uint32_t dwSkipDigest = 0;
     int rc;
 
-    if(!pTS || !pTdnf || !pTdnf->pArgs)
+    if(!pTS || !pTdnf || !pTdnf->pConf || !pTdnf->pArgs)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -453,7 +508,10 @@ TDNFRunTransaction(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //TODO do callbacks for output
+    if (pTdnf->pConf->nOpenMax > 0) {
+        dwError = TDNFSetOpenMax(pTdnf);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     pr_info("Running transaction\n");
 
     rpmtsSetFlags(pTS->pTS, pTS->nTransFlags);
