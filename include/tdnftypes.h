@@ -241,6 +241,7 @@ typedef struct _TDNF_CONF
     int nInstallOnlyLimit;
     int nCleanRequirementsOnRemove;
     int nKeepCache;
+    int nOpenMax;          //set max number of open files
     char* pszRepoDir;
     char* pszCacheDir;
     char* pszProxy;
