@@ -609,13 +609,35 @@ TDNFTransAddInstallPkg(
     {
         if (!pTdnf->pArgs->nDownloadOnly || pTdnf->pArgs->pszDownloadDir == NULL)
         {
-            dwError = TDNFDownloadPackageToCache(
-                          pTdnf,
-                          pszPackageLocation,
-                          pszPkgName,
-                          pszRepoName,
-                          &pszFilePath
-            );
+            int nInPlace = 0;
+            PTDNF_REPO_DATA pRepo = NULL;
+
+            dwError = TDNFGetRepoById(pTdnf, pszRepoName, &pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            /* avoid copying a file to cache if we can access it directly */
+            if (strncasecmp(pRepo->pszBaseUrl, "file://", 7) == 0)
+            {
+                dwError = TDNFJoinPath(&pszFilePath,
+                                       &(pRepo->pszBaseUrl[7]),
+                                       pszPackageLocation,
+                                       NULL);
+                BAIL_ON_TDNF_ERROR(dwError);
+                if(access(pszFilePath, F_OK) == 0) {
+                    nInPlace = 1;
+                }
+            }
+
+            if (!nInPlace)
+            {
+                dwError = TDNFDownloadPackageToCache(
+                              pTdnf,
+                              pszPackageLocation,
+                              pszPkgName,
+                              pszRepoName,
+                              &pszFilePath
+                );
+            }
         }
         else
         {
@@ -637,6 +659,7 @@ TDNFTransAddInstallPkg(
     if(access(pszFilePath, F_OK))
     {
         dwError = errno;
+        pr_err("could not access file %s: %s (%d)\n", pszFilePath, strerror(errno), errno);
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
