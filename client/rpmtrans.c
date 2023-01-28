@@ -19,6 +19,7 @@
  */
 
 #include "includes.h"
+#include <sys/resource.h>
 
 uint32_t
 TDNFRpmCleanupTS(PTDNF pTdnf,
@@ -663,6 +664,19 @@ TDNFRunTransaction(
 
     if (!pTdnf->pArgs->nTestOnly)
     {
+        if (pTdnf->pArgs->pszInstallRoot &&
+            (strcmp(pTdnf->pArgs->pszInstallRoot, "/") != 0))
+        {
+            /*
+             * Restrict number of open files. When rpm cannot access /proc
+             * it tries to set the close on exec flag for every possible
+             * fd, which may take a long time if the limit is very high.
+             * See also https://github.com/rpm-software-management/rpm/issues/2081
+            */
+            struct rlimit rl = {1024, 1024};
+            setrlimit(RLIMIT_NOFILE, &rl);
+        }
+
         pr_info("Running transaction\n");
 
         rpmtsSetFlags(pTS->pTS, pTS->nTransFlags);
