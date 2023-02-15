@@ -93,6 +93,8 @@ typedef enum
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
 #define TDNF_CONF_KEY_MINVERSIONS         "minversions"
+#define TDNF_CONF_KEY_OPENMAX             "openmax"
+
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"
@@ -139,6 +141,8 @@ typedef enum
 #define TDNF_REPODATA_DIR_NAME            "repodata"
 #define TDNF_SOLVCACHE_DIR_NAME           "solvcache"
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
+
+#define TDNF_DEFAULT_OPENMAX              1024
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0
