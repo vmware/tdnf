@@ -30,6 +30,12 @@ TDNFAllocateMemory(
     );
 
 uint32_t
+TDNFReAllocateMemory(
+    size_t nSize,
+    void** ppMemory
+    );
+
+uint32_t
 TDNFAllocateString(
     const char* pszSrc,
     char** ppszDst
@@ -243,6 +249,10 @@ TDNFStringMatchesOneOf(
     const char *pszSearch,
     char **ppszList,
     int *pRet);
+
+uint32_t
+TDNFJoinPath(
+    char **ppszPath, ...);
 
 //setopt.c
 uint32_t
