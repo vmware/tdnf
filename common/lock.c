@@ -54,6 +54,21 @@ static tdnflock tdnflock_new(const char *lock_path, const char *descr)
 	else
 	{
 		lock->openmode = TDNFLOCK_WRITE | TDNFLOCK_READ;
+
+		/* Write out PID into lock file */
+		char pid_buffer[128] = {0};
+		int rsnpf;
+		rsnpf = snprintf(pid_buffer, sizeof(pid_buffer), "%ld\n", (long) getpid());
+
+		if (rsnpf > 0)
+		{
+			int wr;
+			wr = write(lock->fd, pid_buffer, strlen(pid_buffer));
+			if (wr == 0)
+			{
+				sync();
+			}
+		}
 	}
 
 	lock->fdrefs = 1;
@@ -234,6 +249,12 @@ tdnflock tdnflockFree(tdnflock lock)
 	{
 		tdnflock_release(lock);
 		tdnflock_free(lock);
+	}
+
+	if (remove(TDNF_INSTANCE_LOCK_FILE))
+	{
+			pr_err("WARNING: Unable to remove lockfile(%s)\n",
+							TDNF_INSTANCE_LOCK_FILE);
 	}
 
 	return NULL;

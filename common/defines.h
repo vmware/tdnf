@@ -33,3 +33,9 @@
     } while(0)
 
 #define TDNF_DEFAULT_MAX_STRING_LEN       16384000
+
+/*
+ * creating this under /var/run because /var/run/lock doesn't exist
+ * in fedora docker images and as a result ci fails
+ */
+#define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"

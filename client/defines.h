@@ -22,12 +22,6 @@
 
 #include "config.h"
 
-/*
- * creating this under /var/run because /var/run/lock doesn't exist
- * in fedora docker images and as a result ci fails
- */
-#define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"
-
 typedef enum
 {
     /* this should be a bitmask */
