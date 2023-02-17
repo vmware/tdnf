@@ -151,6 +151,13 @@ TDNFReadConfig(
                   &pConf->nOpenMax);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFReadKeyValueBoolean(
+                  pSection,
+                  TDNF_CONF_KEY_CHECK_UPDATE_COMPAT,
+                  0,
+                  &pConf->nCheckUpdateCompat);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFConfigReadProxySettings(
                   pSection,
                   pConf);

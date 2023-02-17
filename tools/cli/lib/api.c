@@ -112,18 +112,17 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
-TDNFCliListCommand(
-    PTDNF_CLI_CONTEXT pContext,
-    PTDNF_CMD_ARGS pCmdArgs
-    )
+TDNFCliListPackagesPrint(
+    PTDNF_PKG_INFO pPkgInfo,
+    uint32_t dwCount,
+    int nJsonOutput
+)
 {
     uint32_t dwError = 0;
-    PTDNF_PKG_INFO pPkgInfo = NULL;
-    PTDNF_PKG_INFO pPkg = NULL;
-    uint32_t dwCount = 0;
     uint32_t dwIndex = 0;
-    PTDNF_LIST_ARGS pListArgs = NULL;
+    PTDNF_PKG_INFO pPkg = NULL;
     struct json_dump *jd = NULL;
     struct json_dump *jd_pkg = NULL;
 
@@ -136,23 +135,7 @@ TDNFCliListCommand(
     int nColPercents[LIST_COL_COUNT] = {55, 25, 15};
     int nColWidths[LIST_COL_COUNT] = {0};
 
-    if(!pContext || !pContext->hTdnf || !pContext->pFnList)
-    {
-        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
-
-    dwError = TDNFCliParseListArgs(pCmdArgs, &pListArgs);
-    BAIL_ON_CLI_ERROR(dwError);
-
-    dwError = pContext->pFnList(pContext, pListArgs, &pPkgInfo, &dwCount);
-    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_MATCH)
-    {
-        dwError = 0;
-    }
-    BAIL_ON_CLI_ERROR(dwError);
-
-    if (pCmdArgs->nJsonOutput)
+    if (nJsonOutput)
     {
         jd = jd_create(0);
         CHECK_JD_NULL(jd);
@@ -223,6 +206,45 @@ TDNFCliListCommand(
     }
 
 cleanup:
+    return dwError;
+
+error:
+    JD_SAFE_DESTROY(jd);
+    JD_SAFE_DESTROY(jd_pkg);
+    goto cleanup;
+}
+
+uint32_t
+TDNFCliListCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    uint32_t dwCount = 0;
+    PTDNF_LIST_ARGS pListArgs = NULL;
+
+    if(!pContext || !pContext->hTdnf || !pContext->pFnList)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFCliParseListArgs(pCmdArgs, &pListArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = pContext->pFnList(pContext, pListArgs, &pPkgInfo, &dwCount);
+    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = 0;
+    }
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = TDNFCliListPackagesPrint(pPkgInfo, dwCount, pCmdArgs->nJsonOutput);
+    BAIL_ON_CLI_ERROR(dwError);
+
+cleanup:
     if(pListArgs)
     {
         TDNFCliFreeListArgs(pListArgs);
@@ -234,8 +256,6 @@ cleanup:
     return dwError;
 
 error:
-    JD_SAFE_DESTROY(jd);
-    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
 
@@ -899,14 +919,15 @@ TDNFCliCheckUpdateCommand(
     uint32_t dwIndex = 0;
     char** ppszPackageArgs = NULL;
     int nPackageCount = 0;
-    struct json_dump *jd = NULL;
-    struct json_dump *jd_pkg = NULL;
+    int nCheckUpdateCompat = 0;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnCheckUpdate)
     {
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
     }
+
+    nCheckUpdateCompat = GlobalGetDnfCheckUpdateCompat();
 
     dwError = TDNFCliParsePackageArgs(
                   pCmdArgs,
@@ -920,33 +941,7 @@ TDNFCliCheckUpdateCommand(
                                        &dwCount);
     BAIL_ON_CLI_ERROR(dwError);
 
-    if (pCmdArgs->nJsonOutput)
-    {
-        jd = jd_create(0);
-        CHECK_JD_NULL(jd);
-
-        CHECK_JD_RC(jd_list_start(jd));
-
-    	for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
-        {
-            jd_pkg = jd_create(0);
-            CHECK_JD_NULL(jd_pkg);
-
-            jd_map_start(jd_pkg);
-            pPkg = &pPkgInfo[dwIndex];
-
-            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
-            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
-            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
-            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
-
-            CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
-            JD_SAFE_DESTROY(jd_pkg);
-        }
-        pr_json(jd->buf);
-        JD_SAFE_DESTROY(jd);
-    }
-    else
+    if (!nCheckUpdateCompat && !pCmdArgs->nJsonOutput)
     {
         for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
         {
@@ -957,6 +952,11 @@ TDNFCliCheckUpdateCommand(
             pr_crit("\n");
         }
     }
+    else
+    {
+        dwError = TDNFCliListPackagesPrint(pPkgInfo, dwCount, pCmdArgs->nJsonOutput);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
 
 cleanup:
     TDNF_CLI_SAFE_FREE_STRINGARRAY(ppszPackageArgs);
@@ -964,13 +964,16 @@ cleanup:
     {
         TDNFFreePackageInfoArray(pPkgInfo, dwCount);
     }
+    /* yum and dnf return 100 if there are package updates available.
+       puppet depends on this behaviour, even with tdnf. */
+    if(nCheckUpdateCompat && dwCount > 0 && dwError == 0)
+        return ERROR_TDNF_CLI_CHECK_UPDATES_AVAILABLE;
     return dwError;
 
 error:
-    JD_SAFE_DESTROY(jd);
-    JD_SAFE_DESTROY(jd_pkg);
     goto cleanup;
 }
+
 
 uint32_t
 TDNFCliMakeCacheCommand(

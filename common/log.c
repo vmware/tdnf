@@ -10,6 +10,7 @@
 
 static bool isQuiet = false;
 static bool isJson = false;
+static bool isDnfCheckUpdateCompat = false;
 
 void GlobalSetQuiet(int32_t val)
 {
@@ -25,6 +26,19 @@ void GlobalSetJson(int32_t val)
     {
         isJson = true;
     }
+}
+
+void GlobalSetDnfCheckUpdateCompat(int32_t val)
+{
+    if (val > 0)
+    {
+        isDnfCheckUpdateCompat = true;
+    }
+}
+
+bool GlobalGetDnfCheckUpdateCompat()
+{
+    return isDnfCheckUpdateCompat;
 }
 
 void log_console(int32_t loglevel, const char *format, ...)

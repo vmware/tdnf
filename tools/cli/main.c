@@ -205,6 +205,11 @@ TDNFCliPrintError(
         return dwError;
     }
 
+    if (dwErrorCode == ERROR_TDNF_CLI_CHECK_UPDATES_AVAILABLE)
+    {
+        return dwError;
+    }
+
     if (dwErrorCode < ERROR_TDNF_BASE)
     {
         dwError = TDNFCliGetErrorString(dwErrorCode, &pszError);
