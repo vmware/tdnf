@@ -101,8 +101,8 @@ TDNFRpmCreateTS(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* parse transaction flags - so far only tsflags=noscripts is
-       supported. */
+    /* parse transaction flags - so far only tsflags=noscripts and
+    tsflags=nodocs are supported  */
     pTS->nTransFlags = RPMTRANS_FLAG_NONE;
     for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
@@ -114,6 +114,11 @@ TDNFRpmCreateTS(
         if (!strcasecmp(pSetOpt->pszOptValue, "noscripts"))
         {
             pTS->nTransFlags |= RPMTRANS_FLAG_NOSCRIPTS;
+        }
+
+        if (!strcasecmp(pSetOpt->pszOptValue, "nodocs"))
+        {
+            pTS->nTransFlags |= RPMTRANS_FLAG_NODOCS;
         }
     }
 
