@@ -592,11 +592,15 @@ TDNFGoalGetAllResultsIgnoreNoData(
                       &pInfo->pPkgsUnNeeded);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    dwError = TDNFGetReinstallPackages(
-                  pTrans,
-                  pTdnf,
-                  &pInfo->pPkgsToReinstall);
-    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(nResolveFor == ALTER_REINSTALL)
+    {
+        dwError = TDNFGetReinstallPackages(
+                      pTrans,
+                      pTdnf,
+                      &pInfo->pPkgsToReinstall);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFGetObsoletedPackages(
                   pTrans,
