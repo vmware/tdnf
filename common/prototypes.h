@@ -328,6 +328,7 @@ TDNFGetOptWithDefault(
     char **ppszOptValue
     );
 
+//log.c
 void
 GlobalSetQuiet(
     int32_t val
@@ -336,6 +337,16 @@ GlobalSetQuiet(
 void
 GlobalSetJson(
     int32_t val
+    );
+
+void
+GlobalSetDnfCheckUpdateCompat(
+    int32_t val
+    );
+
+bool
+GlobalGetDnfCheckUpdateCompat(
+    void
     );
 
 void

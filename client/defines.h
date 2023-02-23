@@ -89,6 +89,7 @@ typedef enum
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
 #define TDNF_CONF_KEY_MINVERSIONS         "minversions"
 #define TDNF_CONF_KEY_OPENMAX             "openmax"
+#define TDNF_CONF_KEY_CHECK_UPDATE_COMPAT "dnf_check_update_compat"
 
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"

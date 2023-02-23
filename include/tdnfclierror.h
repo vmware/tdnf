@@ -9,6 +9,7 @@
 #ifndef __TDNF_CLI_ERR_H__
 #define __TDNF_CLI_ERR_H__
 
+#define ERROR_TDNF_CLI_CHECK_UPDATES_AVAILABLE           100
 #define ERROR_TDNF_CLI_BASE                              900
 #define ERROR_TDNF_CLI_NO_MATCH                          (ERROR_TDNF_CLI_BASE + 1)
 #define ERROR_TDNF_CLI_INVALID_ARGUMENT                  (ERROR_TDNF_CLI_BASE + 2)
