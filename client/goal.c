@@ -20,6 +20,16 @@
 
 #include "includes.h"
 
+static
+uint32_t
+TDNFGoalGetAllResultsIgnoreNoData(
+    Transaction* pTrans,
+    Solver* pSolv,
+    PTDNF_SOLVED_PKG_INFO* ppInfo,
+    PTDNF pTdnf,
+    int nReInstall
+    );
+
 uint32_t
 TDNFGetPackagesWithSpecifiedType(
     Transaction* pTrans,
@@ -443,7 +453,8 @@ TDNFGoal(
                   pTrans,
                   pSolv,
                   &pInfoTemp,
-                  pTdnf);
+                  pTdnf,
+                  nAlterType == ALTER_REINSTALL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (nAlterType == ALTER_INSTALL)
@@ -772,12 +783,14 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
 TDNFGoalGetAllResultsIgnoreNoData(
     Transaction* pTrans,
     Solver* pSolv,
     PTDNF_SOLVED_PKG_INFO* ppInfo,
-    PTDNF pTdnf
+    PTDNF pTdnf,
+    int nReInstall
     )
 {
     uint32_t dwError = 0;
@@ -820,11 +833,13 @@ TDNFGoalGetAllResultsIgnoreNoData(
                   &pInfo->pPkgsToRemove);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetReinstallPackages(
-                  pTrans,
-                  pTdnf,
-                  &pInfo->pPkgsToReinstall);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (nReInstall) {
+        dwError = TDNFGetReinstallPackages(
+                      pTrans,
+                      pTdnf,
+                      &pInfo->pPkgsToReinstall);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFGetObsoletedPackages(
                   pTrans,
