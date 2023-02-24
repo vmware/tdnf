@@ -282,7 +282,7 @@ TDNFLoadReposFromFile(
         dwError = TDNFReadKeyValue(
                       pSections,
                       TDNF_REPO_KEY_NAME,
-                      NULL,
+                      pszRepo,
                       &pRepo->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
