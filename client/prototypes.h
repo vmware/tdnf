@@ -480,14 +480,6 @@ TDNFAddGoal(
     );
 
 uint32_t
-TDNFGoalGetAllResultsIgnoreNoData(
-    Transaction* pTrans,
-    Solver* pSolv,
-    PTDNF_SOLVED_PKG_INFO* ppInfo,
-    PTDNF pTdnf
-    );
-
-uint32_t
 TDNFGetPackagesWithSpecifiedType(
     Transaction* pTrans,
     PTDNF pTdnf,
