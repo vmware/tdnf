@@ -134,7 +134,8 @@ TDNFReadConfig(
         {
             pConf->nKeepCache = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
+        else if (strcmp(cn->name, TDNF_CONF_KEY_REPOSDIR) == 0 ||
+                 strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
         {
             pConf->pszRepoDir = strdup(cn->value);
         }
