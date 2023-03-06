@@ -485,8 +485,9 @@ TDNFGoal(
                        nAllowErasing,
                        (pTdnf->pConf->nCleanRequirementsOnRemove &&
                                 !pTdnf->pArgs->nNoAutoRemove) ||
-                               nAlterType == ALTER_AUTOERASE,
-                                nAlterType == ALTER_REINSTALL,
+                                nAlterType == ALTER_AUTOERASE,
+                                nAlterType == ALTER_REINSTALL ||
+                                (nAlterType == ALTER_DISTRO_SYNC && pTdnf->pConf->nDistroSyncReinstallChanged),
                        ppInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
