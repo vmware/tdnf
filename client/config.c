@@ -158,6 +158,13 @@ TDNFReadConfig(
                   &pConf->nCheckUpdateCompat);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFReadKeyValueBoolean(
+                  pSection,
+                  TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED,
+                  0,
+                  &pConf->nDistroSyncReinstallChanged);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFConfigReadProxySettings(
                   pSection,
                   pConf);

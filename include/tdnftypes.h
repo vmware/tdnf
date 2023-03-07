@@ -249,6 +249,7 @@ typedef struct _TDNF_CONF
     int nKeepCache;
     int nOpenMax;          //set max number of open files
     int nCheckUpdateCompat;
+    int nDistroSyncReinstallChanged;
     char* pszRepoDir;
     char* pszCacheDir;
     char* pszPersistDir;
