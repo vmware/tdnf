@@ -45,6 +45,8 @@ export GNUPGHOME=${TEST_REPO_DIR}/gnupg
 
 BUILD_PATH=${TEST_REPO_DIR}/build
 PUBLISH_PATH=${TEST_REPO_DIR}/photon-test
+PUBLISH_SRC_PATH=${TEST_REPO_DIR}/photon-test-src
+
 ARCH=$(uname -m)
 
 mkdir -p -m 755 ${BUILD_PATH}/BUILD \
@@ -52,8 +54,9 @@ mkdir -p -m 755 ${BUILD_PATH}/BUILD \
     ${BUILD_PATH}/SRPMS \
     ${BUILD_PATH}/RPMS/${ARCH} \
     ${BUILD_PATH}/RPMS/noarch \
-    ${PUBLISH_PATH} \
     ${TEST_REPO_DIR}/yum.repos.d \
+    ${PUBLISH_PATH} \
+    ${PUBLISH_SRC_PATH} \
     ${GNUPGHOME}
 
 #gpgkey data for unattended key generation
@@ -93,14 +96,16 @@ for spec in ${REPO_SRC_DIR}/*.spec ${BUILD_PATH}/SOURCES/*.spec ; do
     check_err "failed to build ${spec}"
 done
 rpmsign --addsign ${BUILD_PATH}/RPMS/*/*.rpm
-cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
 check_err "Failed to sign built packages."
+cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
+cp -r ${BUILD_PATH}/SRPMS ${PUBLISH_SRC_PATH}
 
 # save key to later be imported:
 mkdir -p ${PUBLISH_PATH}/keys
 gpg --armor --export tdnftest@tdnf.test > ${PUBLISH_PATH}/keys/pubkey.asc
 
-createrepo ${PUBLISH_PATH} > /dev/null 2>&1
+createrepo ${PUBLISH_PATH}
+createrepo ${PUBLISH_SRC_PATH}
 
 modifyrepo ${REPO_SRC_DIR}/updateinfo-1.xml ${PUBLISH_PATH}/repodata
 check_err "Failed to modify repo with updateinfo-1.xml."
@@ -121,6 +126,15 @@ baseurl=http://localhost:8080/photon-test
 gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
 gpgcheck=0
 enabled=1
+EOF
+
+cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test-src.repo
+[photon-test-src]
+name=basic
+baseurl=http://localhost:8080/photon-test-src
+gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
+gpgcheck=0
+enabled=0
 EOF
 
 cat << EOF > ${TEST_REPO_DIR}/tdnf.conf

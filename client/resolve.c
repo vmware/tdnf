@@ -61,8 +61,6 @@ TDNFPrepareAllPackages(
     uint32_t dwError = 0;
     PTDNF_CMD_ARGS pCmdArgs = NULL;
     int nPkgIndex = 0;
-    int nIsFile = 0;
-    int nDummy = 0;
     char* pszPkgName = NULL;
     char* pszName = NULL;
     Queue queueLocal = {0};
@@ -173,26 +171,10 @@ TDNFPrepareAllPackages(
            }
            else
            {
-               dwError = TDNFIsFileOrSymlink(pszPkgName, &nIsFile);
-               BAIL_ON_TDNF_ERROR(dwError);
-
-               if (nIsFile && (fnmatch("*.rpm", pszPkgName, 0) == 0))
-               {
+               if (fnmatch("*.rpm", pszPkgName, 0) == 0) {
+                   /* already handled in TDNFAddCmdLinePackages */
                    continue;
                }
-
-               dwError = TDNFUriIsRemote(pszPkgName, &nDummy);
-               if (dwError == 0)
-               {
-                 /* URL => cmd line pkg, already handled */
-                 dwError = 0;
-                 continue;
-               }
-               else if (dwError == ERROR_TDNF_URL_INVALID)
-               {
-                   dwError = 0;
-               }
-               BAIL_ON_TDNF_ERROR(dwError);
 
                dwError = TDNFPrepareSinglePkg(
                              pTdnf,
@@ -341,7 +323,7 @@ TDNFPrepareSinglePkg(
     pSack = pTdnf->pSack;
 
     //Check if this is a known package. If not add to unresolved
-    dwError = SolvCountPkgByName(pSack, pszPkgName, &dwCount);
+    dwError = SolvCountPkgByName(pSack, pszPkgName, pTdnf->pArgs->nSource, &dwCount);
     if (dwError == ERROR_TDNF_NO_MATCH)
     {
         pr_err("%s package not found or not installed\n", pszPkgName);
@@ -388,10 +370,13 @@ TDNFPrepareSinglePkg(
     }
     else if (nAlterType == ALTER_INSTALL)
     {
+        int nSource = pTdnf->pArgs->nSource;
+
         dwError = TDNFAddPackagesForInstall(
                       pSack,
                       queueGoal,
-                      pszPkgName);
+                      pszPkgName,
+                      nSource);
         if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
         {
             /* the package may have been already installed as a dependency,
@@ -470,5 +455,90 @@ error:
         dwError = 0;
 //TODO: maybe restore solvedinfo based processing here.
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFResolveBuildDependencies(
+    PTDNF pTdnf,
+    char **ppszPackageNameSpecs,
+    char **ppszPkgsNotResolved,
+    Queue* queueGoal
+    )
+{
+    uint32_t dwError = 0;
+    int i;
+    PSolvQuery pQuery = NULL;
+    PSolvPackageList pPkgList = NULL;
+    Queue qDeps = {0};
+    const char *pszDep = NULL;
+
+    if(!pTdnf || !pTdnf->pSack || !ppszPackageNameSpecs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (ppszPackageNameSpecs[0]) {
+        dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFApplyScopeFilter(pQuery, SCOPE_SOURCE);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvApplyPackageFilter(pQuery, ppszPackageNameSpecs);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvApplyListQuery(pQuery);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetQueryResult(pQuery, &pPkgList);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    queue_init(&qDeps);
+
+    if (queueGoal->count > 0) {
+        /* queueGoal has the command line packages */
+        dwError = SolvRequiresFromQueue(pTdnf->pSack->pPool, queueGoal, &qDeps);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    queue_empty(queueGoal);
+
+    if (pPkgList && pPkgList->queuePackages.count > 0) {
+        dwError = SolvRequiresFromQueue(pTdnf->pSack->pPool, &pPkgList->queuePackages, &qDeps);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (i = 0; i < qDeps.count; i++) {
+        pszDep = pool_id2str(pTdnf->pSack->pPool, qDeps.elements[i]);
+        if (!pszDep) {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (strncmp(pszDep, "rpmlib(", 7) == 0) {
+            /* packages from cmd line require these and nothing provides
+               them */
+            continue;
+        }
+        dwError = TDNFPrepareSinglePkg(
+                      pTdnf,
+                      pszDep,
+                      ALTER_INSTALL,
+                      ppszPkgsNotResolved,
+                      queueGoal);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    queue_free(&qDeps);
+    if(pQuery) {
+        SolvFreeQuery(pQuery);
+    }
+    if(pPkgList) {
+        SolvFreePackageList(pPkgList);
+    }
+    return dwError;
+error:
     goto cleanup;
 }

@@ -81,7 +81,8 @@ typedef enum
     SCOPE_OBSOLETES,
     SCOPE_RECENT,
     SCOPE_UPGRADES,
-    SCOPE_DOWNGRADES
+    SCOPE_DOWNGRADES,
+    SCOPE_SOURCE
 }TDNF_SCOPE;
 
 //availability - updateinfo
@@ -227,6 +228,8 @@ typedef struct _TDNF_CMD_ARGS
     int nJsonOutput;       //output in json format
     int nTestOnly;         //run test transaction only
     int nSkipBroken;
+    int nSource;
+    int nBuildDeps;
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location

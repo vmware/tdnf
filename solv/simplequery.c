@@ -132,3 +132,25 @@ cleanup:
 error:
     goto cleanup;
 }
+
+uint32_t
+SolvRequiresFromQueue(
+    Pool *pool,
+    Queue *pq_pkgs,  /* solvable ids */
+    Queue *pq_deps   /* string ids */
+)
+{
+    uint32_t dwError = 0;
+    int i,j;
+
+    for (i = 0; i < pq_pkgs->count; i++) {
+        Queue q_tmp = {0};
+        Solvable *p_solv = pool_id2solvable(pool, pq_pkgs->elements[i]);
+        solvable_lookup_deparray(p_solv, SOLVABLE_REQUIRES, &q_tmp, -1);
+        for(j = 0; j < q_tmp.count; j++) {
+            queue_pushunique(pq_deps, q_tmp.elements[j]);
+        }
+        queue_free(&q_tmp);
+    }
+    return dwError;
+}

@@ -61,6 +61,8 @@ TDNFCloneCmdArgs(
     pCmdArgs->nJsonOutput    = pCmdArgsIn->nJsonOutput;
     pCmdArgs->nTestOnly      = pCmdArgsIn->nTestOnly;
     pCmdArgs->nSkipBroken    = pCmdArgsIn->nSkipBroken;
+    pCmdArgs->nSource        = pCmdArgsIn->nSource;
+    pCmdArgs->nBuildDeps     = pCmdArgsIn->nBuildDeps;
 
     pCmdArgs->nArgc = pCmdArgsIn->nArgc;
     pCmdArgs->ppszArgv = pCmdArgsIn->ppszArgv;
@@ -125,7 +127,7 @@ TDNFCloneCmdArgs(
 
     pCmdArgs->nCmdCount = pCmdArgsIn->nCmdCount;
     dwError = TDNFAllocateMemory(
-                  pCmdArgs->nCmdCount,
+                  pCmdArgs->nCmdCount + 1,
                   sizeof(char*),
                   (void**)&pCmdArgs->ppszCmds);
     BAIL_ON_TDNF_ERROR(dwError);
