@@ -71,3 +71,10 @@ def test_config_invaid_repodir(utils):
     utils.edit_config({'repodir': '/etc/invalid'}, section='main', filename=TEST_CONF_PATH)
     ret = utils.run(['tdnf', '--config', TEST_CONF_PATH, 'list', pkg])
     assert ret['retval'] == 1005
+
+
+def test_config_reposdir(utils):
+    pkg = utils.config['sglversion_pkgname']
+    utils.edit_config({'reposdir': WORKDIR, 'repodir': None}, section='main', filename=TEST_CONF_PATH)
+    ret = utils.run(['tdnf', '--config', TEST_CONF_PATH, 'list', pkg])
+    assert ret['retval'] == 0

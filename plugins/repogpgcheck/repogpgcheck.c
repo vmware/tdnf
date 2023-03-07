@@ -9,6 +9,8 @@
 #include "includes.h"
 #include <gpgme.h>
 
+#include "../../llconf/nodes.h"
+
 static
 uint32_t
 _TDNFVerifyResult(
@@ -310,6 +312,12 @@ error:
     goto cleanup;
 }
 
+static
+int isTrue(const char *str)
+{
+    return strcasecmp(str, "true") == 0 || atoi(str) != 0;
+}
+
 uint32_t
 TDNFRepoGPGCheckReadConfig(
     PTDNF_PLUGIN_HANDLE pHandle,
@@ -318,7 +326,7 @@ TDNFRepoGPGCheckReadConfig(
 {
     uint32_t dwError = 0;
     int nEnabled = 0;
-    PCONF_SECTION pSection = NULL;
+    struct cnfnode *cn_section = NULL, *cn;
     PTDNF_REPO_GPG_CHECK_DATA pData = NULL;
 
     if (!pHandle || !pHandle->pTdnf || !pContext)
@@ -331,15 +339,19 @@ TDNFRepoGPGCheckReadConfig(
     dwError = TDNFEventContextGetItemPtr(
                   pContext,
                   TDNF_EVENT_ITEM_REPO_SECTION,
-                  (const void **)&pSection);
+                  (const void **)&cn_section);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFReadKeyValueBoolean(
-                  pSection,
-                  TDNF_REPO_CONFIG_REPO_GPGCHECK_KEY,
-                  0,
-                  &nEnabled);
-    BAIL_ON_TDNF_ERROR(dwError);
+    for(cn = cn_section->first_child; cn; cn = cn->next)
+    {
+        if ((cn->name[0] == '.') || (cn->value == NULL))
+            continue;
+
+        if (strcmp(cn->name, TDNF_REPO_CONFIG_REPO_GPGCHECK_KEY) == 0)
+        {
+            nEnabled = isTrue(cn->value);
+        }
+    }
 
     /*
      * if repo_gpgcheck is enabled, keep this repo id
@@ -350,7 +362,7 @@ TDNFRepoGPGCheckReadConfig(
         dwError = TDNFAllocateMemory(sizeof(*pData), 1, (void **)&pData);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateString(pSection->pszName, &pData->pszRepoId);
+        dwError = TDNFAllocateString(cn_section->name, &pData->pszRepoId);
         BAIL_ON_TDNF_ERROR(dwError);
 
         pData->pNext = pHandle->pData;

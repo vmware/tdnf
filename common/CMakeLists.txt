@@ -9,7 +9,6 @@
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_library(${LIB_TDNF_COMMON} STATIC
-    configreader.c
     memory.c
     setopt.c
     strings.c

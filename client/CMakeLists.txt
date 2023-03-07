@@ -46,6 +46,7 @@ target_link_libraries(${LIB_TDNF}
     ${LIB_TDNF_COMMON}
     ${LIB_TDNF_SOLV}
     ${LIB_TDNF_HISTORY}
+    ${LIB_TDNF_LLCONF}
     ${RPM_LIBRARIES}
     ${LibSolv_LIBRARIES}
     ${CURL_LIBRARIES}
