@@ -49,6 +49,7 @@ static struct option pstOptions[] =
     {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"json",          no_argument, &_opt.nJsonOutput, 1},
     {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
+    {"nodeps",        no_argument, &_opt.nNoDeps, 1},
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
     {"noplugins",     no_argument, 0, 0},                  //--noplugins
     {"quiet",         no_argument, &_opt.nQuiet, 1},       //--nogpgcheck
@@ -289,6 +290,11 @@ TDNFCliParseArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
+    if (pCmdArgs->nNoDeps && !pCmdArgs->nDownloadOnly) {
+        dwError = ERROR_TDNF_CLI_NODEPS_REQUIRES_DOWNLOADONLY;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
     *ppCmdArgs = pCmdArgs;
 
 cleanup:
@@ -327,6 +333,7 @@ TDNFCopyOptions(
     pArgs->nBest          = pOptionArgs->nBest;
     pArgs->nCacheOnly     = pOptionArgs->nCacheOnly;
     pArgs->nDebugSolver   = pOptionArgs->nDebugSolver;
+    pArgs->nNoDeps        = pOptionArgs->nNoDeps;
     pArgs->nNoGPGCheck    = pOptionArgs->nNoGPGCheck;
     pArgs->nNoOutput      = pOptionArgs->nQuiet && pOptionArgs->nAssumeYes;
     pArgs->nQuiet         = pOptionArgs->nQuiet;

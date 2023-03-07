@@ -216,6 +216,7 @@ typedef struct _TDNF_CMD_ARGS
     int nRpmVerbosity;     //set to rpm verbosity level
     int nShowDuplicates;   //show dups in list/search
     int nShowVersion;      //show version and exit
+    int nNoDeps;           //download no dependencies
     int nNoGPGCheck;       //skip gpg check
     int nNoOutput;         //if quiet and assumeyes are provided
     int nQuiet;            //quiet option

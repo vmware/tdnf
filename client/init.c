@@ -44,6 +44,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nBest          = pCmdArgsIn->nBest;
     pCmdArgs->nCacheOnly     = pCmdArgsIn->nCacheOnly;
     pCmdArgs->nDebugSolver   = pCmdArgsIn->nDebugSolver;
+    pCmdArgs->nNoDeps        = pCmdArgsIn->nNoDeps;
     pCmdArgs->nNoGPGCheck    = pCmdArgsIn->nNoGPGCheck;
     pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
     pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;

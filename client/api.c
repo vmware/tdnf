@@ -1661,7 +1661,7 @@ TDNFResolve(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (!pTdnf->pArgs->nSource) {
+    if (!pTdnf->pArgs->nSource && !pTdnf->pArgs->nNoDeps) {
         dwError = TDNFGoal(
                       pTdnf,
                       &queueGoal,
