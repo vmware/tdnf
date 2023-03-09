@@ -13,14 +13,15 @@ import pytest
 DOWNLOADDIR = '/tmp/tdnf/download'
 
 
-@pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(scope='function', autouse=True)
 def setup_test_function(utils):
     yield
     teardown_test(utils)
 
 
 def teardown_test(utils):
-    shutil.rmtree(DOWNLOADDIR)
+    if os.path.isdir(DOWNLOADDIR):
+        shutil.rmtree(DOWNLOADDIR)
 
 
 def check_package_in_cache(utils, pkgname):
@@ -61,6 +62,39 @@ def test_install_downloaddir_no_downloadonly(utils):
     assert not utils.check_package(pkgname)
 
 
+# --alldeps option without --downloadonly should fail
+def test_install_aldeps_no_downloadonly(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run(['tdnf', 'install', '-y', '--alldeps', DOWNLOADDIR, pkgname])
+    assert ret['retval'] != 0
+    assert not utils.check_package(pkgname)
+
+
+# --nodeps option without --downloadonly should fail
+def test_install_nodeps_no_downloadonly(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run(['tdnf', 'install', '-y', '--nodeps', DOWNLOADDIR, pkgname])
+    assert ret['retval'] != 0
+    assert not utils.check_package(pkgname)
+
+
+# an uninstalled requirement will be downloaded as well (unless --nodeps is set):
+def test_install_download_only_and_requires(utils):
+    pkgname = 'tdnf-test-cleanreq-leaf1'
+    pkgname_req = 'tdnf-test-cleanreq-required'
+
+    utils.erase_package(pkgname_req)
+    assert not utils.check_package(pkgname_req)
+
+    os.makedirs(DOWNLOADDIR, exist_ok=True)
+
+    ret = utils.run(['tdnf', 'install', '-y', '--downloadonly', '--downloaddir', DOWNLOADDIR, pkgname])
+
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+    assert len(glob.glob('{}/{}*.rpm'.format(DOWNLOADDIR, pkgname_req))) > 0
+
+
 # normally an installed requirement will not be downloaded, but with --alldeps it should:
 def test_install_download_only_alldeps(utils):
     pkgname = 'tdnf-test-cleanreq-leaf1'
@@ -76,3 +110,20 @@ def test_install_download_only_alldeps(utils):
     assert ret['retval'] == 0
     assert not utils.check_package(pkgname)
     assert len(glob.glob('{}/{}*.rpm'.format(DOWNLOADDIR, pkgname_req))) > 0
+
+
+# normally an uninstalled requirement will be downloaded, but with --nodeps it should not:
+def test_install_download_only_nodeps(utils):
+    pkgname = 'tdnf-test-cleanreq-leaf1'
+    pkgname_req = 'tdnf-test-cleanreq-required'
+
+    utils.erase_package(pkgname_req)
+    assert not utils.check_package(pkgname_req)
+
+    os.makedirs(DOWNLOADDIR, exist_ok=True)
+
+    ret = utils.run(['tdnf', 'install', '-y', '--downloadonly', '--downloaddir', DOWNLOADDIR, '--nodeps', pkgname])
+
+    assert ret['retval'] == 0
+    assert not utils.check_package(pkgname)
+    assert len(glob.glob('{}/{}*.rpm'.format(DOWNLOADDIR, pkgname_req))) == 0
