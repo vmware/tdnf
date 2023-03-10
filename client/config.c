@@ -238,6 +238,8 @@ TDNFReadConfig(
         pConf->pszCacheDir = strdup(TDNF_DEFAULT_CACHE_LOCATION);
     if (pConf->pszDistroVerPkg == NULL)
         pConf->pszDistroVerPkg = strdup(TDNF_DEFAULT_DISTROVERPKG);
+    if (pConf->pszPersistDir == NULL)
+        pConf->pszPersistDir = strdup(TDNF_DEFAULT_DB_LOCATION);
 
     /* We need a copy of pszConfFile because dirname() modifies its argument */
     dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy);
