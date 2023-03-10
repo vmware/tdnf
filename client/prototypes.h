@@ -50,13 +50,6 @@ AddKeyFileToKeyring(
     );
 
 uint32_t
-AddKeyPktToKeyring(
-    rpmKeyring pKeyring,
-    uint8_t* pPkt,
-    size_t nPktLen
-    );
-
-uint32_t
 VerifyRpmSig(
     rpmKeyring pKeyring,
     const char* pszPkgFile
