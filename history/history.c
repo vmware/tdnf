@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 /* for O_RDONLY */
 #include <fcntl.h>
