@@ -266,7 +266,7 @@ TDNFIsFileOrSymlink(
     if(stat(pszPath, &stStat))
     {
         if (errno == ENOENT)
-	{
+        {
             nPathIsFile = 0;
         }
         else
