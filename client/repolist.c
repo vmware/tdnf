@@ -603,6 +603,10 @@ TDNFLoadReposFromFile(
         dwError = TDNFEventRepoReadConfigEnd(pTdnf, cn_section);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        /* default to repo id if name isn't set */
+        if (pRepo->pszName == NULL)
+            pRepo->pszName = strdup(pRepo->pszId);
+
         pRepo->pNext = pRepos;
         pRepos = pRepo;
         pRepo = NULL;
