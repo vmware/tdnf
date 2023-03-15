@@ -223,6 +223,12 @@ TDNFIsDir(
     int* pnPathIsDir
     );
 
+uint32_t
+TDNFDirName(
+    const char *pszPath,
+    char **ppszDirName
+);
+
 //setopt.c
 uint32_t
 AddSetOpt(
