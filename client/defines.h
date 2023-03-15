@@ -234,7 +234,7 @@ typedef enum
     {ERROR_TDNF_RPM_CHECK,           "ERROR_TDNF_RPM_CHECK",           "rpm check reported errors"}, \
     {ERROR_TDNF_RPMTS_BAD_ROOT_DIR,  "ERROR_TDNF_RPMTS_BAD_ROOT_DIR",  "Bad root directory"}, \
     {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
-    {ERROR_TDNF_SELF_ERASE, "ERROR_TDNF_SELF_ERASE", "The operation would result in removing the protected package : tdnf"},\
+    {ERROR_TDNF_PROTECTED,           "ERROR_TDNF_PROTECTED",           "The operation would result in removing a protected package."},\
     {ERROR_TDNF_DOWNGRADE_NOT_ALLOWED,\
 	    "ERROR_TDNF_DOWNGRADE_NOT_ALLOWED",\
 	    "a downgrade is not allowed below the minimal version. Check 'minversions' in the configuration."},\
