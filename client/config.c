@@ -56,6 +56,7 @@ TDNFReadConfig(
     char *pszConfDir = NULL;
     char *pszMinVersionsDir = NULL;
     char *pszPkgLocksDir = NULL;
+    char *pszProtectedDir = NULL;
 
     const char *pszProxyUser = NULL;
     const char *pszProxyPass = NULL;
@@ -253,6 +254,12 @@ TDNFReadConfig(
     dwError = TDNFReadConfFilesFromDir(pszPkgLocksDir, &pConf->ppszPkgLocks);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFJoinPath(&pszProtectedDir, pszConfDir, "protected.d", NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadConfFilesFromDir(pszProtectedDir, &pConf->ppszProtectedPkgs);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pTdnf->pConf = pConf;
 
 cleanup:
@@ -260,6 +267,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszConfDir);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
     TDNF_SAFE_FREE_MEMORY(pszPkgLocksDir);
+    TDNF_SAFE_FREE_MEMORY(pszProtectedDir);
     return dwError;
 
 error:
@@ -339,6 +347,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszProtectedPkgs);
         TDNFFreeMemory(pConf);
     }
 }

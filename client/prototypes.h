@@ -378,11 +378,6 @@ TDNFAddPackagesForDowngrade(
     );
 
 uint32_t
-TDNFCheckProtectedPkgs(
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
-    );
-
-uint32_t
 TDNFGetAvailableCacheBytes(
     PTDNF_CONF pConf,
     uint64_t* pqwAvailCacheBytes
@@ -532,6 +527,20 @@ TDNFSolvAddPkgLocks(
 uint32_t
 TDNFSolvAddMinVersions(
     PTDNF pTdnf,
+    Pool *pPool
+    );
+
+uint32_t
+TDNFSolvAddProtectPkgs(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    );
+
+uint32_t
+TDNFSolvCheckProtectPkgsInTrans(
+    PTDNF pTdnf,
+    Transaction *pTrans,
     Pool *pPool
     );
 
