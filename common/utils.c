@@ -917,3 +917,36 @@ error:
     }
     goto cleanup;
 }
+
+uint32_t
+TDNFDirName(
+    const char *pszPath,
+    char **ppszDirName
+)
+{
+    uint32_t dwError = 0;
+    char *pszDirName = NULL;
+    char *pszPathCopy = NULL;
+
+    if(!pszPath || IsNullOrEmptyString(pszPath) || !ppszDirName)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszPath, &pszPathCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(dirname(pszPathCopy), &pszDirName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszDirName = pszDirName;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszPathCopy);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszDirName);
+    goto cleanup;
+}
