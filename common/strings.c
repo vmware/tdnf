@@ -143,7 +143,7 @@ TDNFSplitStringToArray(
     size_t nCount = 0;
     size_t nIndex = 0;
 
-    if (!pszBuf || IsNullOrEmptyString(pszSep))
+    if (!pszBuf || IsNullOrEmptyString(pszSep) || !pppszTokens)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
