@@ -37,6 +37,11 @@ TDNFFileReadAllText(
     fseek(fp, 0, SEEK_END);
     nLength = ftell(fp);
 
+    if (nLength < 0) {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
     dwError = TDNFAllocateMemory(1, nLength + 1, (void **)&pszText);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -796,9 +801,9 @@ TDNFJoinPath(char **ppszPath, ...)
         dwError = TDNFAllocateString(pszNode, &pszNodeCopy);
         BAIL_ON_TDNF_ERROR(dwError);
         pszNodeTmp = pszNodeCopy;
-	/* if the first node is an absolute path, the result should be absolute -
-	 * safe this by initializing with a '/' if absolute, otherwise with an empty string
-	 * before stripping all leading slashes */
+        /* if the first node is an absolute path, the result should be absolute -
+         * safe this by initializing with a '/' if absolute, otherwise with an empty string
+         * before stripping all leading slashes */
         if (i == 0)
         {
             if (*pszNodeTmp == '/')
@@ -812,10 +817,10 @@ TDNFJoinPath(char **ppszPath, ...)
             }
             BAIL_ON_TDNF_ERROR(dwError);
         }
-	/* now strip leading slashes */
+        /* now strip leading slashes */
         while(*pszNodeTmp == '/') pszNodeTmp++;
 
-	/* strip trailing slashes */
+        /* strip trailing slashes */
         nLengthTmp = strlen(pszNodeTmp);
         pszTmp = pszNodeTmp + nLengthTmp - 1;
         while(pszTmp >= pszNodeTmp && *pszTmp == '/')
@@ -829,7 +834,7 @@ TDNFJoinPath(char **ppszPath, ...)
         BAIL_ON_TDNF_ERROR(dwError);
 
         strcat(pszResult, pszNodeTmp);
-	/* put new slashes between nodes, except for the end */
+        /* put new slashes between nodes, except for the end */
         if (i != nCount-1)
         {
             strcat(pszResult, "/");
