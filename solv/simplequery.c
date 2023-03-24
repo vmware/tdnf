@@ -101,6 +101,7 @@ SolvFindSolvablesByNevraStr(
 {
     uint32_t dwError = 0;
     char *n = NULL, *name, *evr, *arch;
+    Id id_name, id_evr, id_arch;
 
     ASSERT_ARG(pool);
     ASSERT_ARG(qresult);
@@ -114,9 +115,9 @@ SolvFindSolvablesByNevraStr(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    Id id_name = pool_str2id(pool, name, 0);
-    Id id_evr = pool_str2id(pool, evr, 0);
-    Id id_arch = pool_str2id(pool, arch, 0);
+    id_name = pool_str2id(pool, name, 0);
+    id_evr = pool_str2id(pool, evr, 0);
+    id_arch = pool_str2id(pool, arch, 0);
 
     if (id_name && id_evr && id_arch)
     {

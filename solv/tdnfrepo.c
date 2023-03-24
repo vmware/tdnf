@@ -346,11 +346,6 @@ SolvReadRpmsFromDirectory(
 
     repo_internalize(pRepo);
 
-    if (dwError) {
-        dwError = ERROR_TDNF_SOLV_IO;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-
 cleanup:
     return dwError;
 error:

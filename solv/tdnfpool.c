@@ -132,6 +132,8 @@ cleanup:
 error:
     if(pRepo)
     {
+        /* leave dead code for future error conditions */
+        /* coverity[dead_error_line] */
         repo_free(pRepo, 1);
     }
     if(pPool)

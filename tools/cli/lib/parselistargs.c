@@ -135,6 +135,7 @@ TDNFCliParseListArgs(
             dwError = 0;
             nStartIndex = 1;
         }
+        BAIL_ON_CLI_ERROR(dwError);
     }
     //Copy the rest of the args as package name specs
     nPackageCount = pCmdArgs->nCmdCount - nStartIndex;

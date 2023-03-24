@@ -555,6 +555,7 @@ int db_play_transaction(sqlite3 *db, int trans_id,
 {
     sqlite3_stmt *res = NULL;
     int step, rc = 0;
+    int base_id = 0;
 
     /* find most recent HISTORY_TRANS_TYPE_BASE */
     rc = sqlite3_prepare_v2(db,
@@ -566,7 +567,6 @@ int db_play_transaction(sqlite3 *db, int trans_id,
     rc = sqlite3_bind_int(res, 1, HISTORY_TRANS_TYPE_BASE);
     check_db_rc(db, rc);
 
-    int base_id = 0;
     for (step = sqlite3_step(res); step == SQLITE_ROW; step = sqlite3_step(res)) {
         base_id = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
         if (base_id <= trans_id)
@@ -663,7 +663,7 @@ int db_add_transaction(sqlite3 *db, int *ptrans_id,
     rc = sqlite3_bind_text(res, 2, cookie, -1, NULL);
     check_db_rc(db, rc);
 
-    rc = sqlite3_bind_int(res, 3, timestamp);
+    rc = sqlite3_bind_int64(res, 3, timestamp);
     check_db_rc(db, rc);
 
     rc = sqlite3_bind_int(res, 4, type);
@@ -1270,6 +1270,8 @@ int history_record_state(struct history_ctx *ctx)
 
     ctx->trans_id = trans_id;
 error:
+    if(err_msg)
+        sqlite3_free(err_msg);
     if (rc)
         sqlite3_exec(ctx->db, "ROLLBACK;", 0, 0, NULL);
     else

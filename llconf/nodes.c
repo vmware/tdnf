@@ -176,13 +176,15 @@ void destroy_cnfnode(struct cnfnode *cn)
  */
 void destroy_cnftree(struct cnfnode *cn_root)
 {
-	struct cnfnode *cn = NULL, *cn_next;
+    struct cnfnode *cn = NULL, *cn_next;
 
-	for(cn = cn_root->first_child; cn; cn = cn_next){
-		cn_next = cn->next;
-		destroy_cnftree(cn);
-	}
-	destroy_cnfnode(cn_root);
+    if (cn_root) {
+        for(cn = cn_root->first_child; cn; cn = cn_next) {
+            cn_next = cn->next;
+            destroy_cnftree(cn);
+        }
+        destroy_cnfnode(cn_root);
+    }
 }
 
 /** appends a node to the list of children.
