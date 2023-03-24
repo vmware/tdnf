@@ -182,6 +182,8 @@ struct cnfnode *find_repo(const char *repodir, const char *repo, char **pfilenam
     }
 
 error:
+    /* leave dead code for future error conditions */
+    /* coverity[dead_error_condition] */
     if (rc && cn_root) {
         destroy_cnftree(cn_root);
         cn_root = NULL;

@@ -89,6 +89,7 @@ TDNFCliParseUpdateInfoArgs(
             //There was no valid mode. Let the next arg start here.
             --nStartIndex;
         }
+        BAIL_ON_CLI_ERROR(dwError);
         ++nStartIndex;
     }
 
@@ -104,6 +105,7 @@ TDNFCliParseUpdateInfoArgs(
             //There was no valid availability. Let the next arg start here.
             --nStartIndex;
         }
+        BAIL_ON_CLI_ERROR(dwError);
         ++nStartIndex;
     }
 

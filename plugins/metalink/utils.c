@@ -573,7 +573,7 @@ TDNFParseHashTag(
     if(!xmlContValue)
     {
         dwError = ERROR_TDNF_METALINK_PARSER_MISSING_HASH_CONTENT;
-        pr_err("XML Parser Error:HASH value is not present in HASH element", value);
+        pr_err("XML Parser Error:HASH value is not present in HASH element");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -638,7 +638,6 @@ TDNFParseUrlTag(
         BAIL_ON_TDNF_ERROR(dwError);
         xmlFree(xmlPropValue);
         xmlPropValue = NULL;
-        value = NULL;
     }
     if ((xmlPropValue = xmlGetProp(node, ATTR_TYPE)))
     {
@@ -647,7 +646,6 @@ TDNFParseUrlTag(
         BAIL_ON_TDNF_ERROR(dwError);
         xmlFree(xmlPropValue);
         xmlPropValue = NULL;
-        value = NULL;
     }
     if ((xmlPropValue = xmlGetProp(node, ATTR_LOCATION)))
     {
@@ -656,7 +654,6 @@ TDNFParseUrlTag(
         BAIL_ON_TDNF_ERROR(dwError);
         xmlFree(xmlPropValue);
         xmlPropValue = NULL;
-        value = NULL;
     }
     if ((xmlPropValue = xmlGetProp(node, ATTR_PREFERENCE)))
     {
@@ -681,7 +678,6 @@ TDNFParseUrlTag(
         {
             ml_url_info->preference = prefValue;
         }
-        value = NULL;
     }
 
     //Get URL Content.
@@ -689,7 +685,7 @@ TDNFParseUrlTag(
     if(!xmlContValue)
     {
         dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_CONTENT;
-        pr_err("URL is no present in URL element", value);
+        pr_err("URL is no present in URL element");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

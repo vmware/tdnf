@@ -225,6 +225,7 @@ TDNFFilterPackages(
     {
         dwError = 0;
     }
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetPackageListSize(pInstalledPkgList, &dwSize);
     BAIL_ON_TDNF_ERROR(dwError);
