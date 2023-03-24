@@ -18,11 +18,11 @@ cov-configure --config ${COV_CONFIG} --compiler ${CC} --comptype gcc --template
 cov-build --dir ${COV_DIR} --config ${COV_CONFIG} make
 
 # gcc >= 10.0 workaround, see https://www.mail-archive.com/gcc@gcc.gnu.org/msg93814.html
-if grep -qr 'version>0' . --include=*.xml ; then
-    for f in $(grep -lr 'version>0' . --include=*.xml) ; do sed -i 's/version>0/version>10/' $f; done
-    make clean
-    cov-build --dir ${COV_DIR} --config ${COV_CONFIG} make
-fi
+#if grep -qr 'version>0' . --include=*.xml ; then
+#    for f in $(grep -lr 'version>0' . --include=*.xml) ; do sed -i 's/version>0/version>10/' $f; done
+#    make clean
+#    cov-build --dir ${COV_DIR} --config ${COV_CONFIG} make
+#fi
 
 cov-analyze --dir ${COV_DIR} --config ${COV_CONFIG} --all
 
