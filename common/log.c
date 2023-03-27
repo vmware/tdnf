@@ -83,7 +83,7 @@ void log_console(int32_t loglevel, const char *format, ...)
     }
 
     vfprintf(stream, format, args);
-
+    fflush(stream);
 end:
     va_end(args);
 }
