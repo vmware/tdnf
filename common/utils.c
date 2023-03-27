@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -428,13 +428,24 @@ TDNFYesOrNo(
 
     if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
     {
-        pr_crit("%s", pszQuestion);
-        while ((opt = getchar()) == '\n' || opt == '\r');
-        opt = tolower(opt);
-        if (opt != 'y' && opt != 'n')
-        {
-            dwError = ERROR_TDNF_INVALID_INPUT;
-            BAIL_ON_TDNF_ERROR(dwError);
+        while(1) {
+            pr_crit("%s", pszQuestion);
+            char buf[256] = {0};
+            char *ret;
+
+            ret = fgets(buf, sizeof(buf)-1, stdin);
+            if (ret != buf || buf[0] == 0) {
+                /* should not happen */
+                dwError = ERROR_TDNF_INVALID_INPUT;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            buf[strlen(buf)-1] = 0;
+            if (strcasecmp(buf, "yes") == 0 || strcasecmp(buf, "y") == 0 ||
+                    strcasecmp(buf, "n") == 0 || strcasecmp(buf, "no") == 0 ||
+                    buf[0] == 0) {
+                opt = tolower(buf[0]);
+                break;
+            }
         }
     }
 
