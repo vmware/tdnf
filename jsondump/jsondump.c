@@ -7,6 +7,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -256,6 +257,15 @@ int jd_map_add_int(struct json_dump *jd, const char *key, int value)
     return _jd_map_add_raw(jd, key, buf);
 }
 
+int jd_map_add_int64(struct json_dump *jd, const char *key, int64_t value)
+{
+    char buf[22]; /* 22 = length of 2^64 + 1 */
+
+    if (snprintf(buf, sizeof(buf), "%ld", value) < 0)
+        return -1;
+    return _jd_map_add_raw(jd, key, buf);
+}
+
 int jd_map_add_bool(struct json_dump *jd, const char *key, int value)
 {
     return _jd_map_add_raw(jd, key, value ? "true": "false");
@@ -361,6 +371,15 @@ int jd_list_add_int(struct json_dump *jd, int value)
     char buf[22]; /* 22 = length of 2^64 + 1 */
 
     if (snprintf(buf, sizeof(buf), "%d", value) < 0)
+        return -1;
+    return _jd_list_add_raw(jd, buf);
+}
+
+int jd_list_add_int64(struct json_dump *jd, int64_t value)
+{
+    char buf[22]; /* 22 = length of 2^64 + 1 */
+
+    if (snprintf(buf, sizeof(buf), "%ld", value) < 0)
         return -1;
     return _jd_list_add_raw(jd, buf);
 }

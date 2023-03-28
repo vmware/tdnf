@@ -74,6 +74,7 @@ TDNFMetalinkReadConfig(
 
         if (strcmp(cn->name, TDNF_REPO_CONFIG_METALINK_KEY) == 0)
         {
+            if (pszMetalink != NULL) free(pszMetalink);
             pszMetalink = strdup(cn->value);
         }
     }
