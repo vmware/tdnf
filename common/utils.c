@@ -53,6 +53,8 @@ TDNFFileReadAllText(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
+    pszText[nLength] = 0;
+
     *ppszText = pszText;
     if (pnLength != NULL) {
         *pnLength = nLength;

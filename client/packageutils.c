@@ -956,6 +956,7 @@ TDNFCheckDownloadCacheBytes(
     if(!pSolvedPkgInfo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
+        /* coverity[name_at_decl_position] */
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

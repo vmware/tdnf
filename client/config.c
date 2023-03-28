@@ -61,7 +61,7 @@ TDNFReadConfig(
     const char *pszProxyUser = NULL;
     const char *pszProxyPass = NULL;
 
-    struct cnfnode *cn_conf, *cn_top, *cn;
+    struct cnfnode *cn_conf = NULL, *cn_top, *cn;
     struct cnfmodule *mod_ini;
 
     int nPluginSet = 0;
@@ -163,7 +163,7 @@ TDNFReadConfig(
                                              " ", &pConf->ppszMinVersions);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
+        else if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
         {
             pConf->nOpenMax = atoi(cn->value);
         }
@@ -230,8 +230,6 @@ TDNFReadConfig(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    destroy_cnftree(cn_conf);
-
     if (pConf->pszRepoDir == NULL)
         pConf->pszRepoDir = strdup(TDNF_DEFAULT_REPO_LOCATION);
     if (pConf->pszCacheDir == NULL)
@@ -263,6 +261,7 @@ TDNFReadConfig(
     pTdnf->pConf = pConf;
 
 cleanup:
+    destroy_cnftree(cn_conf);
     TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
     TDNF_SAFE_FREE_MEMORY(pszConfFileCopy2);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);

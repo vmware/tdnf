@@ -453,6 +453,10 @@ TDNFGoalNoDeps(
 cleanup:
     return dwError;
 error:
+    if(pPkgInfo) {
+        TDNFFreePackageInfo(pPkgInfo);
+    }
+    TDNF_SAFE_FREE_MEMORY(pInfo);
     goto cleanup;
 }
 

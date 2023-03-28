@@ -1197,7 +1197,7 @@ TDNFCliHistoryList(
             CHECK_JD_RC(jd_map_start(jd_item));
             CHECK_JD_RC(jd_map_add_int(jd_item, "Id", pItems[i].nId));
             CHECK_JD_RC(jd_map_add_string(jd_item, "CmdLine", pItems[i].pszCmdLine));
-            CHECK_JD_RC(jd_map_add_int(jd_item, "TimeStamp", pItems[i].timeStamp));
+            CHECK_JD_RC(jd_map_add_int64(jd_item, "TimeStamp", pItems[i].timeStamp));
             CHECK_JD_RC(jd_map_add_int(jd_item, "AddedCount", pItems[i].nAddedCount));
             CHECK_JD_RC(jd_map_add_int(jd_item, "RemovedCount", pItems[i].nRemovedCount));
             if (pHistoryArgs->nInfo)

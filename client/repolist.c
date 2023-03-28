@@ -461,7 +461,7 @@ TDNFLoadReposFromFile(
     PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_REPO_DATA pRepo = NULL;
 
-    struct cnfnode *cn_conf, *cn_section, *cn;
+    struct cnfnode *cn_conf = NULL, *cn_section, *cn;
     struct cnfmodule *mod_ini;
 
     mod_ini = find_cnfmodule("ini");
@@ -516,16 +516,17 @@ TDNFLoadReposFromFile(
             {
                 dwError = TDNFSplitStringToArray(cn->value,
                                                  " ", &pRepo->ppszBaseUrls);
+                BAIL_ON_TDNF_ERROR(dwError);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_METALINK) == 0)
             {
                 pRepo->pszMetaLink = strdup(cn->value);
             }
-            if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
+            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
             {
                 pRepo->nSkipIfUnavailable = isTrue(cn->value);
             }
-            if (strcmp(cn->name, TDNF_REPO_KEY_GPGCHECK) == 0)
+            else if (strcmp(cn->name, TDNF_REPO_KEY_GPGCHECK) == 0)
             {
                 pRepo->nGPGCheck = isTrue(cn->value);
             }
@@ -563,7 +564,7 @@ TDNFLoadReposFromFile(
             {
                 pRepo->nThrottle = atoi(cn->value);
             }
-            if (strcmp(cn->name, TDNF_REPO_KEY_SSL_VERIFY) == 0)
+            else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_VERIFY) == 0)
             {
                 pRepo->nSSLVerify = isTrue(cn->value);
             }
@@ -586,15 +587,15 @@ TDNFLoadReposFromFile(
                               &pRepo->lMetadataExpire);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-            if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_FILELISTS) == 0)
+            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_FILELISTS) == 0)
             {
                 pRepo->nSkipMDFileLists = isTrue(cn->value);
             }
-            if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_UPDATEINFO) == 0)
+            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_UPDATEINFO) == 0)
             {
                 pRepo->nSkipMDUpdateInfo = isTrue(cn->value);
             }
-            if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_OTHER) == 0)
+            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_OTHER) == 0)
             {
                 pRepo->nSkipMDOther = isTrue(cn->value);
             }
@@ -611,11 +612,11 @@ TDNFLoadReposFromFile(
         pRepos = pRepo;
         pRepo = NULL;
     }
-    destroy_cnftree(cn_conf);
 
     *ppRepos = pRepos;
 
 cleanup:
+    destroy_cnftree(cn_conf);
     TDNF_SAFE_FREE_MEMORY(pszMetadataExpire);
     return dwError;
 
