@@ -266,6 +266,7 @@ typedef struct _TDNF_CONF
     char** ppszExcludes;
     char** ppszMinVersions;
     char** ppszPkgLocks;
+    char** ppszProtectedPkgs;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_DATA

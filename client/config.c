@@ -53,10 +53,10 @@ TDNFReadConfig(
 {
     uint32_t dwError = 0;
     PTDNF_CONF pConf = NULL;
-    char *pszConfFileCopy = NULL;
+    char *pszConfDir = NULL;
     char *pszMinVersionsDir = NULL;
-    char *pszConfFileCopy2 = NULL;
     char *pszPkgLocksDir = NULL;
+    char *pszProtectedDir = NULL;
 
     const char *pszProxyUser = NULL;
     const char *pszProxyPass = NULL;
@@ -239,33 +239,35 @@ TDNFReadConfig(
     if (pConf->pszPersistDir == NULL)
         pConf->pszPersistDir = strdup(TDNF_DEFAULT_DB_LOCATION);
 
-    /* We need a copy of pszConfFile because dirname() modifies its argument */
-    dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy);
+    dwError = TDNFDirName(pszConfFile, &pszConfDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFJoinPath(&pszMinVersionsDir, dirname(pszConfFileCopy), "minversions.d", NULL);
+    dwError = TDNFJoinPath(&pszMinVersionsDir, pszConfDir, "minversions.d", NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadConfFilesFromDir(pszMinVersionsDir, &pConf->ppszMinVersions);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateString(pszConfFile, &pszConfFileCopy2);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFJoinPath(&pszPkgLocksDir, dirname(pszConfFileCopy2), "locks.d", NULL);
+    dwError = TDNFJoinPath(&pszPkgLocksDir, pszConfDir, "locks.d", NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFReadConfFilesFromDir(pszPkgLocksDir, &pConf->ppszPkgLocks);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszProtectedDir, pszConfDir, "protected.d", NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFReadConfFilesFromDir(pszProtectedDir, &pConf->ppszProtectedPkgs);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pTdnf->pConf = pConf;
 
 cleanup:
     destroy_cnftree(cn_conf);
-    TDNF_SAFE_FREE_MEMORY(pszConfFileCopy);
-    TDNF_SAFE_FREE_MEMORY(pszConfFileCopy2);
+    TDNF_SAFE_FREE_MEMORY(pszConfDir);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
     TDNF_SAFE_FREE_MEMORY(pszPkgLocksDir);
+    TDNF_SAFE_FREE_MEMORY(pszProtectedDir);
     return dwError;
 
 error:
@@ -345,6 +347,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszProtectedPkgs);
         TDNFFreeMemory(pConf);
     }
 }

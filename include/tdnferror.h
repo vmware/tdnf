@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -61,6 +61,7 @@ extern "C" {
 #define ERROR_TDNF_NO_DOWNGRADE_PATH        1028
 //
 #define ERROR_TDNF_METADATA_EXPIRE_PARSE    1029
+#define ERROR_TDNF_PROTECTED                1030
 #define ERROR_TDNF_SELF_ERASE               1030
 #define ERROR_TDNF_ERASE_NEEDS_INSTALL      1031
 #define ERROR_TDNF_OPERATION_ABORTED        1032

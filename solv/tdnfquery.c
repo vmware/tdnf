@@ -106,7 +106,7 @@ SolvAddUserInstalledToJobs(
         }
         if (nFlag == 0)
         {
-            queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_USERINSTALLED, s->name);
+            queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, p);
         }
     }
 
@@ -169,25 +169,6 @@ SolvAddPkgEraseJob(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
     queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_ERASE, dwId);
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
-uint32_t
-SolvAddPkgUserInstalledJob(
-    Queue*  pQueueJobs,
-    Id      dwId)
-{
-    uint32_t dwError = 0;
-    if(!pQueueJobs)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
-    queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, dwId);
 cleanup:
     return dwError;
 
