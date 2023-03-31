@@ -21,6 +21,8 @@ import os
 import re
 from datetime import datetime
 
+IGNORE_COMMITS = ['38fa1f466b86ffdf550b17461b2722b4ddc07a85']
+
 class Commit:
     def __init__(self, id):
         self.id = id
@@ -41,7 +43,7 @@ def get_latest_commit(file):
     stream = os.popen('git log --pretty=fuller {}'.format(file))
     for line in stream.readlines():
         if line.startswith('commit'):
-            commit = Commit(line.split(' ')[1]).strip()
+            commit = Commit(line.strip().split(' ')[1])
         # We use the commit date, not the author date
         # see https://stackoverflow.com/questions/11856983/why-git-authordate-is-different-from-commitdate
         elif line.startswith('CommitDate:'):
@@ -89,5 +91,6 @@ if __name__ == '__main__':
     files = get_files()
     for f in files:
         commit = get_latest_commit(f)
-        year = str(commit.date.year)
-        fix_file(f, year)
+        if commit.id not in IGNORE_COMMITS:
+            year = str(commit.date.year)
+            fix_file(f, year)
