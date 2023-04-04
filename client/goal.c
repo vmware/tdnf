@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -355,7 +355,12 @@ TDNFSolv(
 
     if(nAllowErasing)
     {
-        solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
+        if (pTdnf->pConf->ppszProtectedPkgs) {
+            dwError = TDNFSolvAddProtectPkgs(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
+            BAIL_ON_TDNF_ERROR(dwError);
+        } else {
+            solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_UNINSTALL, 1);
+        }
     }
     solver_set_flag(pSolv, SOLVER_FLAG_BEST_OBEY_POLICY, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_VENDORCHANGE, 1);
@@ -384,6 +389,12 @@ TDNFSolv(
     if(pTdnf->pArgs->nDebugSolver)
     {
         dwError = SolvAddDebugInfo(pSolv, "debugdata");
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pTdnf->pConf->ppszProtectedPkgs) {
+        /* catch protected obsoleted packages, and double check for removals */
+        dwError = TDNFSolvCheckProtectPkgsInTrans(pTdnf, pTrans, pTdnf->pSack->pPool);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -1032,6 +1043,141 @@ cleanup:
     }
     TDNF_SAFE_FREE_MEMORY(pszTmp);
     TDNF_SAFE_FREE_STRINGARRAY(ppszTokens);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFSolvAddProtectPkgs(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszProtectedPkgs = NULL;
+    int i, j;
+    Queue qPkgs = {0};
+    Id p;
+    Solvable *s;
+
+    if(!pTdnf || !pQueueJobs || !pPool || !pTdnf->pConf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppszProtectedPkgs = pTdnf->pConf->ppszProtectedPkgs;
+    queue_init(&qPkgs);
+    for (i = 0; ppszProtectedPkgs[i]; i++) {
+        Id idPkg = pool_str2id(pPool, ppszProtectedPkgs[i], 1);
+        if (idPkg) {
+            queue_push(&qPkgs, idPkg);
+        }
+    }
+
+    /* Not setting SOLVER_ALLOWUNINSTALL will not prevent a package from being
+       uninstalled if it's going to be removed directly. */
+    for (j = 0; j < pQueueJobs->count; j += 2) {
+        Id how = pQueueJobs->elements[j];
+        /* assuming that all erase jobs that we added use SOLVER_SOLVABLE */
+        if (((how & SOLVER_JOBMASK) == SOLVER_ERASE) && (how & SOLVER_SOLVABLE)) {
+            Id what = pQueueJobs->elements[j+1];
+            Solvable *s = pool_id2solvable(pPool, what);
+            for (i = 0; i < qPkgs.count; i++) {
+                if (qPkgs.elements[i] == s->name)
+                    break;
+            }
+            if (i < qPkgs.count) {
+                pr_err("package %s is protected\n", ppszProtectedPkgs[i]);
+                dwError = ERROR_TDNF_PROTECTED;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+
+    /* There is no "SOLVER_PROTECTED" flag, so we allow
+       all pkgs that are not protected to be removed. */
+    FOR_REPO_SOLVABLES(pPool->installed, p, s)
+    {
+        for (i = 0; i < qPkgs.count; i++) {
+            if (qPkgs.elements[i] == s->name)
+                break;
+        }
+        if (i == qPkgs.count) {
+            queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_ALLOWUNINSTALL, p);
+        } else {
+            /* autoerase would remove this, even if we do not set
+               SOLVER_ALLOWUNINSTALL for it */
+            queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_USERINSTALLED, p);
+        }
+    }
+
+cleanup:
+    queue_free(&qPkgs);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFSolvCheckProtectPkgsInTrans(
+    PTDNF pTdnf,
+    Transaction *pTrans,
+    Pool *pPool
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszProtectedPkgs = NULL;
+    int i;
+    Queue qPkgs = {0};
+
+    if(!pTdnf || !pTrans || !pPool || !pTdnf->pConf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppszProtectedPkgs = pTdnf->pConf->ppszProtectedPkgs;
+    queue_init(&qPkgs);
+    for (i = 0; ppszProtectedPkgs[i]; i++) {
+        Id idPkg = pool_str2id(pPool, ppszProtectedPkgs[i], 1);
+        if (idPkg) {
+            queue_push(&qPkgs, idPkg);
+        }
+    }
+
+    for (i = 0; i < pTrans->steps.count; i++) {
+        Id idType;
+        Id idPkg = pTrans->steps.elements[i];
+
+        idType = transaction_type(pTrans, idPkg,
+                                  SOLVER_TRANSACTION_SHOW_OBSOLETES);
+        if (idType != SOLVER_TRANSACTION_OBSOLETED) {
+            idType = transaction_type(pTrans, idPkg,
+                                      SOLVER_TRANSACTION_SHOW_ACTIVE|
+                                          SOLVER_TRANSACTION_SHOW_ALL);
+        }
+        if (idType == SOLVER_TRANSACTION_OBSOLETED ||
+            idType == SOLVER_TRANSACTION_ERASE) {
+            int j;
+            Solvable *s = pool_id2solvable(pPool, idPkg);
+            for (j = 0; j < qPkgs.count; j++) {
+                if (qPkgs.elements[j] == s->name) {
+                    pr_err("package %s would be %s but it is protected\n",
+                           ppszProtectedPkgs[j],
+                           idType == SOLVER_TRANSACTION_OBSOLETED ?
+                               "obsoleted" : "removed");
+                    dwError = ERROR_TDNF_PROTECTED;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
+        }
+    }
+
+cleanup:
+    queue_free(&qPkgs);
     return dwError;
 error:
     goto cleanup;

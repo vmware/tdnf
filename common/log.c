@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2019-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -83,7 +83,7 @@ void log_console(int32_t loglevel, const char *format, ...)
     }
 
     vfprintf(stream, format, args);
-
+    fflush(stream);
 end:
     va_end(args);
 }

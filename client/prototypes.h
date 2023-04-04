@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -378,11 +378,6 @@ TDNFAddPackagesForDowngrade(
     );
 
 uint32_t
-TDNFCheckProtectedPkgs(
-    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo
-    );
-
-uint32_t
 TDNFGetAvailableCacheBytes(
     PTDNF_CONF pConf,
     uint64_t* pqwAvailCacheBytes
@@ -532,6 +527,20 @@ TDNFSolvAddPkgLocks(
 uint32_t
 TDNFSolvAddMinVersions(
     PTDNF pTdnf,
+    Pool *pPool
+    );
+
+uint32_t
+TDNFSolvAddProtectPkgs(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    );
+
+uint32_t
+TDNFSolvCheckProtectPkgsInTrans(
+    PTDNF pTdnf,
+    Transaction *pTrans,
     Pool *pPool
     );
 

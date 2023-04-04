@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -1673,9 +1673,6 @@ TDNFResolve(
                       &queueGoal,
                       &pSolvedPkgInfo);
     }
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFCheckProtectedPkgs(pSolvedPkgInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     pSolvedPkgInfo->nNeedAction =

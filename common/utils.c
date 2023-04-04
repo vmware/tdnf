@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2022 VMware, Inc. All Rights Reserved.
+ * Copyright (C) 2015-2023 VMware, Inc. All Rights Reserved.
  *
  * Licensed under the GNU Lesser General Public License v2.1 (the "License");
  * you may not use this file except in compliance with the License. The terms
@@ -36,6 +36,11 @@ TDNFFileReadAllText(
     }
     fseek(fp, 0, SEEK_END);
     nLength = ftell(fp);
+
+    if (nLength < 0) {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
 
     dwError = TDNFAllocateMemory(1, nLength + 1, (void **)&pszText);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -428,13 +433,24 @@ TDNFYesOrNo(
 
     if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
     {
-        pr_crit("%s", pszQuestion);
-        while ((opt = getchar()) == '\n' || opt == '\r');
-        opt = tolower(opt);
-        if (opt != 'y' && opt != 'n')
-        {
-            dwError = ERROR_TDNF_INVALID_INPUT;
-            BAIL_ON_TDNF_ERROR(dwError);
+        while(1) {
+            pr_crit("%s", pszQuestion);
+            char buf[256] = {0};
+            char *ret;
+
+            ret = fgets(buf, sizeof(buf)-1, stdin);
+            if (ret != buf || buf[0] == 0) {
+                /* should not happen */
+                dwError = ERROR_TDNF_INVALID_INPUT;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+            buf[strlen(buf)-1] = 0;
+            if (strcasecmp(buf, "yes") == 0 || strcasecmp(buf, "y") == 0 ||
+                    strcasecmp(buf, "n") == 0 || strcasecmp(buf, "no") == 0 ||
+                    buf[0] == 0) {
+                opt = tolower(buf[0]);
+                break;
+            }
         }
     }
 
@@ -785,9 +801,9 @@ TDNFJoinPath(char **ppszPath, ...)
         dwError = TDNFAllocateString(pszNode, &pszNodeCopy);
         BAIL_ON_TDNF_ERROR(dwError);
         pszNodeTmp = pszNodeCopy;
-	/* if the first node is an absolute path, the result should be absolute -
-	 * safe this by initializing with a '/' if absolute, otherwise with an empty string
-	 * before stripping all leading slashes */
+        /* if the first node is an absolute path, the result should be absolute -
+         * safe this by initializing with a '/' if absolute, otherwise with an empty string
+         * before stripping all leading slashes */
         if (i == 0)
         {
             if (*pszNodeTmp == '/')
@@ -801,10 +817,10 @@ TDNFJoinPath(char **ppszPath, ...)
             }
             BAIL_ON_TDNF_ERROR(dwError);
         }
-	/* now strip leading slashes */
+        /* now strip leading slashes */
         while(*pszNodeTmp == '/') pszNodeTmp++;
 
-	/* strip trailing slashes */
+        /* strip trailing slashes */
         nLengthTmp = strlen(pszNodeTmp);
         pszTmp = pszNodeTmp + nLengthTmp - 1;
         while(pszTmp >= pszNodeTmp && *pszTmp == '/')
@@ -818,7 +834,7 @@ TDNFJoinPath(char **ppszPath, ...)
         BAIL_ON_TDNF_ERROR(dwError);
 
         strcat(pszResult, pszNodeTmp);
-	/* put new slashes between nodes, except for the end */
+        /* put new slashes between nodes, except for the end */
         if (i != nCount-1)
         {
             strcat(pszResult, "/");
@@ -904,5 +920,38 @@ error:
     {
         *pnPathIsDir = 0;
     }
+    goto cleanup;
+}
+
+uint32_t
+TDNFDirName(
+    const char *pszPath,
+    char **ppszDirName
+)
+{
+    uint32_t dwError = 0;
+    char *pszDirName = NULL;
+    char *pszPathCopy = NULL;
+
+    if(!pszPath || IsNullOrEmptyString(pszPath) || !ppszDirName)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszPath, &pszPathCopy);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateString(dirname(pszPathCopy), &pszDirName);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszDirName = pszDirName;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszPathCopy);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszDirName);
     goto cleanup;
 }

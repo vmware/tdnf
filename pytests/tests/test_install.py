@@ -117,6 +117,16 @@ def test_install_missing_dep(utils):
     assert not utils.check_package(pkgname)
 
 
+# install an obsoleting package, expect the obsoleted package to be removed
+def test_install_obsoleting(utils):
+    utils.erase_package(PKGNAME_OBSING)
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED_VER])
+    assert utils.check_package(PKGNAME_OBSED)
+
+    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSING])
+    assert not utils.check_package(PKGNAME_OBSED)
+
+
 # install an obsoleted package, expect the obsoleting package to be installed
 # the obsoleting package must also provide the obsoleted one
 def test_install_obsoletes(utils):
@@ -132,7 +142,8 @@ def test_install_obsoleted_version(utils):
     utils.erase_package(PKGNAME_OBSED_VER)
     utils.erase_package(PKGNAME_OBSING)
 
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED_VER])
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSED_VER])
+    print(ret)
     assert utils.check_package(PKGNAME_OBSED)
 
 

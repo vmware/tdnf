@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019-2022 VMware, Inc. All Rights Reserved.
+# Copyright (C) 2019-2023 VMware, Inc. All Rights Reserved.
 #
 # Licensed under the GNU General Public License v2 (the "License");
 # you may not use this file except in compliance with the License. The terms
@@ -8,7 +8,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(tdnf VERSION 3.5.1 LANGUAGES C)
+project(tdnf VERSION 3.5.2 LANGUAGES C)
 set(VERSION ${PROJECT_VERSION})
 set(PROJECT_YEAR 2023)
 
