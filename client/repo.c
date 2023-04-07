@@ -99,6 +99,7 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    pool_addfileprovides(pPool);
     pool_createwhatprovides(pPool);
 
 cleanup:
@@ -194,8 +195,6 @@ TDNFInitCmdLineRepo(
     pRepo->appdata = pSolvRepoInfo;
 
     pTdnf->pSolvCmdLineRepo = pRepo;
-
-    pool_createwhatprovides(pPool);
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pSolvRepoInfo);
@@ -972,7 +971,9 @@ TDNFParseRepoMD(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pPool = pool_create();
+    dwError = SolvCreatePool(&pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pRepo = repo_create(pPool, "md_parse_temp");
 
     fp = fopen(pRepoMD->pszRepoMD, "r");
@@ -1147,7 +1148,9 @@ TDNFDownloadMetadata(
         pr_info("%s\n", pszRepoMDUrl);
     }
 
-    pPool = pool_create();
+    dwError = SolvCreatePool(&pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pSolvRepo = repo_create(pPool, "md_parse_temp");
 
     fp = fopen(pszRepoMDPath, "r");

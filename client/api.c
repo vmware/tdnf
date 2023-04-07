@@ -280,7 +280,9 @@ TDNFCheckLocalPackages(
 
     pr_info("Checking all packages from: %s\n", pszLocalPath);
 
-    pCmdLinePool = pool_create();
+    dwError = SolvCreatePool(&pCmdLinePool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pool_set_rootdir(pCmdLinePool, pTdnf->pArgs->pszInstallRoot);
 
     pCmdlineRepo = repo_create(pCmdLinePool, CMDLINE_REPO_NAME);
@@ -715,6 +717,9 @@ TDNFOpenHandle(
     dwError = TDNFInitCmdLineRepo(pTdnf, pSack);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    pool_addfileprovides(pSack->pPool);
+    pool_createwhatprovides(pSack->pPool);
+
     pTdnf->pSack = pSack;
     *ppTdnf = pTdnf;
 
@@ -853,6 +858,8 @@ TDNFAddCmdLinePackages(
         }
         queue_push(pQueueGoal, id);
     }
+
+    pool_addfileprovides(pSack->pPool);
     pool_createwhatprovides(pSack->pPool);
     repo_internalize(pTdnf->pSolvCmdLineRepo);
 

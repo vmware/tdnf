@@ -341,6 +341,9 @@ SolvFreeSack(
     PSolvSack);
 
 uint32_t
+SolvCreatePool(Pool **ppPool);
+
+uint32_t
 SolvInitSack(
     PSolvSack *ppSack,
     const char* pszCacheDir,
