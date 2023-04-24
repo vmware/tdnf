@@ -28,3 +28,8 @@ target_link_libraries(${TDNF_HISTORY_UTIL_BIN}
     ${SQLITE3_LIBRARIES}
     ${LIB_TDNF_HISTORY}
 )
+
+target_link_libraries(${LIB_TDNF_HISTORY}
+    ${RPM_LIBRARIES}
+    ${SQLITE3_LIBRARIES}
+)

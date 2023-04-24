@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
                     struct json_dump *jd = cnftree2json(cn_repo);
                     unlink_node(cn_repo); /* do not dump siblings */
                     if (jd) {
-                        printf(jd->buf);
+                        printf("%s", jd->buf);
                         jd_destroy(jd);
                     } else
                         fail(ERR_JSON, "failed to generate json\n");

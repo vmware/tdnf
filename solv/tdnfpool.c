@@ -64,6 +64,44 @@ SolvFreeSack(
 }
 
 uint32_t
+SolvCreatePool(Pool **ppPool)
+{
+    uint32_t dwError = 0;
+    Pool* pPool = NULL;
+
+    pPool = pool_create();
+
+    if(!ppPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    if(pPool == NULL)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    if (pool_setdisttype(pPool, DISTTYPE_RPM) < 0) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    *ppPool = pPool;
+
+cleanup:
+    return dwError;
+
+error:
+    if(pPool)
+    {
+        pool_free(pPool);
+    }
+    goto cleanup;
+}
+
+uint32_t
 SolvInitSack(
     PSolvSack *ppSack,
     const char* pszCacheDir,
@@ -91,12 +129,8 @@ SolvInitSack(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pPool = pool_create();
-    if(pPool == NULL)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
-    }
+    dwError = SolvCreatePool(&pPool);
+    BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if(pszRootDir != NULL)
     {

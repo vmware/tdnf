@@ -757,7 +757,6 @@ TDNFCreateRepo(
 uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
-    TDNF_REPOLISTFILTER nFilter,
     PTDNF_REPO_DATA* ppReposAll
     );
 

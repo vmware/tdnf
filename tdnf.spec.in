@@ -26,6 +26,7 @@ BuildRequires:  curl-devel
 BuildRequires:  libxml2-devel
 BuildRequires:  zlib-devel
 BuildRequires:  systemd
+BuildRequires:  systemd-rpm-macros
 
 #metalink plugin
 BuildRequires:  libxml2-devel
@@ -156,7 +157,6 @@ mkdir -p %{buildroot}/var/cache/%{name} %{buildroot}%{_unitdir}
 ln -sfv %{name} %{buildroot}%{_bindir}/tyum
 ln -sfv %{name} %{buildroot}%{_bindir}/yum
 ln -sfv %{name} %{buildroot}%{_bindir}/tdnfj
-
 pushd build/python
 python3 setup.py install --skip-build --prefix=%{_prefix} --root=%{buildroot}
 popd
