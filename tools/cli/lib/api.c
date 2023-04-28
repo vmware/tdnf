@@ -641,7 +641,7 @@ TDNFCliRepoSyncCommand(
     )
 {
     uint32_t dwError = 0;
-    PTDNF_REPOSYNC_ARGS pReposyncArgs;
+    PTDNF_REPOSYNC_ARGS pReposyncArgs = NULL;
 
     if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoSync)
     {
@@ -671,7 +671,7 @@ TDNFCliRepoQueryCommand(
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
-    PTDNF_REPOQUERY_ARGS pRepoqueryArgs;
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs = NULL;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PTDNF_PKG_INFO pPkgInfos = NULL;
     int nCount = 0, i, j, k;
