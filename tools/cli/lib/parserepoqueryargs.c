@@ -122,6 +122,18 @@ TDNFCliParseRepoQueryArgs(
         {
             pRepoqueryArgs->nList = 1;
         }
+        else if (strcasecmp(pSetOpt->pszOptName, "qf") == 0)
+        {
+            if (pSetOpt->pNext != NULL)
+            {
+                dwError = ERROR_TDNF_CLI_INVALID_MIXED_QUERY_QUERYFORMAT;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
+            dwError = TDNFAllocateString(pSetOpt->pszOptValue,
+                                         &pRepoqueryArgs->pszQueryFormat);
+            BAIL_ON_CLI_ERROR(dwError);
+        }
         else if (strcasecmp(pSetOpt->pszOptName, "source") == 0)
         {
             pRepoqueryArgs->nSource = 1;
@@ -136,15 +148,21 @@ TDNFCliParseRepoQueryArgs(
         }
         else
         {
-            REPOQUERY_DEP_KEY depKey;
+            int depKey;
 
-            for (depKey = 0; depKey < REPOQUERY_DEP_KEY_COUNT - 1; depKey++)
+            for (depKey = 0; depKey < REPOQUERY_DEP_KEY_COUNT; depKey++)
             {
                 if (strcasecmp(pSetOpt->pszOptName, depKeys[depKey]) == 0)
                 {
-                    if (pRepoqueryArgs->depKey == 0)
+                    if (!(pRepoqueryArgs->depKeySet & (1 << depKey)))
                     {
-                        pRepoqueryArgs->depKey = depKey + 1;
+                        if (pSetOpt->pNext != NULL)
+                        {
+                            dwError = ERROR_TDNF_CLI_INVALID_MIXED_QUERY_QUERYFORMAT;
+                            BAIL_ON_CLI_ERROR(dwError);
+                        }
+
+                        pRepoqueryArgs->depKeySet |= 1 << depKey;
                         break;
                     }
                     else
@@ -154,7 +172,7 @@ TDNFCliParseRepoQueryArgs(
                     }
                 }
             }
-            if (depKey == REPOQUERY_DEP_KEY_COUNT - 1) /* not found in loop above */
+            if (depKey == REPOQUERY_DEP_KEY_COUNT) /* not found in loop above */
             {
                 REPOQUERY_WHAT_KEY whatKey;
 
@@ -183,6 +201,7 @@ TDNFCliParseRepoQueryArgs(
     {
         dwError = TDNFAllocateString(pArgs->ppszCmds[1],
                                      &pRepoqueryArgs->pszSpec);
+        BAIL_ON_CLI_ERROR(dwError);
         BAIL_ON_CLI_ERROR(dwError);
     }
 

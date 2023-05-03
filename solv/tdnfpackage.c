@@ -2143,7 +2143,6 @@ SolvGetDependenciesFromId(
     else
     {
         Id _allDepKeyIds[] = {
-            ID_NULL,
             SOLVABLE_PROVIDES,
             SOLVABLE_OBSOLETES,
             SOLVABLE_CONFLICTS,

@@ -1397,7 +1397,9 @@ TDNFRepoQuery(
     PSolvQuery pQuery = NULL;
     PSolvPackageList pPkgList = NULL;
     int nDetail;
+    int depKey = 0;
     uint32_t dwCount = 0;
+    uint32_t dwPkgIndex = 0;
     TDNF_SCOPE nScope = SCOPE_ALL;
     struct history_ctx *pHistoryCtx = NULL;
 
@@ -1524,15 +1526,23 @@ TDNFRepoQuery(
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    /* handle query options */
+    if(pRepoqueryArgs->pszQueryFormat)
+    {
+        dwError = TDNFPopulatePkgInfoQueryFormat(pTdnf->pSack, pPkgList, &pPkgInfo, &dwCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        /* handle query options */
 
-    /* TDNFPopulatePkgInfoArray fills in details */
-    nDetail = pRepoqueryArgs->nChangeLogs ? DETAIL_CHANGELOG :
-              pRepoqueryArgs->nSource ? DETAIL_SOURCEPKG :
-              DETAIL_LIST;
-    dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, nDetail,
+        /* TDNFPopulatePkgInfoArray fills in details */
+        nDetail = pRepoqueryArgs->nChangeLogs ? DETAIL_CHANGELOG :
+                  pRepoqueryArgs->nSource ? DETAIL_SOURCEPKG :
+                  DETAIL_LIST;
+        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, nDetail,
                                        &pPkgInfo, &dwCount);
-    BAIL_ON_TDNF_ERROR(dwError);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     /* fill in file list or dependencies */
     if (pRepoqueryArgs->nList)
@@ -1543,14 +1553,29 @@ TDNFRepoQuery(
                 pPkgInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
-    else if (pRepoqueryArgs->depKey)
+    else
     {
-        dwError = TDNFPopulatePkgInfoArrayDependencies(
-                pTdnf->pSack,
-                pPkgList,
-                pRepoqueryArgs->depKey,
-                pPkgInfo);
-        BAIL_ON_TDNF_ERROR(dwError);
+        for (dwPkgIndex =0; dwPkgIndex < dwCount; dwPkgIndex++)
+        {
+            dwError = TDNFAllocateMemory(
+                    REPOQUERY_DEP_KEY_COUNT,
+                    sizeof(char **),
+                    (void **) &(&pPkgInfo[dwPkgIndex])->pppszDependencies);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        for (depKey = 0; depKey < REPOQUERY_DEP_KEY_COUNT; depKey++)
+        {
+            if ( pRepoqueryArgs->depKeySet & (1 << depKey))
+            {
+                dwError = TDNFPopulatePkgInfoArrayDependencies(
+                        pTdnf->pSack,
+                        pPkgList,
+                        depKey,
+                        pPkgInfo);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
     }
 
     *ppPkgInfo = pPkgInfo;

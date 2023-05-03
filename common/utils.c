@@ -234,6 +234,7 @@ TDNFFreePackageInfoContents(
     )
 {
     PTDNF_PKG_CHANGELOG_ENTRY pEntry, pEntryNext;
+    int depKey;
 
     if(pPkgInfo)
     {
@@ -249,7 +250,16 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
-        TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->ppszDependencies);
+
+        if(pPkgInfo->pppszDependencies)
+        {
+            for (depKey = 0; depKey < REPOQUERY_DEP_KEY_COUNT; depKey++)
+            {
+                TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->pppszDependencies[depKey]);
+            }
+            TDNFFreeMemory(pPkgInfo->pppszDependencies);
+        }
+
         TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->ppszFileList);
         for (pEntry = pPkgInfo->pChangeLogEntries;
              pEntry;
