@@ -1524,15 +1524,23 @@ TDNFRepoQuery(
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    /* handle query options */
+    if(pRepoqueryArgs->pszQueryFormat != NULL)
+    {
+        dwError = TDNFPopulatePkgInfoQueryFormat(pTdnf->pSack, pPkgList, &pPkgInfo, &dwCount);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        /* handle query options */
 
-    /* TDNFPopulatePkgInfoArray fills in details */
-    nDetail = pRepoqueryArgs->nChangeLogs ? DETAIL_CHANGELOG :
-              pRepoqueryArgs->nSource ? DETAIL_SOURCEPKG :
-              DETAIL_LIST;
-    dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, nDetail,
+        /* TDNFPopulatePkgInfoArray fills in details */
+        nDetail = pRepoqueryArgs->nChangeLogs ? DETAIL_CHANGELOG :
+                  pRepoqueryArgs->nSource ? DETAIL_SOURCEPKG :
+                  DETAIL_LIST;
+        dwError = TDNFPopulatePkgInfoArray(pTdnf->pSack, pPkgList, nDetail,
                                        &pPkgInfo, &dwCount);
-    BAIL_ON_TDNF_ERROR(dwError);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     /* fill in file list or dependencies */
     if (pRepoqueryArgs->nList)

@@ -83,6 +83,156 @@ error:
 }
 
 uint32_t
+TDNFPopulatePkgInfoQueryFormat(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t* pdwCount
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    uint32_t dwPkgIndex = 0;
+    Id dwPkgId = 0;
+    PTDNF_PKG_INFO pPkgInfos = NULL;
+    PTDNF_PKG_INFO pPkgInfo  = NULL;
+    char *pszSrcName = NULL;
+    char *pszSrcArch = NULL;
+    char *pszSrcEVR = NULL;
+
+    if(!ppPkgInfo || !pdwCount || !pSack || !pPkgList)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = SolvGetPackageListSize(pPkgList, &dwCount);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(dwCount == 0)
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  dwCount,
+                  sizeof(TDNF_PKG_INFO),
+                  (void**)&pPkgInfos);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (dwPkgIndex = 0; (uint32_t)dwPkgIndex < dwCount; dwPkgIndex++)
+    {
+        pPkgInfo = &pPkgInfos[dwPkgIndex];
+
+        dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetNevraFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->dwEpoch,
+                      &pPkgInfo->pszName,
+                      &pPkgInfo->pszVersion,
+                      &pPkgInfo->pszRelease,
+                      &pPkgInfo->pszArch,
+                      &pPkgInfo->pszEVR);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgRepoNameFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszRepoName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgInstallSizeFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->dwInstallSizeBytes);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgDownloadSizeFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->dwDownloadSizeBytes);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFUtilsFormatSize(
+                      pPkgInfo->dwInstallSizeBytes,
+                      &pPkgInfo->pszFormattedSize);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFUtilsFormatSize(
+                      pPkgInfo->dwDownloadSizeBytes,
+                      &pPkgInfo->pszFormattedDownloadSize);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgSummaryFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszSummary);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgUrlFromId(pSack, dwPkgId, &pPkgInfo->pszURL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgLicenseFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszLicense);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgDescriptionFromId(
+                      pSack,
+                      dwPkgId,
+                      &pPkgInfo->pszDescription);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetSourceFromId(
+                      pSack,
+                      dwPkgId,
+                      &pszSrcName,
+                      &pszSrcArch,
+                      &pszSrcEVR);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFAllocateStringPrintf(
+                      &pPkgInfo->pszSourcePkg,
+                      "%s-%s.%s",
+                      pszSrcName, pszSrcEVR, pszSrcArch);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if (dwPkgIndex < dwCount - 1)
+        {
+            pPkgInfo->pNext = &pPkgInfos[dwPkgIndex+1];
+        }
+    }
+
+    *pdwCount = dwCount;
+    *ppPkgInfo = pPkgInfos;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszSrcName);
+    TDNF_SAFE_FREE_MEMORY(pszSrcArch);
+    TDNF_SAFE_FREE_MEMORY(pszSrcEVR);
+    return dwError;
+
+error:
+    if(ppPkgInfo)
+    {
+        *ppPkgInfo = NULL;
+    }
+    if(pdwCount)
+    {
+        *pdwCount = 0;
+    }
+    if(pPkgInfos)
+    {
+        TDNFFreePackageInfoArray(pPkgInfos, dwCount);
+    }
+    goto cleanup;
+}
+
+uint32_t
 TDNFPopulatePkgInfoArray(
     PSolvSack pSack,
     PSolvPackageList pPkgList,

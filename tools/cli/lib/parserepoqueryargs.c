@@ -122,6 +122,12 @@ TDNFCliParseRepoQueryArgs(
         {
             pRepoqueryArgs->nList = 1;
         }
+        else if (strcasecmp(pSetOpt->pszOptName, "qf") == 0)
+        {
+            dwError = TDNFAllocateString(pSetOpt->pszOptValue,
+                                         &pRepoqueryArgs->pszQueryFormat);
+            BAIL_ON_CLI_ERROR(dwError);
+        }
         else if (strcasecmp(pSetOpt->pszOptName, "source") == 0)
         {
             pRepoqueryArgs->nSource = 1;
@@ -173,15 +179,20 @@ TDNFCliParseRepoQueryArgs(
         } /* if (strcasecmp(pSetOpt->pszOptName, ... */
     } /* for (pSetOpt ... */
 
-    if(pArgs->nCmdCount > 2)
+    if((pArgs->nCmdCount > 2 && pArgs->pszQueryFormat_dep == false) || (pArgs->nCmdCount > 4 && pArgs->pszQueryFormat_dep == true))
     {
         dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    if(pArgs->nCmdCount > 1)
+    if(pArgs->nCmdCount > 1 && pArgs->pszQueryFormat_dep == false)
     {
         dwError = TDNFAllocateString(pArgs->ppszCmds[1],
+                                     &pRepoqueryArgs->pszSpec);
+        BAIL_ON_CLI_ERROR(dwError);
+    } else if(pArgs->nCmdCount > 3 && pArgs->pszQueryFormat_dep == true)
+    {
+        dwError = TDNFAllocateString(pArgs->ppszCmds[3],
                                      &pRepoqueryArgs->pszSpec);
         BAIL_ON_CLI_ERROR(dwError);
     }

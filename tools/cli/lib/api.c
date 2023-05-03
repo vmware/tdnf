@@ -671,6 +671,322 @@ error:
     goto cleanup;
 }
 
+
+uint32_t
+TDNFQueryFormatDepCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    void *data
+    )
+{
+    uint32_t dwError = 0;
+    uint32_t dwCount = 0;
+    PTDNF_REPOQUERY_ARGS pRepoqueryArgs = NULL;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_PKG_INFO pPkgInfos = NULL;
+    int nCount = 0, p = 0, i, j, k;
+    int nSize = 0, nSepSize = 0;
+    char **ppszLines = NULL;
+    char *pszdependencies=NULL;
+    PTDNF_PKG_INFO ppPkgInfo = (PTDNF_PKG_INFO)data;
+
+    if(!pContext || !pContext->hTdnf || !pCmdArgs || !pContext->pFnRepoQuery)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = TDNFCliParseRepoQueryArgs(pCmdArgs, &pRepoqueryArgs);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = pContext->pFnRepoQuery(pContext, pRepoqueryArgs, &pPkgInfos, &dwCount);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    for (i = 0; i < (int)dwCount; i++)
+      {
+         pPkgInfo = &pPkgInfos[i];
+
+         if (pPkgInfo->ppszDependencies)
+         {
+             for (j = 0; pPkgInfo->ppszDependencies[j]; j++);
+             nCount += j;
+         }
+         else if (pPkgInfo->ppszFileList)
+         {
+             for (j = 0; pPkgInfo->ppszFileList[j]; j++);
+             nCount += j;
+         }
+      }
+      if (nCount > 0)
+      {
+          dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszLines);
+          BAIL_ON_CLI_ERROR(dwError);
+          for (k = 0, i = 0; i < (int)dwCount; i++)
+          {
+              pPkgInfo = &pPkgInfos[i];
+
+              if (pPkgInfo->ppszDependencies)
+              {
+                  for (j = 0; pPkgInfo->ppszDependencies[j]; j++)
+                  {
+                      ppszLines[k++] = pPkgInfo->ppszDependencies[j];
+                  }
+              }
+              else if (pPkgInfo->ppszFileList)
+              {
+                  for (j = 0; pPkgInfo->ppszFileList[j]; j++)
+                  {
+                      ppszLines[k++] = pPkgInfo->ppszFileList[j];
+                  }
+              }
+          }
+
+          dwError = TDNFStringArraySort(ppszLines);
+          BAIL_ON_CLI_ERROR(dwError);
+
+          nSepSize = strlen("\n");
+          nSize = nSepSize * (nCount + 1);
+          for(i = 0; ppszLines[i]; i++)
+          {
+              if(i == 0 || strcmp(ppszLines[i], ppszLines[i-1]))
+                nSize += strlen(ppszLines[i]);
+          }
+          nSize++;
+
+          dwError = TDNFAllocateMemory(nSize, sizeof(char), (void**)&pszdependencies);
+          BAIL_ON_CLI_ERROR(dwError);
+
+          dwError = TDNFAllocateMemory(1, sizeof(char *), (void**)&ppPkgInfo->ppszDependencies);
+          BAIL_ON_CLI_ERROR(dwError);
+
+          for (j = 0; ppszLines[j]; j++)
+          {
+              if (j == 0)
+              {
+                   strcpy(&pszdependencies[p], ppszLines[j]);
+                   p += strlen(ppszLines[j]);
+              } else if (strcmp(ppszLines[j], ppszLines[j-1]))
+              {
+                   strcpy(&pszdependencies[p], "\n");
+                   p += nSepSize;
+                   strcpy(&pszdependencies[p], ppszLines[j]);
+                   p += strlen(ppszLines[j]);
+              }
+          }
+
+          dwError = TDNFAllocateString(pszdependencies, &ppPkgInfo->ppszDependencies[0]);
+          BAIL_ON_CLI_ERROR(dwError);
+    } else {
+          dwError = TDNFAllocateMemory(1, sizeof(char *), (void**)&ppPkgInfo->ppszDependencies);
+          BAIL_ON_CLI_ERROR(dwError);
+          ppPkgInfo->ppszDependencies[0] = strdup("(null)");
+    }
+
+cleanup:
+    if(pPkgInfos)
+    {
+        TDNFFreePackageInfoArray(pPkgInfos, dwCount);
+    }
+    TDNF_CLI_SAFE_FREE_MEMORY(ppszLines);
+    TDNF_CLI_SAFE_FREE_MEMORY(pszdependencies);
+    TDNFCliFreeRepoQueryArgs(pRepoqueryArgs);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t find_dependencies(PTDNF_CLI_CONTEXT pContext, int nquery_arg, char **query_argv, void *data, const int tdwCount, const int pdwCount, PTDNF_CMD_ARGS* ppCmdArgs)
+{
+    uint32_t dwError = 0;
+    PTDNF_CMD_ARGS pCmdArgs = NULL;
+
+    if(pdwCount == 0)
+    {
+       dwError = TDNFCliParseArgs(nquery_arg, query_argv, &pCmdArgs);
+       BAIL_ON_CLI_ERROR(dwError);
+       *ppCmdArgs=pCmdArgs;
+    } else {
+       pCmdArgs=*ppCmdArgs;
+    }
+
+    if(pCmdArgs->nCmdCount > 0)
+    {
+       if (pCmdArgs->pszQueryFormat_dep == false)
+           pCmdArgs->pszQueryFormat_dep = true;
+
+       dwError = TDNFQueryFormatDepCommand(pContext, pCmdArgs, data);
+       BAIL_ON_CLI_ERROR(dwError);
+    }
+
+cleanup:
+    pCmdArgs->pszQueryFormat_dep = false;
+    if((pCmdArgs && (tdwCount == (pdwCount+1))) || (dwError != 0))
+    {
+        ppCmdArgs=NULL;
+        TDNFFreeCmdArgs(pCmdArgs);
+    }
+    return dwError;
+
+error:
+    if (dwError == ERROR_TDNF_CLI_NOTHING_TO_DO ||
+        dwError == ERROR_TDNF_NO_DATA)
+    {
+        // Nothing to do should not return an error code
+        dwError = 0;
+    }
+
+    goto cleanup;
+}
+
+uint32_t tag_handler(PTDNF_CLI_CONTEXT pContext, const char *tag, char **pszRet, void *data, const int tdwCount, const int pdwCount, PTDNF_CMD_ARGS* ppCmdArgs)
+{
+    PTDNF_PKG_INFO pPkgInfo = (PTDNF_PKG_INFO)data;
+    char *pszVal = NULL;
+    uint32_t dwError = 0;
+    int nquery_arg;
+
+    if (strcmp(tag, "name") == 0) {
+        pszVal = pPkgInfo->pszName;
+    } else if (strcmp(tag, "arch") == 0) {
+        pszVal = pPkgInfo->pszArch;
+    } else if (strcmp(tag, "version") == 0) {
+        pszVal = pPkgInfo->pszVersion;
+    } else if (strcmp(tag, "reponame") == 0) {
+        pszVal = pPkgInfo->pszRepoName;
+    } else if (strcmp(tag, "release") == 0) {
+        pszVal = pPkgInfo->pszRelease;
+    } else if (strcmp(tag, "evr") == 0) {
+        pszVal = pPkgInfo->pszEVR;
+    } else if (strcmp(tag, "sourcename") == 0) {
+        pszVal = pPkgInfo->pszSourcePkg;
+    } else if (strcmp(tag, "size") == 0) {
+        pszVal = pPkgInfo->pszFormattedDownloadSize;
+    } else if (strcmp(tag, "downloadsize") == 0) {
+        pszVal = pPkgInfo->pszFormattedDownloadSize;
+    } else if (strcmp(tag, "installsize") == 0) {
+        pszVal = pPkgInfo->pszFormattedSize;
+    } else if (strcmp(tag, "sourcerpm") == 0) {
+        pszVal = pPkgInfo->pszSourcePkg;
+    } else if (strcmp(tag, "description") == 0) {
+        pszVal = pPkgInfo->pszDescription;
+    } else if (strcmp(tag, "summary") == 0) {
+        pszVal = pPkgInfo->pszSummary;
+    } else if (strcmp(tag, "license") == 0) {
+        pszVal = pPkgInfo->pszLicense;
+    } else if (strcmp(tag, "url") == 0) {
+        pszVal = pPkgInfo->pszURL;
+    } else if (strcmp(tag, "requires") == 0) {
+        nquery_arg = 8;
+        char *query_argv[] = {"", "", "", "", "", "repoquery", "--requires", pPkgInfo->pszName};
+        dwError = find_dependencies(pContext, nquery_arg, query_argv, data, tdwCount, pdwCount, ppCmdArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+        pszVal = pPkgInfo->ppszDependencies[0];
+    } else if (strcmp(tag, "provides") == 0) {
+        nquery_arg = 8;
+        char *query_argv[] = {"", "", "", "", "", "repoquery", "--provides", pPkgInfo->pszName};
+        dwError = find_dependencies(pContext, nquery_arg, query_argv, data, tdwCount, pdwCount, ppCmdArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+        pszVal = pPkgInfo->ppszDependencies[0];
+    } else if (strcmp(tag, "conflicts") == 0) {
+        nquery_arg = 8;
+        char *query_argv[] = {"", "", "", "", "", "repoquery", "--conflicts", pPkgInfo->pszName};
+        dwError = find_dependencies(pContext, nquery_arg, query_argv, data, tdwCount, pdwCount, ppCmdArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+        pszVal = pPkgInfo->ppszDependencies[0];
+    } else if (strcmp(tag, "obsoletes") == 0) {
+        nquery_arg = 8;
+        char *query_argv[] = {"", "", "", "", "", "repoquery", "--obsoletes", pPkgInfo->pszName};
+        dwError = find_dependencies(pContext, nquery_arg, query_argv, data, tdwCount, pdwCount, ppCmdArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+        pszVal = pPkgInfo->ppszDependencies[0];
+    } else {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (pszVal) {
+        *pszRet = strdup(pszVal);
+    } else {
+        *pszRet = strdup("(null)");
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/* similar semantics as snprintf() */
+uint32_t format_string(PTDNF_CLI_CONTEXT pContext, char **out, size_t *len, const char *format,
+                  uint32_t (*tag_handler)(PTDNF_CLI_CONTEXT, const char *, char **, void *, const int, const int, PTDNF_CMD_ARGS *), void *data, const int tdwCount, const int pdwCount, PTDNF_CMD_ARGS* ppCmdArgs)
+{
+    const char *p;
+    char *q;
+    int l = 0;
+    int nLength = 0;
+    uint32_t dwError = 0;
+
+    p = format;
+    q = *out;
+    while (*p) {
+        if (*p == '%' && p[1] == '{') {
+            const char *t = &p[2];
+            char *tag, *value;
+            size_t tag_len;
+
+            while(*t && *t != '}') t++;
+
+            if (!*t)
+                return -1;
+            tag_len = t - &p[2];
+            tag = (char *)malloc(tag_len+1);
+            strncpy(tag, &p[2], tag_len);
+            tag[tag_len] = 0;
+            value = NULL;
+ 
+            dwError = tag_handler(pContext, tag, &value, data, tdwCount, pdwCount, ppCmdArgs);
+            if (dwError == ERROR_TDNF_INVALID_PARAMETER) {
+                pr_err("Package doesn't have attribute %s\n", tag);
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            if (strlen(value) > (*len - strlen(*out))) {
+                nLength = strlen(*out) + strlen(value) + 2;
+                dwError = TDNFReAllocateMemory(nLength, (void **)out);
+                BAIL_ON_TDNF_ERROR(dwError);
+                *len = nLength;
+                q = *out;
+                q = q + l;
+            }
+
+            if (value) {
+                t = value;
+                while(*t) {
+                    *q = *t++; l++;
+                    if (q < *out + *len-1) {
+                        q++; *q = 0;
+                    }
+                }
+                *q = 0;
+                free(value);
+            }
+            p += tag_len + 3;
+
+        } else {
+            *q = *p++; l++;
+            if (q < *out + *len-1) {
+                q++; *q = 0;
+            }
+        }
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFCliRepoQueryCommand(
     PTDNF_CLI_CONTEXT pContext,
@@ -682,6 +998,7 @@ TDNFCliRepoQueryCommand(
     PTDNF_REPOQUERY_ARGS pRepoqueryArgs = NULL;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     PTDNF_PKG_INFO pPkgInfos = NULL;
+    char *pszResult;
     int nCount = 0, i, j, k;
     char **ppszLines = NULL;
     struct json_dump *jd = NULL;
@@ -802,6 +1119,24 @@ TDNFCliRepoQueryCommand(
         pr_json(jd->buf);
         JD_SAFE_DESTROY(jd);
     }
+    else if (pRepoqueryArgs->pszQueryFormat)
+    {
+        PTDNF_CMD_ARGS pCmdArgs = NULL;
+        for (i = 0; i < (int)dwCount; i++)
+        {
+            pPkgInfo = &pPkgInfos[i];
+            size_t size = strlen(pRepoqueryArgs->pszQueryFormat) * 2;
+
+            dwError = TDNFAllocateMemory(size, sizeof(char), (void **)&pszResult);
+            BAIL_ON_CLI_ERROR(dwError);
+
+            dwError = format_string(pContext, &pszResult, &size, pRepoqueryArgs->pszQueryFormat, tag_handler, (void *)pPkgInfo, dwCount, i, &pCmdArgs);
+            BAIL_ON_CLI_ERROR(dwError);
+            pr_crit("%s\n", pszResult);
+
+            TDNF_CLI_SAFE_FREE_MEMORY(pszResult);
+        }
+    }
     else
     {
         for (i = 0; i < (int)dwCount; i++)
@@ -895,6 +1230,7 @@ cleanup:
         TDNFFreePackageInfoArray(pPkgInfos, dwCount);
     }
     TDNF_CLI_SAFE_FREE_MEMORY(ppszLines);
+    TDNF_CLI_SAFE_FREE_MEMORY(pszResult);
     TDNFCliFreeRepoQueryArgs(pRepoqueryArgs);
     return dwError;
 

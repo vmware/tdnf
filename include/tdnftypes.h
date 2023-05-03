@@ -242,6 +242,7 @@ typedef struct _TDNF_CMD_ARGS
     PTDNF_CMD_OPT pSetOpt;
 
     int nArgc;
+    bool pszQueryFormat_dep;
     char **ppszArgv;
 }TDNF_CMD_ARGS, *PTDNF_CMD_ARGS;
 
@@ -408,6 +409,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int nChangeLogs;
     REPOQUERY_DEP_KEY depKey; /* list dependencies of this type, 0 => unset */
     int nList;                /* list files of packages(s) */
+    char *pszQueryFormat;
     int nSource;              /* show source packages */
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 
