@@ -870,8 +870,7 @@ uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    const char* pszPackageLocation,
-    const char* pszPkgName,
+    PTDNF_PKG_INFO pInfo,
     PTDNF_REPO_DATA pRepo,
     int nUpgrade
     );
