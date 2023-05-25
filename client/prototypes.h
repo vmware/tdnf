@@ -298,6 +298,14 @@ TDNFPkgInfoFilterNewest(
 );
 
 uint32_t
+TDNFPopulatePkgInfoQueryFormat(
+    PSolvSack pSack,
+    PSolvPackageList pPkgList,
+    PTDNF_PKG_INFO* ppPkgInfo,
+    uint32_t* pdwCount
+    );
+
+uint32_t
 TDNFPopulatePkgInfoArray(
     PSolvSack pSack,
     PSolvPackageList pPkgList,

@@ -109,6 +109,7 @@ static struct option pstOptions[] =
     {"list",          no_argument, 0, 0},
     {"obsoletes",     no_argument, 0, 0},
     {"provides",      no_argument, 0, 0},
+    {"qf",            required_argument, 0, 0},
     {"recommends",    no_argument, 0, 0},
     {"requires",      no_argument, 0, 0},
     {"requires-pre",  no_argument, 0, 0},

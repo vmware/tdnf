@@ -166,7 +166,7 @@ typedef struct _TDNF_PKG_INFO
     char* pszFormattedDownloadSize;
     char* pszRelease;
     char* pszLocation;
-    char **ppszDependencies;
+    char ***pppszDependencies;
     char **ppszFileList;
     char *pszSourcePkg;
     PTDNF_PKG_CHANGELOG_ENTRY pChangeLogEntries;
@@ -373,8 +373,7 @@ typedef enum {
 } REPOQUERY_WHAT_KEY;
 
 typedef enum {
-    REPOQUERY_DEP_KEY_NONE = 0,
-    REPOQUERY_DEP_KEY_PROVIDES,
+    REPOQUERY_DEP_KEY_PROVIDES = 0,
     REPOQUERY_DEP_KEY_OBSOLETES,
     REPOQUERY_DEP_KEY_CONFLICTS,
     REPOQUERY_DEP_KEY_REQUIRES,
@@ -406,8 +405,9 @@ typedef struct _TDNF_REPOQUERY_ARGS
 
     /* query options */
     int nChangeLogs;
-    REPOQUERY_DEP_KEY depKey; /* list dependencies of this type, 0 => unset */
+    unsigned int depKeySet;               /* list dependencies of this type, 0 => unset */
     int nList;                /* list files of packages(s) */
+    char *pszQueryFormat;
     int nSource;              /* show source packages */
 }TDNF_REPOQUERY_ARGS, *PTDNF_REPOQUERY_ARGS;
 

@@ -82,6 +82,13 @@ TDNFJoinArrayToString(
 );
 
 uint32_t
+TDNFJoinArrayToStringSorted(
+    char **ppszDependencies,
+    char *pszSep,
+    char **ppszResult
+);
+
+uint32_t
 TDNFAllocateStringPrintf(
     char** ppszDst,
     const char* pszFmt,

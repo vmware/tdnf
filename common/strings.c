@@ -226,6 +226,84 @@ error:
 }
 
 uint32_t
+TDNFJoinArrayToStringSorted(
+    char **ppszDependencies,
+    char *pszSep,
+    char **ppszResult
+)
+{
+    int nCount = 0, p = 0, k, i;
+    char **ppszLines = NULL;
+    uint32_t dwError = 0;
+    int nSepSize = 0, nSize = 0;
+    char *pszResult = NULL;
+
+    if (ppszDependencies)
+    {
+        for (i = 0; ppszDependencies[i]; i++);
+        nCount += i;
+    }
+
+    if (nCount > 0)
+    {
+        dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszLines);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (ppszDependencies)
+        {
+            k = 0;
+            for (i = 0; ppszDependencies[i]; i++)
+            {
+                ppszLines[k++] = ppszDependencies[i];
+            }
+        }
+        dwError = TDNFStringArraySort(ppszLines);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        nSepSize = strlen(pszSep);
+        nSize = nSepSize * (nCount + 1);
+
+        for(i = 0; ppszLines[i]; i++)
+        {
+            if(i == 0 || strcmp(ppszLines[i], ppszLines[i-1]))
+              nSize += strlen(ppszLines[i]);
+        }
+        nSize++;
+
+        dwError = TDNFAllocateMemory(nSize, sizeof(char), (void**)&pszResult);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        for (i = 0; ppszLines[i]; i++)
+        {
+            if (i == 0)
+            {
+                 strcpy(&pszResult[p], ppszLines[i]);
+                 p += strlen(ppszLines[i]);
+            } else if (strcmp(ppszLines[i], ppszLines[i-1]))
+            {
+                 strcpy(&pszResult[p], pszSep);
+                 p += nSepSize;
+                 strcpy(&pszResult[p], ppszLines[i]);
+                 p += strlen(ppszLines[i]);
+            }
+        }
+    }
+
+    if (pszResult) {
+        *ppszResult = strdup(pszResult);
+    } else {
+        *ppszResult = strdup("");
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(ppszLines);
+    TDNF_SAFE_FREE_MEMORY(pszResult);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFAllocateStringPrintf(
     char** ppszDst,
     const char* pszFmt,

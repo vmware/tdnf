@@ -241,3 +241,72 @@ def test_arch(utils):
     ret = utils.run(['tdnf', 'repoquery', '--arch', 'noarch'])
     assert 'noarch' in "\n".join(ret['stdout'])
     assert ARCH not in "\n".join(ret['stdout'])
+
+
+# Repoquery should list output for all the querys in the correct format
+def test_queryformat(utils):
+    querytags = ['name', 'arch', 'version', 'reponame', 'release',
+                 'evr', 'sourcename', 'size', 'downloadsize', 'installsize',
+                 'sourcerpm', 'description', 'summary', 'license', 'url',
+                 'conflicts', 'enhances', 'obsoletes', 'provides',
+                 'recommends', 'requires', 'suggests', 'supplements']
+
+    for tag in querytags:
+        ret = utils.run(['tdnf',
+                         'repoquery',
+                         '--qf',
+                         f"%{{{tag}}}",
+                         'tdnf-repoquery-queryformat'
+                         ])
+        assert ret['retval'] == 0
+
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--qf',
+                     '%{name} : %{requires}',
+                     'tdnf-repoquery-queryformat'
+                     ])
+    assert ret['retval'] == 0
+    assert 'tdnf-repoquery-queryformat' in '\n'.join(ret['stdout'])
+    assert 'tdnf-test-cleanreq1-required' in '\n'.join(ret['stdout'])
+
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--qf',
+                     '%{provides}\t%{conflicts}',
+                     'tdnf-repoquery-queryformat'
+                     ])
+    assert ret['retval'] == 0
+    assert 'tdnf-repoquery-queryformat' in '\n'.join(ret['stdout'])
+    assert 'tdnf-test-conflicts-0' in '\n'.join(ret['stdout'])
+
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--qf',
+                     '%{obsoletes}\n%{version}',
+                     'tdnf-repoquery-queryformat'
+                     ])
+    assert ret['retval'] == 0
+    assert 'tdnf-test-obsoleted' in '\n'.join(ret['stdout'])
+    assert '1.0.1' in '\n'.join(ret['stdout'])
+
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--qf',
+                     '%{arch}',
+                     'tdnf-test-noarch'
+                     ])
+    assert ret['retval'] == 0
+    assert 'noarch' in '\n'.join(ret['stdout'])
+
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--qf',
+                     'Requires:\n%{requires}\nConficts:\n%{conflicts}\n',
+                     'tdnf-repoquery-queryformat'
+                     ])
+    assert ret['retval'] == 0
+    assert 'Requires:' in '\n'.join(ret['stdout'])
+    assert 'tdnf-test-cleanreq1-required' in '\n'.join(ret['stdout'])
+    assert 'Conficts:' in '\n'.join(ret['stdout'])
+    assert 'tdnf-test-conflicts-0' in '\n'.join(ret['stdout'])
