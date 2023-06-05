@@ -24,8 +24,7 @@
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pSolvedInfo,
-    TDNF_ALTERTYPE nAlterType
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo
     )
 {
     uint32_t dwError = 0;
@@ -54,10 +53,6 @@ TDNFRpmExecTransaction(
 
     //Allow downgrades
     ts.nProbFilterFlags = RPMPROB_FILTER_OLDPACKAGE;
-    if(nAlterType == ALTER_REINSTALL)
-    {
-        ts.nProbFilterFlags = ts.nProbFilterFlags | RPMPROB_FILTER_REPLACEPKG;
-    }
 
     ts.pTS = rpmtsCreate();
     if(!ts.pTS)
@@ -123,35 +118,9 @@ error:
     goto cleanup;
 }
 
-uint32_t
-TDNFTransAddErasePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo)
-{
-    uint32_t dwError = 0;
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    while(pInfo)
-    {
-        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
-        pInfo = pInfo->pNext;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
+#define INSTALL_INSTALL 0
+#define INSTALL_UPGRADE 1
+#define INSTALL_REINSTALL 2
 
 uint32_t
 TDNFPopulateTransaction(
@@ -166,23 +135,26 @@ TDNFPopulateTransaction(
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToInstall);
+                      pSolvedInfo->pPkgsToInstall,
+                      INSTALL_INSTALL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToReinstall)
     {
-        dwError = TDNFTransAddUpgradePkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToReinstall);
+                      pSolvedInfo->pPkgsToReinstall,
+                      INSTALL_REINSTALL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToUpgrade)
     {
-        dwError = TDNFTransAddUpgradePkgs(
+        dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToUpgrade);
+                      pSolvedInfo->pPkgsToUpgrade,
+                      INSTALL_UPGRADE);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToRemove)
@@ -194,7 +166,7 @@ TDNFPopulateTransaction(
     }
     if(pSolvedInfo->pPkgsObsoleted)
     {
-        dwError = TDNFTransAddObsoletedPkgs(
+        dwError = TDNFTransAddErasePkgs(
                       pTS,
                       pSolvedInfo->pPkgsObsoleted);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -204,7 +176,8 @@ TDNFPopulateTransaction(
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToDowngrade);
+                      pSolvedInfo->pPkgsToDowngrade,
+                      INSTALL_INSTALL);
         BAIL_ON_TDNF_ERROR(dwError);
         if(pSolvedInfo->pPkgsRemovedByDowngrade)
         {
@@ -537,7 +510,8 @@ uint32_t
 TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNF_PKG_INFO pInfo,
+    int nInstallFlag
     )
 {
     uint32_t dwError = 0;
@@ -553,7 +527,7 @@ TDNFTransAddInstallPkgs(
                       pTdnf,
                       pInfo->pszLocation,
                       pInfo->pszName,
-                      pInfo->pszRepoName, 0);
+                      pInfo->pszRepoName, nInstallFlag);
         pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -576,7 +550,7 @@ TDNFTransAddReInstallPkgs(
     PTDNF_PKG_INFO pInfo
     )
 {
-    return TDNFTransAddInstallPkgs(pTS, pTdnf, pInfo);
+    return TDNFTransAddInstallPkgs(pTS, pTdnf, pInfo, INSTALL_REINSTALL);
 }
 
 uint32_t
@@ -586,7 +560,7 @@ TDNFTransAddInstallPkg(
     const char* pszPackageLocation,
     const char* pszPkgName,
     const char* pszRepoName,
-    int nUpgrade
+    int nInstallFlag
     )
 {
     uint32_t dwError = 0;
@@ -672,12 +646,19 @@ TDNFTransAddInstallPkg(
         rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
     }
 
-    dwError = rpmtsAddInstallElement(
+    if (nInstallFlag == INSTALL_REINSTALL){
+        dwError = rpmtsAddReinstallElement(
+                  pTS->pTS,
+                  rpmHeader,
+                  (fnpyKey)pszFilePath);
+    } else {
+        dwError = rpmtsAddInstallElement(
                   pTS->pTS,
                   rpmHeader,
                   (fnpyKey)pszFilePath,
-                  nUpgrade,
+                  nInstallFlag == INSTALL_UPGRADE,
                   NULL);
+    }
     BAIL_ON_TDNF_RPM_ERROR(dwError);
 
     /* add to cached array only when file is actually in cache dir */
@@ -714,60 +695,22 @@ error:
 }
 
 uint32_t
-TDNFTransAddUpgradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo)
-{
-    uint32_t dwError = 0;
-    if(!pInfo)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    while(pInfo)
-    {
-        dwError = TDNFTransAddInstallPkg(
-                      pTS,
-                      pTdnf,
-                      pInfo->pszLocation,
-                      pInfo->pszName,
-                      pInfo->pszRepoName,
-                      1);
-        pInfo = pInfo->pNext;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    return dwError;
-
-error:
-    if(dwError == ERROR_TDNF_NO_DATA)
-    {
-        dwError = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
-TDNFTransAddObsoletedPkgs(
+TDNFTransAddErasePkgs(
     PTDNFRPMTS pTS,
     PTDNF_PKG_INFO pInfo
     )
 {
     uint32_t dwError = 0;
-
     if(!pInfo)
     {
         dwError = ERROR_TDNF_NO_DATA;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
     while(pInfo)
     {
         dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
-        pInfo = pInfo->pNext;
         BAIL_ON_TDNF_ERROR(dwError);
+        pInfo = pInfo->pNext;
     }
 
 cleanup:

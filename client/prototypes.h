@@ -813,8 +813,7 @@ TDNFAddNotResolved(
 uint32_t
 TDNFRpmExecTransaction(
     PTDNF pTdnf,
-    PTDNF_SOLVED_PKG_INFO pInfo,
-    TDNF_ALTERTYPE nAlterType
+    PTDNF_SOLVED_PKG_INFO pInfo
     );
 
 void*
@@ -841,12 +840,6 @@ TDNFTransAddErasePkgs(
     );
 
 uint32_t
-TDNFTransAddObsoletedPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF_PKG_INFO pInfo
-    );
-
-uint32_t
 TDNFTransAddErasePkg(
     PTDNFRPMTS pTS,
     const char* pszPkgName
@@ -856,14 +849,8 @@ uint32_t
 TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
-    );
-
-uint32_t
-TDNFTransAddReInstallPkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
+    PTDNF_PKG_INFO pInfo,
+    int nUpgrade
     );
 
 uint32_t
@@ -874,13 +861,6 @@ TDNFTransAddInstallPkg(
     const char* pszPkgName,
     const char* pszRepoName,
     int nUpgrade
-    );
-
-uint32_t
-TDNFTransAddUpgradePkgs(
-    PTDNFRPMTS pTS,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO pInfo
     );
 
 uint32_t

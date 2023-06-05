@@ -164,6 +164,8 @@ TDNFAlterCommand(
     PTDNF_SOLVED_PKG_INFO pSolvedInfo
     )
 {
+    UNUSED(nAlterType);
+
     uint32_t dwError = 0;
     if(!pTdnf || !pSolvedInfo)
     {
@@ -171,7 +173,7 @@ TDNFAlterCommand(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo, nAlterType);
+    dwError = TDNFRpmExecTransaction(pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
