@@ -31,6 +31,7 @@ def teardown_test(utils):
 
     utils.erase_package('tdnf-test-cleanreq-required')
     utils.erase_package('tdnf-test-cleanreq-leaf1')
+    utils.erase_package(utils.config["mulversion_pkgname"])
 
 
 # helper to create directory tree without complains when it exists:
@@ -109,3 +110,26 @@ def test_protected_obsoleted(utils):
     ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', PKGNAME_OBSING])
     assert ret['retval'] == 1030
     assert utils.check_package(PKGNAME_OBSED)
+
+
+def test_protected_history_rollback_update(utils):
+    mpkg = utils.config["mulversion_pkgname"]
+    mpkg_version = utils.config["mulversion_lower"]
+
+    # install lower version
+    utils.install_package(mpkg, mpkg_version)
+
+    # protect it
+    set_protected_file(utils, mpkg)
+
+    # save the history id to roll back to
+    ret = utils.run(['tdnf', 'history'])
+    baseline = ret['stdout'][-1].split()[0]
+
+    # perform an upgrade
+    ret = utils.run(['tdnf', 'update', '-y', '--nogpgcheck', mpkg])
+    assert ret['retval'] == 0
+
+    # we should be able to roll it back
+    ret = utils.run(['tdnf', 'history', '-y', 'rollback', '--to', baseline])
+    assert ret['retval'] == 0
