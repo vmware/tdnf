@@ -2117,6 +2117,9 @@ TDNFHistoryResolve(
         char *pszPkgName = history_get_nevra(hnm, hd->added_ids[i]);
         if (pszPkgName)
         {
+            if (strncmp(pszPkgName, "gpg-pubkey-", 11) == 0)
+                continue;
+
             Queue qResult = {0};
             queue_init(&qResult);
 
@@ -2163,6 +2166,9 @@ TDNFHistoryResolve(
         char *pszPkgName = history_get_nevra(hnm, hd->removed_ids[i]);
         if (pszPkgName)
         {
+            if (strncmp(pszPkgName, "gpg-pubkey-", 11) == 0)
+                continue;
+
             dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool, pszPkgName, &qErase, SOLV_NEVRA_INSTALLED);
             BAIL_ON_TDNF_ERROR(dwError);
         }
