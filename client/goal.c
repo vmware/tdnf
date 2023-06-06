@@ -1090,9 +1090,26 @@ TDNFSolvAddProtectPkgs(
                     break;
             }
             if (i < qPkgs.count) {
-                pr_err("package %s is protected\n", ppszProtectedPkgs[i]);
-                dwError = ERROR_TDNF_PROTECTED;
-                BAIL_ON_TDNF_ERROR(dwError);
+                const char *pszPkgName = ppszProtectedPkgs[i];
+                /* if this is a history transaction,
+                   we may add it again (with another version) */
+                for (i = 0; i < pQueueJobs->count; i += 2) {
+                    if (i == j)
+                        continue;
+                    Id how = pQueueJobs->elements[i];
+                    if (((how & SOLVER_JOBMASK) == SOLVER_INSTALL) && (how & SOLVER_SOLVABLE)) {
+                        Id what_add = pQueueJobs->elements[i+1];
+                        Solvable *s_add = pool_id2solvable(pPool, what_add);
+                        if (s_add->name == s->name) {
+                            break;
+                        }
+                    }
+                }
+                if (i == pQueueJobs->count) { /* not found in re-adds */
+                    pr_err("package %s is protected\n", pszPkgName);
+                    dwError = ERROR_TDNF_PROTECTED;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
             }
         }
     }
