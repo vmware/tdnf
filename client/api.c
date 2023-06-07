@@ -2103,7 +2103,7 @@ TDNFHistoryResolve(
             goto cleanup;
         case HISTORY_CMD_ROLLBACK:
             hd = history_get_delta(ctx, pHistoryArgs->nTo);
-            hfd = history_get_flags_delta(ctx, ctx->trans_id, pHistoryArgs->nTo - 1);
+            hfd = history_get_flags_delta(ctx, ctx->trans_id, pHistoryArgs->nTo);
             break;
         case HISTORY_CMD_UNDO:
             hd = history_get_delta_range(ctx, pHistoryArgs->nFrom - 1, pHistoryArgs->nTo);
