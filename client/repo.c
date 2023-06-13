@@ -57,6 +57,14 @@ TDNFInitRepo(
                   NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    if (pRepoData->nHasMetaData) {
+        dwError = TDNFGetRepoMD(pTdnf,
+                                pRepoData,
+                                pszRepoDataDir,
+                                &pRepoMD);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFAllocateMemory(
                   1,
                   sizeof(SOLV_REPO_INFO_INTERNAL),
@@ -74,12 +82,6 @@ TDNFInitRepo(
     pRepo->appdata = pSolvRepoInfo;
 
     if (pRepoData->nHasMetaData) {
-        dwError = TDNFGetRepoMD(pTdnf,
-                                pRepoData,
-                                pszRepoDataDir,
-                                &pRepoMD);
-        BAIL_ON_TDNF_ERROR(dwError);
-
         dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
         BAIL_ON_TDNF_ERROR(dwError);
         pSolvRepoInfo->nCookieSet = 1;

@@ -7,6 +7,7 @@
 #
 
 import pytest
+import os
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -228,7 +229,7 @@ def test_history_mark(utils):
 
 # redo may pull additional deps if they were already installed
 # when the transaction was made, but were removed later. They
-# should to be pulled in and marked autoinstalled
+# should be pulled in and marked autoinstalled
 def test_history_redo_and_autoinstall(utils):
     pkgname = 'tdnf-test-cleanreq-leaf1'
     pkgname_req = 'tdnf-test-cleanreq-required'
@@ -254,4 +255,34 @@ def test_history_memcheck(utils):
     assert ret['retval'] == 0
 
     ret = utils.run_memcheck(['tdnf', 'history', '--info'])
+    assert ret['retval'] == 0
+
+
+# ignore gpg-pubkey packages since we cannot revert a removal
+def test_history_pubkey_removed(utils):
+    keypath = os.path.join(utils.config['repo_path'], 'photon-test', 'keys', 'pubkey.asc')
+    utils.run(['rpm', '--import', keypath])
+    utils.run(['tdnf', 'history', 'update'])
+
+    ret = utils.run(['tdnf', 'history'])
+    baseline = ret['stdout'][-1].split()[0]
+
+    utils.run(['rpm', '-e', '--allmatches', 'gpg-pubkey'])
+    utils.run(['tdnf', 'history', 'update'])
+
+    ret = utils.run(['tdnf', 'history', '-y', 'rollback', '--to', baseline])
+    assert ret['retval'] == 0
+
+
+def test_history_pubkey_added(utils):
+    utils.run(['rpm', '-e', '--allmatches', 'gpg-pubkey'])
+
+    ret = utils.run(['tdnf', 'history'])
+    baseline = ret['stdout'][-1].split()[0]
+
+    keypath = os.path.join(utils.config['repo_path'], 'photon-test', 'keys', 'pubkey.asc')
+    utils.run(['rpm', '--import', keypath])
+    utils.run(['tdnf', 'history', 'update'])
+
+    ret = utils.run(['tdnf', 'history', '-y', 'rollback', '--to', baseline])
     assert ret['retval'] == 0
