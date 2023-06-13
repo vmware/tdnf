@@ -2103,7 +2103,7 @@ TDNFHistoryResolve(
             goto cleanup;
         case HISTORY_CMD_ROLLBACK:
             hd = history_get_delta(ctx, pHistoryArgs->nTo);
-            hfd = history_get_flags_delta(ctx, ctx->trans_id, pHistoryArgs->nTo - 1);
+            hfd = history_get_flags_delta(ctx, ctx->trans_id, pHistoryArgs->nTo);
             break;
         case HISTORY_CMD_UNDO:
             hd = history_get_delta_range(ctx, pHistoryArgs->nFrom - 1, pHistoryArgs->nTo);
@@ -2148,6 +2148,9 @@ TDNFHistoryResolve(
         char *pszPkgName = history_get_nevra(hnm, hd->added_ids[i]);
         if (pszPkgName)
         {
+            if (strncmp(pszPkgName, "gpg-pubkey-", 11) == 0)
+                continue;
+
             Queue qResult = {0};
             queue_init(&qResult);
 
@@ -2194,6 +2197,9 @@ TDNFHistoryResolve(
         char *pszPkgName = history_get_nevra(hnm, hd->removed_ids[i]);
         if (pszPkgName)
         {
+            if (strncmp(pszPkgName, "gpg-pubkey-", 11) == 0)
+                continue;
+
             dwError = SolvFindSolvablesByNevraStr(pTdnf->pSack->pPool, pszPkgName, &qErase, SOLV_NEVRA_INSTALLED);
             BAIL_ON_TDNF_ERROR(dwError);
         }
