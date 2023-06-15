@@ -606,6 +606,7 @@ SolvApplyListQuery(
              SELECTION_PROVIDES |
              SELECTION_GLOB |     /* foo* */
              SELECTION_CANON |    /* foo-1.2-3.ph4.noarch */
+	     SELECTION_DOTARCH |  /* foo.noarch */
              SELECTION_REL;       /* foo>=1.2-3 */
 
     if (pQuery->nScope == SCOPE_SOURCE) {
