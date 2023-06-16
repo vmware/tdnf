@@ -799,8 +799,7 @@ TDNFTransAddInstallPkgs(
         dwError = TDNFTransAddInstallPkg(
                       pTS,
                       pTdnf,
-                      pInfo->pszLocation,
-                      pInfo->pszName,
+                      pInfo,
                       pRepo,
                       nUpgrade);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -821,8 +820,7 @@ uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    const char* pszPackageLocation,
-    const char* pszPkgName,
+    PTDNF_PKG_INFO pInfo,
     PTDNF_REPO_DATA pRepo,
     int nUpgrade
     )
@@ -832,6 +830,18 @@ TDNFTransAddInstallPkg(
     char* pszFilePath = NULL;
     Header rpmHeader = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
+    const char* pszPackageLocation = NULL;
+    const char* pszPkgName = NULL;
+    int nSize;
+
+    if(!pTS || !pTdnf || !pInfo || !pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszPackageLocation = pInfo->pszLocation;
+    pszPkgName = pInfo->pszName;
 
     if (pszPackageLocation[0] == '/')
     {
@@ -898,6 +908,15 @@ TDNFTransAddInstallPkg(
         dwError = errno;
         pr_err("could not access file %s: %s (%d)\n", pszFilePath, strerror(errno), errno);
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    dwError = TDNFGetFileSize(pszFilePath, &nSize);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (nSize != (int)pInfo->dwDownloadSizeBytes) {
+        pr_err("rpm file (%s) size (%u) does not match expected size (%u)\n", pszFilePath, nSize, pInfo->dwDownloadSizeBytes);
+        dwError = ERROR_TDNF_SIZE_MISMATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     dwError = TDNFGPGCheckPackage(pTS, pTdnf, pRepo, pszFilePath, &rpmHeader);
