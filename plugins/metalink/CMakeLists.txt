@@ -25,7 +25,7 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME}
-    ${LIBXML2_LIBRARIES}
+    ${EXPAT_LIBRARIES}
     ${LIB_TDNF}
 )
 

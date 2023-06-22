@@ -20,11 +20,12 @@
 
 #include "includes.h"
 
-#define ATTR_NAME       (xmlChar*)"name"
-#define ATTR_PROTOCOL   (xmlChar*)"protocol"
-#define ATTR_TYPE       (xmlChar*)"type"
-#define ATTR_LOCATION   (xmlChar*)"location"
-#define ATTR_PREFERENCE (xmlChar*)"preference"
+#define MIN_URL_LENGTH  4
+#define ATTR_NAME       (char*)"name"
+#define ATTR_PROTOCOL   (char*)"protocol"
+#define ATTR_TYPE       (char*)"type"
+#define ATTR_LOCATION   (char*)"location"
+#define ATTR_PREFERENCE (char*)"preference"
 
 typedef struct _hash_op {
     char *hash_type;
@@ -59,6 +60,16 @@ static int hashTypeComparator(const void * p1, const void * p2)
 {
     return strcmp(*((const char **)p1), *((const char **)p2));
 }
+
+// Structure to hold element information
+struct MetalinkElementInfo {
+    uint32_t     dwError;
+    TDNF_ML_CTX  *ml_ctx;
+    const char   *filename;
+    const char   *startElement;
+    const char   *endElement;
+    const char   **attributes;
+};
 
 int
 TDNFGetResourceType(
@@ -485,48 +496,58 @@ TDNFMetalinkFree(
     TDNF_SAFE_FREE_MEMORY(ml_ctx);
 }
 
+char *
+TDNFSearchTag(
+    const char **attr,
+    const char *type
+    )
+{
+    for (int i = 0; attr[i]; i += 2)
+    {
+        if((!strcmp(attr[i], type)) && (attr[i + 1] != NULL))
+        {
+           return (char *)attr[i + 1];
+        }
+    }
+
+    return NULL;
+}
+
 uint32_t
 TDNFParseFileTag(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node,
-    const char *filename
+    void *userData
     )
 {
     uint32_t dwError = 0;
-    xmlChar* xmlPropValue = NULL;
     const char *name = NULL;
+    struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
-    if(!ml_ctx || !node || IsNullOrEmptyString(filename))
+    if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    xmlPropValue = xmlGetProp(node, ATTR_NAME);
-    if (!xmlPropValue)
+    name = TDNFSearchTag(elementInfo->attributes, ATTR_NAME);
+
+    if (!name)
     {
         pr_err("%s: Missing attribute \"name\" of file element", __func__);
         dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_ATTR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    name = (const char*)xmlPropValue;
-    if (strcmp(name, filename))
+    if (strcmp(name, elementInfo->filename))
     {
         pr_err("%s: Invalid filename from metalink file:%s", __func__, name);
         dwError = ERROR_TDNF_METALINK_PARSER_INVALID_FILE_NAME;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFAllocateString(name, &(ml_ctx->filename));
+    dwError = TDNFAllocateString(name, &(elementInfo->ml_ctx->filename));
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
-    if(xmlPropValue)
-    {
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
-    }
     return dwError;
 error:
     goto cleanup;
@@ -534,33 +555,33 @@ error:
 
 uint32_t
 TDNFParseHashTag(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node
+    void *userData,
+    const char *val,
+    int len
     )
 {
     uint32_t dwError = 0;
-    xmlChar* xmlPropValue = NULL;
-    xmlChar* xmlContValue = NULL;
     const char *type = NULL;
-    const char *value = NULL;
+    char *value = NULL;
     TDNF_ML_HASH_INFO *ml_hash_info = NULL;
+    struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
-    if(!ml_ctx || !node)
+    if(!elementInfo || !elementInfo->ml_ctx)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Get Hash Properties.
-    xmlPropValue = xmlGetProp(node, ATTR_TYPE);
-    if (!xmlPropValue)
+    //Get Hash Properties
+    type = TDNFSearchTag(elementInfo->attributes, ATTR_TYPE);
+
+    if (!type)
     {
         dwError = ERROR_TDNF_METALINK_PARSER_MISSING_HASH_ATTR;
         pr_err("XML Parser Error:HASH element doesn't have attribute \"type\"");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    type = (const char*)xmlPropValue;
     dwError = TDNFAllocateMemory(1, sizeof(TDNF_ML_HASH_INFO),
                                  (void**)&ml_hash_info);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -569,33 +590,25 @@ TDNFParseHashTag(
     BAIL_ON_TDNF_ERROR(dwError);
 
     //Get Hash Content.
-    xmlContValue = xmlNodeGetContent(node);
-    if(!xmlContValue)
+    TDNFAllocateStringN(val, len, &value);
+
+    if(!value)
     {
         dwError = ERROR_TDNF_METALINK_PARSER_MISSING_HASH_CONTENT;
         pr_err("XML Parser Error:HASH value is not present in HASH element");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    value = (const char*)xmlContValue;
     dwError = TDNFAllocateString(value, &(ml_hash_info->value));
     BAIL_ON_TDNF_ERROR(dwError);
 
     //Append hash info in ml_ctx hash list.
-    dwError = TDNFAppendList(&(ml_ctx->hashes), ml_hash_info);
+    dwError = TDNFAppendList(&(elementInfo->ml_ctx->hashes), ml_hash_info);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
-    if(xmlPropValue)
-    {
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
-    }
-
-    if(xmlContValue)
-    {
-        xmlFree(xmlContValue);
-        xmlContValue = NULL;
+    if(value != NULL){
+       TDNF_SAFE_FREE_MEMORY(value);
     }
     return dwError;
 
@@ -610,18 +623,19 @@ error:
 
 uint32_t
 TDNFParseUrlTag(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node
+    void *userData,
+    const char *val,
+    int len
     )
 {
     uint32_t dwError = 0;
-    xmlChar* xmlPropValue = NULL;
-    xmlChar* xmlContValue = NULL;
-    const char *value = NULL;
+    char *value = NULL;
+    char *prefval = NULL;
     int prefValue = 0;
     TDNF_ML_URL_INFO *ml_url_info = NULL;
+    struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
-    if(!ml_ctx || !node)
+    if(!elementInfo || !elementInfo->ml_ctx)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -631,83 +645,70 @@ TDNFParseUrlTag(
                                  (void**)&ml_url_info);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if ((xmlPropValue = xmlGetProp(node, ATTR_PROTOCOL)))
+    for (int i = 0; elementInfo->attributes[i]; i += 2)
     {
-        value = (const char*)xmlPropValue;
-        dwError = TDNFAllocateString(value, &(ml_url_info->protocol));
-        BAIL_ON_TDNF_ERROR(dwError);
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
-    }
-    if ((xmlPropValue = xmlGetProp(node, ATTR_TYPE)))
-    {
-        value = (const char*)xmlPropValue;
-        dwError = TDNFAllocateString(value, &(ml_url_info->type));
-        BAIL_ON_TDNF_ERROR(dwError);
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
-    }
-    if ((xmlPropValue = xmlGetProp(node, ATTR_LOCATION)))
-    {
-        value = (const char*)xmlPropValue;
-        dwError = TDNFAllocateString(value, &(ml_url_info->location));
-        BAIL_ON_TDNF_ERROR(dwError);
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
-    }
-    if ((xmlPropValue = xmlGetProp(node, ATTR_PREFERENCE)))
-    {
-        value = (const char*)xmlPropValue;
-        if(sscanf(value, "%d", &prefValue) != 1)
+        if ((!strcmp(elementInfo->attributes[i], ATTR_PROTOCOL)) && (elementInfo->attributes[i + 1] != NULL))
         {
-            dwError = ERROR_TDNF_INVALID_PARAMETER;
-            pr_err("XML Parser Warning: Preference is invalid value: %s\n", value);
-            BAIL_ON_TDNF_ERROR(dwError);
+           value = (char *)elementInfo->attributes[i + 1];
+           dwError = TDNFAllocateString(value, &(ml_url_info->protocol));
+           BAIL_ON_TDNF_ERROR(dwError);
         }
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
+        if ((!strcmp(elementInfo->attributes[i], ATTR_TYPE)) && (elementInfo->attributes[i + 1] != NULL))
+        {
+           value = (char *)elementInfo->attributes[i + 1];
+           dwError = TDNFAllocateString(value, &(ml_url_info->type));
+           BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if ((!strcmp(elementInfo->attributes[i], ATTR_LOCATION)) && (elementInfo->attributes[i + 1] != NULL))
+        {
+           value = (char *)elementInfo->attributes[i + 1];
+           dwError = TDNFAllocateString(value, &(ml_url_info->location));
+           BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if ((!strcmp(elementInfo->attributes[i], ATTR_PREFERENCE)) && (elementInfo->attributes[i + 1] != NULL))
+        {
+           prefval = (char *)elementInfo->attributes[i + 1];
+           if(sscanf(prefval, "%d", &prefValue) != 1)
+           {
+               dwError = ERROR_TDNF_INVALID_PARAMETER;
+               pr_err("XML Parser Warning: Preference is invalid value: %s\n", prefval);
+               BAIL_ON_TDNF_ERROR(dwError);
+           }
 
-        if (prefValue < 0 || prefValue > 100)
-        {
-            dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_ATTR;
-            pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\""
-                   "attribute in url element (should be in range 0-100)", value);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        else
-        {
-            ml_url_info->preference = prefValue;
-        }
+           if (prefValue < 0 || prefValue > 100)
+           {
+               dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_ATTR;
+               pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\""
+                      "attribute in url element (should be in range 0-100)", value);
+               BAIL_ON_TDNF_ERROR(dwError);
+           }
+           else
+           {
+               ml_url_info->preference = prefValue;
+           }
+       }
     }
 
     //Get URL Content.
-    xmlContValue = xmlNodeGetContent(node);
-    if(!xmlContValue)
+    TDNFAllocateStringN(val, len, &value);
+
+    if(!value)
     {
         dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_CONTENT;
         pr_err("URL is no present in URL element");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    value = (const char*)xmlContValue;
     dwError = TDNFAllocateString(value, &(ml_url_info->url));
     BAIL_ON_TDNF_ERROR(dwError);
 
     //Append url info in ml_ctx url list.
-    dwError = TDNFAppendList(&(ml_ctx->urls), ml_url_info);
+    dwError = TDNFAppendList(&(elementInfo->ml_ctx->urls), ml_url_info);
     BAIL_ON_TDNF_ERROR(dwError);
 
 cleanup:
-    if(xmlPropValue)
-    {
-        xmlFree(xmlPropValue);
-        xmlPropValue = NULL;
-    }
-
-    if(xmlContValue)
-    {
-        xmlFree(xmlContValue);
-        xmlContValue = NULL;
+    if(value != NULL){
+       TDNF_SAFE_FREE_MEMORY(value);
     }
     return dwError;
 
@@ -720,128 +721,168 @@ error:
     goto cleanup;
 }
 
-uint32_t
-TDNFXmlParseData(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node,
-    const char *filename
+void
+TDNFXmlParseStartElement(
+    void *userData,
+    const char *name,
+    const char **attrs
     )
 {
-    uint32_t dwError = 0;
-    xmlChar* xmlContValue = NULL;
-    char *size = NULL;
+    struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
-    if(!ml_ctx || !node || IsNullOrEmptyString(filename))
+    if(elementInfo->dwError != 0)
     {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
     }
 
-    //Looping through all the nodes from root and parse all children nodes.
-    while(node)
+    // Set the start element name and attribute
+    elementInfo->startElement = name;
+    elementInfo->attributes = attrs;
+
+cleanup:
+    return;
+error:
+    goto cleanup;
+}
+
+void
+TDNFXmlParseData(
+    void *userData,
+    const char *val,
+    int len
+    )
+{
+    struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
+    char *size = NULL;
+
+    if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename) || (elementInfo->dwError != 0))
     {
-        if(node->type == XML_ELEMENT_NODE)
+        elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+    }
+
+    if(!strcmp(elementInfo->startElement, TAG_NAME_FILE))
+    {
+        elementInfo->dwError = TDNFParseFileTag(userData);
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+    }
+    else if(!strcmp(elementInfo->startElement, TAG_NAME_SIZE))
+    {
+        //Get File Size.
+        TDNFAllocateStringN(val, len, &size);
+
+        if(!size)
         {
-            if(!strcmp((const char*)node->name, TAG_NAME_FILE))
-            {
-                dwError = TDNFParseFileTag(ml_ctx, node, filename);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            else if(!strcmp((const char*)node->name, TAG_NAME_SIZE))
-            {
-                //Get File Size.
-                xmlContValue = xmlNodeGetContent(node);
-                if(!xmlContValue)
-                {
-                    dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_SIZE;
-                    pr_err("XML Parser Error:File size is missing: %s", size);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
-                size = (char*)xmlContValue;
-                if(sscanf(size, "%ld", &(ml_ctx->size)) != 1)
-                {
-                    dwError = ERROR_TDNF_INVALID_PARAMETER;
-                    pr_err("XML Parser Warning: size is invalid value: %s\n", size);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
-            }
-            else if(!strcmp((const char*)node->name, TAG_NAME_HASH))
-            {
-                dwError = TDNFParseHashTag(ml_ctx, node);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            else if(!strcmp((const char*)node->name, TAG_NAME_URL))
-            {
-                dwError = TDNFParseUrlTag(ml_ctx, node);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
+            elementInfo->dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_SIZE;
+            pr_err("XML Parser Error:File size is missing: %s", size);
+            BAIL_ON_TDNF_ERROR(elementInfo->dwError);
         }
-        if (node->children) {
-            TDNFXmlParseData(ml_ctx, node->children, filename);
+        if(sscanf(size, "%ld", &(elementInfo->ml_ctx->size)) != 1)
+        {
+            elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
+            pr_err("XML Parser Warning: size is invalid value: %s\n", size);
+            BAIL_ON_TDNF_ERROR(elementInfo->dwError);
         }
-        node = node->next;
+    }
+    else if(!strcmp(elementInfo->startElement, TAG_NAME_HASH))
+    {
+        elementInfo->dwError = TDNFParseHashTag(userData, val, len);
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+    }
+    else if(!strcmp(elementInfo->startElement, TAG_NAME_URL) && len > MIN_URL_LENGTH)
+    {
+        elementInfo->dwError = TDNFParseUrlTag(userData, val, len);
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
     }
 
 cleanup:
-    if(xmlContValue)
-    {
-        xmlFree(xmlContValue);
-        xmlContValue = NULL;
+    if(size != NULL){
+       TDNF_SAFE_FREE_MEMORY(size);
     }
-    return dwError;
+    return;
 error:
     goto cleanup;
+}
+
+void
+TDNFXmlParseEndElement(
+    void *userData,
+    const char *name
+    )
+{
+    struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
+    elementInfo->endElement = name;
+
+    if(elementInfo->dwError != 0)
+       BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+
+cleanup:
+     return;
+error:
+     goto cleanup;
 }
 
 uint32_t
 TDNFMetalinkParseFile(
     TDNF_ML_CTX *ml_ctx,
-    int fd,
+    FILE *file,
     const char *filename
     )
 {
     uint32_t dwError = 0;
-    xmlDoc *doc = NULL;
-    xmlNode *root_element = NULL;
+    struct stat st = {0};
+    size_t file_size = 0;
+    char *buffer = NULL;
+    struct MetalinkElementInfo elementInfo = {0};
 
-    if(!ml_ctx || (fd <= 0) || IsNullOrEmptyString(filename))
+    XML_Parser parser = XML_ParserCreate(NULL);
+    if(!ml_ctx || (file == NULL) || IsNullOrEmptyString(filename) || (parser == NULL))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    //Read The File and get the doc object.
-    doc = xmlReadFd(fd, NULL, NULL, 0);
+    elementInfo.ml_ctx = ml_ctx;
+    elementInfo.filename = filename;
 
-    if (doc == NULL)
-    {
-        pr_err("%s: Error while reading xml from fd:%d \n", __func__, fd);
-        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT;
-        BAIL_ON_TDNF_ERROR(dwError);
+    XML_SetElementHandler(parser, TDNFXmlParseStartElement, TDNFXmlParseEndElement);
+    XML_SetCharacterDataHandler(parser, TDNFXmlParseData);
+    XML_SetUserData(parser, &elementInfo);
+
+    // Get file information using fstat
+    if (fstat(fileno(file), &st) == -1) {
+        pr_err("Error getting file information");
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
 
-    //Get the root element from parsed xml tree.
-    root_element = xmlDocGetRootElement(doc);
+    // Get the file size from the stat structure
+    file_size = st.st_size;
 
-    if (root_element == NULL)
-    {
-        pr_err("%s: Error to fetch root element of xml tree\n", __func__);
-        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_ROOT_ELEMENT;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    // Parsing
-    dwError = TDNFXmlParseData(ml_ctx, root_element, filename);
+    // Allocate memory for the buffer
+    dwError = TDNFAllocateMemory(file_size + 1, sizeof(char*), (void **)&buffer);
     BAIL_ON_TDNF_ERROR(dwError);
 
-cleanup:
-    if(doc != NULL)
-    {
-        xmlFreeDoc(doc);
-        doc = NULL;
+    // Read the file into the buffer
+    if (fread(buffer, 1, file_size, file) != file_size) {
+        pr_err("Failed to read the metalink file %s.\n", filename);
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
-    xmlCleanupParser();
 
+    buffer[file_size] = '\0';
+    dwError = XML_Parse(parser, buffer, file_size + 1, XML_TRUE);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(elementInfo.dwError != 0)
+    {
+       dwError = elementInfo.dwError;
+       BAIL_ON_TDNF_ERROR(elementInfo.dwError);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(buffer);
+    XML_ParserFree(parser);
     return dwError;
 error:
     goto cleanup;

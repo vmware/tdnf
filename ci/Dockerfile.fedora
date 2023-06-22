@@ -2,10 +2,10 @@ FROM fedora:34
 
 RUN dnf -y upgrade
 RUN dnf -y install gcc make cmake libcurl-devel rpm-devel rpm-build \
-        libsolv-devel popt-devel sed createrepo_c glib2-devel libxml2 \
+        libsolv-devel popt-devel sed createrepo_c glib2-devel expat \
         findutils python3-pytest python3-requests python3-urllib3 \
         python3-pyOpenSSL python3 python3-devel valgrind gpgme-devel \
-        libxml2-devel openssl-devel sqlite-devel rpm-sign which python3-pip \
+        expat-devel openssl-devel sqlite-devel rpm-sign which python3-pip \
         shadow-utils sudo e2fsprogs util-linux
 
 RUN pip3 install flake8

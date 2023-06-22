@@ -117,7 +117,7 @@ TDNFParseAndGetURLFromMetalink(
     TDNF_ML_CTX *ml_ctx
     )
 {
-    int fd = -1;
+    FILE* file = NULL;
     uint32_t dwError = 0;
 
     if (!pTdnf ||
@@ -128,14 +128,14 @@ TDNFParseAndGetURLFromMetalink(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    fd = open(pszFile, O_RDONLY);
-    if (fd < 0)
+    file = fopen(pszFile, "r");
+    if (file == NULL)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
 
-    dwError = TDNFMetalinkParseFile(ml_ctx, fd, TDNF_REPO_METADATA_FILE_NAME);
+    dwError = TDNFMetalinkParseFile(ml_ctx, file, TDNF_REPO_METADATA_FILE_NAME);
     if (dwError)
     {
         pr_err("Unable to parse metalink, ERROR: code=%d\n", dwError);
@@ -146,9 +146,9 @@ TDNFParseAndGetURLFromMetalink(
     TDNFSortListOnPreference(&ml_ctx->urls);
 
 cleanup:
-    if (fd >= 0)
+    if (file != NULL)
     {
-        close(fd);
+        fclose(file);
     }
     return dwError;
 error:

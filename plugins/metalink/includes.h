@@ -22,7 +22,7 @@
 #include <tdnfplugineventmap.h>
 #include <tdnf-common-defines.h>
 
-#include <libxml/parser.h>
+#include <expat.h>
 
 //libcurl
 #include <curl/curl.h>
