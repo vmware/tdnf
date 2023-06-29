@@ -62,10 +62,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(RPM REQUIRED rpm)
 find_package(OpenSSL REQUIRED)
-pkg_check_modules(LIBXML2 REQUIRED libxml-2.0)
+pkg_check_modules(EXPAT REQUIRED expat)
 pkg_check_modules(SQLITE3 sqlite3)
 include_directories(${RPM_INCLUDE_DIRS})
-include_directories(${LIBXML2_INCLUDE_DIRS})
+include_directories(${EXPAT_INCLUDE_DIRS})
 
 ### External dependency: libsolv
 find_package(LibSolv REQUIRED ext)

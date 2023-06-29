@@ -14,7 +14,7 @@
 uint32_t
 TDNFMetalinkParseFile(
     TDNF_ML_CTX *ml_ctx,
-    int fd,
+    FILE *file,
     const char *filename
     );
 
@@ -23,31 +23,49 @@ TDNFMetalinkFree(
     TDNF_ML_CTX *ml_ctx
     );
 
-uint32_t
+char *
+TDNFSearchTag(
+    const char **attr,
+    const char *type
+    );
+
+void
+TDNFXmlParseStartElement(
+    void *userData,
+    const char *name,
+    const char **attrs
+    );
+
+void
 TDNFXmlParseData(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node,
-    const char *filename
+    void *userData,
+    const char *val,
+    int len
+    );
+
+void
+TDNFXmlParseEndElement(
+    void *userData,
+    const char *name
     );
 
 uint32_t
 TDNFParseFileTag(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node,
-    const char *filename
+    void *userData
     );
 
 uint32_t
 TDNFParseHashTag(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node
+    void *userData,
+    const char *val,
+    int len
     );
-
 
 uint32_t
 TDNFParseUrlTag(
-    TDNF_ML_CTX *ml_ctx,
-    xmlNode *node
+    void *userData,
+    const char *val,
+    int len
     );
 
 uint32_t

@@ -47,10 +47,10 @@
 #
 # Example for mode 1:
 #
-#    FIND_PACKAGE_HANDLE_STANDARD_ARGS(LibXml2  DEFAULT_MSG  LIBXML2_LIBRARY LIBXML2_INCLUDE_DIR)
+#    FIND_PACKAGE_HANDLE_STANDARD_ARGS(Expat  DEFAULT_MSG  EXPAT_LIBRARY EXPAT_INCLUDE_DIR)
 #
-# LibXml2 is considered to be found, if both LIBXML2_LIBRARY and
-# LIBXML2_INCLUDE_DIR are valid. Then also LIBXML2_FOUND is set to TRUE.
+# Expat is considered to be found, if both EXPAT_LIBRARY and
+# EXPAT_INCLUDE_DIR are valid. Then also EXPAT_FOUND is set to TRUE.
 # If it is not found and REQUIRED was used, it fails with FATAL_ERROR,
 # independent whether QUIET was used or not.
 # If it is found, success will be reported, including the content of <var1>.

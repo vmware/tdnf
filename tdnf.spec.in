@@ -15,7 +15,7 @@ Requires:       rpm-libs >= 4.16.1.3-1
 Requires:       curl-libs
 Requires:       %{name}-cli-libs = %{version}-%{release}
 Requires:       libsolv >= 0.7.19
-Requires:       libxml2
+Requires:       expat-libs
 Requires:       zlib
 
 BuildRequires:  popt-devel
@@ -23,13 +23,13 @@ BuildRequires:  rpm-devel
 BuildRequires:  openssl-devel >= 1.1.1
 BuildRequires:  libsolv-devel >= 0.7.19
 BuildRequires:  curl-devel
-BuildRequires:  libxml2-devel
+BuildRequires:  expat-devel
 BuildRequires:  zlib-devel
 BuildRequires:  systemd
 BuildRequires:  systemd-rpm-macros
 
 #metalink plugin
-BuildRequires:  libxml2-devel
+BuildRequires:  expat-devel
 
 #repogpgcheck plugin
 BuildRequires:  gpgme-devel
@@ -287,6 +287,8 @@ systemctl try-restart %{name}-cache-updateinfo.timer >/dev/null 2>&1 || :
 %{_unitdir}/%{name}-automatic-notifyonly.service
 
 %changelog
+* Fri Jun 09 2023 Shivani Agarwal <shivania2@vmware.com> 3.3.1-4
+- Remove libxml2 dependency and add expat dependency
 * Mon Jun 27 2022 Shreenidhi Shedi <sshedi@vmware.com> 3.3.1-3
 - Exclude debug symbols properly
 * Fri Jun 17 2022 Shreenidhi Shedi <sshedi@vmware.com> 3.3.1-2
