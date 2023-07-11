@@ -31,7 +31,7 @@ TDNFConfGetRpmVerbosity(
     )
 {
     rpmlogLvl nLogLevel = RPMLOG_INFO;
-    if(pTdnf)
+    if(pTdnf && pTdnf->pArgs->nRpmVerbosity >= 0)
     {
         nLogLevel = pTdnf->pArgs->nRpmVerbosity;
     }
