@@ -671,6 +671,7 @@ TDNFRunTransaction(
     uint32_t dwSkipSignature = 0;
     uint32_t dwSkipDigest = 0;
     int rc;
+    FD_t fdScript = NULL;
 
     if(!pTS || !pTdnf || !pTdnf->pConf || !pTdnf->pArgs)
     {
@@ -691,6 +692,18 @@ TDNFRunTransaction(
 
     dwError = TDNFGetSkipDigestOption(pTdnf, &dwSkipDigest);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    /* When json output is enabled redirect stdout from scripts to stderr
+       to not mess with the json syntax ("json decode failed at ...") */
+    if (pTdnf->pArgs->nJsonOutput) {
+        fdScript = fdDup(STDERR_FILENO);
+        if (fdScript == NULL) {
+            pr_err("failed to create script output handle");
+            dwError = ERROR_TDNF_RPMTS_FDDUP_FAILED;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        rpmtsSetScriptFd(pTS->pTS, fdScript);
+    }
 
     //TODO do callbacks for output
     pr_info("Testing transaction\n");
@@ -741,6 +754,14 @@ TDNFRunTransaction(
     }
 
 cleanup:
+    if(pTS) {
+        rpmtsSetScriptFd(pTS->pTS, NULL);
+    }
+    if(fdScript)
+    {
+        Fclose(fdScript);
+        fdScript = NULL;
+    }
     return dwError;
 
 error:
