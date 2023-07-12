@@ -796,7 +796,8 @@ TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,
     const char* pszPkgName,
-    int nSource
+    int nSource,
+    int nInstallOnly
     )
 {
     uint32_t dwError = 0;
@@ -822,7 +823,7 @@ TDNFAddPackagesForInstall(
                   &dwInstallPackage);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwInstallPackage == 1)
+    if(dwInstallPackage == 1 || nInstallOnly)
     {
         queue_push(pQueueGoal, dwHighestAvailable);
     }

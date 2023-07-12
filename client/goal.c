@@ -328,6 +328,9 @@ TDNFSolv(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    dwError = TDNFSolvAddInstallOnlyPkgs(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFSolvAddPkgLocks(pTdnf, pQueueJobs, pTdnf->pSack->pPool);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -939,6 +942,51 @@ TDNFSolvAddPkgLocks(
                 if (idPkg == s->name)
                 {
                     queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_LOCK, idPkg);
+                    break;
+                }
+            }
+        }
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFSolvAddInstallOnlyPkgs(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszPackages = NULL;
+    int i;
+
+    if(!pTdnf || !pQueueJobs || !pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppszPackages = pTdnf->pConf->ppszInstallOnlyPkgs;
+
+    for (i = 0; ppszPackages && ppszPackages[i]; i++)
+    {
+        char *pszPkg = ppszPackages[i];
+        Id idPkg = pool_str2id(pPool, pszPkg, 1);
+        if (idPkg)
+        {
+            Id p;
+            Solvable *s;
+            /* only mark if they are installed - first install doesn't care */
+            FOR_REPO_SOLVABLES(pPool->installed, p, s)
+            {
+                if (idPkg == s->name)
+                {
+                    queue_push2(pQueueJobs, SOLVER_SOLVABLE_NAME|SOLVER_MULTIVERSION, idPkg);
                     break;
                 }
             }

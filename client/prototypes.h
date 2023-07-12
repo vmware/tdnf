@@ -332,7 +332,8 @@ TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,
     const char* pszPkgName,
-    int nSource
+    int nSource,
+    int nInstallOnly
     );
 
 uint32_t
@@ -512,6 +513,13 @@ TDNFPkgsToExclude(
 
 uint32_t
 TDNFSolvAddPkgLocks(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    );
+
+uint32_t
+TDNFSolvAddInstallOnlyPkgs(
     PTDNF pTdnf,
     Queue* pQueueJobs,
     Pool *pPool

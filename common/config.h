@@ -16,9 +16,11 @@
 #define TDNF_REPO_EXT                     ".repo"
 #define TDNF_CONF_FILE                    "/etc/tdnf/tdnf.conf"
 #define TDNF_CONF_GROUP                   "main"
+
 //Conf file key names
 #define TDNF_CONF_KEY_GPGCHECK            "gpgcheck"
 #define TDNF_CONF_KEY_INSTALLONLY_LIMIT   "installonly_limit"
+#define TDNF_CONF_KEY_INSTALLONLYPKGS     "installonlypkgs"
 #define TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE "clean_requirements_on_remove"
 #define TDNF_CONF_KEY_REPODIR             "repodir" // typo, keep for back compatibility
 #define TDNF_CONF_KEY_REPOSDIR            "reposdir"
@@ -96,6 +98,7 @@
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
 
 #define TDNF_DEFAULT_OPENMAX              1024
+#define TDNF_DEFAULT_INSTALLONLY_LIMIT    2
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0

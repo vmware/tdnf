@@ -360,12 +360,19 @@ TDNFPrepareSinglePkg(
     else if (nAlterType == ALTER_INSTALL)
     {
         int nSource = pTdnf->pArgs->nSource;
+        int nInstallOnly = 0;
 
+        for (int i = 0; pTdnf->pConf->ppszInstallOnlyPkgs[i]; i++) {
+            if (strcmp(pTdnf->pConf->ppszInstallOnlyPkgs[i], pszPkgName) == 0) {
+                nInstallOnly = 1;
+            }
+        }
         dwError = TDNFAddPackagesForInstall(
                       pSack,
                       queueGoal,
                       pszPkgName,
-                      nSource);
+                      nSource,
+                      nInstallOnly);
         if (dwError == ERROR_TDNF_ALREADY_INSTALLED)
         {
             /* the package may have been already installed as a dependency,
