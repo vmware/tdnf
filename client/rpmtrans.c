@@ -990,6 +990,7 @@ TDNFTransAddErasePkgs(
 {
     uint32_t dwError = 0;
     PTDNF_PKG_INFO pInfo;
+    char *pszFullName = NULL;
 
     if(!pInfos)
     {
@@ -999,11 +1000,14 @@ TDNFTransAddErasePkgs(
 
     for(pInfo = pInfos; pInfo; pInfo = pInfo->pNext)
     {
-        dwError = TDNFTransAddErasePkg(pTS, pInfo->pszName);
+        dwError = TDNFAllocateStringPrintf(&pszFullName, "%s-%s", pInfo->pszName, pInfo->pszEVR);
+        BAIL_ON_TDNF_ERROR(dwError);
+        dwError = TDNFTransAddErasePkg(pTS, pszFullName);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFullName);
     return dwError;
 
 error:
