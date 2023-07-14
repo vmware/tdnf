@@ -298,6 +298,7 @@ TDNFSolv(
     Transaction *pTrans = NULL;
     int nFlags = 0;
     int nProblems = 0;
+    int retries = 0;
 
     if(!pTdnf || !ppInfo)
     {
@@ -361,31 +362,51 @@ TDNFSolv(
     solver_set_flag(pSolv, SOLVER_FLAG_ALLOW_DOWNGRADE, 1);
     solver_set_flag(pSolv, SOLVER_FLAG_INSTALL_ALSO_UPDATES, 1);
 
-    nProblems = solver_solve(pSolv, pQueueJobs);
-    if (nProblems > 0)
-    {
-        dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
-        BAIL_ON_TDNF_ERROR(dwError);
-        dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    do {
+        /* in case this is second or later try */
+        if(pTrans)
+        {
+            transaction_free(pTrans);
+            pTrans = NULL;
+        }
 
-    pTrans = solver_create_transaction(pSolv);
-    if(!pTrans)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+        nProblems = solver_solve(pSolv, pQueueJobs);
+        if (nProblems > 0)
+        {
+            dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
+            BAIL_ON_TDNF_ERROR(dwError);
+            dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        pTrans = solver_create_transaction(pSolv);
+        if(!pTrans)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pTdnf->pConf->ppszProtectedPkgs) {
+            /* catch protected obsoleted packages, and double check for removals */
+            dwError = TDNFSolvCheckProtectPkgsInTrans(pTdnf, pTrans, pTdnf->pSack->pPool);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        if (pTdnf->pConf->ppszInstallOnlyPkgs) {
+            /* check if we are going to exceed the installonly limit */
+            /* if so, removal jobs will be added and we'll try to solve again */
+            dwError = TDNFSolvCheckInstallOnlyLimitInTrans(pTdnf, pTrans, pTdnf->pSack->pPool, pQueueJobs);
+            if (dwError != ERROR_TDNF_INSTALLONLY_LIMIT_EXCEEDED) {
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+        retries++;
+    } while (dwError == ERROR_TDNF_INSTALLONLY_LIMIT_EXCEEDED && retries < 2);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     if(pTdnf->pArgs->nDebugSolver)
     {
         dwError = SolvAddDebugInfo(pSolv, "debugdata");
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if (pTdnf->pConf->ppszProtectedPkgs) {
-        /* catch protected obsoleted packages, and double check for removals */
-        dwError = TDNFSolvCheckProtectPkgsInTrans(pTdnf, pTrans, pTdnf->pSack->pPool);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -982,6 +1003,9 @@ TDNFSolvAddInstallOnlyPkgs(
             Id p;
             Solvable *s;
             /* only mark if they are installed - first install doesn't care */
+            /* we are marking the name, so we just need to mark it once */
+            /* the flag only affects to be installed packages and
+               it has no effect for already installed packages */
             FOR_REPO_SOLVABLES(pPool->installed, p, s)
             {
                 if (idPkg == s->name)
@@ -994,6 +1018,109 @@ TDNFSolvAddInstallOnlyPkgs(
     }
 
 cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFSolvCheckInstallOnlyLimitInTrans(
+    PTDNF pTdnf,
+    Transaction *pTrans,
+    Pool *pPool,
+    Queue *pQueueJobs
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszPackages = NULL;
+    int i;
+    int nLimit;
+    Queue qPkgs = {0};
+    Map *pMapRemove = NULL;
+
+    if(!pTdnf || !pTrans || !pPool || !pTdnf->pConf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    ppszPackages = pTdnf->pConf->ppszInstallOnlyPkgs;
+    nLimit = pTdnf->pConf->nInstallOnlyLimit;
+
+    dwError = TDNFAllocateMemory(
+                          1,
+                          sizeof(Map),
+                          (void**)&pMapRemove);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    map_init(pMapRemove, pPool->nsolvables);
+
+    for (i = 0; ppszPackages && ppszPackages[i]; i++)
+    {
+        char *pszPkg = ppszPackages[i];
+        Id idName = pool_str2id(pPool, pszPkg, 1);
+        int n = 0;
+
+        /* count installed packages */
+        if (idName)
+        {
+            Id p;
+            Solvable *s;
+
+            FOR_REPO_SOLVABLES(pPool->installed, p, s) {
+                if (idName == s->name) {
+                    n++;
+                }
+            }
+        }
+        /* increment if more gets installed,
+           subtract if any gets removed */
+        for (int j = 0; j < pTrans->steps.count; j++) {
+            Id idType;
+            Id idPkg = pTrans->steps.elements[j];
+            Solvable *s = pool_id2solvable(pPool, idPkg);
+
+            if (idName == s->name) {
+                idType = transaction_type(pTrans, idPkg,
+                                          SOLVER_TRANSACTION_SHOW_MULTIINSTALL);
+                if (idType == SOLVER_TRANSACTION_MULTIINSTALL) {
+                    n++;
+                } else if (idType == SOLVER_TRANSACTION_ERASE) {
+                    map_set(pMapRemove, idPkg);
+                    n--;
+                }
+            }
+        }
+
+        /* if we exceed the limit, add erase jobs */
+        if (n > nLimit) {
+            Id p;
+            Solvable *s;
+
+            /* we are going to add jobs and return this error,
+               so the caller can re-solve */
+            dwError = ERROR_TDNF_INSTALLONLY_LIMIT_EXCEEDED;
+
+            /* TODO: look for lowest versions? Currently looks like least
+               recent installed gets selected first - which may be fine too */
+            FOR_REPO_SOLVABLES(pPool->installed, p, s) {
+                if (idName == s->name && !MAPTST(pMapRemove, p)) {
+                    map_set(pMapRemove, p);
+                    queue_push2(pQueueJobs, SOLVER_SOLVABLE|SOLVER_ERASE, p);
+                    n--;
+                    if (n <= nLimit)
+                        break;
+                }
+            }
+        }
+    }
+
+cleanup:
+    if (pMapRemove) {
+        map_free(pMapRemove);
+        TDNFFreeMemory(pMapRemove);
+    }
+    queue_free(&qPkgs);
     return dwError;
 error:
     goto cleanup;

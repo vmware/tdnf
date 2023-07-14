@@ -362,11 +362,14 @@ TDNFPrepareSinglePkg(
         int nSource = pTdnf->pArgs->nSource;
         int nInstallOnly = 0;
 
-        for (int i = 0; pTdnf->pConf->ppszInstallOnlyPkgs[i]; i++) {
-            if (strcmp(pTdnf->pConf->ppszInstallOnlyPkgs[i], pszPkgName) == 0) {
-                nInstallOnly = 1;
+        if (pTdnf->pConf->ppszInstallOnlyPkgs) {
+            for (int i = 0; pTdnf->pConf->ppszInstallOnlyPkgs[i]; i++) {
+                if (strcmp(pTdnf->pConf->ppszInstallOnlyPkgs[i], pszPkgName) == 0) {
+                    nInstallOnly = 1;
+                }
             }
         }
+
         dwError = TDNFAddPackagesForInstall(
                       pSack,
                       queueGoal,

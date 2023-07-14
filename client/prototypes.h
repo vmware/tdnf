@@ -545,6 +545,14 @@ TDNFSolvCheckProtectPkgsInTrans(
     Pool *pPool
     );
 
+uint32_t
+TDNFSolvCheckInstallOnlyLimitInTrans(
+    PTDNF pTdnf,
+    Transaction *pTrans,
+    Pool *pPool,
+    Queue *pQueueJobs
+    );
+
 //config.c
 int
 TDNFConfGetRpmVerbosity(
