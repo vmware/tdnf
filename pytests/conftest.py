@@ -195,11 +195,11 @@ class TestUtils(object):
 
     def check_package(self, package, version=None):
         ''' Check if a package exists '''
-        ret = self.run(['tdnf', 'list', package])
-        for line in ret['stdout']:
-            if package in line and '@System' in line:
-                if version is None or version in line:
-                    return True
+        ret = self.run(["tdnf", "list", "-j", "--installed", package])
+        pkglist = json.loads('\n'.join(ret['stdout']))
+        for p in pkglist:
+            if p['Name'] == package and (version is None or p['Evr'] == version):
+                return True
         return False
 
     def erase_package(self, pkgname, pkgversion=None):
