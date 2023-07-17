@@ -11,6 +11,10 @@
 
 #include "rpm/rpmcli.h"
 
+#define INSTALL_INSTALL 0
+#define INSTALL_UPGRADE 1
+#define INSTALL_REINSTALL 2
+
 uint32_t
 TDNFRpmCleanupTS(PTDNF pTdnf,
                  PTDNFRPMTS pTS)
@@ -366,7 +370,7 @@ TDNFPopulateTransaction(
         dwError = TDNFTransAddInstallPkgs(
                       pTS,
                       pTdnf,
-                      pSolvedInfo->pPkgsToInstall, 0);
+                      pSolvedInfo->pPkgsToInstall, INSTALL_INSTALL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToReinstall)
@@ -375,7 +379,7 @@ TDNFPopulateTransaction(
                       pTS,
                       pTdnf,
                       pSolvedInfo->pPkgsToReinstall,
-                      1);
+                      INSTALL_REINSTALL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToUpgrade)
@@ -384,7 +388,7 @@ TDNFPopulateTransaction(
                       pTS,
                       pTdnf,
                       pSolvedInfo->pPkgsToUpgrade,
-                      1);
+                      INSTALL_UPGRADE);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     if(pSolvedInfo->pPkgsToRemove)
@@ -407,7 +411,7 @@ TDNFPopulateTransaction(
                       pTS,
                       pTdnf,
                       pSolvedInfo->pPkgsToDowngrade,
-                      0);
+                      INSTALL_INSTALL);
         BAIL_ON_TDNF_ERROR(dwError);
         if(pSolvedInfo->pPkgsRemovedByDowngrade)
         {
@@ -765,7 +769,7 @@ TDNFTransAddInstallPkgs(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
     PTDNF_PKG_INFO pInfos,
-    int nUpgrade
+    int nInstallFlag
     )
 {
     uint32_t dwError = 0;
@@ -789,7 +793,7 @@ TDNFTransAddInstallPkgs(
                       pTdnf,
                       pInfo,
                       pRepo,
-                      nUpgrade);
+                      nInstallFlag);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -810,7 +814,7 @@ TDNFTransAddInstallPkg(
     PTDNF pTdnf,
     PTDNF_PKG_INFO pInfo,
     PTDNF_REPO_DATA pRepo,
-    int nUpgrade
+    int nInstallFlag
     )
 {
     uint32_t dwError = 0;
@@ -940,12 +944,19 @@ TDNFTransAddInstallPkg(
             BAIL_ON_TDNF_RPM_ERROR(dwError);
         }
     } else {
-        dwError = rpmtsAddInstallElement(
+        if (nInstallFlag == INSTALL_REINSTALL){
+            dwError = rpmtsAddReinstallElement(
                       pTS->pTS,
                       rpmHeader,
-                      (fnpyKey)pszFilePath,
-                      nUpgrade,
-                      NULL);
+                      (fnpyKey)pszFilePath);
+        } else {
+            dwError = rpmtsAddInstallElement(
+                          pTS->pTS,
+                          rpmHeader,
+                          (fnpyKey)pszFilePath,
+                          nInstallFlag == INSTALL_UPGRADE,
+                          NULL);
+        }
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
 
