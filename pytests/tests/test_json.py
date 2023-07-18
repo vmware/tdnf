@@ -11,6 +11,9 @@ import json
 import os
 
 
+PKGNAME_VERBOSE_SCRIPTS = "tdnf-verbose-scripts"
+
+
 @pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     tdnfj = os.path.join(utils.config['bin_dir'], 'tdnfj')
@@ -82,6 +85,43 @@ def test_install(utils):
 
 def test_erase(utils):
     pkgname = utils.config["mulversion_pkgname"]
+    utils.install_package(pkgname)
+    ret = utils.run(['tdnf',
+                     '-j', '-y', '--nogpgcheck',
+                     'erase', pkgname])
+    assert not utils.check_package(pkgname)
+    install_info = json.loads("\n".join(ret['stdout']))
+
+    pkg_found = False
+    install_pkgs = install_info["Remove"]
+    for p in install_pkgs:
+        if p['Name'] == pkgname:
+            pkg_found = True
+            break
+    assert pkg_found
+
+
+# verbose rpm scriplets should not interfer with json output
+def test_install_verbose(utils):
+    pkgname = PKGNAME_VERBOSE_SCRIPTS
+    utils.erase_package(pkgname)
+    ret = utils.run(['tdnf',
+                     '-j', '-y', '--nogpgcheck',
+                     'install', pkgname])
+    assert utils.check_package(pkgname)
+    install_info = json.loads("\n".join(ret['stdout']))
+
+    pkg_found = False
+    install_pkgs = install_info["Install"]
+    for p in install_pkgs:
+        if p['Name'] == pkgname:
+            pkg_found = True
+            break
+    assert pkg_found
+
+
+def test_erase_verbose(utils):
+    pkgname = PKGNAME_VERBOSE_SCRIPTS
     utils.install_package(pkgname)
     ret = utils.run(['tdnf',
                      '-j', '-y', '--nogpgcheck',
