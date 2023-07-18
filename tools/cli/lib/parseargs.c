@@ -172,6 +172,8 @@ TDNFCliParseArgs(
     pCmdArgs->nArgc = argc;
     pCmdArgs->ppszArgv = argv;
 
+    pCmdArgs->nRpmVerbosity = -1;
+
     opterr = 0;//tell getopt to not print errors
     while (1)
     {
@@ -497,7 +499,7 @@ ParseRpmVerbosity(
         }
     }
 
-    *pnRpmVerbosity = TDNF_RPMLOG_ERR;
+    *pnRpmVerbosity = TDNF_RPMLOG_INFO;
 
     return dwError;
 }

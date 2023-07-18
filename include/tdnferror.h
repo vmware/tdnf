@@ -153,6 +153,8 @@ extern "C" {
 
 #define ERROR_TDNF_SIZE_MISMATCH             1527
 
+#define ERROR_TDNF_RPMTS_FDDUP_FAILED        1528
+
 /* event context */
 #define ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND      1551
 #define ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE   1552
