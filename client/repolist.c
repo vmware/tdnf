@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : repolist.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #include "includes.h"
 
 #include "../llconf/nodes.h"
@@ -475,7 +463,7 @@ TDNFLoadReposFromFile(
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
-    
+
     /* cn_conf == NULL => we will not reach here */
     /* coverity[var_deref_op] */
     for(cn_section = cn_conf->first_child; cn_section; cn_section = cn_section->next)

@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : packageutils.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #define _GNU_SOURCE 1
 #include "includes.h"
 

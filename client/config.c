@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : config.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #include "includes.h"
 
 #include "../llconf/nodes.h"
