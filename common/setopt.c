@@ -6,19 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : setopt.c
- *
- * Abstract :
- *
- *            tdnf
- *
- *            command line tool
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- *
- */
-
 #include "includes.h"
 
 void

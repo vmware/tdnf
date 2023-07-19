@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : api.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #include "includes.h"
 
 uid_t gEuid;
@@ -439,7 +427,7 @@ TDNFClean(
             dwError = 0;
         }
         BAIL_ON_TDNF_ERROR(dwError);
-        
+
         pr_info("\n");
     }
 cleanup:

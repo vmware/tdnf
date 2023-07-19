@@ -6,17 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : memory.c
- *
- * Abstract :
- *
- *
- *            common library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #include "includes.h"
 
 uint32_t
