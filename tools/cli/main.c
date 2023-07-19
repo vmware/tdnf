@@ -113,6 +113,7 @@ int main(int argc, char **argv)
             if (strcmp(pszCmd, arCmdMap[i].pszCmdName) == 0)
             {
                 pCmd = &arCmdMap[i];
+                break;
             }
         }
 
