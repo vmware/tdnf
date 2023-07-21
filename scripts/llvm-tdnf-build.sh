@@ -20,5 +20,4 @@ p=$(nproc)
 mkdir -p $history_loc
 cmake -DHISTORY_DB_DIR=$history_loc .. && \
   make -j$p && \
-  make python -j$p && \
   make check -j$p || exit 1
