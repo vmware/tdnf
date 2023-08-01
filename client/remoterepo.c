@@ -163,6 +163,7 @@ TDNFDownloadFile(
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
     int i;
+    int nNoOutput = 1;
 
     /* TDNFFetchRemoteGPGKey sends pszProgressData as NULL */
     if(!pTdnf ||
@@ -215,6 +216,7 @@ TDNFDownloadFile(
         {
             dwError = set_progress_cb(pCurl, pszProgressData);
             BAIL_ON_TDNF_ERROR(dwError);
+            nNoOutput = 0;
         }
     }
 
@@ -252,6 +254,11 @@ TDNFDownloadFile(
         }
         fclose(fp);
         fp = NULL;
+    }
+    /* finish progress line output,
+       but only if progrees was enabled */
+    if (!nNoOutput) {
+        pr_info("\n");
     }
 
     dwError = curl_easy_getinfo(pCurl,
@@ -404,8 +411,6 @@ TDNFDownloadPackage(
         pr_info("%s package already downloaded", pszPkgName);
     }
     BAIL_ON_TDNF_ERROR(dwError);
-
-    pr_info("\n");
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszCopyOfPackageLocation);
