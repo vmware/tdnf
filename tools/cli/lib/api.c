@@ -187,7 +187,7 @@ TDNFCliListPackagesPrint(
             if(snprintf(
                 szNameAndArch,
                 MAX_COL_LEN,
-                "%s.%s",
+                "%s.%s ",
                 pPkg->pszName,
                 pPkg->pszArch) < 0)
             {
@@ -199,7 +199,7 @@ TDNFCliListPackagesPrint(
             if(snprintf(
                 szVersionAndRelease,
                 MAX_COL_LEN,
-                "%s-%s",
+                "%s-%s ",
                 pPkg->pszVersion,
                 pPkg->pszRelease) < 0)
             {
