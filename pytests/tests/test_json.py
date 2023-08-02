@@ -141,7 +141,7 @@ def test_erase_verbose(utils):
 def test_check_update(utils):
     ret = utils.run(['tdnf', '-j', 'check-update'])
     d = json.loads("\n".join(ret['stdout']))
-    assert type(d) == list
+    assert type(d) is list
 
 
 def test_repolist(utils):
@@ -160,25 +160,25 @@ def test_repolist(utils):
 def test_repoquery(utils):
     ret = utils.run(['tdnf', '-j', 'repoquery'])
     d = json.loads("\n".join(ret['stdout']))
-    assert type(d) == list
+    assert type(d) is list
 
 
 def test_updateinfo(utils):
     ret = utils.run(['tdnf', '-j', 'updateinfo'])
     d = json.loads("\n".join(ret['stdout']))
-    assert type(d) == dict
+    assert type(d) is dict
 
 
 def test_updateinfo_info(utils):
     ret = utils.run(['tdnf', '-j', 'updateinfo', '--info'])
     d = json.loads("\n".join(ret['stdout']))
-    assert type(d) == list
+    assert type(d) is list
 
 
 def test_history_info(utils):
     ret = utils.run(['tdnf', '-j', 'history', '--info'])
     d = json.loads("\n".join(ret['stdout']))
-    assert type(d) == list
+    assert type(d) is list
 
 
 def test_jsondump(utils):
