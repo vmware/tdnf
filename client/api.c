@@ -31,6 +31,11 @@ static void IsTdnfAlreadyRunning(void);
 
 static void TdnfExitHandler(void)
 {
+    if (gEuid)
+    {
+        return;
+    }
+
     tdnflockFree(instance_lock);
 }
 
