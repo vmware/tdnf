@@ -981,3 +981,11 @@ int32_t strtoi(const char *ptr)
 
     return (int32_t) tmp;
 }
+
+int isTrue(const char *str)
+{
+    if (!strcasecmp(str, "false"))
+        return 0;
+
+    return !strcasecmp(str, "true") || strtoi(str);
+}

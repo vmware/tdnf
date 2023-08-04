@@ -26,14 +26,6 @@ TDNFConfGetRpmVerbosity(
     return nLogLevel;
 }
 
-static
-int isTrue(const char *str)
-{
-    int val = 0;
-
-    return strcasecmp(str, "true") == 0 || strtoi(str) != 0;
-}
-
 uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,

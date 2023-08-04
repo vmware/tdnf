@@ -312,12 +312,6 @@ error:
     goto cleanup;
 }
 
-static
-int isTrue(const char *str)
-{
-    return strcasecmp(str, "true") == 0 || strtoi(str) != 0;
-}
-
 uint32_t
 TDNFRepoGPGCheckReadConfig(
     PTDNF_PLUGIN_HANDLE pHandle,

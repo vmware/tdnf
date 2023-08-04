@@ -321,4 +321,6 @@ tdnflockNewAcquire(
 
 int32_t strtoi(const char *ptr);
 
+int isTrue(const char *str);
+
 #endif /* __COMMON_PROTOTYPES_H__ */

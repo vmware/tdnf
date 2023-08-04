@@ -223,12 +223,6 @@ _TDNFFreePlugin(
     }
 }
 
-static
-int isTrue(const char *str)
-{
-    return strcasecmp(str, "true") == 0 || strtoi(str) != 0;
-}
-
 /* read config file */
 static
 uint32_t
