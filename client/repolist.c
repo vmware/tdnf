@@ -424,7 +424,7 @@ error:
 static
 int isTrue(const char *str)
 {
-    return strcasecmp(str, "true") == 0 || atoi(str) != 0;
+    return strcasecmp(str, "true") == 0 || strtoi(str) != 0;
 }
 
 uint32_t
@@ -525,23 +525,23 @@ TDNFLoadReposFromFile(
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_PRIORITY) == 0)
             {
-                pRepo->nPriority = atoi(cn->value);
+                pRepo->nPriority = strtoi(cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_TIMEOUT) == 0)
             {
-                pRepo->nTimeout = atoi(cn->value);
+                pRepo->nTimeout = strtoi(cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_RETRIES) == 0)
             {
-                pRepo->nRetries = atoi(cn->value);
+                pRepo->nRetries = strtoi(cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_MINRATE) == 0)
             {
-                pRepo->nMinrate = atoi(cn->value);
+                pRepo->nMinrate = strtoi(cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_THROTTLE) == 0)
             {
-                pRepo->nThrottle = atoi(cn->value);
+                pRepo->nThrottle = strtoi(cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_VERIFY) == 0)
             {

@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <limits.h>
 
 #include <tdnftypes.h>
 #include <tdnferror.h>

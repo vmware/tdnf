@@ -137,7 +137,7 @@ void _cnf_find_entry(struct cnfresult **pcr, struct cnfnode *cn_parent,
 		if(*p != ']')
 			return; // FIXME: error condition
 
-		index = atoi(tmp);
+		index = strtoi(tmp);
 		p++;
 	}
 

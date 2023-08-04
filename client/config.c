@@ -29,7 +29,9 @@ TDNFConfGetRpmVerbosity(
 static
 int isTrue(const char *str)
 {
-    return strcasecmp(str, "true") == 0 || atoi(str) != 0;
+    int val = 0;
+
+    return strcasecmp(str, "true") == 0 || strtoi(str) != 0;
 }
 
 uint32_t
@@ -108,7 +110,7 @@ TDNFReadConfig(
 
         if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLY_LIMIT) == 0)
         {
-            pConf->nInstallOnlyLimit = atoi(cn->value);
+            pConf->nInstallOnlyLimit = strtoi(cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
         {
@@ -153,7 +155,7 @@ TDNFReadConfig(
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
         {
-            pConf->nOpenMax = atoi(cn->value);
+            pConf->nOpenMax = strtoi(cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
         {

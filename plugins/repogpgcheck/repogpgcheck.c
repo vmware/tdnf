@@ -315,7 +315,7 @@ error:
 static
 int isTrue(const char *str)
 {
-    return strcasecmp(str, "true") == 0 || atoi(str) != 0;
+    return strcasecmp(str, "true") == 0 || strtoi(str) != 0;
 }
 
 uint32_t

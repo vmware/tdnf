@@ -319,4 +319,6 @@ tdnflockNewAcquire(
     const char *descr
     );
 
+int32_t strtoi(const char *ptr);
+
 #endif /* __COMMON_PROTOTYPES_H__ */
