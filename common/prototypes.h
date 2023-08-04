@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Header   : prototypes.h
- *
- * Abstract :
- *
- *            commonlib
- *
- *            common library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #ifndef __COMMON_PROTOTYPES_H__
 #define __COMMON_PROTOTYPES_H__
 

@@ -6,19 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Header   : includes.h
- *
- * Abstract :
- *
- *            tdnf
- *
- *            command line tool
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- *
- */
-
 #ifndef __CLI_LIB_INCLUDES_H__
 #define __CLI_LIB_INCLUDES_H__
 
