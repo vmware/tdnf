@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Header : defines.h
- *
- * Abstract :
- *
- *            commonlib
- *
- *            common library
- *
- * Authors  : Priyesh Padmavilasom (ppadmavilasom@vmware.com)
- */
-
 #pragma once
 
 #define STRINGIFYX(N) STRINGIFY(N)
