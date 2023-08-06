@@ -463,6 +463,11 @@ TDNFYesOrNo(
 
     if(!pArgs->nAssumeYes && !pArgs->nAssumeNo)
     {
+        if (pArgs->nQuiet) {
+            dwError = ERROR_TDNF_CLI_INSUFF_ARGS_TO_QUIET;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+
         while(1) {
             pr_crit("%s", pszQuestion);
             char buf[256] = {0};
