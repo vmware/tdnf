@@ -195,7 +195,7 @@ typedef struct _TDNF_CLI_CONTEXT_
     PFN_TDNF_HISTORY_RESOLVE_CMD  pFnHistoryResolve;
     PFN_TDNF_ALTER_HISTORY        pFnAlterHistory;
     PFN_TDNF_MARK_COMMAND         pFnMark;
-}TDNF_CLI_CONTEXT, *PTDNF_CLI_CONTEXT;
+} TDNF_CLI_CONTEXT;
 
 #ifdef __cplusplus
 }

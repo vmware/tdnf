@@ -20,4 +20,4 @@ typedef struct _TDNF_PLUGIN_HANDLE_
     uint32_t nError; /* last error set by this plugin */
     uint32_t nGPGError; /* gpg specific error. gpgerror will provide details */
     PTDNF_REPO_GPG_CHECK_DATA pData;
-}TDNF_PLUGIN_HANDLE, *PTDNF_PLUGIN_HANDLE;
+}TDNF_PLUGIN_HANDLE;

@@ -56,4 +56,4 @@ typedef struct _TDNF_PLUGIN_HANDLE_
     PTDNF pTdnf;
     uint32_t nError; /* last error set by this plugin */
     PTDNF_METALINK_DATA pData;
-} TDNF_PLUGIN_HANDLE, *PTDNF_PLUGIN_HANDLE;
+} TDNF_PLUGIN_HANDLE;

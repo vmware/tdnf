@@ -32,11 +32,11 @@
 
 static
 struct cnfmodule this_module = {
-	name: "ini",
-	parser: parse_ini,
-	unparser: unparse_ini,
-	default_file: NULL,
-	opt_root: NULL
+	.name = "ini",
+	.parser = parse_ini,
+	.unparser = unparse_ini,
+	.default_file = NULL,
+	.opt_root = NULL
 };
 
 static

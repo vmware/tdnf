@@ -468,7 +468,7 @@ TDNFLoadReposFromFile(
     /* coverity[var_deref_op] */
     for(cn_section = cn_conf->first_child; cn_section; cn_section = cn_section->next)
     {
-        if ((cn_section->name[0] == '.'))
+        if (cn_section->name[0] == '.')
             continue;
 
         dwError = TDNFCreateRepo(&pRepo, cn_section->name);

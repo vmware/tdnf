@@ -17,7 +17,7 @@ typedef struct _TDNF_PLUGIN_
     TDNF_PLUGIN_EVENT RegisterdEvts;
     TDNF_PLUGIN_INTERFACE stInterface;
     struct _TDNF_PLUGIN_ *pNext;
-} TDNF_PLUGIN, *PTDNF_PLUGIN;
+} TDNF_PLUGIN;
 
 typedef struct _TDNF_
 {
@@ -79,7 +79,7 @@ typedef struct _TDNF_EVENT_DATA_
     TDNF_EVENT_ITEM_TYPE nType;
     const char *pcszName;
     struct _TDNF_EVENT_DATA_ *pNext;
-} TDNF_EVENT_DATA, *PTDNF_EVENT_DATA;
+} TDNF_EVENT_DATA;
 
 typedef struct progress_cb_data {
     time_t cur_time;
