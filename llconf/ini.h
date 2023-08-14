@@ -19,6 +19,8 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#pragma once
+
 struct cnfnode *parse_ini(struct cnfmodule *cm, FILE *fptr);
 int unparse_ini(struct cnfmodule *cm, FILE *fptr, struct cnfnode *cn_root);
 void register_ini(struct cnfnode *opt_root);

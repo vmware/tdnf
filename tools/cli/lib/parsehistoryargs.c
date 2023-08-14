@@ -72,10 +72,10 @@ TDNFCliParseHistoryArgs(
         dwError = TDNFSplitStringToArray(pArgs->ppszCmds[2], "-", &ppszRange);
         BAIL_ON_CLI_ERROR(dwError);
 
-        pHistoryArgs->nFrom = atoi(ppszRange[0]);
+        pHistoryArgs->nFrom = strtoi(ppszRange[0]);
         if (ppszRange[1])
         {
-            pHistoryArgs->nTo = atoi(ppszRange[1]);
+            pHistoryArgs->nTo = strtoi(ppszRange[1]);
         }
     }
 
@@ -93,11 +93,11 @@ TDNFCliParseHistoryArgs(
         }
         else if (strcasecmp(pSetOpt->pszOptName, "from") == 0)
         {
-            pHistoryArgs->nFrom = atoi(pSetOpt->pszOptValue);
+            pHistoryArgs->nFrom = strtoi(pSetOpt->pszOptValue);
         }
         else if (strcasecmp(pSetOpt->pszOptName, "to") == 0)
         {
-            pHistoryArgs->nTo = atoi(pSetOpt->pszOptValue);
+            pHistoryArgs->nTo = strtoi(pSetOpt->pszOptValue);
         }
     }
 

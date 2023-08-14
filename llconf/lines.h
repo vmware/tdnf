@@ -19,6 +19,8 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#pragma once
+
 /** \file
  * Handling for collections of lines of text.
  *

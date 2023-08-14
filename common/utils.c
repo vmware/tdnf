@@ -965,3 +965,27 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszDirName);
     goto cleanup;
 }
+
+int32_t strtoi(const char *ptr)
+{
+    char *p = NULL;
+    long int tmp = 0;
+
+    tmp = strtol(ptr, &p, 10);
+
+    if (*p || tmp > INT_MAX || tmp < INT_MIN)
+    {
+        pr_crit("WARNING: invalid arg to %s: '%s'\n", __func__, ptr);
+        return 0;
+    }
+
+    return (int32_t) tmp;
+}
+
+int isTrue(const char *str)
+{
+    if (!strcasecmp(str, "false"))
+        return 0;
+
+    return !strcasecmp(str, "true") || strtoi(str);
+}
