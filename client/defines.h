@@ -237,6 +237,7 @@ typedef enum
     {ERROR_TDNF_NO_GPGKEY_CONF_ENTRY,         "ERROR_TDNF_NO_GPGKEY_CONF_ENTRY",         "gpgkey entry is missing for this repo. please add gpgkey in repo file or use --nogpgcheck to ignore."}, \
     {ERROR_TDNF_URL_INVALID,                          "ERROR_TDNF_URL_INVALID",          "URL is invalid."}, \
     {ERROR_TDNF_SIZE_MISMATCH,                       "ERROR_TDNF_SIZE_MISMATCH",                       "File size does not match."}, \
+    {ERROR_TDNF_CHECKSUM_MISMATCH,                   "ERROR_TDNF_CHECKSUM_MISMATCH",                   "File checksum does not match."}, \
     {ERROR_TDNF_BASEURL_DOES_NOT_EXISTS,             "ERROR_TDNF_BASEURL_DOES_NOT_EXISTS",             "Base URL and Metalink URL not found in the repo file"},\
     {ERROR_TDNF_CHECKSUM_VALIDATION_FAILED,          "ERROR_TDNF_CHECKSUM_VALIDATION_FAILED",          "Checksum Validation failed for the repomd.xml downloaded using URL from metalink"},\
     {ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED, "ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED", "No Resource present in metalink file for file download"},\

@@ -46,6 +46,7 @@ export GNUPGHOME=${TEST_REPO_DIR}/gnupg
 BUILD_PATH=${TEST_REPO_DIR}/build
 PUBLISH_PATH=${TEST_REPO_DIR}/photon-test
 PUBLISH_SRC_PATH=${TEST_REPO_DIR}/photon-test-src
+PUBLISH_SHA512_PATH=${TEST_REPO_DIR}/photon-test-sha512
 
 ARCH=$(uname -m)
 
@@ -57,6 +58,7 @@ mkdir -p -m 755 ${BUILD_PATH}/BUILD \
     ${TEST_REPO_DIR}/yum.repos.d \
     ${PUBLISH_PATH} \
     ${PUBLISH_SRC_PATH} \
+   ${PUBLISH_SHA512_PATH} \
     ${GNUPGHOME}
 
 #gpgkey data for unattended key generation
@@ -99,6 +101,7 @@ rpmsign --addsign ${BUILD_PATH}/RPMS/*/*.rpm
 check_err "Failed to sign built packages."
 cp -r ${BUILD_PATH}/RPMS ${PUBLISH_PATH}
 cp -r ${BUILD_PATH}/SRPMS ${PUBLISH_SRC_PATH}
+cp -r ${BUILD_PATH}/RPMS ${PUBLISH_SHA512_PATH}
 
 # save key to later be imported:
 mkdir -p ${PUBLISH_PATH}/keys
@@ -106,6 +109,7 @@ gpg --armor --export tdnftest@tdnf.test > ${PUBLISH_PATH}/keys/pubkey.asc
 
 createrepo ${PUBLISH_PATH}
 createrepo ${PUBLISH_SRC_PATH}
+createrepo -s sha512 ${PUBLISH_SHA512_PATH}
 
 modifyrepo ${REPO_SRC_DIR}/updateinfo-1.xml ${PUBLISH_PATH}/repodata
 check_err "Failed to modify repo with updateinfo-1.xml."
@@ -126,6 +130,16 @@ baseurl=http://localhost:8080/photon-test
 gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
 gpgcheck=0
 enabled=1
+EOF
+
+cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test-sha512.repo
+[photon-test-sha512]
+name=basic
+baseurl=http://localhost:8080/photon-test-sha512
+#metalink=http://localhost:8080/photon-test-sha512/metalink
+gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
+gpgcheck=0
+enabled=0
 EOF
 
 cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test-src.repo

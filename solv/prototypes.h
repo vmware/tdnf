@@ -187,6 +187,13 @@ SolvGetPackageId(
     Id* dwPkgId
     );
 
+uint32_t
+SolvGetPkgChecksumFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    int *checksumType,
+    unsigned char** ppbChecksum
+    );
 
 uint32_t
 SolvGetLatest(

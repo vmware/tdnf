@@ -821,6 +821,62 @@ error:
 }
 
 uint32_t
+SolvGetPkgChecksumFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    int *checksumType,
+    unsigned char** ppbChecksum)
+{
+
+    uint32_t dwError = 0;
+    const unsigned char* pbTemp = NULL;
+    unsigned char* pbChecksum = NULL;
+    Solvable *pSolv = NULL;
+    int checksumLen = 0;
+
+    if(!pSack || !pSack->pPool || !ppbChecksum)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pbTemp = solvable_lookup_bin_checksum(pSolv, SOLVABLE_CHECKSUM, checksumType);
+
+    if(!pbTemp)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    checksumLen = solv_chksum_len(*checksumType);
+
+    dwError = TDNFAllocateMemory(checksumLen, sizeof(unsigned char), (void **)&pbChecksum);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    memcpy(pbChecksum, pbTemp, checksumLen);
+    *ppbChecksum = pbChecksum;
+
+cleanup:
+    return dwError;
+
+error:
+    if(ppbChecksum)
+    {
+        *ppbChecksum = NULL;
+    }
+    TDNF_SAFE_FREE_MEMORY(pbChecksum);
+    goto cleanup;
+
+}
+
+uint32_t
 SolvCmpEvr(
     PSolvSack pSack,
     Id dwPkg1,
