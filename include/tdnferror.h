@@ -152,8 +152,9 @@ extern "C" {
 #define ERROR_TDNF_RPMTS_OPENDB_FAILED       1526
 
 #define ERROR_TDNF_SIZE_MISMATCH             1527
+#define ERROR_TDNF_CHECKSUM_MISMATCH         1528
 
-#define ERROR_TDNF_RPMTS_FDDUP_FAILED        1528
+#define ERROR_TDNF_RPMTS_FDDUP_FAILED        1529
 
 /* event context */
 #define ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND      1551

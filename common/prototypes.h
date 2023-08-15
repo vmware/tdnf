@@ -323,4 +323,35 @@ int32_t strtoi(const char *ptr);
 
 int isTrue(const char *str);
 
+uint32_t
+TDNFGetDigestForFile(
+    const char *filename,
+    hash_op *hash,
+    uint8_t *digest
+    );
+
+uint32_t
+TDNFCheckHash(
+    const char *filename,
+    unsigned char *digest,
+    int type
+    );
+
+uint32_t
+TDNFCheckHexDigest(
+    const char *hex_digest,
+    int digest_length
+    );
+
+uint32_t
+TDNFHexToUint(
+    const char *hex_digest,
+    unsigned char *uintValue
+    );
+
+uint32_t
+TDNFChecksumFromHexDigest(
+    const char *hex_digest,
+    unsigned char *ppdigest
+    );
 #endif /* __COMMON_PROTOTYPES_H__ */

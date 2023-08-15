@@ -153,6 +153,7 @@ typedef struct _TDNF_PKG_INFO
     uint32_t dwEpoch;
     uint32_t dwInstallSizeBytes;
     uint32_t dwDownloadSizeBytes;
+    int nChecksumType;
     char* pszName;
     char* pszRepoName;
     char* pszVersion;
@@ -169,6 +170,7 @@ typedef struct _TDNF_PKG_INFO
     char ***pppszDependencies;
     char **ppszFileList;
     char *pszSourcePkg;
+    unsigned char* pbChecksum;
     PTDNF_PKG_CHANGELOG_ENTRY pChangeLogEntries;
     struct _TDNF_PKG_INFO* pNext;
 }TDNF_PKG_INFO, *PTDNF_PKG_INFO;

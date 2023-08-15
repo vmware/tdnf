@@ -1082,6 +1082,7 @@ TDNFPopulatePkgInfos(
     Id dwPkgId = 0;
     PTDNF_PKG_INFO pPkgInfos = NULL;
     PTDNF_PKG_INFO pPkgInfo = NULL;
+    int nChecksumType = 0;
 
     if(!ppPkgInfos)
     {
@@ -1134,6 +1135,34 @@ TDNFPopulatePkgInfos(
                       pSack,
                       dwPkgId,
                       &pPkgInfo->pszLocation);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = SolvGetPkgChecksumFromId(
+                      pSack,
+                      dwPkgId,
+                      &nChecksumType,
+                      &pPkgInfo->pbChecksum);
+        //Ignore no data
+        if(dwError == ERROR_TDNF_NO_DATA)
+        {
+            dwError = 0;
+        } else if (nChecksumType == REPOKEY_TYPE_SHA512)
+        {
+            pPkgInfo->nChecksumType = TDNF_HASH_SHA512;
+        } else if (nChecksumType == REPOKEY_TYPE_SHA256)
+        {
+            pPkgInfo->nChecksumType = TDNF_HASH_SHA256;
+        } else if (nChecksumType == REPOKEY_TYPE_SHA1)
+        {
+            pPkgInfo->nChecksumType = TDNF_HASH_SHA1;
+        } else if (nChecksumType == REPOKEY_TYPE_MD5)
+        {
+            pPkgInfo->nChecksumType = TDNF_HASH_MD5;
+        } else
+        {
+            pPkgInfo->pbChecksum = NULL;
+        }
+
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgInstallSizeFromId(
