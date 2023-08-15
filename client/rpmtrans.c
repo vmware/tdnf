@@ -832,6 +832,8 @@ TDNFTransAddInstallPkg(
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
     const char* pszPackageLocation = NULL;
     const char* pszPkgName = NULL;
+    uint8_t digest_from_file[EVP_MAX_MD_SIZE] = {0};
+    hash_op *hash = NULL;
     int nSize;
 
     if(!pTS || !pTdnf || !pInfo || !pRepo)
@@ -908,6 +910,20 @@ TDNFTransAddInstallPkg(
         dwError = errno;
         pr_err("could not access file %s: %s (%d)\n", pszFilePath, strerror(errno), errno);
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    if(pInfo->pbChecksum != NULL) {
+        hash = hash_ops + pInfo->nChecksumType;
+
+        dwError = TDNFGetDigestForFile(pszFilePath, hash, digest_from_file);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (memcmp(digest_from_file, pInfo->pbChecksum, hash->length))
+        {
+            pr_err("rpm file (%s) Checksum FAILED (digest mismatch)\n", pszFilePath);
+            dwError = ERROR_TDNF_CHECKSUM_MISMATCH;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     dwError = TDNFGetFileSize(pszFilePath, &nSize);
