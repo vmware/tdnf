@@ -236,8 +236,8 @@ typedef enum
     {ERROR_TDNF_METADATA_EXPIRE_PARSE, "ERROR_TDNF_METADATA_EXPIRE_PARSE", "metadata_expire value could not be parsed. Check your repo files."},\
     {ERROR_TDNF_PROTECTED,           "ERROR_TDNF_PROTECTED",           "The operation would result in removing a protected package."},\
     {ERROR_TDNF_DOWNGRADE_NOT_ALLOWED,\
-	    "ERROR_TDNF_DOWNGRADE_NOT_ALLOWED",\
-	    "a downgrade is not allowed below the minimal version. Check 'minversions' in the configuration."},\
+        "ERROR_TDNF_DOWNGRADE_NOT_ALLOWED",\
+        "a downgrade is not allowed below the minimal version. Check 'minversions' in the configuration."},\
     {ERROR_TDNF_PERM, "ERROR_TDNF_PERM", "Operation not permitted. You have to be root."},\
     {ERROR_TDNF_OPT_NOT_FOUND, "ERROR_TDNF_OPT_NOT_FOUND", "A required option was not found"},\
     {ERROR_TDNF_OPERATION_ABORTED, "ERROR_TDNF_OPERATION_ABORTED", "Operation aborted."},\
@@ -248,6 +248,8 @@ typedef enum
     {ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE, "ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE", "An event item type had a mismatch. This is usually related to plugin events. Try --noplugins to deactivate all plugins or --disableplugin=<plugin> to deactivate a specific one. You can permanently deactivate an offending plugin by setting enable=0 in the plugin config file."},\
     {ERROR_TDNF_NO_GPGKEY_CONF_ENTRY,         "ERROR_TDNF_NO_GPGKEY_CONF_ENTRY",         "gpgkey entry is missing for this repo. please add gpgkey in repo file or use --nogpgcheck to ignore."}, \
     {ERROR_TDNF_URL_INVALID,                          "ERROR_TDNF_URL_INVALID",          "URL is invalid."}, \
+    {ERROR_TDNF_SIZE_MISMATCH,                       "ERROR_TDNF_SIZE_MISMATCH",                       "File size does not match."}, \
+    {ERROR_TDNF_CHECKSUM_MISMATCH,                   "ERROR_TDNF_CHECKSUM_MISMATCH",                   "File checksum does not match."}, \
     {ERROR_TDNF_BASEURL_DOES_NOT_EXISTS,             "ERROR_TDNF_BASEURL_DOES_NOT_EXISTS",             "Base URL and Metalink URL not found in the repo file"},\
     {ERROR_TDNF_CHECKSUM_VALIDATION_FAILED,          "ERROR_TDNF_CHECKSUM_VALIDATION_FAILED",          "Checksum Validation failed for the repomd.xml downloaded using URL from metalink"},\
     {ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED, "ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED", "No Resource present in metalink file for file download"},\

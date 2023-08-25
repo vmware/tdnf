@@ -22,9 +22,6 @@
 #define __CLIENT_PROTOTYPES_H__
 
 #include <unistd.h>
-#include <openssl/sha.h>
-#include <openssl/md5.h>
-#include <openssl/evp.h>
 
 extern uid_t gEuid;
 
@@ -871,8 +868,7 @@ uint32_t
 TDNFTransAddInstallPkg(
     PTDNFRPMTS pTS,
     PTDNF pTdnf,
-    const char* pszPackageLocation,
-    const char* pszPkgName,
+    PTDNF_PKG_INFO pInfo,
     PTDNF_REPO_DATA pRepo,
     int nUpgrade
     );
