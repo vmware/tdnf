@@ -12,7 +12,6 @@ import pytest
 
 WORKDIR = '/root/baseurls/workdir'
 REPOFILENAME = 'baseurls.repo'
-TESTREPO = 'photon-test'
 REPONAME = 'baseurls-repo'
 
 
@@ -33,7 +32,7 @@ def teardown_test(utils):
 
 
 def test_multiple_baseurls(utils):
-    reponame = TESTREPO
+    reponame = REPONAME
     workdir = WORKDIR
     utils.makedirs(workdir)
 

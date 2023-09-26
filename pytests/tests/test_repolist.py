@@ -50,6 +50,8 @@ def setup_test(utils):
 def teardown_test(utils):
     os.remove(os.path.join(utils.config['repo_path'], 'yum.repos.d', 'foo.repo'))
     os.remove(os.path.join(utils.config['repo_path'], 'yum.repos.d', 'bar.repo'))
+    os.remove(os.path.join(utils.config['repo_path'], "yum.repos.d", 'test.repo'))
+    os.remove(os.path.join(utils.config['repo_path'], "yum.repos.d", 'test1.repo'))
 
 
 def find_repo(repolist, id):
@@ -126,3 +128,35 @@ def test_repolist_invalid(utils):
 def test_repolist_memcheck(utils):
     ret = utils.run_memcheck(['tdnf', 'repolist'])
     assert ret['retval'] == 0
+
+
+# multiple repoid
+def test_multiple_repoid(utils):
+    reponame = 'test.repo'
+    repofile_test = os.path.join(utils.config['repo_path'], 'yum.repos.d', reponame)
+    utils.edit_config(
+        {
+            'name': 'Test Repo',
+            'enabled': '1',
+            'baseurl': 'http://pkgs.test.org/test'
+        },
+        section='test',
+        filename=repofile_test
+    )
+
+    reponame = 'test1.repo'
+    repofile_test1 = os.path.join(utils.config['repo_path'], 'yum.repos.d', reponame)
+    utils.edit_config(
+        {
+            'name': 'Test Repo',
+            'enabled': '1',
+            'baseurl': 'http://pkgs.test1.org/test1'
+        },
+        section='test',
+        filename=repofile_test1
+    )
+
+    ret = utils.run(['tdnf',
+                     '--disablerepo=*', '--enablerepo={}'.format(reponame),
+                     'makecache'])
+    assert ret['retval'] == 1037
