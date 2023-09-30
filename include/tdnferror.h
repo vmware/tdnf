@@ -72,6 +72,8 @@ extern "C" {
 #define ERROR_TDNF_DOWNGRADE_NOT_ALLOWED    1035
 // cache directory out of memory
 #define ERROR_TDNF_CACHE_DIR_OUT_OF_DISK_SPACE 1036
+// There are duplicate repo id
+#define ERROR_TDNF_DUPLICATE_REPO_ID        1037
 
 //curl errors
 #define ERROR_TDNF_CURL_INIT                  1200

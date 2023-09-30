@@ -27,7 +27,8 @@ def setup_test(utils):
 def teardown_test(utils):
     if os.path.isdir(INSTALLROOT):
         shutil.rmtree(INSTALLROOT)
-    pass
+    if os.path.isdir(REPODIR):
+        shutil.rmtree(REPODIR)
 
 
 def install_root(utils, no_reposd=False):
