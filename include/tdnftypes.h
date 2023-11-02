@@ -265,6 +265,9 @@ typedef struct _TDNF_CONF
     char* pszBaseArch;
     char* pszVarReleaseVer;
     char* pszVarBaseArch;
+    char* pszUserAgentHeader;
+    char* pszOSName;
+    char* pszOSVersion;
     char** ppszExcludes;
     char** ppszMinVersions;
     char** ppszPkgLocks;

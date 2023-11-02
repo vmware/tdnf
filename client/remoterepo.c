@@ -194,6 +194,15 @@ TDNFDownloadFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(!IsNullOrEmptyString(pTdnf->pConf->pszUserAgentHeader))
+    {
+        dwError = curl_easy_setopt(
+                      pCurl,
+                      CURLOPT_USERAGENT,
+                      pTdnf->pConf->pszUserAgentHeader);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
     BAIL_ON_TDNF_ERROR(dwError);
 

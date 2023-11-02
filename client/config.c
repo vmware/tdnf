@@ -13,6 +13,9 @@
 #include "../llconf/entry.h"
 #include "../llconf/ini.h"
 
+#define USERAGENT_HEADER_MAX_LENGTH 256
+#define OS_CONF_FILE "/etc/os-release"
+
 int
 TDNFConfGetRpmVerbosity(
     PTDNF pTdnf
@@ -24,6 +27,59 @@ TDNFConfGetRpmVerbosity(
         nLogLevel = pTdnf->pArgs->nRpmVerbosity;
     }
     return nLogLevel;
+}
+
+static uint32_t TDNFParseOSInfo(PTDNF_CONF pConf)
+{
+    char buf[USERAGENT_HEADER_MAX_LENGTH];
+    char *name = NULL;
+    char *version = NULL;
+    uint32_t dwError = 0;
+    FILE *file = NULL;
+
+    file = fopen(OS_CONF_FILE, "r");
+
+    if (!file) {
+        pr_info("Warning: %s file is not present in the system\n", OS_CONF_FILE);
+        return 0;
+    }
+
+    while (fgets(buf, USERAGENT_HEADER_MAX_LENGTH, file))
+    {
+        if (strncmp("ID=", buf, sizeof("ID=")-1) == 0)
+        {
+            if (sscanf(buf, "ID=\"%[^\"]\"", buf) == 1) {
+                dwError = TDNFAllocateString(buf, &name);
+            } else if (sscanf(buf, "ID=%s", buf) == 1) {
+                dwError = TDNFAllocateString(buf, &name);
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strncmp("VERSION_ID=", buf, sizeof("VERSION_ID=")-1) == 0)
+        {
+            if (sscanf(buf, "VERSION_ID=\"%[^\"]\"", buf) == 1) {
+                dwError = TDNFAllocateString(buf, &version);
+            } else if (sscanf(buf, "VERSION_ID=%s", buf) == 1) {
+                dwError = TDNFAllocateString(buf, &version);
+            }
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    pConf->pszOSName = name;
+    pConf->pszOSVersion = version;
+
+cleanup:
+    if(file)
+    {
+        fclose(file);
+    }
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(name);
+    TDNF_SAFE_FREE_MEMORY(version);
+    goto cleanup;
 }
 
 uint32_t
@@ -40,6 +96,7 @@ TDNFReadConfig(
     char *pszPkgLocksDir = NULL;
     char *pszProtectedDir = NULL;
 
+    const char *pszTdnfVersion = NULL;
     const char *pszProxyUser = NULL;
     const char *pszProxyPass = NULL;
 
@@ -90,6 +147,9 @@ TDNFReadConfig(
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
+
+    dwError = TDNFParseOSInfo(pConf);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     /* cn_conf == NULL => we will not reach here */
     /* coverity[var_deref_op] */
@@ -191,6 +251,17 @@ TDNFReadConfig(
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }
+
+    pszTdnfVersion = TDNFGetVersion();
+
+    if (pConf->pszOSName == NULL)
+        TDNFAllocateString("UNKNOWN", &pConf->pszOSName);
+
+    if (pConf->pszOSVersion == NULL)
+        TDNFAllocateString("UNKNOWN", &pConf->pszOSVersion);
+
+    dwError = TDNFAllocateStringPrintf(&pConf->pszUserAgentHeader, "tdnf/%s %s/%s", pszTdnfVersion, pConf->pszOSName, pConf->pszOSVersion);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     /* if plugins are not enabled explicitely,
        we have to disable them because it's the default */
@@ -326,6 +397,9 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
         TDNF_SAFE_FREE_MEMORY(pConf->pszBaseArch);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszUserAgentHeader);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszOSName);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszOSVersion);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
