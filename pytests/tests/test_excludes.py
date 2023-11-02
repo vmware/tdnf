@@ -73,19 +73,14 @@ def test_update_package(utils):
     pkgversion1 = utils.config["mulversion_lower"]
     pkgversion2 = utils.config["mulversion_higher"]
 
-    if '-' in pkgversion1:
-        pkgversion1 = pkgversion1.split('-')[0]
-    if '-' in pkgversion2:
-        pkgversion2 = pkgversion2.split('-')[0]
-
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion1])
-    assert utils.check_package(pkgname, pkgversion1)
+    assert utils.check_package(pkgname, version=pkgversion1)
 
     utils.run(['tdnf', 'update', '--exclude=', pkgname, '-y', '--nogpgcheck', pkgname + '-' + pkgversion2])
-    assert not utils.check_package(pkgname, pkgversion2)
-    assert utils.check_package(pkgname, pkgversion1)
+    assert not utils.check_package(pkgname, version=pkgversion2)
+    assert utils.check_package(pkgname, version=pkgversion1)
 
 
 # removing an excluded package should fail (dnf behavior) (negative test)
@@ -106,16 +101,11 @@ def test_with_minversion_existing(utils):
     pkgversion1 = utils.config["mulversion_lower"]
     pkgversion2 = utils.config["mulversion_higher"]
 
-    if '-' in pkgversion1:
-        pkgversion1 = pkgversion1.split('-')[0]
-    if '-' in pkgversion2:
-        pkgversion2 = pkgversion2.split('-')[0]
-
     utils.erase_package(pkgname)
 
     utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname + '-' + pkgversion1])
-    assert utils.check_package(pkgname, pkgversion1)
+    assert utils.check_package(pkgname, version=pkgversion1)
 
     utils.run(['tdnf', 'update', '--exclude=', '-y', '--nogpgcheck', pkgname + '-' + pkgversion2])
-    assert not utils.check_package(pkgname, pkgversion2)
-    assert utils.check_package(pkgname, pkgversion1)
+    assert not utils.check_package(pkgname, version=pkgversion2)
+    assert utils.check_package(pkgname, version=pkgversion1)

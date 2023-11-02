@@ -332,7 +332,8 @@ TDNFAddPackagesForInstall(
     PSolvSack pSack,
     Queue* pQueueGoal,
     const char* pszPkgName,
-    int nSource
+    int nSource,
+    int nInstallOnly
     );
 
 uint32_t
@@ -518,6 +519,13 @@ TDNFSolvAddPkgLocks(
     );
 
 uint32_t
+TDNFSolvAddInstallOnlyPkgs(
+    PTDNF pTdnf,
+    Queue* pQueueJobs,
+    Pool *pPool
+    );
+
+uint32_t
 TDNFSolvAddMinVersions(
     PTDNF pTdnf,
     Pool *pPool
@@ -535,6 +543,14 @@ TDNFSolvCheckProtectPkgsInTrans(
     PTDNF pTdnf,
     Transaction *pTrans,
     Pool *pPool
+    );
+
+uint32_t
+TDNFSolvCheckInstallOnlyLimitInTrans(
+    PTDNF pTdnf,
+    Transaction *pTrans,
+    Pool *pPool,
+    Queue *pQueueJobs
     );
 
 //config.c

@@ -125,6 +125,7 @@ TDNFReadConfig(
     pConf->nCleanRequirementsOnRemove = 0;
     pConf->nKeepCache = 0;
     pConf->nOpenMax = TDNF_DEFAULT_OPENMAX;
+    pConf->nInstallOnlyLimit = TDNF_DEFAULT_INSTALLONLY_LIMIT;
 
     register_ini(NULL);
     mod_ini = find_cnfmodule("ini");
@@ -228,6 +229,12 @@ TDNFReadConfig(
         else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_PASS) == 0)
         {
             pszProxyPass = cn->value;
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLYPKGS) == 0)
+        {
+            dwError = TDNFSplitStringToArray(cn->value,
+                                             " ", &pConf->ppszInstallOnlyPkgs);
+            BAIL_ON_TDNF_ERROR(dwError);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
         {

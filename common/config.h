@@ -16,9 +16,11 @@
 #define TDNF_REPO_EXT                     ".repo"
 #define TDNF_CONF_FILE                    "/etc/tdnf/tdnf.conf"
 #define TDNF_CONF_GROUP                   "main"
+
 //Conf file key names
 #define TDNF_CONF_KEY_GPGCHECK            "gpgcheck"
 #define TDNF_CONF_KEY_INSTALLONLY_LIMIT   "installonly_limit"
+#define TDNF_CONF_KEY_INSTALLONLYPKGS     "installonlypkgs"
 #define TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE "clean_requirements_on_remove"
 #define TDNF_CONF_KEY_REPODIR             "repodir" // typo, keep for back compatibility
 #define TDNF_CONF_KEY_REPOSDIR            "reposdir"
@@ -83,13 +85,20 @@
 // repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
+
+/* pszPersistDir - default is configurable at build time,
+   and configurable with "persistdir" at run time */
+#define TDNF_DEFAULT_DB_LOCATION          HISTORY_DB_DIR
+
 #define TDNF_DEFAULT_DISTROVERPKG         "system-release"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
 #define TDNF_SOLVCACHE_DIR_NAME           "solvcache"
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
+
 #define TDNF_DEFAULT_OPENMAX              1024
+#define TDNF_DEFAULT_INSTALLONLY_LIMIT    2
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0
