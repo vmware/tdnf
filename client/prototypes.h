@@ -35,26 +35,6 @@ AddKeyFileToKeyring(
     );
 
 uint32_t
-AddKeyPktToKeyring(
-    rpmKeyring pKeyring,
-    uint8_t* pPkt,
-    size_t nPktLen
-    );
-
-uint32_t
-VerifyRpmSig(
-    rpmKeyring pKeyring,
-    const char* pszPkgFile
-    );
-
-uint32_t
-TDNFGPGCheck(
-    rpmKeyring pKeyring,
-    const char* pszUrlKeyFile,
-    const char* pszPackage
-    );
-
-uint32_t
 TDNFImportGPGKeyFile(
     rpmts pTS,
     const char* pszFile

@@ -10,16 +10,30 @@
 
 uint32_t
 TDNFGPGCheck(
-    rpmKeyring pKeyring,
+    rpmts pTS,
     const char* pszKeyFile,
     const char* pszPkgFile
     )
 {
     uint32_t dwError = 0;
-    char* pszKeyData = NULL;
+    rpmKeyring pKeyring = NULL;
+    FD_t fp = NULL;
 
-    if(!pKeyring || IsNullOrEmptyString(pszKeyFile) || !pszPkgFile)
+    if(!pTS || IsNullOrEmptyString(pszKeyFile) || !pszPkgFile)
     {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    fp = Fopen(pszPkgFile, "r.ufdio");
+    if (fp == NULL) {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+
+    pKeyring = rpmtsGetKeyring(pTS, 0);
+    if (pKeyring == NULL) {
+        pr_err("failed to get RPM keyring");
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -27,11 +41,19 @@ TDNFGPGCheck(
     dwError = AddKeyFileToKeyring(pszKeyFile, pKeyring);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = VerifyRpmSig(pKeyring, pszPkgFile);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (rpmVerifySignatures(
+        /* unused but must be != NULL, see lib/rpmchecksig.c in rpm */ (QVA_t)1,
+        pTS, fp, pszPkgFile) != 0)
+    {
+        dwError = ERROR_TDNF_RPM_GPG_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszKeyData);
+    if(fp)
+    {
+        Fclose(fp);
+    }
     return dwError;
 
 error:
@@ -91,12 +113,10 @@ AddKeyFileToKeyring(
     )
 {
     uint32_t dwError = 0;
-    uint8_t* pPkt = NULL;
-    size_t nPktLen = 0;
-    char* pszKeyData = NULL;
-    int nKeyDataSize;
-    int nKeys = 0;
-    int nOffset = 0;
+
+    int subkeysCount, i;
+    rpmPubkey *subkeys = NULL;
+    rpmPubkey key = NULL;
 
     if(IsNullOrEmptyString(pszFile) || !pKeyring)
     {
@@ -104,184 +124,31 @@ AddKeyFileToKeyring(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = ReadGPGKeyFile(pszFile, &pszKeyData, &nKeyDataSize);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    while (nOffset < nKeyDataSize)
-    {
-        pgpArmor nArmor = pgpParsePkts(pszKeyData + nOffset, &pPkt, &nPktLen);
-        if(nArmor == PGPARMOR_PUBKEY)
-        {
-            dwError = AddKeyPktToKeyring(pKeyring, pPkt, nPktLen);
-            BAIL_ON_TDNF_ERROR(dwError);
-            nKeys++;
-        }
-        nOffset += nPktLen;
-    }
-    if (nKeys == 0) {
+    key = rpmPubkeyRead(pszFile);
+    if (key == NULL) {
+        pr_err("reading %s failed: %s (%d)", pszFile, strerror(errno), errno);
         dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszKeyData);
-    return dwError;
-error:
-    goto cleanup;
-}
-
-uint32_t
-AddKeyPktToKeyring(
-    rpmKeyring pKeyring,
-    uint8_t* pPkt,
-    size_t nPktLen
-    )
-{
-    uint32_t dwError = 0;
-    pgpDig pDig = NULL;
-    rpmPubkey pPubkey = NULL;
-
-    if(!pKeyring || !pPkt || nPktLen == 0)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
+    if (rpmKeyringAddKey(pKeyring, key) == 0) {
+        pr_info("added key %s to keyring");
     }
+    subkeys = rpmGetSubkeys(key, &subkeysCount);
+    rpmPubkeyFree(key);
+    for (i = 0; i < subkeysCount; i++) {
+        rpmPubkey subkey = subkeys[i];
 
-    pPubkey = rpmPubkeyNew (pPkt, nPktLen);
-    if(!pPubkey)
-    {
-        dwError = ERROR_TDNF_CREATE_PUBKEY_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pDig = rpmPubkeyDig(pPubkey);
-    if(!pDig)
-    {
-        dwError = ERROR_TDNF_CREATE_PUBKEY_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = rpmKeyringLookup(pKeyring, pDig);
-    if(dwError == RPMRC_OK)
-    {
-        dwError = 0;//key exists
-    }
-    else
-    {
-        dwError = rpmKeyringAddKey(pKeyring, pPubkey);
-        if(dwError == 1)
-        {
-            dwError = 0;//Already added. ignore
+        if (rpmKeyringAddKey(pKeyring, subkey) == 0) {
+            pr_info("added subkey %d of main key %s to keyring\n", i, pszFile);
         }
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-cleanup:
-    return dwError;
-error:
-    if(pPubkey)
-    {
-        rpmPubkeyFree(pPubkey);
-    }
-    goto cleanup;
-}
-
-uint32_t
-VerifyRpmSig(
-    rpmKeyring pKeyring,
-    const char* pszPkgFile
-    )
-{
-    uint32_t dwError = 0;
-    FD_t pFD_t = NULL;
-    rpmts pTS = NULL;
-    rpmtd pTD = NULL;
-    Header pPkgHeader = NULL;
-    pgpDig pDigest = NULL;
-
-    if(!pKeyring || IsNullOrEmptyString(pszPkgFile))
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pFD_t = Fopen(pszPkgFile, "r.fdio");
-    if(!pFD_t)
-    {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-    }
-
-    pTS = rpmtsCreate();
-    if(!pTS)
-    {
-        dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
-        BAIL_ON_TDNF_RPM_ERROR(dwError);
-    }
-    rpmtsSetVSFlags (pTS, _RPMVSF_NOSIGNATURES);
-
-    pTD = rpmtdNew();
-    if(!pTD)
-    {
-        dwError = ERROR_TDNF_RPMTD_CREATE_FAILED;
-        BAIL_ON_TDNF_RPM_ERROR(dwError);
-    }
-
-    dwError = rpmReadPackageFile(pTS, pFD_t, pszPkgFile, &pPkgHeader);
-    BAIL_ON_TDNF_RPM_ERROR(dwError);
-
-    if(!headerConvert(pPkgHeader, HEADERCONV_RETROFIT_V3))
-    {
-        dwError = ERROR_TDNF_RPM_HEADER_CONVERT_FAILED;
-        BAIL_ON_TDNF_RPM_ERROR(dwError);
-    }
-
-    if(!headerGet(pPkgHeader, RPMTAG_RSAHEADER, pTD, HEADERGET_MINMEM))
-    {
-        dwError = ERROR_TDNF_RPM_GET_RSAHEADER_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pDigest = pgpNewDig();
-    if(pgpPrtPkts(pTD->data, pTD->count, pDigest, 0))
-    {
-        dwError = ERROR_TDNF_RPM_GPG_PARSE_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(rpmKeyringLookup(pKeyring, pDigest) != RPMRC_OK)
-    {
-        dwError = ERROR_TDNF_RPM_GPG_NO_MATCH;
-        BAIL_ON_TDNF_ERROR(dwError);
+        rpmPubkeyFree(subkey);
     }
 
 cleanup:
-    if(pFD_t)
-    {
-        Fclose(pFD_t);
-    }
-    if(pDigest)
-    {
-        pgpFreeDig(pDigest);
-    }
-    if(pPkgHeader)
-    {
-        headerFree(pPkgHeader);
-    }
-    if(pTD)
-    {
-        rpmtdFree(pTD);
-    }
-    if(pTS)
-    {
-        rpmtsFree(pTS);
-    }
+    if (subkeys)
+        free(subkeys);
     return dwError;
-
 error:
-    if (pszPkgFile)
-    {
-        pr_err("Error verifying signature of: %s\n", pszPkgFile);
-    }
     goto cleanup;
 }
 
@@ -343,7 +210,6 @@ TDNFGPGCheckPackage(
 {
     uint32_t dwError = 0;
     Header rpmHeader = NULL;
-    rpmKeyring pKeyring = NULL;
     int nGPGSigCheck = 0;
     FD_t fp = NULL;
     char** ppszUrlGPGKeys = NULL;
@@ -416,8 +282,7 @@ TDNFGPGCheckPackage(
             dwError = TDNFImportGPGKeyFile(pTS->pTS, pszLocalGPGKey);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            pKeyring = rpmtsGetKeyring(pTS->pTS, 0);
-            dwError = TDNFGPGCheck(pKeyring, pszLocalGPGKey, pszFilePath);
+            dwError = TDNFGPGCheck(pTS->pTS, pszLocalGPGKey, pszFilePath);
             if (dwError == 0)
             {
                 nMatched++;
