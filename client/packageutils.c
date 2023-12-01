@@ -1000,7 +1000,8 @@ TDNFGetAvailableCacheBytes(
     )
 {
     uint32_t dwError = 0;
-    struct statfs tmpStatfsBuffer = {0};
+    struct statfs stfs = {0};
+    struct stat st = {0};
 
     if(!pConf || !pConf->pszCacheDir || !pqwAvailCacheDirBytes)
     {
@@ -1008,13 +1009,19 @@ TDNFGetAvailableCacheBytes(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (statfs(pConf->pszCacheDir, &tmpStatfsBuffer) != 0)
+    if (stat(pConf->pszCacheDir, &st) != 0) {
+        /* avoid failure when checking space, and dir doesn't exist */
+        dwError = TDNFUtilsMakeDirs(pConf->pszCacheDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (statfs(pConf->pszCacheDir, &stfs) != 0)
     {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    *pqwAvailCacheDirBytes = tmpStatfsBuffer.f_bsize * tmpStatfsBuffer.f_bavail;
+    *pqwAvailCacheDirBytes = stfs.f_bsize * stfs.f_bavail;
 
 cleanup:
     return dwError;
