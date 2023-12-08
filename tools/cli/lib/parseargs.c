@@ -48,6 +48,7 @@ static struct option pstOptions[] =
     {"repofrompath",  required_argument, 0, 0},            //--repofrompath
     {"repoid",        required_argument, 0, 0},            //--repoid (same as --repo)
     {"rpmverbosity",  required_argument, 0, 0},            //--rpmverbosity
+    {"rpmdefine",     required_argument, 0, 0},
     {"sec-severity",  required_argument, 0, 0},            //--sec-severity
     {"security",      no_argument, 0, 0},                  //--security
     {"setopt",        required_argument, 0, 0},            //--set or override options
