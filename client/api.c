@@ -617,6 +617,7 @@ TDNFOpenHandle(
     char *pszCacheDir = NULL;
     char *pszRepoDir = NULL;
     int nHasOptReposdir = 0;
+    PTDNF_CMD_OPT pOpt = NULL;
 
     if(!pArgs || !ppTdnf)
     {
@@ -692,6 +693,15 @@ TDNFOpenHandle(
         TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszRepoDir);
         dwError = TDNFGetCmdOptValue(pTdnf->pArgs, TDNF_SETOPT_KEY_REPOSDIR, &pTdnf->pConf->pszRepoDir);
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* set macros from command line */
+    for (pOpt = pTdnf->pArgs->pSetOpt; pOpt; pOpt = pOpt->pNext)
+    {
+        if (strcmp(pOpt->pszOptName, "rpmdefine") == 0)
+        {
+            rpmDefineMacro(NULL, pOpt->pszOptValue, 0);
+        }
     }
 
     dwError = TDNFLoadPlugins(pTdnf);
