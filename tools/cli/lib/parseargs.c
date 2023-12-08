@@ -34,6 +34,7 @@ static struct option pstOptions[] =
     {"exclude",       required_argument, 0, 0},            //--exclude
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
+    {"installtodir",  no_argument, &_opt.nInstallToDir, 1},
     {"json",          no_argument, &_opt.nJsonOutput, 1},
     {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
     {"nodeps",        no_argument, &_opt.nNoDeps, 1},
@@ -343,6 +344,7 @@ TDNFCopyOptions(
     pArgs->nSkipBroken    = pOptionArgs->nSkipBroken;
     pArgs->nSource        = pOptionArgs->nSource;
     pArgs->nBuildDeps     = pOptionArgs->nBuildDeps;
+    pArgs->nInstallToDir  = pOptionArgs->nInstallToDir;
 
 cleanup:
     return dwError;

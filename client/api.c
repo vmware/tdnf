@@ -703,10 +703,18 @@ TDNFOpenHandle(
                   pTdnf->pArgs->pszInstallRoot);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(!pArgs->nAllDeps)
-    {
+    if(!pArgs->nAllDeps) {
         dwError = SolvReadInstalledRpms(pSack->pPool->installed, pszCacheDir);
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    } else if (pArgs->nInstallToDir) {
+        if (pArgs->nDownloadOnly && !IsNullOrEmptyString(pArgs->pszDownloadDir)) {
+            dwError = SolvReadRpmsFromDirectory(pSack->pPool->installed, pArgs->pszDownloadDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+        } else {
+            pr_err("--installtodir requires --downloadonly and --downloaddir");
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     dwError = TDNFLoadRepoData(

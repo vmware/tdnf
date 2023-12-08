@@ -189,6 +189,7 @@ typedef struct _TDNF_SOLVED_PKG_INFO
     PTDNF_PKG_INFO pPkgsUnNeeded;
     PTDNF_PKG_INFO pPkgsToReinstall;
     PTDNF_PKG_INFO pPkgsObsoleted;
+    PTDNF_PKG_INFO pPkgsRemovedByUpgrade;
     PTDNF_PKG_INFO pPkgsRemovedByDowngrade;
     char** ppszPkgsNotResolved;
     char** ppszPkgsUserInstall;
@@ -233,6 +234,7 @@ typedef struct _TDNF_CMD_ARGS
     int nSkipBroken;
     int nSource;
     int nBuildDeps;
+    int nInstallToDir;
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location

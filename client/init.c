@@ -52,6 +52,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nSkipBroken    = pCmdArgsIn->nSkipBroken;
     pCmdArgs->nSource        = pCmdArgsIn->nSource;
     pCmdArgs->nBuildDeps     = pCmdArgsIn->nBuildDeps;
+    pCmdArgs->nInstallToDir  = pCmdArgsIn->nInstallToDir;
 
     pCmdArgs->nArgc = pCmdArgsIn->nArgc;
     pCmdArgs->ppszArgv = pCmdArgsIn->ppszArgv;

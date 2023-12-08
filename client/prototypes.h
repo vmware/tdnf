@@ -457,10 +457,13 @@ TDNFGetReinstallPackages(
     );
 
 uint32_t
-TDNFGetUpgradePackages(
+TDNFGetUpDowngradePackages(
     Transaction* pTrans,
     PTDNF pTdnf,
-    PTDNF_PKG_INFO* pPkgInfo);
+    PTDNF_PKG_INFO* pPkgInfo,
+    PTDNF_PKG_INFO* pRemovePkgInfo,
+    int nIsUpgrade
+);
 
 uint32_t
 TDNFGetErasePackages(
@@ -474,14 +477,6 @@ TDNFGetObsoletedPackages(
     Transaction* pTrans,
     PTDNF pTdnf,
     PTDNF_PKG_INFO* pPkgInfo
-    );
-
-uint32_t
-TDNFGetDownGradePackages(
-    Transaction* pTrans,
-    PTDNF pTdnf,
-    PTDNF_PKG_INFO* pPkgInfo,
-    PTDNF_PKG_INFO* pRemovePkgInfo
     );
 
 uint32_t
