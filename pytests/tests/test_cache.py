@@ -9,6 +9,7 @@
 import os
 import fnmatch
 import pytest
+import shutil
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -203,3 +204,15 @@ def test_cache_directory_out_of_disk_space(utils):
     clean_cache(utils)
     clean_small_cache(utils)
     assert ret['retval'] == 1036
+
+
+# see https://github.com/vmware/tdnf/pull/454
+# tdnf should not fail if cache dir does not exist
+def test_cachedir_removed(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+    utils.install_package(pkgname)
+
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    shutil.rmtree(cache_dir)
+    ret = utils.run(["tdnf", "-y", "--disablerepo=*", "remove", pkgname])
+    assert ret['retval'] == 0

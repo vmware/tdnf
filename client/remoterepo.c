@@ -408,7 +408,7 @@ TDNFDownloadPackage(
     }
     else if(dwError == 0)
     {
-        pr_info("%s package already downloaded", pszPkgName);
+        pr_info("%s package already downloaded\n", pszPkgName);
     }
     BAIL_ON_TDNF_ERROR(dwError);
 

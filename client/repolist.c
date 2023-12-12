@@ -41,6 +41,8 @@ TDNFLoadRepoData(
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
     char **ppszUrlIdTuple = NULL;
+    PTDNF_REPO_DATA pRepoParsePre = NULL;
+    PTDNF_REPO_DATA pRepoParseNext = NULL;
 
     if(!pTdnf || !pTdnf->pConf || !pTdnf->pArgs || !ppReposAll)
     {
@@ -140,6 +142,17 @@ TDNFLoadRepoData(
         /* may habe added multiple repos, go to last one */
         while (*ppRepoNext)
             ppRepoNext = &((*ppRepoNext)->pNext);
+    }
+
+    for (pRepoParsePre = pReposAll; pRepoParsePre; pRepoParsePre = pRepoParsePre->pNext) {
+
+        for (pRepoParseNext = pRepoParsePre->pNext; pRepoParseNext; pRepoParseNext = pRepoParseNext->pNext) {
+            if (!strcmp(pRepoParsePre->pszId, pRepoParseNext->pszId)) {
+                pr_err("ERROR: duplicate repo id: %s\n", pRepoParsePre->pszId);
+                dwError = ERROR_TDNF_DUPLICATE_REPO_ID;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
     }
 
     *ppReposAll = pReposAll;
