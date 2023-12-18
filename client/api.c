@@ -606,7 +606,8 @@ TDNFOpenHandle(
     PSolvSack pSack = NULL;
     char *pszCacheDir = NULL;
     char *pszRepoDir = NULL;
-    int nHasOptReposdir = 0;
+    int nHasOptReposDir = 0;
+    int nHasOptCacheDir = 0;
     PTDNF_CMD_OPT pOpt = NULL;
 
     if(!pArgs || !ppTdnf)
@@ -636,7 +637,10 @@ TDNFOpenHandle(
 
     GlobalSetDnfCheckUpdateCompat(pTdnf->pConf->nCheckUpdateCompat);
 
-    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_SETOPT_KEY_REPOSDIR, &nHasOptReposdir);
+    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_REPOSDIR, &nHasOptReposDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_CACHEDIR, &nHasOptCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (!IsNullOrEmptyString(pTdnf->pArgs->pszInstallRoot) &&
@@ -644,17 +648,20 @@ TDNFOpenHandle(
     {
         int nIsDir = 0;
 
-        dwError = TDNFJoinPath(&pszCacheDir,
-                               pTdnf->pArgs->pszInstallRoot,
-                               pTdnf->pConf->pszCacheDir,
-                               NULL);
-        BAIL_ON_TDNF_ERROR(dwError);
+        if(!nHasOptCacheDir)
+        {
+            dwError = TDNFJoinPath(&pszCacheDir,
+                                   pTdnf->pArgs->pszInstallRoot,
+                                   pTdnf->pConf->pszCacheDir,
+                                   NULL);
+            BAIL_ON_TDNF_ERROR(dwError);
 
-        TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszCacheDir);
-        pTdnf->pConf->pszCacheDir = pszCacheDir;
-        pszCacheDir = NULL;
+            TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszCacheDir);
+            pTdnf->pConf->pszCacheDir = pszCacheDir;
+            pszCacheDir = NULL;
+        }
 
-        if (!nHasOptReposdir)
+        if (!nHasOptReposDir)
         {
             dwError = TDNFJoinPath(&pszRepoDir,
                                    pTdnf->pArgs->pszInstallRoot,
@@ -678,10 +685,18 @@ TDNFOpenHandle(
         }
     }
 
-    if (nHasOptReposdir)
+    /* cachedir and reoposdir when set with setopt are always relative to host */
+    if (nHasOptReposDir)
     {
         TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszRepoDir);
-        dwError = TDNFGetCmdOptValue(pTdnf->pArgs, TDNF_SETOPT_KEY_REPOSDIR, &pTdnf->pConf->pszRepoDir);
+        dwError = TDNFGetCmdOptValue(pTdnf->pArgs, TDNF_CONF_KEY_REPOSDIR, &pTdnf->pConf->pszRepoDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (nHasOptCacheDir)
+    {
+        TDNF_SAFE_FREE_MEMORY(pTdnf->pConf->pszCacheDir);
+        dwError = TDNFGetCmdOptValue(pTdnf->pArgs, TDNF_CONF_KEY_CACHEDIR, &pTdnf->pConf->pszCacheDir);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
