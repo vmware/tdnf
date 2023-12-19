@@ -62,6 +62,12 @@ TDNFSplitStringToArray(
     );
 
 uint32_t
+TDNFMergeStringArrays(
+    char ***pppszArray0,
+    char **ppszArray1
+);
+
+uint32_t
 TDNFJoinArrayToString(
     char **ppszArray,
     const char *pszSep,

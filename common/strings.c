@@ -170,6 +170,44 @@ error:
 }
 
 uint32_t
+TDNFMergeStringArrays(
+    char ***pppszArray0,
+    char **ppszArray1
+)
+{
+    uint32_t dwError = 0;
+    int i, n, n0, n1;
+
+    if (!pppszArray0 || !ppszArray1) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFStringArrayCount(*pppszArray0, &n0);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFStringArrayCount(ppszArray1, &n1);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    n = n0 + n1;
+
+    dwError = TDNFReAllocateMemory((n + 1) * sizeof(char *), (void **)pppszArray0);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; i < n1; i++) {
+        (*pppszArray0)[n0 + i] = ppszArray1[i];
+    }
+    (*pppszArray0)[n] = NULL;
+
+    TDNF_SAFE_FREE_MEMORY(ppszArray1);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFJoinArrayToString(
     char **ppszArray,
     const char *pszSep,
@@ -654,4 +692,3 @@ cleanup:
 error:
     goto cleanup;
 }
-
