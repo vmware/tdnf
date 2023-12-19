@@ -103,8 +103,6 @@ TDNFReadConfig(
     struct cnfnode *cn_conf = NULL, *cn_top, *cn;
     struct cnfmodule *mod_ini;
 
-    int nPluginSet = 0;
-
     if(!pTdnf ||
        IsNullOrEmptyString(pszConfFile) ||
        IsNullOrEmptyString(pszGroup))
@@ -238,24 +236,15 @@ TDNFReadConfig(
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
         {
-            /* presence of option disables plugins, no matter the value */
-            if(!isTrue(cn->value)) {
-                dwError = TDNFSetOpt(
-                              pTdnf->pArgs,
-                              TDNF_CONF_KEY_NO_PLUGINS, "1");
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            nPluginSet = 1;
+            pConf->nPluginsEnabled = isTrue(cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
         {
-            dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_CONF_PATH, cn->value);
-            BAIL_ON_TDNF_ERROR(dwError);
+            pConf->pszPluginConfPath = strdup(cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
         {
-            dwError = TDNFSetOpt(pTdnf->pArgs, TDNF_CONF_KEY_PLUGIN_PATH, cn->value);
-            BAIL_ON_TDNF_ERROR(dwError);
+            pConf->pszPluginPath = strdup(cn->value);
         }
     }
 
@@ -269,16 +258,6 @@ TDNFReadConfig(
 
     dwError = TDNFAllocateStringPrintf(&pConf->pszUserAgentHeader, "tdnf/%s %s/%s", pszTdnfVersion, pConf->pszOSName, pConf->pszOSVersion);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    /* if plugins are not enabled explicitely,
-       we have to disable them because it's the default */
-    if (!nPluginSet) {
-        /* no plugins by default */
-        dwError = TDNFSetOpt(
-                      pTdnf->pArgs,
-                      TDNF_CONF_KEY_NO_PLUGINS, "1");
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     if (pszProxyUser && pszProxyPass)
     {
@@ -298,6 +277,11 @@ TDNFReadConfig(
         pConf->pszDistroVerPkg = strdup(TDNF_DEFAULT_DISTROVERPKG);
     if (pConf->pszPersistDir == NULL)
         pConf->pszPersistDir = strdup(TDNF_DEFAULT_DB_LOCATION);
+
+    if (pConf->pszPluginPath == NULL)
+        pConf->pszPluginPath = strdup(TDNF_DEFAULT_PLUGIN_PATH);
+    if (pConf->pszPluginConfPath == NULL)
+        pConf->pszPluginConfPath = strdup(TDNF_DEFAULT_PLUGIN_CONF_PATH);
 
     dwError = TDNFDirName(pszConfFile, &pszConfDir);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -407,6 +391,8 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszUserAgentHeader);
         TDNF_SAFE_FREE_MEMORY(pConf->pszOSName);
         TDNF_SAFE_FREE_MEMORY(pConf->pszOSVersion);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszPluginPath);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszPluginConfPath);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszExcludes);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
