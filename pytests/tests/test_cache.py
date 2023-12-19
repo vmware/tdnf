@@ -12,7 +12,11 @@ import pytest
 import shutil
 
 
-@pytest.fixture(scope='module', autouse=True)
+CACHEDIR = "/root/cache"
+INSTALLROOT = "/root/installroot"
+
+
+@pytest.fixture(scope='function', autouse=True)
 def setup_test(utils):
     yield
     teardown_test(utils)
@@ -28,6 +32,8 @@ def teardown_test(utils):
     for pkgname in pkg_list:
         utils.erase_package(pkgname)
     utils.run(run_cmd)
+    if os.path.isdir(CACHEDIR):
+        shutil.rmtree(CACHEDIR)
 
 
 def clean_cache(utils):
@@ -216,3 +222,36 @@ def test_cachedir_removed(utils):
     shutil.rmtree(cache_dir)
     ret = utils.run(["tdnf", "-y", "--disablerepo=*", "remove", pkgname])
     assert ret['retval'] == 0
+
+
+def test_makecache_setopt_cachedir(utils):
+    ret = utils.run(['tdnf', 'makecache',
+                     '-y', '--nogpgcheck',
+                     f"--setopt=cachedir={CACHEDIR}"])
+    assert ret['retval'] == 0
+
+    found = False
+    reponame = 'photon-test'
+    for f in os.listdir(CACHEDIR):
+        if fnmatch.fnmatch(f, '{}-*'.format(reponame)):
+            found = True
+    assert found
+    shutil.rmtree(CACHEDIR)
+
+
+def test_makecache_setopt_cachedir_installroot(utils):
+    os.makedirs(INSTALLROOT, exist_ok=True)
+    ret = utils.run(['tdnf', 'makecache',
+                     '-y', '--nogpgcheck',
+                     "--releasever=5.0",
+                     f"--setopt=cachedir={CACHEDIR}",
+                     f"--installroot={INSTALLROOT}"])
+    assert ret['retval'] == 0
+
+    found = False
+    reponame = 'photon-test'
+    for f in os.listdir(CACHEDIR):
+        if fnmatch.fnmatch(f, '{}-*'.format(reponame)):
+            found = True
+    assert found
+    shutil.rmtree(CACHEDIR)
