@@ -700,12 +700,18 @@ TDNFOpenHandle(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* set macros from command line */
     for (pOpt = pTdnf->pArgs->pSetOpt; pOpt; pOpt = pOpt->pNext)
     {
+        /* set macros from command line */
         if (strcmp(pOpt->pszOptName, "rpmdefine") == 0)
         {
             rpmDefineMacro(NULL, pOpt->pszOptValue, 0);
+        }
+        /* ultimately all --setopt= settings should override config values,
+           but for now make exceptions */
+        else if (strcmp(pOpt->pszOptName, TDNF_CONF_KEY_KEEP_CACHE) == 0)
+        {
+            pTdnf->pConf->nKeepCache = isTrue(pOpt->pszOptValue);
         }
     }
 
