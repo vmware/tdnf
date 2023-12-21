@@ -256,6 +256,7 @@ typedef struct _TDNF_CONF
     int nOpenMax;          //set max number of open files
     int nCheckUpdateCompat;
     int nDistroSyncReinstallChanged;
+    int nPluginsEnabled;
     char* pszRepoDir;
     char* pszCacheDir;
     char* pszPersistDir;
@@ -273,6 +274,8 @@ typedef struct _TDNF_CONF
     char** ppszPkgLocks;
     char** ppszProtectedPkgs;
     char **ppszInstallOnlyPkgs;
+    char *pszPluginPath;
+    char *pszPluginConfPath;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct _TDNF_REPO_DATA

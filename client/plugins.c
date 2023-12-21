@@ -14,17 +14,10 @@
 #include "../llconf/entry.h"
 #include "../llconf/ini.h"
 
-struct plugin_config
-{
-    PTDNF_CMD_ARGS pArgs;
-    char *pszPath;
-    char *pszConfPath;
-};
-
 static
 uint32_t
 _TDNFLoadPlugins(
-    PTDNF_CMD_ARGS pArgs,
+    PTDNF pTdnf,
     PTDNF_PLUGIN *ppPlugins
     );
 
@@ -65,7 +58,7 @@ TDNFLoadPlugins(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = _TDNFLoadPlugins(pTdnf->pArgs, &pPlugins);
+    dwError = _TDNFLoadPlugins(pTdnf, &pPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = _TDNFInitPlugins(pTdnf, pPlugins);
@@ -136,57 +129,6 @@ cleanup:
 
 error:
     TDNFShowPluginError(pTdnf, pPlugin, dwError);
-    goto cleanup;
-}
-
-static
-uint32_t
-_TDNFGetPluginSettings(
-    struct plugin_config *pConf
-    )
-{
-    uint32_t dwError = 0;
-    int nHasOpt = 0;
-    char *pszConfPath = NULL;
-    char *pszPath = NULL;
-
-    if(!pConf)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFHasOpt(pConf->pArgs, TDNF_CONF_KEY_NO_PLUGINS, &nHasOpt);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (nHasOpt)
-    {
-        dwError = ERROR_TDNF_PLUGINS_DISABLED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFGetOptWithDefault(
-                  pConf->pArgs, TDNF_CONF_KEY_PLUGIN_CONF_PATH,
-                  TDNF_DEFAULT_PLUGIN_CONF_PATH, &pszConfPath);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGetOptWithDefault(
-                  pConf->pArgs, TDNF_CONF_KEY_PLUGIN_PATH,
-                  TDNF_DEFAULT_PLUGIN_PATH, &pszPath);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    TDNF_SAFE_FREE_MEMORY(pConf->pszConfPath);
-    TDNF_SAFE_FREE_MEMORY(pConf->pszPath);
-
-    pConf->pszConfPath = pszConfPath;
-    pConf->pszPath = pszPath;
-
-cleanup:
-    return dwError;
-
-error:
-    TDNF_SAFE_FREE_MEMORY(pszConfPath);
-    TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
 }
 
@@ -302,7 +244,7 @@ error:
 static
 uint32_t
 _TDNFLoadPluginConfigs(
-    struct plugin_config *pConf,
+    PTDNF pTdnf,
     PTDNF_PLUGIN *ppPlugins
     )
 {
@@ -315,13 +257,13 @@ _TDNFLoadPluginConfigs(
     PTDNF_PLUGIN pLast = NULL;
     char *pszPluginConfig = NULL;
 
-    if(!pConf || !ppPlugins)
+    if(!pTdnf || !ppPlugins)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pDir = opendir(pConf->pszConfPath);
+    pDir = opendir(pTdnf->pConf->pszPluginConfPath);
     if(pDir == NULL)
     {
         dwError = ERROR_TDNF_NO_PLUGIN_CONF_DIR;
@@ -339,7 +281,7 @@ _TDNFLoadPluginConfigs(
 
         dwError = TDNFJoinPath(
                       &pszPluginConfig,
-                      pConf->pszConfPath,
+                      pTdnf->pConf->pszPluginConfPath,
                       pEnt->d_name,
                       NULL);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -439,21 +381,21 @@ error:
 static
 uint32_t
 _TDNFApplyPluginOverrides(
-    struct plugin_config *pConf,
+    PTDNF pTdnf,
     PTDNF_PLUGIN pPlugins
     )
 {
     uint32_t dwError = 0;
     PTDNF_CMD_OPT pSetOpt = NULL;
 
-    if (!pConf || !pPlugins)
+    if (!pTdnf || !pPlugins)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
     /* apply command line overrides to enable/deactivate specific plugins */
-    for (pSetOpt = pConf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
+    for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
         if (strcmp(pSetOpt->pszOptName, "enableplugin") == 0)
         {
@@ -599,37 +541,44 @@ error:
 static
 uint32_t
 _TDNFLoadPlugins(
-    PTDNF_CMD_ARGS pArgs,
+    PTDNF pTdnf,
     PTDNF_PLUGIN *ppPlugins
     )
 {
     uint32_t dwError = 0;
     PTDNF_PLUGIN pPlugins = NULL;
-    struct plugin_config stConf = {0};
+    int nHasOptNoPlugins = 0;
 
-    if(!pArgs || !ppPlugins)
+    if(!pTdnf || !ppPlugins)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    stConf.pArgs = pArgs;
-    dwError = _TDNFGetPluginSettings(&stConf);
+    if (!pTdnf->pConf->nPluginsEnabled) {
+        dwError = ERROR_TDNF_PLUGINS_DISABLED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_NO_PLUGINS, &nHasOptNoPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = _TDNFLoadPluginConfigs(&stConf, &pPlugins);
+    if (nHasOptNoPlugins) {
+        dwError = ERROR_TDNF_PLUGINS_DISABLED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = _TDNFLoadPluginConfigs(pTdnf, &pPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = _TDNFApplyPluginOverrides(&stConf, pPlugins);
+    dwError = _TDNFApplyPluginOverrides(pTdnf, pPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = _TDNFLoadPluginLibs(stConf.pszPath, pPlugins);
+    dwError = _TDNFLoadPluginLibs(pTdnf->pConf->pszPluginPath, pPlugins);
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPlugins = pPlugins;
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(stConf.pszPath);
-    TDNF_SAFE_FREE_MEMORY(stConf.pszConfPath);
     return dwError;
 
 error:
