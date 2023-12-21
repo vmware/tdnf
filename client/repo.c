@@ -745,10 +745,12 @@ TDNFDownloadRepoMDPart(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepo,
     const char *pszLocation,
-    const char *pszDestPath
+    const char *pszDestPath,
+    const char *pszPartName
     )
 {
     uint32_t dwError = 0;
+    char *pszInfo;
 
     if(!pTdnf || !pRepo ||
        IsNullOrEmptyString(pszLocation) ||
@@ -766,12 +768,15 @@ TDNFDownloadRepoMDPart(
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
 
+        dwError = TDNFAllocateStringPrintf(&pszInfo, "%s (%s)", pRepo->pszId, pszPartName);
+        BAIL_ON_TDNF_ERROR(dwError);
+
         dwError = TDNFDownloadFileFromRepo(
                       pTdnf,
                       pRepo,
                       pszLocation,
                       pszDestPath,
-                      pRepo->pszId);
+                      pszInfo);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -817,7 +822,8 @@ TDNFEnsureRepoMDParts(
                   pTdnf,
                   pRepo,
                   pRepoMDRel->pszPrimary,
-                  pRepoMD->pszPrimary);
+                  pRepoMD->pszPrimary,
+                  "primary");
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(!pRepo->nSkipMDFileLists && !IsNullOrEmptyString(pRepoMDRel->pszFileLists))
@@ -832,7 +838,8 @@ TDNFEnsureRepoMDParts(
                       pTdnf,
                       pRepo,
                       pRepoMDRel->pszFileLists,
-                      pRepoMD->pszFileLists);
+                      pRepoMD->pszFileLists,
+                      "file lists");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -848,7 +855,8 @@ TDNFEnsureRepoMDParts(
                       pTdnf,
                       pRepo,
                       pRepoMDRel->pszUpdateInfo,
-                      pRepoMD->pszUpdateInfo);
+                      pRepoMD->pszUpdateInfo,
+                      "update info");
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -864,7 +872,8 @@ TDNFEnsureRepoMDParts(
                       pTdnf,
                       pRepo,
                       pRepoMDRel->pszOther,
-                      pRepoMD->pszOther);
+                      pRepoMD->pszOther,
+                      "other");
         BAIL_ON_TDNF_ERROR(dwError);
     }
     *ppRepoMD = pRepoMD;

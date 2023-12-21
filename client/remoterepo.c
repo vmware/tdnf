@@ -264,8 +264,9 @@ TDNFDownloadFile(
         fclose(fp);
         fp = NULL;
     }
+
     /* finish progress line output,
-       but only if progrees was enabled */
+       but only if progress was enabled */
     if (!nNoOutput) {
         pr_info("\n");
     }
@@ -417,7 +418,7 @@ TDNFDownloadPackage(
     }
     else if(dwError == 0)
     {
-        pr_info("%s package already downloaded", pszPkgName);
+        pr_info("%s package already downloaded\n", pszPkgName);
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
