@@ -68,9 +68,6 @@
 #define TDNF_REPO_KEY_SKIP_MD_UPDATEINFO  "skip_md_updateinfo"
 #define TDNF_REPO_KEY_SKIP_MD_OTHER       "skip_md_other"
 
-//setopt keys
-#define TDNF_SETOPT_KEY_REPOSDIR          "reposdir"
-
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
 #define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
