@@ -606,6 +606,8 @@ TDNFOpenHandle(
     PSolvSack pSack = NULL;
     char *pszCacheDir = NULL;
     char *pszRepoDir = NULL;
+    char *pszConfFile = NULL;
+    char *pszConfFileInstallRoot = NULL;
     int nHasOptReposDir = 0;
     int nHasOptCacheDir = 0;
     PTDNF_CMD_OPT pOpt = NULL;
@@ -626,12 +628,58 @@ TDNFOpenHandle(
     dwError = TDNFAllocateMemory(1, sizeof(TDNF), (void**)&pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFCloneCmdArgs(pArgs, &pTdnf->pArgs);
-    BAIL_ON_TDNF_ERROR(dwError);
+    pTdnf->pArgs = pArgs;
+
+    if(!pArgs->pSetOpt)
+    /* if there are no setopt values, prime it to ensure non null */
+    {
+        dwError = AddSetOptWithValues(
+                      pArgs,
+                      TDNF_SETOPT_NAME_DUMMY,
+                      TDNF_SETOPT_VALUE_DUMMY);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* if using --installroot, we prefer the tdnf.conf from the
+    installroot unless a tdnf.conf location is explicitely set */
+    if(IsNullOrEmptyString(pArgs->pszConfFile) &&
+       !IsNullOrEmptyString(pArgs->pszInstallRoot) &&
+       strcmp(pArgs->pszInstallRoot, "/"))
+    {
+        /* no conf file explicitely set in args,
+        but using --installroot */
+
+        int nExists = 0;
+
+        /* prepend installroot to tdnf.conf location */
+        dwError = TDNFJoinPath(&pszConfFileInstallRoot,
+                            pArgs->pszInstallRoot,
+                            TDNF_CONF_FILE,
+                            NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFIsFileOrSymlink(pszConfFileInstallRoot, &nExists);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        /* if we find tdnf.conf inside the install root use it,
+        otherwise use tdnf.conf from the host */
+        dwError = TDNFAllocateString(
+                   nExists ? pszConfFileInstallRoot : TDNF_CONF_FILE,
+                   &pszConfFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFAllocateString(
+                   pArgs->pszConfFile ?
+                         pArgs->pszConfFile : TDNF_CONF_FILE,
+                   &pszConfFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFReadConfig(
                   pTdnf,
-                  pTdnf->pArgs->pszConfFile,
+                  pszConfFile,
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -750,6 +798,8 @@ TDNFOpenHandle(
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszCacheDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoDir);
+    TDNF_SAFE_FREE_MEMORY(pszConfFile);
+    TDNF_SAFE_FREE_MEMORY(pszConfFileInstallRoot);
     return dwError;
 
 error:
@@ -2514,10 +2564,6 @@ TDNFCloseHandle(
         if(pTdnf->pConf)
         {
             TDNFFreeConfig(pTdnf->pConf);
-        }
-        if(pTdnf->pArgs)
-        {
-            TDNFFreeCmdArgs(pTdnf->pArgs);
         }
         if(pTdnf->pSack)
         {

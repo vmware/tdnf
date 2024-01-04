@@ -59,12 +59,6 @@ TDNFFetchRemoteGPGKey(
 
 //init.c
 uint32_t
-TDNFCloneCmdArgs(
-    PTDNF_CMD_ARGS pCmdArgsIn,
-    PTDNF_CMD_ARGS* ppCmdArgs
-    );
-
-uint32_t
 TDNFCloneSetOpts(
     PTDNF_CMD_OPT pCmdOptIn,
     PTDNF_CMD_OPT* ppCmdOpt
