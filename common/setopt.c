@@ -30,15 +30,6 @@ AddSetOpt(
     dwError = GetOptionAndValue(pszOptArg, &pCmdOpt);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(!strcmp(pCmdOpt->pszOptName, "tdnf.conf"))
-    {
-        TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
-        dwError = TDNFAllocateString(
-                      pCmdOpt->pszOptValue,
-                      &pCmdArgs->pszConfFile);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
     dwError = AddSetOptWithValues(pCmdArgs, pCmdOpt->pszOptName, pCmdOpt->pszOptValue);
     BAIL_ON_TDNF_ERROR(dwError);
 
