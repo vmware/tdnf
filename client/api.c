@@ -630,16 +630,6 @@ TDNFOpenHandle(
 
     pTdnf->pArgs = pArgs;
 
-    if(!pArgs->pSetOpt)
-    /* if there are no setopt values, prime it to ensure non null */
-    {
-        dwError = AddSetOptWithValues(
-                      pArgs,
-                      TDNF_SETOPT_NAME_DUMMY,
-                      TDNF_SETOPT_VALUE_DUMMY);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
     /* if using --installroot, we prefer the tdnf.conf from the
     installroot unless a tdnf.conf location is explicitely set */
     if(IsNullOrEmptyString(pArgs->pszConfFile) &&

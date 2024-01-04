@@ -213,17 +213,19 @@ TDNFHasOpt(
     PTDNF_CMD_OPT pOpt = NULL;
     int nHasOpt = 0;
 
-    if(!pArgs || !pArgs->pSetOpt ||
+    if(!pArgs ||
        IsNullOrEmptyString(pszOptName) || !pnHasOpt)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = _TDNFGetCmdOpt(pArgs, pszOptName, &pOpt);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pArgs->pSetOpt) {
+        dwError = _TDNFGetCmdOpt(pArgs, pszOptName, &pOpt);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-    nHasOpt = 1;
+        nHasOpt = 1;
+    }
 
     *pnHasOpt = nHasOpt;
 
