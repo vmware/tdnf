@@ -1,5 +1,7 @@
 #define STR_IS_TRUE(s) ((s) && (!strcmp((s), "1") || !strcasecmp((s), "true")))
 
+#define SET_STRING(s, v) {if (s) free(s); if(v) s = strdup(v); else s = NULL;}
+
 //Misc
 #define TDNF_RPM_EXT                      ".rpm"
 #define TDNF_NAME                         "tdnf"

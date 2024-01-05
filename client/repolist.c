@@ -495,7 +495,7 @@ TDNFLoadReposFromFile(
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_NAME) == 0)
             {
-                pRepo->pszName = strdup(cn->value);
+                SET_STRING(pRepo->pszName, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_BASEURL) == 0)
             {
@@ -505,7 +505,7 @@ TDNFLoadReposFromFile(
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_METALINK) == 0)
             {
-                pRepo->pszMetaLink = strdup(cn->value);
+                SET_STRING(pRepo->pszMetaLink, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
             {
@@ -523,11 +523,11 @@ TDNFLoadReposFromFile(
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_USERNAME) == 0)
             {
-                pRepo->pszUser = strdup(cn->value);
+                SET_STRING(pRepo->pszUser, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_PASSWORD) == 0)
             {
-                pRepo->pszPass = strdup(cn->value);
+                SET_STRING(pRepo->pszPass, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_PRIORITY) == 0)
             {
@@ -555,15 +555,15 @@ TDNFLoadReposFromFile(
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CA_CERT) == 0)
             {
-                pRepo->pszSSLCaCert = strdup(cn->value);
+                SET_STRING(pRepo->pszSSLCaCert, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CLI_CERT) == 0)
             {
-                pRepo->pszSSLClientCert = strdup(cn->value);
+                SET_STRING(pRepo->pszSSLClientCert, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CLI_KEY) == 0)
             {
-                pRepo->pszSSLClientKey = strdup(cn->value);
+                SET_STRING(pRepo->pszSSLClientKey, cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_METADATA_EXPIRE) == 0)
             {

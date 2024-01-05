@@ -115,19 +115,19 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         else if (strcmp(cn->name, TDNF_CONF_KEY_REPOSDIR) == 0 ||
                  strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
         {
-            pConf->pszRepoDir = strdup(cn->value);
+            SET_STRING(pConf->pszRepoDir, cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_CACHEDIR) == 0)
         {
-            pConf->pszCacheDir = strdup(cn->value);
+            SET_STRING(pConf->pszCacheDir, cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PERSISTDIR) == 0)
         {
-            pConf->pszPersistDir = strdup(cn->value);
+            SET_STRING(pConf->pszPersistDir, cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKG) == 0)
         {
-            pConf->pszDistroVerPkg = strdup(cn->value);
+            SET_STRING(pConf->pszDistroVerPkg, cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_EXCLUDE) == 0)
         {
@@ -155,7 +155,7 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY) == 0)
         {
-            pConf->pszProxy = strdup(cn->value);
+            SET_STRING(pConf->pszProxy, cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_USER) == 0)
         {
@@ -177,11 +177,11 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
         {
-            pConf->pszPluginConfPath = strdup(cn->value);
+            SET_STRING(pConf->pszPluginConfPath, cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
         {
-            pConf->pszPluginPath = strdup(cn->value);
+            SET_STRING(pConf->pszPluginPath, cn->value);
         }
     }
 
