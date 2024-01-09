@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include "../llconf/nodes.h"
 
 void
 TDNFFreeCmdOpt(
@@ -41,7 +42,6 @@ cleanup:
     return dwError;
 
 error:
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
     goto cleanup;
 }
 

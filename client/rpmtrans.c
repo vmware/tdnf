@@ -11,6 +11,8 @@
 
 #include "rpm/rpmcli.h"
 
+#include "../llconf/nodes.h"
+
 #define INSTALL_INSTALL 0
 #define INSTALL_UPGRADE 1
 #define INSTALL_REINSTALL 2
@@ -60,7 +62,7 @@ TDNFRpmCreateTS(
 {
     uint32_t dwError = 0;
     PTDNFRPMTS pTS = NULL;
-    PTDNF_CMD_OPT pSetOpt = NULL;
+    struct cnfnode *cn;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
     {
@@ -98,21 +100,23 @@ TDNFRpmCreateTS(
     /* parse transaction flags - so far only tsflags=noscripts and
     tsflags=nodocs are supported  */
     pTS->nTransFlags = RPMTRANS_FLAG_NONE;
-    for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
-    {
-        if (strcasecmp(pSetOpt->pszOptName, "tsflags"))
+    if (pTdnf->pArgs->cn_setopts) {
+        for (cn = pTdnf->pArgs->cn_setopts->first_child; cn; cn = cn->next)
         {
-            continue;
-        }
+            if (strcasecmp(cn->name, "tsflags"))
+            {
+                continue;
+            }
 
-        if (!strcasecmp(pSetOpt->pszOptValue, "noscripts"))
-        {
-            pTS->nTransFlags |= RPMTRANS_FLAG_NOSCRIPTS;
-        }
+            if (!strcasecmp(cn->value, "noscripts"))
+            {
+                pTS->nTransFlags |= RPMTRANS_FLAG_NOSCRIPTS;
+            }
 
-        if (!strcasecmp(pSetOpt->pszOptValue, "nodocs"))
-        {
-            pTS->nTransFlags |= RPMTRANS_FLAG_NODOCS;
+            if (!strcasecmp(cn->value, "nodocs"))
+            {
+                pTS->nTransFlags |= RPMTRANS_FLAG_NODOCS;
+            }
         }
     }
 
