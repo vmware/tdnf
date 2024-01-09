@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include "../../../llconf/nodes.h"
 
 static TDNF_CMD_ARGS _opt = {0};
 
@@ -143,6 +144,8 @@ TDNFCliParseArgs(
                   sizeof(TDNF_CMD_ARGS),
                   (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
+
+    pCmdArgs->cn_setopts = create_cnfnode("(setopts)");
 
     /*
      * when invoked as 'tdnfj', act as if invoked with with '-j' and '-y'
@@ -398,16 +401,19 @@ ParseOption(
     }
     else if (!strcasecmp(pszName, "setopt"))
     {
+        struct cnfnode *cn;
+
         if (!optarg)
         {
             dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
             BAIL_ON_CLI_ERROR(dwError);
         }
 
-        dwError = AddSetOpt(pCmdArgs, optarg);
-        if (dwError == ERROR_TDNF_SETOPT_NO_EQUALS)
-        {
+        cn = create_cnfnode_keyval(optarg);
+        if (!cn) {
             dwError = ERROR_TDNF_CLI_SETOPT_NO_EQUALS;
+        } else {
+            append_node(pCmdArgs->cn_setopts, cn);
         }
     }
     else if (!strcasecmp(pszName, "exclude"))

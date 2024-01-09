@@ -421,6 +421,7 @@ TDNFFreeCmdArgs(
     {
         TDNFFreeCmdOpt(pCmdArgs->pSetOpt);
     }
+    destroy_cnftree(pCmdArgs->cn_setopts);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs);
 }
 

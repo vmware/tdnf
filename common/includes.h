@@ -23,6 +23,8 @@
 #include <libgen.h>
 #include <limits.h>
 
+#include "../llconf/nodes.h"
+
 #include <tdnftypes.h>
 #include <tdnferror.h>
 #include <tdnf-common-defines.h>

@@ -68,6 +68,11 @@ TDNFMergeStringArrays(
 );
 
 uint32_t
+TDNFAddStringArray(
+    char ***pppszArray,
+    char *pszValue);
+
+uint32_t
 TDNFJoinArrayToString(
     char **ppszArray,
     const char *pszSep,
