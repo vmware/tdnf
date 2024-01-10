@@ -13,8 +13,10 @@
 #include "../llconf/entry.h"
 #include "../llconf/ini.h"
 
+
 #define USERAGENT_HEADER_MAX_LENGTH 256
 #define OS_CONF_FILE "/etc/os-release"
+
 
 int
 TDNFConfGetRpmVerbosity(
@@ -81,6 +83,42 @@ error:
     TDNF_SAFE_FREE_MEMORY(version);
     goto cleanup;
 }
+
+struct {
+    char *name;
+    rpmtransFlags flag;
+} rpmtransflags_map[] = {
+    {"noscripts",       RPMTRANS_FLAG_NOSCRIPTS },
+    {"justdb",          RPMTRANS_FLAG_JUSTDB },
+    {"notriggers",      RPMTRANS_FLAG_NOTRIGGERS },
+    {"nodocs",          RPMTRANS_FLAG_NODOCS },
+    {"allfiles",        RPMTRANS_FLAG_ALLFILES },
+    {"noplugins",       RPMTRANS_FLAG_NOPLUGINS },
+    {"nocontexts",      RPMTRANS_FLAG_NOCONTEXTS },
+    {"nocaps",          RPMTRANS_FLAG_NOCAPS},
+    {"nodb",            RPMTRANS_FLAG_NODB},
+
+//    {"nopreuntrans",    RPMTRANS_FLAG_NOPREUNTRANS },
+//    {"nopostuntrans",   RPMTRANS_FLAG_NOPOSTUNTRANS },
+    {"notriggerprein",  RPMTRANS_FLAG_NOTRIGGERPREIN },
+    {"nopre",           RPMTRANS_FLAG_NOPRE },
+    {"nopost",          RPMTRANS_FLAG_NOPOST },
+    {"notriggerin",     RPMTRANS_FLAG_NOTRIGGERIN },
+    {"notriggerun",     RPMTRANS_FLAG_NOTRIGGERUN },
+    {"nopreun",         RPMTRANS_FLAG_NOPREUN },
+    {"nopostun",        RPMTRANS_FLAG_NOPOSTUN },
+    {"notriggerpostun", RPMTRANS_FLAG_NOTRIGGERPOSTUN },
+    {"nopretrans",      RPMTRANS_FLAG_NOPRETRANS },
+    {"noposttrans",     RPMTRANS_FLAG_NOPOSTTRANS},
+//    {"nosysusers",      RPMTRANS_FLAG_NOSYSUSERS},
+    {"nomd5",           RPMTRANS_FLAG_NOMD5},
+    {"nofiledigest",    RPMTRANS_FLAG_NOFILEDIGEST},
+
+    {"noartifacts",     RPMTRANS_FLAG_NOARTIFACTS},
+    {"noconfigs",       RPMTRANS_FLAG_NOCONFIGS},
+    {"deploops",        RPMTRANS_FLAG_DEPLOOPS},
+    {NULL,              RPMTRANS_FLAG_NONE}
+};
 
 static
 uint32_t
@@ -191,6 +229,40 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
         {
             SET_STRING(pConf->pszPluginPath, cn->value);
+        }
+        else if  (strcmp(cn->name, TDNF_CONF_KEY_TSFLAGS) == 0)
+        {
+            if (cn->value == NULL || strcmp(cn->value, "") == 0) {
+                pConf->rpmTransFlags = RPMTRANS_FLAG_NONE;
+            } else {
+                char *value = strdup(cn->value);
+                char *saveptr = NULL, *str, *token;
+                int i;
+
+                for (str = value; ; str = NULL){
+                    token = strtok_r(str, " ", &saveptr);
+                    if (token == NULL)
+                        break;
+
+                    for (i = 0; rpmtransflags_map[i].name != NULL; i++) {
+                        if (strcmp(token, rpmtransflags_map[i].name) == 0){
+                            pConf->rpmTransFlags |= rpmtransflags_map[i].flag;
+                            break;
+                        }
+                    }
+                    if (rpmtransflags_map[i].name == NULL) {
+                        pr_err("unknown tsflag '%s'\n", token);
+                        free(value);
+                        dwError = ERROR_TDNF_INVALID_PARAMETER;
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
+                    /* in rpmts.h, deprecated flags will be set to 0. Warn user about it. */
+                    if (rpmtransflags_map[i].flag == 0) {
+                        pr_info("flag tsflag '%s' is not suported and has no effect\n", token);
+                    }
+                }
+                free(value);
+            }
         }
     }
 

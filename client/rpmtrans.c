@@ -62,7 +62,6 @@ TDNFRpmCreateTS(
 {
     uint32_t dwError = 0;
     PTDNFRPMTS pTS = NULL;
-    struct cnfnode *cn;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !pSolvedInfo)
     {
@@ -97,28 +96,7 @@ TDNFRpmCreateTS(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* parse transaction flags - so far only tsflags=noscripts and
-    tsflags=nodocs are supported  */
-    pTS->nTransFlags = RPMTRANS_FLAG_NONE;
-    if (pTdnf->pArgs->cn_setopts) {
-        for (cn = pTdnf->pArgs->cn_setopts->first_child; cn; cn = cn->next)
-        {
-            if (strcasecmp(cn->name, "tsflags"))
-            {
-                continue;
-            }
-
-            if (!strcasecmp(cn->value, "noscripts"))
-            {
-                pTS->nTransFlags |= RPMTRANS_FLAG_NOSCRIPTS;
-            }
-
-            if (!strcasecmp(cn->value, "nodocs"))
-            {
-                pTS->nTransFlags |= RPMTRANS_FLAG_NODOCS;
-            }
-        }
-    }
+    pTS->nTransFlags = pTdnf->pConf->rpmTransFlags;
 
     if(rpmtsSetRootDir (pTS->pTS, pTdnf->pArgs->pszInstallRoot))
     {
