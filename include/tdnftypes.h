@@ -9,6 +9,7 @@
 #pragma once
 
 #include <curl/curl.h>
+#include <rpm/rpmts.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -257,6 +258,7 @@ typedef struct _TDNF_CONF
     int nOpenMax;          //set max number of open files
     int nCheckUpdateCompat;
     int nDistroSyncReinstallChanged;
+    rpmtransFlags rpmTransFlags;
     int nPluginsEnabled;
     char* pszRepoDir;
     char* pszCacheDir;
