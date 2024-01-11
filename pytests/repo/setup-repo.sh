@@ -65,8 +65,7 @@ mkdir -p -m 755 ${BUILD_PATH}/BUILD \
 cat << EOF > ${TEST_REPO_DIR}/gpgkeydata
      %echo Generating a key for repogpgcheck signatures
      %no-protection
-     Key-Type: default
-     Subkey-Type: default
+     Key-Type: RSA
      Name-Real: tdnf test
      Name-Comment: tdnf test key
      Name-Email: tdnftest@tdnf.test
