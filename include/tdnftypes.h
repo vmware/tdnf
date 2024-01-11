@@ -244,6 +244,7 @@ typedef struct _TDNF_CMD_ARGS
     int nCmdCount;
     PTDNF_CMD_OPT pSetOpt;
     struct cnfnode *cn_setopts;
+    struct cnfnode *cn_repoopts;
 
     int nArgc;
     char **ppszArgv;
