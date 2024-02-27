@@ -69,6 +69,8 @@ extern "C" {
 // cache only set, but no cache available
 #define ERROR_TDNF_CACHE_DISABLED           1034
 #define ERROR_TDNF_DOWNGRADE_NOT_ALLOWED    1035
+// There are duplicate repo ids
+#define ERROR_TDNF_DUPLICATE_REPO_ID        1037
 
 //curl errors
 #define ERROR_TDNF_CURL_INIT                  1200

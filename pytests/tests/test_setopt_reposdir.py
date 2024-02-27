@@ -11,8 +11,8 @@ import shutil
 import pytest
 
 REPODIR = '/root/yum.repos.d'
-REPOFILENAME = 'reposync.repo'
-REPONAME = "reposdir-test"
+REPOFILENAME = 'setopt.repo'
+REPONAME = "setopt-test"
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -32,4 +32,5 @@ def test_setopt_reposdir(utils):
                           "http://foo.bar.com/packages",
                           REPONAME)
     ret = utils.run(['tdnf', '--setopt=reposdir={}'.format(REPODIR), 'repolist'])
+    assert ret['retval'] == 0
     assert REPONAME in "\n".join(ret['stdout'])
