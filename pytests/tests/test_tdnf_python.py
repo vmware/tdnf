@@ -21,16 +21,28 @@ def setup_test(utils):
     sglpkgname = utils.config['sglversion_pkgname']
 
     global config
-    config = utils.config['repo_path'] + '/tdnf.conf'
+    config = os.path.join(utils.config['repo_path'], "tdnf.conf")
 
-    path = '{builddir}/python/build/lib.linux-{arch}-{pymajor}.{pyminor}'
+    if not utils.config.get('installed', False):
+        # find path to our tdnf python module
+        builddir = utils.config['build_dir']
+        arch = os.uname().machine
+        pymajor = sys.version_info.major
+        pyminor = sys.version_info.minor
 
-    path = path.format(builddir=utils.config['build_dir'],
-                       arch=os.uname().machine,
-                       pymajor=str(sys.version_info.major),
-                       pyminor=str(sys.version_info.minor))
+        # only support python3
+        assert pymajor == 3
 
-    sys.path.append(path)
+        if pyminor < 10:
+            path = f"{builddir}/python/build/lib.linux-{arch}-{pymajor}.{pyminor}"
+        else:
+            # build/lib.linux-aarch64-cpython-310/tdnf
+            path = f"{builddir}/python/build/lib.linux-{arch}-cpython-{pymajor}{pyminor}"
+
+        print(f"tdnf python path: {path}")
+
+        assert os.path.isdir(path)
+        sys.path.append(path)
 
     global tdnf
     import tdnf
