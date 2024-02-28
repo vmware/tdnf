@@ -1,4 +1,4 @@
-FROM photon:latest
+FROM photon:4.0
 
 RUN tdnf update  -y
 RUN tdnf remove  -y toybox
