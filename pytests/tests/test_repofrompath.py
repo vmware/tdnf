@@ -65,3 +65,22 @@ def test_repofrompath_created_repo(utils):
                     cwd=workdir)
     assert ret['retval'] == 0
     assert utils.check_package(pkgname)
+
+    empty_repodir = os.path.join(workdir, "empty")
+    os.makedirs(empty_repodir)
+    utils.run(["createrepo", empty_repodir])
+
+    # test again with an additional but empty repo
+    # to make sure we can use --repofrompath multiple times
+    utils.erase_package(pkgname)
+
+    ret = utils.run(['tdnf',
+                     '-y', '--nogpgcheck',
+                     '--repofrompath=synced-repo,{}'.format(synced_dir),
+                     '--repofrompath=empty-repo,{}'.format(empty_repodir),
+                     '--repo=synced-repo',
+                     '--repo=empty-repo',
+                     'install', pkgname],
+                    cwd=workdir)
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)

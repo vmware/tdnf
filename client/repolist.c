@@ -31,13 +31,14 @@ TDNFLoadRepoData(
     uint32_t dwError = 0;
     char* pszRepoFilePath = NULL;
     PTDNF_REPO_DATA pReposAll = NULL;
-    PTDNF_REPO_DATA pReposTemp = NULL;
-    PTDNF_REPO_DATA pRepos = NULL;
+    PTDNF_REPO_DATA *ppRepoNext = NULL;
     PTDNF_CONF pConf = NULL;
     PTDNF_CMD_OPT pSetOpt = NULL;
     DIR *pDir = NULL;
     struct dirent *pEnt = NULL;
     char **ppszUrlIdTuple = NULL;
+    PTDNF_REPO_DATA pRepoParsePre = NULL;
+    PTDNF_REPO_DATA pRepoParseNext = NULL;
 
     if(!pTdnf || !pTdnf->pConf || !pTdnf->pArgs || !ppReposAll)
     {
@@ -46,8 +47,12 @@ TDNFLoadRepoData(
     }
     pConf = pTdnf->pConf;
 
-    dwError = TDNFCreateCmdLineRepo(&pReposAll);
+    ppRepoNext = &pReposAll;
+
+    dwError = TDNFCreateCmdLineRepo(ppRepoNext);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    ppRepoNext = &((*ppRepoNext)->pNext);
 
     for(pSetOpt = pTdnf->pArgs->pSetOpt;
         pSetOpt;
@@ -55,16 +60,20 @@ TDNFLoadRepoData(
     {
         if(strcmp(pSetOpt->pszOptName, "repofrompath") == 0)
         {
-            TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszUrlIdTuple);
+            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszUrlIdTuple);
+            BAIL_ON_TDNF_ERROR(dwError);
             if ((ppszUrlIdTuple[0] == NULL) || ppszUrlIdTuple[1] == NULL)
             {
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-            dwError = TDNFCreateRepoFromPath(&pReposAll,
+
+            dwError = TDNFCreateRepoFromPath(ppRepoNext,
                                              ppszUrlIdTuple[0],
                                              ppszUrlIdTuple[1]);
             BAIL_ON_TDNF_ERROR(dwError);
+
+            ppRepoNext = &((*ppRepoNext)->pNext);
 
             TDNF_SAFE_FREE_STRINGARRAY(ppszUrlIdTuple);
             ppszUrlIdTuple = NULL;
@@ -95,34 +104,33 @@ TDNFLoadRepoData(
                       NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, &pRepos);
+        dwError = TDNFLoadReposFromFile(pTdnf, pszRepoFilePath, ppRepoNext);
         BAIL_ON_TDNF_ERROR(dwError);
 
         TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
         pszRepoFilePath = NULL;
 
         //Apply filter
-        if((nFilter == REPOLISTFILTER_ENABLED && !pRepos->nEnabled) ||
-           (nFilter == REPOLISTFILTER_DISABLED && pRepos->nEnabled))
+        if((nFilter == REPOLISTFILTER_ENABLED && !(*ppRepoNext)->nEnabled) ||
+           (nFilter == REPOLISTFILTER_DISABLED && (*ppRepoNext)->nEnabled))
         {
-            TDNFFreeReposInternal(pRepos);
-            pRepos = NULL;
+            TDNFFreeReposInternal(*ppRepoNext);
+            *ppRepoNext = NULL;
             continue;
         }
+        /* may habe added multiple repos, go to last one */
+        while (*ppRepoNext)
+            ppRepoNext = &((*ppRepoNext)->pNext);
+    }
 
-        if(!pReposAll)
-        {
-            pReposAll = pRepos;
-        }
-        else
-        {
-            pReposTemp = pReposAll;
-            while(pReposAll->pNext)
-            {
-                pReposAll = pReposAll->pNext;
+    for (pRepoParsePre = pReposAll; pRepoParsePre; pRepoParsePre = pRepoParsePre->pNext) {
+
+        for (pRepoParseNext = pRepoParsePre->pNext; pRepoParseNext; pRepoParseNext = pRepoParseNext->pNext) {
+            if (!strcmp(pRepoParsePre->pszId, pRepoParseNext->pszId)) {
+                pr_err("ERROR: duplicate repo id: %s\n", pRepoParsePre->pszId);
+                dwError = ERROR_TDNF_DUPLICATE_REPO_ID;
+                BAIL_ON_TDNF_ERROR(dwError);
             }
-            pReposAll->pNext = pRepos;
-            pReposAll = pReposTemp;
         }
     }
 
