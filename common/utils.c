@@ -810,6 +810,8 @@ TDNFJoinPath(char **ppszPath, ...)
     char *pszNodeCopy = NULL;
     char *pszResult = NULL;
     int nLength = 0;
+    int nIsRemoteUrl = 0;
+    char *pszUrlQueryStringCopy = NULL;
 
     if (!ppszPath)
     {
@@ -836,6 +838,19 @@ TDNFJoinPath(char **ppszPath, ...)
          * before stripping all leading slashes */
         if (i == 0)
         {
+            /* we also check to see if the base path is a remote URL; for URLs
+             * with query strings, we will need to splice additional path components
+             * before the query string */
+            dwError = TDNFUriIsRemote(pszNodeTmp, &nIsRemoteUrl);
+
+            /* we explicitly ignore invalid URLs because this might not be a URL */
+            if (dwError == ERROR_TDNF_URL_INVALID)
+            {
+                dwError = 0;
+            }
+
+            BAIL_ON_TDNF_ERROR(dwError);
+
             if (*pszNodeTmp == '/')
             {
                 dwError = TDNFAllocateString("/", &pszResult);
@@ -847,8 +862,27 @@ TDNFJoinPath(char **ppszPath, ...)
             }
             BAIL_ON_TDNF_ERROR(dwError);
         }
+
         /* now strip leading slashes */
         while(*pszNodeTmp == '/') pszNodeTmp++;
+
+        /* if this is the first node and if it's a remote URL, then
+         * strip off the query string at the end; we'll place it back
+         * on later after appending all other nodes */
+        if (i == 0 && nIsRemoteUrl)
+        {
+            char *pszUrlQueryString = strchr(pszNodeTmp, '?');
+            if (pszUrlQueryString != NULL)
+            {
+                dwError = TDNFAllocateString(pszUrlQueryString, &pszUrlQueryStringCopy);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                /* make sure to prealllocate space for the query string */
+                nLength += strlen(pszUrlQueryString);
+
+                *pszUrlQueryString = 0;
+            }
+        }
 
         /* strip trailing slashes */
         nLengthTmp = strlen(pszNodeTmp);
@@ -858,6 +892,7 @@ TDNFJoinPath(char **ppszPath, ...)
             *pszTmp = 0;
             pszTmp--;
         }
+
         nLength += nLengthTmp + 2;
 
         dwError = TDNFReAllocateMemory(nLength, (void **)&pszResult);
@@ -873,11 +908,19 @@ TDNFJoinPath(char **ppszPath, ...)
         TDNF_SAFE_FREE_MEMORY(pszNodeCopy);
     }
 
+    /* if this was a remote URL and we found a query string, then append
+     * it back on now */
+    if (nIsRemoteUrl && pszUrlQueryStringCopy != NULL)
+    {
+        strcat(pszResult, pszUrlQueryStringCopy);
+    }
+
     *ppszPath = pszResult;
 cleanup:
     va_end(ap);
     return dwError;
 error:
+    TDNF_SAFE_FREE_MEMORY(pszUrlQueryStringCopy);
     TDNF_SAFE_FREE_MEMORY(pszResult);
     TDNF_SAFE_FREE_MEMORY(pszNodeCopy);
     goto cleanup;
