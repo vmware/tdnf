@@ -64,7 +64,7 @@ TDNFSplitStringToArray(
 uint32_t
 TDNFJoinArrayToString(
     char **ppszArray,
-    char *pszSep,
+    const char *pszSep,
     int count,
     char **ppszResult
 );
@@ -72,7 +72,7 @@ TDNFJoinArrayToString(
 uint32_t
 TDNFJoinArrayToStringSorted(
     char **ppszDependencies,
-    char *pszSep,
+    const char *pszSep,
     char **ppszResult
 );
 
@@ -333,7 +333,7 @@ TDNFGetDigestForFile(
 uint32_t
 TDNFCheckHash(
     const char *filename,
-    unsigned char *digest,
+    const unsigned char *digest,
     int type
     );
 
