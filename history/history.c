@@ -1054,7 +1054,7 @@ error:
 /* Helper to convert installed_map into list of ids and set it for ctx */
 static
 int history_set_ids_from_map(struct history_ctx *ctx,
-                             char *installed_map, int map_size)
+                             const char *installed_map, int map_size)
 {
     int rc = 0;
 
@@ -1584,7 +1584,7 @@ struct history_ctx *create_history_ctx(const char *db_filename)
 
         step = sqlite3_step(res);
         if (step == SQLITE_ROW) {
-            char *cookie = (char *)sqlite3_column_text(res, COLUMN_TRANSACTIONS_COOKIE);
+            const char *cookie = (char *)sqlite3_column_text(res, COLUMN_TRANSACTIONS_COOKIE);
             if (cookie)
                 history_set_cookie(ctx, cookie);
             ctx->trans_id = sqlite3_column_int(res, COLUMN_TRANSACTIONS_ID);
