@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : metalink.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Nitesh Kumar (kunitesh@vmware.com)
- */
-
 #include "includes.h"
 
 #define MIN_URL_LENGTH  4
@@ -50,7 +38,7 @@ TDNFGetResourceType(
 {
     uint32_t dwError = 0;
     static _Bool sorted;
-    hash_type *currHash = NULL;
+    const hash_type *currHash = NULL;
 
     if (IsNullOrEmptyString(resource_type) ||
        !type)
@@ -469,10 +457,14 @@ TDNFXmlParseData(
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
     char *size = NULL;
 
-    if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename) || (elementInfo->dwError != 0))
+    if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename) || elementInfo->dwError)
     {
-        elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+        uint32_t dwError = ERROR_TDNF_INVALID_PARAMETER;
+
+        if (elementInfo)
+            elementInfo->dwError = dwError;
+
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     if(!strcmp(elementInfo->startElement, TAG_NAME_FILE))

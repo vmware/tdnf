@@ -202,7 +202,7 @@ TDNFGetUrlsFromMLCtx(
         buf[BUFSIZ-1] = '\0'; // force terminate
         dwError = TDNFTrimSuffix(buf, TDNF_REPO_METADATA_FILE_PATH);
         BAIL_ON_TDNF_ERROR(dwError);
-        
+
         dwError = TDNFAllocateString(buf, &ppszBaseUrls[i]);
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -226,7 +226,7 @@ TDNFMetalinkGetBaseURLs(
     PTDNF pTdnf;
     PTDNF_REPO_DATA pRepo = NULL;
     PTDNF_METALINK_DATA pData = NULL;
-    char *pszMetalink = NULL;
+    const char *pszMetalink = NULL;
     char *pszMetaLinkFile = NULL;
     TDNF_ML_CTX *ml_ctx = NULL;
 
