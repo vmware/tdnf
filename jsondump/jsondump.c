@@ -296,7 +296,7 @@ int jd_map_add_fmt(struct json_dump *jd, const char *key, const char *format, ..
     return rc;
 }
 
-int jd_map_add_child(struct json_dump *jd, const char *key, struct json_dump *jd_child)
+int jd_map_add_child(struct json_dump *jd, const char *key, const struct json_dump *jd_child)
 {
     return _jd_map_add_raw(jd, key, jd_child->buf);
 }
@@ -414,7 +414,7 @@ int jd_list_add_fmt(struct json_dump *jd, const char *format, ...)
     return rc;
 }
 
-int jd_list_add_child(struct json_dump *jd, struct json_dump *jd_child)
+int jd_list_add_child(struct json_dump *jd, const struct json_dump *jd_child)
 {
     return _jd_list_add_raw(jd, jd_child->buf);
 }
