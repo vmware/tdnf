@@ -423,7 +423,7 @@ SolvGetPkgRepoNameFromId(
 {
     uint32_t dwError = 0;
     char* pszRepoName = NULL;
-    Solvable *pSolv = NULL;
+    const Solvable *pSolv = NULL;
 
     if(!pSack || !ppszRepoName)
     {
@@ -1360,11 +1360,11 @@ error:
 /* code based on mlschroe's suggestion in PR 378 */
 
 /* check if package s obsoletes is */
-static
-int
-is_obsoleting(Pool *pool, Solvable *s, Solvable *is)
+static int
+is_obsoleting(Pool *pool, Solvable *s, const Solvable *is)
 {
-    Id obs, *obsp;
+    Id obs;
+    const Id *obsp;
     Id n = is - pool->solvables;
     if (!s->obsoletes)
         return 0;
@@ -1795,7 +1795,7 @@ check_for_providers(
     )
 {
     char *beg;
-    char *end;
+    const char *end;
     uint32_t dwError = 0;
     char pkgname[256] = {0};
     PSolvPackageList pAvailablePkgList = NULL;

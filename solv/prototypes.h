@@ -592,7 +592,7 @@ SolvIsGlob(
 
 uint32_t
 SolvCalculateCookieForFile(
-    char* pszRepoMD,
+    const char* pszRepoMD,
     unsigned char* pszCookie
     );
 
@@ -612,7 +612,7 @@ SolvGetMetaDataCachePath(
 uint32_t
 SolvAddSolvMetaData(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
-    char *pszTempSolvFile
+    const char *pszTempSolvFile
     );
 
 uint32_t

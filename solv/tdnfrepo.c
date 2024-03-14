@@ -247,7 +247,7 @@ SolvCountPackages(
 {
     uint32_t dwError = 0;
     uint32_t dwCount = 0;
-    Pool* pool = 0;
+    const Pool* pool = 0;
     Id p = 0;
     if(!pSack || !pSack->pPool || !pdwCount)
     {
@@ -400,7 +400,7 @@ error:
 
 uint32_t
 SolvCalculateCookieForFile(
-    char *pszFilePath,
+    const char *pszFilePath,
     unsigned char *pszCookie
     )
 {
@@ -533,7 +533,7 @@ error:
 uint32_t
 SolvAddSolvMetaData(
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
-    char *pszTempSolvFile
+    const char *pszTempSolvFile
     )
 {
     uint32_t dwError = 0;
@@ -590,7 +590,7 @@ error:
 
 uint32_t
 SolvUseMetaDataCache(
-    PSolvSack pSack,
+    const PSolvSack pSack,
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo,
     int       *nUseMetaDataCache
     )
@@ -598,7 +598,7 @@ SolvUseMetaDataCache(
     uint32_t dwError = 0;
     FILE *fp = NULL;
     Repo *pRepo = NULL;
-    unsigned char *pszCookie = NULL;
+    const unsigned char *pszCookie = NULL;
     unsigned char pszTempCookie[32];
     char *pszCacheFilePath = NULL;
 
@@ -661,7 +661,7 @@ error:
 
 uint32_t
 SolvCreateMetaDataCache(
-    PSolvSack pSack,
+    const PSolvSack pSack,
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo
     )
 {
