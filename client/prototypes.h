@@ -400,7 +400,7 @@ TDNFHistoryGoal(
 uint32_t
 TDNFAddUserInstall(
     PTDNF pTdnf,
-    Queue* pQueueGoal,
+    const Queue* pQueueGoal,
     PTDNF_SOLVED_PKG_INFO ppInfo
     );
 
@@ -708,7 +708,7 @@ TDNFDownloadRepoMDParts(
 uint32_t
 TDNFLoadReposFromFile(
     PTDNF pTdnf,
-    char* pszRepoFile,
+    const char* pszRepoFile,
     PTDNF_REPO_DATA* ppRepos
     );
 

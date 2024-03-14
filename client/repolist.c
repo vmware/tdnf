@@ -368,7 +368,7 @@ error:
 uint32_t
 TDNFEventRepoReadConfigEnd(
     PTDNF pTdnf,
-    struct cnfnode *cn_section
+    const struct cnfnode *cn_section
     )
 {
     uint32_t dwError = 0;
@@ -402,7 +402,7 @@ error:
 uint32_t
 TDNFEventRepoReadConfigStart(
     PTDNF pTdnf,
-    struct cnfnode *cn_section
+    const struct cnfnode *cn_section
     )
 {
     uint32_t dwError = 0;
@@ -436,7 +436,7 @@ error:
 uint32_t
 TDNFLoadReposFromFile(
     PTDNF pTdnf,
-    char* pszRepoFile,
+    const char* pszRepoFile,
     PTDNF_REPO_DATA* ppRepos
     )
 {

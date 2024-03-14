@@ -2209,7 +2209,7 @@ TDNFHistoryResolve(
 
     for (int i = 0; i < hd->added_count; i++)
     {
-        char *pszPkgName = history_get_nevra(hnm, hd->added_ids[i]);
+        const char *pszPkgName = history_get_nevra(hnm, hd->added_ids[i]);
         if (pszPkgName)
         {
             if (strncmp(pszPkgName, "gpg-pubkey-", 11) == 0)
@@ -2258,7 +2258,7 @@ TDNFHistoryResolve(
 
     for (int i = 0; i < hd->removed_count; i++)
     {
-        char *pszPkgName = history_get_nevra(hnm, hd->removed_ids[i]);
+        const char *pszPkgName = history_get_nevra(hnm, hd->removed_ids[i]);
         if (pszPkgName)
         {
             if (strncmp(pszPkgName, "gpg-pubkey-", 11) == 0)
@@ -2404,20 +2404,33 @@ TDNFHistoryList(
         pHistoryInfoItems[i].nAddedCount = tas[i].delta.added_count;
         pHistoryInfoItems[i].nRemovedCount = tas[i].delta.removed_count;
 
-        if (hnm)
+        if (!hnm)
+            continue;
+
+        if (tas[i].delta.added_count > 0)
         {
-            dwError = TDNFAllocateMemory(tas[i].delta.added_count, sizeof(char *), (void **)&pHistoryInfoItems[i].ppszAddedPkgs);
+            dwError = TDNFAllocateMemory(tas[i].delta.added_count,
+                                         sizeof(char *),
+                                         (void **)&pHistoryInfoItems[i].ppszAddedPkgs);
+            BAIL_ON_TDNF_ERROR(dwError);
             for (int j = 0; j < tas[i].delta.added_count; j++)
             {
                 dwError = TDNFAllocateString(history_get_nevra(hnm, tas[i].delta.added_ids[j]),
-                                             &pHistoryInfoItems[i].ppszAddedPkgs[j]);
+                        &pHistoryInfoItems[i].ppszAddedPkgs[j]);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-            dwError = TDNFAllocateMemory(tas[i].delta.removed_count, sizeof(char *), (void **)&pHistoryInfoItems[i].ppszRemovedPkgs);
+        }
+
+        if (tas[i].delta.removed_count > 0)
+        {
+            dwError = TDNFAllocateMemory(tas[i].delta.removed_count,
+                                         sizeof(char *),
+                                         (void **)&pHistoryInfoItems[i].ppszRemovedPkgs);
+            BAIL_ON_TDNF_ERROR(dwError);
             for (int j = 0; j < tas[i].delta.removed_count; j++)
             {
                 dwError = TDNFAllocateString(history_get_nevra(hnm, tas[i].delta.removed_ids[j]),
-                                             &pHistoryInfoItems[i].ppszRemovedPkgs[j]);
+                        &pHistoryInfoItems[i].ppszRemovedPkgs[j]);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
