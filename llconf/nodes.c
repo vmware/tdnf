@@ -255,13 +255,13 @@ struct cnfnode *find_node(struct cnfnode *cn_list, const char *name)
  */
 struct cnfnode *clone_cnftree(const struct cnfnode *cn_root)
 {
-	struct cnfnode *cn_root_new, *cn_new;
+	struct cnfnode *cn_root_new;
 	const struct cnfnode *cn;
 
 	cn_root_new = clone_cnfnode(cn_root);
 
 	for(cn = cn_root->first_child; cn; cn = cn->next){
-		cn_new = clone_cnftree(cn);
+		struct cnfnode *cn_new = clone_cnftree(cn);
 		append_node(cn_root_new, cn_new);
 	}
 	return cn_root_new;
@@ -325,7 +325,6 @@ int compare_cnftree(const struct cnfnode *cn_root1, const struct cnfnode *cn_roo
 int compare_cnftree_children(const struct cnfnode *cn_root1, const struct cnfnode *cn_root2)
 {
 	const struct cnfnode *cn1, *cn2;
-	int ret;
 
 	if(!(cn_root1 && cn_root2)){
 		if((cn_root1 == NULL) && (cn_root2 == NULL))
@@ -338,7 +337,8 @@ int compare_cnftree_children(const struct cnfnode *cn_root1, const struct cnfnod
 		}
 	}
 	for(cn1 = cn_root1->first_child, cn2 = cn_root2->first_child; cn1 || cn2; cn1 = cn1->next, cn2 = cn2->next){
-		if((ret = compare_cnftree(cn1, cn2)) != 0)
+	    int ret = compare_cnftree(cn1, cn2);
+		if(ret)
 			return ret;
 	}
 
@@ -377,7 +377,8 @@ char *cnfnode_path(struct cnfnode *cn)
 	*q0 = 0;
 
 	for(cn_parent = cn; cn_parent; cn_parent = cn_parent->parent){
-		char *p, *q;
+		const char *p;
+        char *q;
 
 		q0 -= strlen(cn_parent->name);
 		q = q0;

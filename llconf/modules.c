@@ -39,21 +39,21 @@ struct cnfmodule *cnfmodules = NULL;
  */
 void register_cnfmodule(struct cnfmodule *cm, struct cnfnode *opt_root)
 {
-	struct cnfmodule **pcm;
+    struct cnfmodule **pcm;
 
-	/* we also check if the module is already registered - otherwise
-	   we may get very weird results. */
-	for(pcm = &cnfmodules; *pcm && *pcm != cm; pcm = &((*pcm)->next));
-	if(!*pcm){
-		*pcm = cm;
-		cm->opt_root = opt_root;
-		cm->next = NULL;
-	}
+    /* we also check if the module is already registered - otherwise
+       we may get very weird results. */
+    for(pcm = &cnfmodules; *pcm && *pcm != cm; pcm = &((*pcm)->next));
+    if(!*pcm){
+        *pcm = cm;
+        cm->opt_root = opt_root;
+        cm->next = NULL;
+    }
 }
 
 void unregister_all(void)
 {
-	cnfmodules = NULL;
+    cnfmodules = NULL;
 }
 
 /** Destroy a module previously created using clone_cnfmodule().
@@ -62,10 +62,10 @@ void unregister_all(void)
  */
 void destroy_cnfmodule(struct cnfmodule *cm)
 {
-	if(cm->default_file) free(cm->default_file);
-	if(cm->name) free(cm->name);
-	if(cm->opt_root) destroy_cnftree(cm->opt_root);
-	free(cm);
+    if(cm->default_file) free(cm->default_file);
+    if(cm->name) free(cm->name);
+    if(cm->opt_root) destroy_cnftree(cm->opt_root);
+    free(cm);
 }
 
 /** Clone a module.
@@ -78,32 +78,32 @@ void destroy_cnfmodule(struct cnfmodule *cm)
  * @return pointer to the new module
  */
 struct cnfmodule *clone_cnfmodule(struct cnfmodule *cm,
-				  const char *new_name, const char *default_file, struct cnfnode *opt_root)
+                  const char *new_name, const char *default_file, struct cnfnode *opt_root)
 {
-	struct cnfmodule *new_cm;
+    struct cnfmodule *new_cm;
 
-	new_cm = malloc(sizeof(struct cnfmodule));
-	memset(new_cm, 0, sizeof(struct cnfmodule));
+    new_cm = malloc(sizeof(struct cnfmodule));
+    memset(new_cm, 0, sizeof(struct cnfmodule));
 
-	if(new_name)
-		new_cm->name = strdup(new_name);
-	else if(cm->name)
-		new_cm->name = strdup(cm->name);
+    if(new_name)
+        new_cm->name = strdup(new_name);
+    else if(cm->name)
+        new_cm->name = strdup(cm->name);
 
-	if(default_file)
-		new_cm->default_file = strdup(default_file);
-	else if(cm->default_file)
-		new_cm->default_file = strdup(cm->default_file);
+    if(default_file)
+        new_cm->default_file = strdup(default_file);
+    else if(cm->default_file)
+        new_cm->default_file = strdup(cm->default_file);
 
-	if(opt_root)
-		new_cm->opt_root = opt_root;
-	else if(cm->opt_root)
-		new_cm->opt_root = cm->opt_root;
+    if(opt_root)
+        new_cm->opt_root = opt_root;
+    else if(cm->opt_root)
+        new_cm->opt_root = cm->opt_root;
 
-	new_cm->parser = cm->parser;
-	new_cm->unparser = cm->unparser;
+    new_cm->parser = cm->parser;
+    new_cm->unparser = cm->unparser;
 
-	return new_cm;
+    return new_cm;
 }
 
 /** Find a module by name.
@@ -113,13 +113,13 @@ struct cnfmodule *clone_cnfmodule(struct cnfmodule *cm,
  */
 struct cnfmodule *find_cnfmodule(const char *name)
 {
-	struct cnfmodule *cm;
+    struct cnfmodule *cm;
 
-	for(cm = cnfmodules; cm; cm = cm->next){
-		if(strcmp(cm->name, name) == 0)
-			return cm;
-	}
-	return NULL;
+    for(cm = cnfmodules; cm; cm = cm->next){
+        if(strcmp(cm->name, name) == 0)
+            return cm;
+    }
+    return NULL;
 }
 
 /** Set module options.
@@ -131,7 +131,7 @@ struct cnfmodule *find_cnfmodule(const char *name)
 */
 void cnfmodule_setopts(struct cnfmodule *cm, struct cnfnode *opt_root)
 {
-	cm->opt_root = opt_root;
+    cm->opt_root = opt_root;
 }
 
 /** Set module options.
@@ -140,9 +140,9 @@ void cnfmodule_setopts(struct cnfmodule *cm, struct cnfnode *opt_root)
 */
 void cnfmodule_setname(struct cnfmodule *cm, const char *name)
 {
-	if(cm->name)
-		free(cm->name);
-	cm->name = strdup(name);
+    if(cm->name)
+        free(cm->name);
+    cm->name = strdup(name);
 }
 
 /** Parse module options
@@ -153,32 +153,31 @@ void cnfmodule_setname(struct cnfmodule *cm, const char *name)
  */
 struct cnfnode *parse_options(const char *string)
 {
-	struct cnfnode *cn_top, *cn;
-	const char *p;
-	char *q, buf[256];
+    struct cnfnode *cn_top;
+    const char *p;
+    char buf[256];
 
-	cn_top = create_cnfnode("(root)");
+    cn_top = create_cnfnode("(root)");
 
-	p = string;
-	while(*p){
-		q = buf;
-		while(*p && *p != '=' && *p != ',' && q < buf+255) *q++ = *p++;
-		*q = 0;
-		cn = create_cnfnode(buf);
-		append_node(cn_top, cn);
+    p = string;
+    while(p && *p){
+        char *q = buf;
+        while(*p && *p != '=' && *p != ',' && q < buf+255) *q++ = *p++;
+        *q = 0;
+        struct cnfnode *cn = create_cnfnode(buf);
+        append_node(cn_top, cn);
 
-		if(*p && *p == '='){
-			p++; q = buf;
-			while(*p && *p != ',' && q < buf+255) *q++ = *p++;
-			*q = 0;
-			cnfnode_setval(cn, buf);
+        if(*p == '='){
+            p++; q = buf;
+            while(*p && *p != ',' && q < buf+255) *q++ = *p++;
+            *q = 0;
+            cnfnode_setval(cn, buf);
+        }else
+            cnfnode_setval(cn, "");
+        if(*p) p++;
+    }
 
-		}else
-			cnfnode_setval(cn, "");
-		if(*p) p++;
-	}
-
-	return cn_top;
+    return cn_top;
 }
 
 /** Parse from a stream.
@@ -188,11 +187,11 @@ struct cnfnode *parse_options(const char *string)
 */
 struct cnfnode *cnfmodule_parse(struct cnfmodule *cm, FILE *fin)
 {
-	struct cnfnode *cn_root = NULL;
+    struct cnfnode *cn_root = NULL;
 
-	cn_root = cm->parser(cm, fin);
+    cn_root = cm->parser(cm, fin);
 
-	return cn_root;
+    return cn_root;
 }
 
 /** Parse from a file.
@@ -202,18 +201,18 @@ struct cnfnode *cnfmodule_parse(struct cnfmodule *cm, FILE *fin)
 */
 struct cnfnode *cnfmodule_parse_file(struct cnfmodule *cm, const char *fname)
 {
-	struct cnfnode *cn_root = NULL;
-	FILE *fin;
+    struct cnfnode *cn_root = NULL;
+    FILE *fin;
 
-	if(fname == NULL)
-		fname = cm->default_file;
-	if(fname){
-		if((fin = fopen(fname, "r"))){
-			cn_root = cnfmodule_parse(cm, fin);
-			fclose(fin);
-		}
-	}
-	return cn_root;
+    if(fname == NULL)
+        fname = cm->default_file;
+    if(fname){
+        if((fin = fopen(fname, "r"))){
+            cn_root = cnfmodule_parse(cm, fin);
+            fclose(fin);
+        }
+    }
+    return cn_root;
 }
 
 /** Unparse to a stream.
@@ -223,9 +222,9 @@ struct cnfnode *cnfmodule_parse_file(struct cnfmodule *cm, const char *fname)
  * @return 0 if successful
 */
 int cnfmodule_unparse(struct cnfmodule *cm, FILE* fout,
-				  struct cnfnode *cn_root)
+                  struct cnfnode *cn_root)
 {
-	return cm->unparser(cm, fout, cn_root);
+    return cm->unparser(cm, fout, cn_root);
 }
 
 /** Unparse to a file.
@@ -235,20 +234,20 @@ int cnfmodule_unparse(struct cnfmodule *cm, FILE* fout,
  * @return 0 if successful
 */
 int cnfmodule_unparse_file(struct cnfmodule *cm, const char *fname,
-			   struct cnfnode *cn_root)
+               struct cnfnode *cn_root)
 {
-	FILE *fout;
-	int ret = -1;
+    int ret = -1;
 
-	if(fname == NULL)
-		fname = cm->default_file;
-	if(fname){
-		if((fout = fopen(fname, "w"))){
-			ret = cnfmodule_unparse(cm, fout, cn_root);
-			fclose(fout);
-		}
-	}
-	return ret;
+    if(fname == NULL)
+        fname = cm->default_file;
+    if(fname){
+        FILE *fout;
+        if((fout = fopen(fname, "w"))){
+            ret = cnfmodule_unparse(cm, fout, cn_root);
+            fclose(fout);
+        }
+    }
+    return ret;
 }
 
 /** Load a shared library module
@@ -263,27 +262,26 @@ int cnfmodule_unparse_file(struct cnfmodule *cm, const char *fname,
 
 int cnfmodule_register_plugin(const char *name, const char *path, struct cnfnode *opt_root)
 {
-	void *dlh;
+    void *dlh;
 
-	dlh = dlopen(path, RTLD_LAZY);
-	if(dlh){
-		char *dlerr;
-		char fname[256];
-		struct cnfmodule *(*fe_reg_func)(struct cnfnode *);
+    dlh = dlopen(path, RTLD_LAZY);
+    if(dlh){
+        char fname[256];
+        struct cnfmodule *(*fe_reg_func)(struct cnfnode *);
 
-		snprintf(fname, sizeof(fname), "llconf_register_%s", name);
-		dlerror();    /* Clear any existing error */
-		fe_reg_func = dlsym(dlh, fname);
-		if((dlerr = dlerror()) == NULL)
-			fe_reg_func(opt_root);
-		else{
+        snprintf(fname, sizeof(fname), "llconf_register_%s", name);
+        dlerror();    /* Clear any existing error */
+        fe_reg_func = dlsym(dlh, fname);
+        if(dlerror() == NULL)
+            fe_reg_func(opt_root);
+        else{
             dlclose(dlh);
-			return -2;
-		}
-	}else{
-		return -1;
-	}
+            return -2;
+        }
+    }else{
+        return -1;
+    }
     /* Technically correct coverity issue (dlh is leaked), but low impact */
     /* coverity[leaked_storage] */
-	return 0;
+    return 0;
 }

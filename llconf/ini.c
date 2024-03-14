@@ -308,20 +308,20 @@ int unparse_ini(struct cnfmodule *cm __attribute__((__unused__)), FILE *fptr, st
 			cl_list = append_confline(cl_list, cl = create_confline(buf));
 
 			for(cn_line = cn_section->first_child; cn_line; cn_line = cn_line->next){
-				if((strcmp(cn_line->name, ".comment") == 0) ||
+				if ((strcmp(cn_line->name, ".comment") == 0) ||
 				   (strcmp(cn_line->name, ".empty") == 0) ||
 				   (strcmp(cn_line->name, ".unparsed") == 0)){
 					snprintf(buf, sizeof(buf), "%s\n", cn_line->value);
 					cl_list = append_confline(cl_list,
 								  cl = create_confline(buf));
-				}else{
-					if(cn_line->value){
+				} else {
+					if (cn_line->value) {
 						snprintf(buf, sizeof(buf), "%s = %s\n",
-							 cn_line->name, cn_line->value ? cn_line->value : "");
+							 cn_line->name, cn_line->value);
 						cl_list =
 							append_confline(cl_list,
 									cl = create_confline(buf));
-					}else{
+					} else {
 						cl_list =
 							unparse_ini_subsection(cn_line, cl_list, 1);
 					}
