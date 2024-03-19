@@ -387,7 +387,7 @@ SolvAddAvailableRepoFilter(
 {
     uint32_t dwError = 0;
     Repo *pRepo = NULL;
-    Pool *pool = NULL;
+    const Pool *pool = NULL;
     int i = 0;
 
     if(!pQuery || !pQuery->pSack)
@@ -505,10 +505,7 @@ SolvGenerateCommonJob(
     {
         queue_empty(&queueJob);
         queue_push2(&queueJob, SOLVER_SOLVABLE_ALL, 0);
-        if (pQuery->queueRepoFilter.count)
-        {
-            selection_filter(pPool, &queueJob, &pQuery->queueRepoFilter);
-        }
+        selection_filter(pPool, &queueJob, &pQuery->queueRepoFilter);
         queue_insertn(&pQuery->queueJob,
                       pQuery->queueJob.count,
                       queueJob.count,
@@ -1149,7 +1146,7 @@ SolvApplyExtrasFilter(
     for (i = 0; i < pQuery->queueResult.count; i++)
     {
         Id idPkg = pQuery->queueResult.elements[i];
-        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+        const Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
 
         if(!pSolvable)
         {
@@ -1165,7 +1162,7 @@ SolvApplyExtrasFilter(
                 if (i != j)
                 {
                     Id idPkg2 = pQuery->queueResult.elements[j];
-                    Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+                    const Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
 
                     if(!pSolvable2)
                     {
@@ -1223,7 +1220,7 @@ SolvApplyDuplicatesFilter(
     for (i = 0; i < pQuery->queueResult.count; i++)
     {
         Id idPkg = pQuery->queueResult.elements[i];
-        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+        const Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
 
         if(!pSolvable)
         {
@@ -1239,7 +1236,7 @@ SolvApplyDuplicatesFilter(
             for (j = i + 1; j < pQuery->queueResult.count; j++)
             {
                 Id idPkg2 = pQuery->queueResult.elements[j];
-                Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
+                const Solvable *pSolvable2 = pool_id2solvable(pPool, idPkg2);
 
                 if(!pSolvable2)
                 {
@@ -1401,7 +1398,7 @@ SolvApplyArchFilter(
     for (i = 0; i < pQuery->queueResult.count; i++)
     {
         Id idPkg = pQuery->queueResult.elements[i];
-        Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
+        const Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
         int nFound = 0;
 
         if(!pSolvable)

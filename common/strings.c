@@ -166,7 +166,7 @@ error:
 uint32_t
 TDNFJoinArrayToString(
     char **ppszArray,
-    char *pszSep,
+    const char *pszSep,
     int count,
     char **ppszResult
 )
@@ -216,7 +216,7 @@ error:
 uint32_t
 TDNFJoinArrayToStringSorted(
     char **ppszDependencies,
-    char *pszSep,
+    const char *pszSep,
     char **ppszResult
 )
 {

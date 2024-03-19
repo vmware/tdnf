@@ -12,7 +12,7 @@ static
 uint32_t
 TDNFGoalGetAllResultsIgnoreNoData(
     Transaction* pTrans,
-    Solver* pSolv,
+    const Solver* pSolv,
     PTDNF_SOLVED_PKG_INFO* ppInfo,
     PTDNF pTdnf,
     int nReInstall
@@ -633,7 +633,7 @@ error:
 uint32_t
 TDNFAddUserInstall(
     PTDNF pTdnf,
-    Queue* pQueueGoal,
+    const Queue* pQueueGoal,
     PTDNF_SOLVED_PKG_INFO ppInfo
     )
 {
@@ -737,7 +737,6 @@ TDNFMarkAutoInstalled(
     */
     for (pPkgInfo = ppInfo->pPkgsToInstall; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
-        int rc;
         const char *pszName = pPkgInfo->pszName;
         int nFlag = 1;
         /* check if user installed */
@@ -757,7 +756,7 @@ TDNFMarkAutoInstalled(
         }
         if (!nAutoOnly || nFlag == 1)
         {
-            rc = history_set_auto_flag(pHistoryCtx, pszName, nFlag);
+            int rc = history_set_auto_flag(pHistoryCtx, pszName, nFlag);
             if (rc != 0)
             {
                 dwError = ERROR_TDNF_HISTORY_ERROR;
@@ -854,7 +853,7 @@ static
 uint32_t
 TDNFGoalGetAllResultsIgnoreNoData(
     Transaction* pTrans,
-    Solver* pSolv,
+    const Solver* pSolv,
     PTDNF_SOLVED_PKG_INFO* ppInfo,
     PTDNF pTdnf,
     int nReInstall
@@ -1078,7 +1077,7 @@ TDNFSolvCheckInstallOnlyLimitInTrans(
         for (int j = 0; j < pTrans->steps.count; j++) {
             Id idType;
             Id idPkg = pTrans->steps.elements[j];
-            Solvable *s = pool_id2solvable(pPool, idPkg);
+            const Solvable *s = pool_id2solvable(pPool, idPkg);
 
             if (idName == s->name) {
                 idType = transaction_type(pTrans, idPkg,
@@ -1160,7 +1159,7 @@ TDNFSolvAddMinVersions(
 
     for (int i = 0; ppszPackages && ppszPackages[i]; i++)
     {
-        char *pszPkg = ppszPackages[i];
+        const char *pszPkg = ppszPackages[i];
 
         dwError = TDNFAllocateString(pszPkg, &pszTmp);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -1247,7 +1246,7 @@ TDNFSolvAddProtectPkgs(
         /* assuming that all erase jobs that we added use SOLVER_SOLVABLE */
         if (((how & SOLVER_JOBMASK) == SOLVER_ERASE) && (how & SOLVER_SOLVABLE)) {
             Id what = pQueueJobs->elements[j+1];
-            Solvable *s = pool_id2solvable(pPool, what);
+            s = pool_id2solvable(pPool, what);
             for (i = 0; i < qPkgs.count; i++) {
                 if (qPkgs.elements[i] == s->name)
                     break;
@@ -1259,10 +1258,10 @@ TDNFSolvAddProtectPkgs(
                 for (i = 0; i < pQueueJobs->count; i += 2) {
                     if (i == j)
                         continue;
-                    Id how = pQueueJobs->elements[i];
+                    how = pQueueJobs->elements[i];
                     if (((how & SOLVER_JOBMASK) == SOLVER_INSTALL) && (how & SOLVER_SOLVABLE)) {
                         Id what_add = pQueueJobs->elements[i+1];
-                        Solvable *s_add = pool_id2solvable(pPool, what_add);
+                        const Solvable *s_add = pool_id2solvable(pPool, what_add);
                         if (s_add->name == s->name) {
                             break;
                         }
@@ -1342,7 +1341,7 @@ TDNFSolvCheckProtectPkgsInTrans(
         if (idType == SOLVER_TRANSACTION_OBSOLETED ||
             idType == SOLVER_TRANSACTION_ERASE) {
             int j;
-            Solvable *s = pool_id2solvable(pPool, idPkg);
+            const Solvable *s = pool_id2solvable(pPool, idPkg);
             for (j = 0; j < qPkgs.count; j++) {
                 if (qPkgs.elements[j] == s->name) {
                     pr_err("package %s would be %s but it is protected\n",

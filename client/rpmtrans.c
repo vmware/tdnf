@@ -149,7 +149,7 @@ TDNFRunTransactionWithHistory(
     PTDNF pTdnf,
     PTDNFRPMTS pTS,
     struct history_ctx *pHistoryCtx,
-    char *pszCmdLine
+    const char *pszCmdLine
     )
 {
     uint32_t dwError = 0;

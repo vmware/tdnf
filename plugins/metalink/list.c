@@ -6,18 +6,6 @@
  * of the License are located in the COPYING file of this distribution.
  */
 
-/*
- * Module   : list.c
- *
- * Abstract :
- *
- *            tdnfclientlib
- *
- *            client library
- *
- * Authors  : Nitesh Kumar (kunitesh@vmware.com)
- */
-
 #include "includes.h"
 
 TDNF_ML_LIST*

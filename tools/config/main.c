@@ -138,7 +138,7 @@ char *get_repodir(const char *main_config)
     if (cn_root) {
         struct cnfnode *cn_main = find_child(cn_root, "main");
         if (cn_main) {
-            struct cnfnode *cn_repodir = find_child(cn_main, TDNF_CONF_KEY_REPODIR);
+            const struct cnfnode *cn_repodir = find_child(cn_main, TDNF_CONF_KEY_REPODIR);
             if (cn_repodir) {
                 repodir = strdup(cnfnode_getval(cn_repodir));
             }
@@ -166,7 +166,7 @@ struct cnfnode *find_repo(const char *repodir, const char *repo, char **pfilenam
     check_cond(rc == 0 || rc == GLOB_NOMATCH);
     if (rc == 0) {
         for (i = 0; globbuf.gl_pathv[i]; i++) {
-            struct cnfnode *cn_repo = NULL;
+            const struct cnfnode *cn_repo = NULL;
 
             cn_root = cnfmodule_parse_file(mod_ini, globbuf.gl_pathv[i]);
             check_ptr(cn_root);
@@ -259,10 +259,9 @@ error:
 
 int main(int argc, char *argv[])
 {
-    char *main_config = TDNF_CONF_FILE;
-    char *repo_config = NULL;
+    const char *main_config = TDNF_CONF_FILE;
+    const char *repo_config = NULL;
     int do_json = 0;
-    int rc = 0;
 
     while(1) {
         int c;
@@ -306,8 +305,9 @@ int main(int argc, char *argv[])
      */
     if (optind < argc) {
         int argcount = 0;
-        char *action = NULL;
-        char *repo = NULL;
+        int rc = 0;
+        const char *action = NULL;
+        const char *repo = NULL;
         char *filename = NULL;
         struct cnfnode *cn_root = NULL;
 
@@ -386,14 +386,14 @@ int main(int argc, char *argv[])
             if (cn_root) {
                 struct cnfnode *cn_repo = find_child(cn_root, repo);
                 if (cn_repo) {
-                    struct cnfnode *cn_keyval = find_child(cn_repo, argv[optind+2]);
+                    const struct cnfnode *cn_keyval = find_child(cn_repo, argv[optind+2]);
                     if (cn_keyval)
                         printf("%s\n", cn_keyval->value);
                     else
                         fail(ERR_NO_SETTING, "'%s' not found in '%s'\n", argv[optind+2], repo);
                 } else
                     fail(ERR_NO_REPO, "repo '%s' not found\n", repo);
-                
+
                 destroy_cnftree(cn_root);
             }
         } else if (strcmp(action, "remove") == 0) {

@@ -75,7 +75,7 @@ SolvFindSolvablesByNevraId(
     Id p;
     FOR_POOL_SOLVABLES(p)
     {
-        Solvable *s = &pool->solvables[p];
+        const Solvable *s = &pool->solvables[p];
         if (installed == (s->repo == pool->installed)) {
             if (s->name == name && s->evr == evr && s->arch == arch) {
                 queue_push(qresult, p);

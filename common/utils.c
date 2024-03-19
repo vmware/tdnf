@@ -159,7 +159,7 @@ TDNFUtilsFormatSize(
 {
     uint32_t dwError = 0;
     char* pszFormattedSize = NULL;
-    char* pszSizes = "bkMG";
+    const char* pszSizes = "bkMG";
     double dSize = unSize;
 
     int nIndex = 0;
@@ -253,7 +253,6 @@ TDNFFreePackageInfoContents(
     )
 {
     PTDNF_PKG_CHANGELOG_ENTRY pEntry, pEntryNext;
-    int depKey;
 
     if(pPkgInfo)
     {
@@ -273,6 +272,7 @@ TDNFFreePackageInfoContents(
 
         if(pPkgInfo->pppszDependencies)
         {
+            int depKey;
             for (depKey = 0; depKey < REPOQUERY_DEP_KEY_COUNT; depKey++)
             {
                 TDNF_SAFE_FREE_STRINGARRAY(pPkgInfo->pppszDependencies[depKey]);
@@ -466,7 +466,7 @@ TDNFYesOrNo(
         while(1) {
             pr_crit("%s", pszQuestion);
             char buf[256] = {0};
-            char *ret;
+            const char *ret;
 
             ret = fgets(buf, sizeof(buf)-1, stdin);
             if (ret != buf || buf[0] == 0) {
@@ -1119,7 +1119,7 @@ error:
 uint32_t
 TDNFCheckHash(
     const char *filename,
-    unsigned char *digest,
+    const unsigned char *digest,
     int type
     )
 {

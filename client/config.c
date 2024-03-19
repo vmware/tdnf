@@ -119,7 +119,6 @@ TDNFReadConfig(
 
     /* defaults */
     pConf->nGPGCheck = 0;
-    pConf->nInstallOnlyLimit = 1;
     pConf->nCleanRequirementsOnRemove = 0;
     pConf->nKeepCache = 0;
     pConf->nOpenMax = TDNF_DEFAULT_OPENMAX;
