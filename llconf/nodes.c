@@ -43,10 +43,25 @@ struct cnfnode *create_cnfnode(const char *name)
 	cn = (struct cnfnode *)malloc(sizeof(struct cnfnode));
 	if(cn){
 		memset(cn, 0, sizeof(struct cnfnode));
-
-		cn->name = strdup(name);
+        if (name != NULL)
+		    cn->name = strdup(name);
 	}
 	return cn;
+}
+
+struct cnfnode *
+create_cnfnode_keyval(const char *keyval)
+{
+    struct cnfnode *cn = NULL;
+    char *psep;
+
+    psep = strstr(keyval, "=");
+    if (psep) {
+        cn = create_cnfnode(NULL);
+        cnfnode_setname_n(cn, keyval, psep - keyval);
+        cnfnode_setval(cn, psep + 1);
+    }
+    return cn;
 }
 
 /** copies a node.
@@ -152,6 +167,23 @@ void cnfnode_setname(struct cnfnode *cn, const char *name)
 		if(cn->name) free(cn->name);
 		if(name)
 			cn->name = strdup(name);
+		else
+			cn->name = NULL;
+	}
+}
+
+/** sets the name of a node.
+ * if the node already has a name, that name will be free'ed.
+ * @param cn pointer to a node
+ * @param name pointer to the new name
+ * @param n length of the name to be used
+ */
+void cnfnode_setname_n(struct cnfnode *cn, const char *name, size_t n)
+{
+	if(cn){
+		if(cn->name) free(cn->name);
+		if(name)
+			cn->name = strndup(name, n);
 		else
 			cn->name = NULL;
 	}

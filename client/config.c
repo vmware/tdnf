@@ -13,8 +13,10 @@
 #include "../llconf/entry.h"
 #include "../llconf/ini.h"
 
+
 #define USERAGENT_HEADER_MAX_LENGTH 256
 #define OS_CONF_FILE "/etc/os-release"
+
 
 int
 TDNFConfGetRpmVerbosity(
@@ -82,6 +84,194 @@ error:
     goto cleanup;
 }
 
+struct {
+    char *name;
+    rpmtransFlags flag;
+} rpmtransflags_map[] = {
+    {"noscripts",       RPMTRANS_FLAG_NOSCRIPTS },
+    {"justdb",          RPMTRANS_FLAG_JUSTDB },
+    {"notriggers",      RPMTRANS_FLAG_NOTRIGGERS },
+    {"nodocs",          RPMTRANS_FLAG_NODOCS },
+    {"allfiles",        RPMTRANS_FLAG_ALLFILES },
+    {"noplugins",       RPMTRANS_FLAG_NOPLUGINS },
+    {"nocontexts",      RPMTRANS_FLAG_NOCONTEXTS },
+    {"nocaps",          RPMTRANS_FLAG_NOCAPS},
+    {"nodb",            RPMTRANS_FLAG_NODB},
+
+//    {"nopreuntrans",    RPMTRANS_FLAG_NOPREUNTRANS },
+//    {"nopostuntrans",   RPMTRANS_FLAG_NOPOSTUNTRANS },
+    {"notriggerprein",  RPMTRANS_FLAG_NOTRIGGERPREIN },
+    {"nopre",           RPMTRANS_FLAG_NOPRE },
+    {"nopost",          RPMTRANS_FLAG_NOPOST },
+    {"notriggerin",     RPMTRANS_FLAG_NOTRIGGERIN },
+    {"notriggerun",     RPMTRANS_FLAG_NOTRIGGERUN },
+    {"nopreun",         RPMTRANS_FLAG_NOPREUN },
+    {"nopostun",        RPMTRANS_FLAG_NOPOSTUN },
+    {"notriggerpostun", RPMTRANS_FLAG_NOTRIGGERPOSTUN },
+    {"nopretrans",      RPMTRANS_FLAG_NOPRETRANS },
+    {"noposttrans",     RPMTRANS_FLAG_NOPOSTTRANS},
+//    {"nosysusers",      RPMTRANS_FLAG_NOSYSUSERS},
+    {"nomd5",           RPMTRANS_FLAG_NOMD5},
+    {"nofiledigest",    RPMTRANS_FLAG_NOFILEDIGEST},
+
+    {"noartifacts",     RPMTRANS_FLAG_NOARTIFACTS},
+    {"noconfigs",       RPMTRANS_FLAG_NOCONFIGS},
+    {"deploops",        RPMTRANS_FLAG_DEPLOOPS},
+    {NULL,              RPMTRANS_FLAG_NONE}
+};
+
+static
+uint32_t
+TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
+{
+    uint32_t dwError = 0;
+    struct cnfnode *cn;
+    const char *pszProxyUser = NULL;
+    const char *pszProxyPass = NULL;
+
+    for(cn = cn_top->first_child; cn; cn = cn->next)
+    {
+        if ((cn->name[0] == '.') || (cn->value == NULL))
+            continue;
+
+        if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLY_LIMIT) == 0)
+        {
+            pConf->nInstallOnlyLimit = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
+        {
+            pConf->nCleanRequirementsOnRemove = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_GPGCHECK) == 0)
+        {
+            pConf->nGPGCheck = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
+        {
+            pConf->nKeepCache = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_REPOSDIR) == 0 ||
+                 strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
+        {
+            SET_STRING(pConf->pszRepoDir, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CACHEDIR) == 0)
+        {
+            SET_STRING(pConf->pszCacheDir, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PERSISTDIR) == 0)
+        {
+            SET_STRING(pConf->pszPersistDir, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKG) == 0)
+        {
+            SET_STRING(pConf->pszDistroVerPkg, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_EXCLUDE) == 0)
+        {
+            dwError = TDNFAddStringArray(&pConf->ppszExcludes, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_MINVERSIONS) == 0)
+        {
+            dwError = TDNFAddStringArray(&pConf->ppszMinVersions, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
+        {
+            pConf->nOpenMax = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
+        {
+            pConf->nCheckUpdateCompat = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED) == 0)
+        {
+            pConf->nDistroSyncReinstallChanged = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY) == 0)
+        {
+            SET_STRING(pConf->pszProxy, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_USER) == 0)
+        {
+            pszProxyUser = cn->value;
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_PASS) == 0)
+        {
+            pszProxyPass = cn->value;
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLYPKGS) == 0)
+        {
+            dwError = TDNFAddStringArray(&pConf->ppszInstallOnlyPkgs, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
+        {
+            pConf->nPluginsEnabled = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
+        {
+            SET_STRING(pConf->pszPluginConfPath, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
+        {
+            SET_STRING(pConf->pszPluginPath, cn->value);
+        }
+        else if  (strcmp(cn->name, TDNF_CONF_KEY_TSFLAGS) == 0)
+        {
+            if (cn->value == NULL || strcmp(cn->value, "") == 0) {
+                pConf->rpmTransFlags = RPMTRANS_FLAG_NONE;
+            } else {
+                char *value = strdup(cn->value);
+                char *saveptr = NULL, *str, *token;
+                int i;
+
+                for (str = value; ; str = NULL){
+                    token = strtok_r(str, " ", &saveptr);
+                    if (token == NULL)
+                        break;
+
+                    for (i = 0; rpmtransflags_map[i].name != NULL; i++) {
+                        if (strcmp(token, rpmtransflags_map[i].name) == 0){
+                            pConf->rpmTransFlags |= rpmtransflags_map[i].flag;
+                            break;
+                        }
+                    }
+                    if (rpmtransflags_map[i].name == NULL) {
+                        pr_err("unknown tsflag '%s'\n", token);
+                        free(value);
+                        dwError = ERROR_TDNF_INVALID_PARAMETER;
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
+                    /* in rpmts.h, deprecated flags will be set to 0. Warn user about it. */
+                    if (rpmtransflags_map[i].flag == 0) {
+                        pr_info("flag tsflag '%s' is not suported and has no effect\n", token);
+                    }
+                }
+                free(value);
+            }
+        }
+    }
+
+    if (pszProxyUser && pszProxyPass)
+    {
+        TDNF_SAFE_FREE_MEMORY(pConf->pszProxyUserPass);
+        dwError = TDNFAllocateStringPrintf(
+                      &pConf->pszProxyUserPass,
+                      "%s:%s",
+                      pszProxyUser,
+                      pszProxyPass);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+
 uint32_t
 TDNFReadConfig(
     PTDNF pTdnf,
@@ -95,12 +285,10 @@ TDNFReadConfig(
     char *pszMinVersionsDir = NULL;
     char *pszPkgLocksDir = NULL;
     char *pszProtectedDir = NULL;
-
+    char *pszCacheDir = NULL;
+    char *pszRepoDir = NULL;
     const char *pszTdnfVersion = NULL;
-    const char *pszProxyUser = NULL;
-    const char *pszProxyPass = NULL;
-
-    struct cnfnode *cn_conf = NULL, *cn_top, *cn;
+    struct cnfnode *cn_conf = NULL;
     struct cnfmodule *mod_ini;
 
     if(!pTdnf ||
@@ -151,100 +339,52 @@ TDNFReadConfig(
 
     /* cn_conf == NULL => we will not reach here */
     /* coverity[var_deref_op] */
-    cn_top = cn_conf->first_child;
+    dwError = TDNFConfigFromCnfTree(pConf, cn_conf->first_child);
+    BAIL_ON_TDNF_ERROR(dwError);
 
-    for(cn = cn_top->first_child; cn; cn = cn->next)
+    if (pConf->pszRepoDir == NULL)
+        pConf->pszRepoDir = strdup(TDNF_DEFAULT_REPO_LOCATION);
+    if (pConf->pszCacheDir == NULL)
+        pConf->pszCacheDir = strdup(TDNF_DEFAULT_CACHE_LOCATION);
+
+    if (!IsNullOrEmptyString(pTdnf->pArgs->pszInstallRoot) &&
+        strcmp(pTdnf->pArgs->pszInstallRoot, "/"))
     {
-        if ((cn->name[0] == '.') || (cn->value == NULL))
-            continue;
+        int nIsDir = 0;
+        dwError = TDNFJoinPath(&pszCacheDir,
+                               pTdnf->pArgs->pszInstallRoot,
+                               pConf->pszCacheDir,
+                               NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-        if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLY_LIMIT) == 0)
+        TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
+        pConf->pszCacheDir = pszCacheDir;
+        pszCacheDir = NULL;
+
+        dwError = TDNFJoinPath(&pszRepoDir,
+                               pTdnf->pArgs->pszInstallRoot,
+                               pConf->pszRepoDir,
+                               NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFIsDir(pszRepoDir, &nIsDir);
+        if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
         {
-            pConf->nInstallOnlyLimit = strtoi(cn->value);
+            nIsDir = 0;
+            dwError = 0;
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
+        BAIL_ON_TDNF_ERROR(dwError);
+        if (nIsDir)
         {
-            pConf->nCleanRequirementsOnRemove = isTrue(cn->value);
+            TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
+            pConf->pszRepoDir = pszRepoDir;
+            pszRepoDir = NULL;
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_GPGCHECK) == 0)
-        {
-            pConf->nGPGCheck = isTrue(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
-        {
-            pConf->nKeepCache = isTrue(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_REPOSDIR) == 0 ||
-                 strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
-        {
-            pConf->pszRepoDir = strdup(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CACHEDIR) == 0)
-        {
-            pConf->pszCacheDir = strdup(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PERSISTDIR) == 0)
-        {
-            pConf->pszPersistDir = strdup(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKG) == 0)
-        {
-            pConf->pszDistroVerPkg = strdup(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_EXCLUDE) == 0)
-        {
-            dwError = TDNFSplitStringToArray(cn->value,
-                                             " ", &pConf->ppszExcludes);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_MINVERSIONS) == 0)
-        {
-            dwError = TDNFSplitStringToArray(cn->value,
-                                             " ", &pConf->ppszMinVersions);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
-        {
-            pConf->nOpenMax = strtoi(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
-        {
-            pConf->nCheckUpdateCompat = isTrue(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED) == 0)
-        {
-            pConf->nDistroSyncReinstallChanged = isTrue(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY) == 0)
-        {
-            pConf->pszProxy = strdup(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_USER) == 0)
-        {
-            pszProxyUser = cn->value;
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_PASS) == 0)
-        {
-            pszProxyPass = cn->value;
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLYPKGS) == 0)
-        {
-            dwError = TDNFSplitStringToArray(cn->value,
-                                             " ", &pConf->ppszInstallOnlyPkgs);
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
-        {
-            pConf->nPluginsEnabled = isTrue(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
-        {
-            pConf->pszPluginConfPath = strdup(cn->value);
-        }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
-        {
-            pConf->pszPluginPath = strdup(cn->value);
-        }
+    }
+
+    if (pTdnf->pArgs->cn_setopts) {
+        dwError = TDNFConfigFromCnfTree(pConf, pTdnf->pArgs->cn_setopts);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     pszTdnfVersion = TDNFGetVersion();
@@ -258,20 +398,7 @@ TDNFReadConfig(
     dwError = TDNFAllocateStringPrintf(&pConf->pszUserAgentHeader, "tdnf/%s %s/%s", pszTdnfVersion, pConf->pszOSName, pConf->pszOSVersion);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pszProxyUser && pszProxyPass)
-    {
-        dwError = TDNFAllocateStringPrintf(
-                      &pConf->pszProxyUserPass,
-                      "%s:%s",
-                      pszProxyUser,
-                      pszProxyPass);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
-    if (pConf->pszRepoDir == NULL)
-        pConf->pszRepoDir = strdup(TDNF_DEFAULT_REPO_LOCATION);
-    if (pConf->pszCacheDir == NULL)
-        pConf->pszCacheDir = strdup(TDNF_DEFAULT_CACHE_LOCATION);
     if (pConf->pszDistroVerPkg == NULL)
         pConf->pszDistroVerPkg = strdup(TDNF_DEFAULT_DISTROVERPKG);
     if (pConf->pszPersistDir == NULL)
@@ -307,6 +434,8 @@ TDNFReadConfig(
 
 cleanup:
     destroy_cnftree(cn_conf);
+    TDNF_SAFE_FREE_MEMORY(pszCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszRepoDir);
     TDNF_SAFE_FREE_MEMORY(pszConfDir);
     TDNF_SAFE_FREE_MEMORY(pszMinVersionsDir);
     TDNF_SAFE_FREE_MEMORY(pszPkgLocksDir);
