@@ -122,7 +122,7 @@ TDNFCliCountCommand(
     {
         pr_jsonf("%u", dwCount);
     } else {
-        pr_crit("Package count = %u\n", dwCount);        
+        pr_crit("Package count = %u\n", dwCount);
     }
 
 cleanup:
@@ -211,7 +211,7 @@ TDNFCliListCommand(
             if(snprintf(
                 szNameAndArch,
                 MAX_COL_LEN,
-                "%s.%s",
+                "%s.%s ",
                 pPkg->pszName,
                 pPkg->pszArch) < 0)
             {
@@ -223,7 +223,7 @@ TDNFCliListCommand(
             if(snprintf(
                 szVersionAndRelease,
                 MAX_COL_LEN,
-                "%s-%s",
+                "%s-%s ",
                 pPkg->pszVersion,
                 pPkg->pszRelease) < 0)
             {
@@ -619,7 +619,7 @@ TDNFCliProvidesCommand(
                 pPkg->pszArch,
                 pPkg->pszSummary);
             pr_crit("Repo\t : %s\n", pPkg->pszRepoName);
-        }        
+        }
     }
 cleanup:
     if(pPkgInfos)
@@ -958,7 +958,7 @@ TDNFCliCheckUpdateCommand(
         }
         pr_json(jd->buf);
         JD_SAFE_DESTROY(jd);
-    }    
+    }
     else
     {
         for(dwIndex = 0; dwIndex < dwCount; ++dwIndex)
