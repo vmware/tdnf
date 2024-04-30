@@ -23,6 +23,7 @@
 #define TDNF_CONF_KEY_GPGCHECK            "gpgcheck"
 #define TDNF_CONF_KEY_INSTALLONLY_LIMIT   "installonly_limit"
 #define TDNF_CONF_KEY_INSTALLONLYPKGS     "installonlypkgs"
+#define TDNF_CONF_KEY_SNAPSHOT_TIME       "snapshottime"
 #define TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE "clean_requirements_on_remove"
 #define TDNF_CONF_KEY_REPODIR             "repodir" // typo, keep for back compatibility
 #define TDNF_CONF_KEY_REPOSDIR            "reposdir"
