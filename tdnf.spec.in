@@ -12,10 +12,15 @@ Source0:        %{name}-%{version}.tar.gz
 %define sha512  %{name}=4c6756aa1778464e3d8eefe69271809f9b9b29ba4ab7756f6c230352f9bcc40eabc541f21f385adfc8d78420101411038e49cf56409ec889beac062571c21d5f
 
 Requires:       rpm-libs >= 4.16.1.3-1
+%if %{defined rhel} || %{defined fedora}
+Requires:       libcurl
+Requires:       expat
+%else
 Requires:       curl-libs
+Requires:       expat-libs
+%endif
 Requires:       %{name}-cli-libs = %{version}-%{release}
 Requires:       libsolv >= 0.7.19
-Requires:       expat-libs
 Requires:       zlib
 
 BuildRequires:  popt-devel
@@ -158,7 +163,7 @@ ln -sfv %{name} %{buildroot}%{_bindir}/tyum
 ln -sfv %{name} %{buildroot}%{_bindir}/yum
 ln -sfv %{name} %{buildroot}%{_bindir}/tdnfj
 pushd build/python
-python3 setup.py install --skip-build --prefix=%{_prefix} --root=%{buildroot}
+python3 setup.py install --skip-build --prefix=%{_prefix} --install-lib=%{python3_sitelib} --root=%{buildroot}
 popd
 find %{buildroot} -name '*.pyc' -delete
 
