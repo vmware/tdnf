@@ -50,6 +50,7 @@
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
 #define TDNF_REPO_KEY_ENABLED             "enabled"
 #define TDNF_REPO_KEY_METALINK            "metalink"
+#define TDNF_REPO_KEY_MIRRORLIST          "mirrorlist"
 #define TDNF_REPO_KEY_NAME                "name"
 #define TDNF_REPO_KEY_SKIP                "skip_if_unavailable"
 #define TDNF_REPO_KEY_GPGCHECK            "gpgcheck"
@@ -72,6 +73,7 @@
 
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
+#define TDNF_REPO_METADATA_MIRRORLIST     "mirrorlist"
 #define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
 #define TDNF_REPO_METADATA_FILE_NAME      "repomd.xml"
 #define TDNF_REPO_METALINK_FILE_NAME      "metalink"

@@ -551,6 +551,10 @@ TDNFLoadReposFromFile(
             {
                 pRepo->pszMetaLink = strdup(cn->value);
             }
+            else if (strcmp(cn->name, TDNF_REPO_KEY_MIRRORLIST) == 0)
+            {
+                pRepo->pszMirrorList = strdup(cn->value);
+            }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
             {
                 pRepo->nSkipIfUnavailable = isTrue(cn->value);
@@ -736,11 +740,22 @@ TDNFRepoListFinalize(
             dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        if(pRepo->pszMirrorList)
+        {
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMirrorList);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
 
         if (pRepo->pszMetaLink)
         {
             dwError = SolvCreateRepoCacheName(pRepo->pszId,
                                               pRepo->pszMetaLink,
+                                              &pRepo->pszCacheName);
+        }
+        else if (pRepo->pszMirrorList)
+        {
+            dwError = SolvCreateRepoCacheName(pRepo->pszId,
+                                              pRepo->pszMirrorList,
                                               &pRepo->pszCacheName);
         }
         else if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0])
@@ -871,6 +886,7 @@ TDNFFreeReposInternal(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszBaseUrls);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszMirrorList);
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
