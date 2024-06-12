@@ -274,6 +274,7 @@ typedef struct _TDNF_CONF
     char** ppszPkgLocks;
     char** ppszProtectedPkgs;
     char **ppszInstallOnlyPkgs;
+    char **ppszVarsDirs;
     char *pszPluginPath;
     char *pszPluginConfPath;
 }TDNF_CONF, *PTDNF_CONF;

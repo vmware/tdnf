@@ -126,7 +126,7 @@ TDNFSplitStringToArray(
 {
     uint32_t dwError = 0;
     char **ppszToks = NULL;
-    const char *p, *p0;
+    const char *p;
     size_t i, n;
 
     if (!pszBuf || IsNullOrEmptyString(pszSep) || !pppszTokens)
@@ -144,6 +144,7 @@ TDNFSplitStringToArray(
     i = 0;
     p = pszBuf;
     while(*p) {
+        const char *p0;
         while (*p && strchr(pszSep, *p))
             p++;
         if (!*p)
