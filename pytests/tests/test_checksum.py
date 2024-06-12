@@ -9,9 +9,11 @@ import os
 import shutil
 import filecmp
 import glob
+import platform
 import pytest
 
 WORKDIR = '/root/repofrompath/workdir'
+ARCH = platform.machine()
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -69,7 +71,7 @@ def test_install_package_with_incorrect_sha512_checksum(utils):
     reponame = 'photon-test-sha512'
     synced_dir = os.path.join(workdir, reponame)
     rpm_dir = os.path.join(synced_dir, 'RPMS')
-    rpm_dir = os.path.join(rpm_dir, 'x86_64')
+    rpm_dir = os.path.join(rpm_dir, ARCH)
 
     enable_and_create_repo(utils)
     copy_rpm(rpm_dir, 'tdnf-test-one', 'tdnf-test-two')
