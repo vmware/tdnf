@@ -162,9 +162,6 @@ typedef enum
 #define TDNF_REPO_DEFAULT_SKIP_MD_UPDATEINFO 0
 #define TDNF_REPO_DEFAULT_SKIP_MD_OTHER      0
 
-// var names
-#define TDNF_VAR_RELEASEVER               "$releasever"
-#define TDNF_VAR_BASEARCH                 "$basearch"
 /* dummy setopt values */
 #define TDNF_SETOPT_NAME_DUMMY             "opt.dummy.name"
 #define TDNF_SETOPT_VALUE_DUMMY            "opt.dummy.value"
