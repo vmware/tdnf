@@ -78,7 +78,7 @@ error:
 
 uint32_t
 TDNFStringSepCount(
-    char *pszBuf,
+    const char *pszBuf,
     char *pszSep,
     size_t *nSepCount
     )
@@ -119,17 +119,15 @@ error:
 
 uint32_t
 TDNFSplitStringToArray(
-    char *pszBuf,
+    const char *pszBuf,
     char *pszSep,
     char ***pppszTokens
     )
 {
     uint32_t dwError = 0;
-    char *pszTok = NULL;
-    char *pszState = NULL;
     char **ppszToks = NULL;
-    size_t nCount = 0;
-    size_t nIndex = 0;
+    const char *p, *p0;
+    size_t i, n;
 
     if (!pszBuf || IsNullOrEmptyString(pszSep) || !pppszTokens)
     {
@@ -137,28 +135,35 @@ TDNFSplitStringToArray(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFStringSepCount(pszBuf, pszSep, &nCount);
+    dwError = TDNFStringSepCount(pszBuf, pszSep, &n);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void**)&ppszToks);
+    dwError = TDNFAllocateMemory(n + 1, sizeof(char *), (void**)&ppszToks);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    pszTok = strtok_r(pszBuf, pszSep, &pszState);
-    while (nIndex < nCount && pszTok != NULL)
-    {
-        dwError = TDNFAllocateString(pszTok, &ppszToks[nIndex]);
-        BAIL_ON_TDNF_ERROR(dwError);
-        nIndex += 1;
-        pszTok = strtok_r(NULL, pszSep, &pszState);
+    i = 0;
+    p = pszBuf;
+    while(*p) {
+        while (*p && strchr(pszSep, *p))
+            p++;
+        if (!*p)
+            break;
+        p0 = p;
+        while (*p && !strchr(pszSep, *p))
+            p++;
+        if((ppszToks[i++] = strndup(p0, p - p0)) == NULL) {
+            dwError = ERROR_TDNF_OUT_OF_MEMORY;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
-    ppszToks[nIndex] = NULL;
+    ppszToks[i] = NULL;
     *pppszTokens = ppszToks;
 
 cleanup:
     return dwError;
 
 error:
-    TDNFFreeStringArrayWithCount(ppszToks, nCount);
+    TDNFFreeStringArrayWithCount(ppszToks, n);
     *pppszTokens = NULL;
     goto cleanup;
 }
