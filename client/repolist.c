@@ -13,6 +13,42 @@
 #include "../llconf/entry.h"
 #include "../llconf/ini.h"
 
+
+static
+uint32_t
+TDNFCreateCmdLineRepo(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA* ppRepo
+    );
+
+static
+uint32_t
+TDNFCreateRepoFromPath(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA* ppRepo,
+    const char *pzsId,
+    const char *pszPath
+    );
+
+static
+uint32_t
+TDNFCreateRepoFromDirectory(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA* ppRepo,
+    const char *pzsId,
+    const char *pszPath
+    );
+
+static
+uint32_t
+TDNFCreateRepo(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA* ppRepo,
+    const char *pszId
+    );
+
+
+
 uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
@@ -40,7 +76,7 @@ TDNFLoadRepoData(
 
     ppRepoNext = &pReposAll;
 
-    dwError = TDNFCreateCmdLineRepo(ppRepoNext);
+    dwError = TDNFCreateCmdLineRepo(pTdnf, ppRepoNext);
     BAIL_ON_TDNF_ERROR(dwError);
 
     ppRepoNext = &((*ppRepoNext)->pNext);
@@ -59,7 +95,7 @@ TDNFLoadRepoData(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
 
-            dwError = TDNFCreateRepoFromPath(ppRepoNext,
+            dwError = TDNFCreateRepoFromPath(pTdnf, ppRepoNext,
                                              ppszUrlIdTuple[0],
                                              ppszUrlIdTuple[1]);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -78,7 +114,7 @@ TDNFLoadRepoData(
                 dwError = ERROR_TDNF_INVALID_PARAMETER;
                 BAIL_ON_TDNF_ERROR(dwError);
             }
-            dwError = TDNFCreateRepoFromDirectory(&pReposAll,
+            dwError = TDNFCreateRepoFromDirectory(pTdnf, &pReposAll,
                                                   ppszUrlIdTuple[0],
                                                   ppszUrlIdTuple[1]);
             BAIL_ON_TDNF_ERROR(dwError);
@@ -155,8 +191,10 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
 TDNFCreateCmdLineRepo(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo
     )
 {
@@ -169,7 +207,7 @@ TDNFCreateCmdLineRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFCreateRepo(&pRepo, CMDLINE_REPO_NAME);
+    dwError = TDNFCreateRepo(pTdnf, &pRepo, CMDLINE_REPO_NAME);
     BAIL_ON_TDNF_ERROR(dwError);
     pRepo->nHasMetaData = 0;
 
@@ -187,8 +225,10 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
 TDNFCreateRepoFromDirectory(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo,
     const char *pszId,
     const char *pszPath
@@ -204,7 +244,7 @@ TDNFCreateRepoFromDirectory(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFCreateRepo(&pRepo, pszId);
+    dwError = TDNFCreateRepo(pTdnf, &pRepo, pszId);
     BAIL_ON_TDNF_ERROR(dwError);
     pRepo->nHasMetaData = 0;
 
@@ -245,8 +285,10 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
 TDNFCreateRepoFromPath(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo,
     const char *pszId,
     const char *pszPath
@@ -263,7 +305,7 @@ TDNFCreateRepoFromPath(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFCreateRepo(&pRepo, pszId);
+    dwError = TDNFCreateRepo(pTdnf, &pRepo, pszId);
     BAIL_ON_TDNF_ERROR(dwError);
 
     /* we want it enabled, or there was no point in adding it */
@@ -311,8 +353,10 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
 TDNFCreateRepo(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo,
     const char *pszId
     )
@@ -339,7 +383,7 @@ TDNFCreateRepo(
     pRepo->nHasMetaData = 1;
     pRepo->nSkipIfUnavailable = TDNF_REPO_DEFAULT_SKIP;
     pRepo->nGPGCheck = TDNF_REPO_DEFAULT_GPGCHECK;
-    pRepo->nSSLVerify = TDNF_REPO_DEFAULT_SSLVERIFY;
+    pRepo->nSSLVerify = pTdnf->pConf->nSSLVerify;
     pRepo->lMetadataExpire = TDNF_REPO_DEFAULT_METADATA_EXPIRE;
     pRepo->nPriority = TDNF_REPO_DEFAULT_PRIORITY;
     pRepo->nTimeout = TDNF_REPO_DEFAULT_TIMEOUT;
@@ -477,7 +521,7 @@ TDNFLoadReposFromFile(
         if (cn_section->name[0] == '.')
             continue;
 
-        dwError = TDNFCreateRepo(&pRepo, cn_section->name);
+        dwError = TDNFCreateRepo(pTdnf, &pRepo, cn_section->name);
         BAIL_ON_TDNF_ERROR(dwError);
 
         /* plugin event repo readconfig start */

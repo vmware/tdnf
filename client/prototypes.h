@@ -713,31 +713,6 @@ TDNFLoadReposFromFile(
     );
 
 uint32_t
-TDNFCreateCmdLineRepo(
-    PTDNF_REPO_DATA* ppRepo
-    );
-
-uint32_t
-TDNFCreateRepoFromPath(
-    PTDNF_REPO_DATA* ppRepo,
-    const char *pzsId,
-    const char *pszPath
-    );
-
-uint32_t
-TDNFCreateRepoFromDirectory(
-    PTDNF_REPO_DATA* ppRepo,
-    const char *pzsId,
-    const char *pszPath
-    );
-
-uint32_t
-TDNFCreateRepo(
-    PTDNF_REPO_DATA* ppRepo,
-    const char *pszId
-    );
-
-uint32_t
 TDNFLoadRepoData(
     PTDNF pTdnf,
     PTDNF_REPO_DATA* ppReposAll
