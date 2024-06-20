@@ -152,7 +152,7 @@ TDNFCliListPackagesPrint(
 
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
-            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Evr", pPkg->pszEVR));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
 
             CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
@@ -183,13 +183,8 @@ TDNFCliListPackagesPrint(
             }
 
             memset(szVersionAndRelease, 0, MAX_COL_LEN);
-            if(snprintf(
-                szVersionAndRelease,
-                MAX_COL_LEN,
-                "%s-%s ",
-                pPkg->pszVersion,
-                pPkg->pszRelease) < 0)
-            {
+            if (snprintf(szVersionAndRelease, MAX_COL_LEN, "%s ",
+                         pPkg->pszEVR) < 0) {
                 dwError = errno;
                 BAIL_ON_CLI_ERROR(dwError);
             }
@@ -313,7 +308,7 @@ TDNFCliInfoCommand(
 
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
-            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Evr", pPkg->pszEVR));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkg->pszRepoName));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Url", pPkg->pszURL));
             CHECK_JD_RC(jd_map_add_int(jd_pkg, "InstallSize", pPkg->dwInstallSizeBytes));
@@ -607,7 +602,7 @@ TDNFCliProvidesCommand(
 
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkg->pszName));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkg->pszArch));
-            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkg->pszVersion, pPkg->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Evr", pPkg->pszEVR));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Summary", pPkg->pszSummary));
 
             CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
@@ -620,10 +615,9 @@ TDNFCliProvidesCommand(
     {
         for(pPkg = pPkgInfos; pPkg; pPkg = pPkg->pNext)
         {
-            pr_crit("%s-%s-%s.%s : %s\n",
+            pr_crit("%s-%s.%s : %s\n",
                 pPkg->pszName,
-                pPkg->pszVersion,
-                pPkg->pszRelease,
+                pPkg->pszEVR,
                 pPkg->pszArch,
                 pPkg->pszSummary);
             pr_crit("Repo\t : %s\n", pPkg->pszRepoName);
@@ -725,7 +719,7 @@ TDNFCliRepoQueryCommand(
 
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Name", pPkgInfo->pszName));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkgInfo->pszArch));
-            CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkgInfo->pszVersion, pPkgInfo->pszRelease));
+            CHECK_JD_RC(jd_map_add_string(jd_pkg, "Evr", pPkgInfo->pszEVR));
             CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkgInfo->pszRepoName));
 
             if (pPkgInfo->ppszFileList)
@@ -947,7 +941,7 @@ TDNFCliCheckUpdateCommand(
         {
             pPkg = &pPkgInfo[dwIndex];
             pr_crit("%*s\r", 80, pPkg->pszRepoName);
-            pr_crit("%*s-%s\r", 50, pPkg->pszVersion, pPkg->pszRelease);
+            pr_crit("%%s\r", 50, pPkg->pszEVR);
             pr_crit("%s.%s", pPkg->pszName, pPkg->pszArch);
             pr_crit("\n");
         }
