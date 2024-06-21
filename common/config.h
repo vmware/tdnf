@@ -37,6 +37,7 @@
 #define TDNF_CONF_KEY_NO_PLUGINS          "noplugins"
 #define TDNF_CONF_KEY_PLUGIN_PATH         "pluginpath"
 #define TDNF_CONF_KEY_PLUGIN_CONF_PATH    "pluginconfpath"
+#define TDNF_CONF_KEY_SSL_VERIFY          "sslverify"
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
 #define TDNF_CONF_KEY_MINVERSIONS         "minversions"
@@ -61,7 +62,7 @@
 #define TDNF_REPO_KEY_RETRIES             "retries"
 #define TDNF_REPO_KEY_MINRATE             "minrate"
 #define TDNF_REPO_KEY_THROTTLE            "throttle"
-#define TDNF_REPO_KEY_SSL_VERIFY          "sslverify"
+#define TDNF_REPO_KEY_SSL_VERIFY          TDNF_CONF_KEY_SSL_VERIFY
 #define TDNF_REPO_KEY_SSL_CA_CERT         "sslcacert"
 #define TDNF_REPO_KEY_SSL_CLI_CERT        "sslclientcert"
 #define TDNF_REPO_KEY_SSL_CLI_KEY         "sslclientkey"
@@ -96,8 +97,9 @@
 #define TDNF_SOLVCACHE_DIR_NAME           "solvcache"
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
 
-#define TDNF_DEFAULT_OPENMAX              1024
-#define TDNF_DEFAULT_INSTALLONLY_LIMIT    2
+#define TDNF_CONF_DEFAULT_OPENMAX            1024
+#define TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT  2
+#define TDNF_CONF_DEFAULT_SSLVERIFY          1
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0
@@ -106,7 +108,6 @@
 #define TDNF_REPO_DEFAULT_MINRATE            0
 #define TDNF_REPO_DEFAULT_THROTTLE           0
 #define TDNF_REPO_DEFAULT_TIMEOUT            0
-#define TDNF_REPO_DEFAULT_SSLVERIFY          1
 #define TDNF_REPO_DEFAULT_RETRIES            10
 #define TDNF_REPO_DEFAULT_PRIORITY           50
 #define TDNF_REPO_DEFAULT_METADATA_EXPIRE    172800 // 48 hours in seconds

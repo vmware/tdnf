@@ -250,6 +250,7 @@ typedef struct _TDNF_CMD_ARGS
 typedef struct _TDNF_CONF
 {
     int nGPGCheck;
+    int nSSLVerify;
     int nInstallOnlyLimit;
     int nCleanRequirementsOnRemove;
     int nKeepCache;
