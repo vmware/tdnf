@@ -1084,4 +1084,8 @@ TDNFGetHistoryCtx(
     int nMustExist
 );
 
+
+struct cnfnode *parse_varsdirs(char *dirs[]);
+char *replace_vars(struct cnfnode *cn_vars, const char *source);
+
 #endif /* __CLIENT_PROTOTYPES_H__ */

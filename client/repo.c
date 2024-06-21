@@ -46,6 +46,11 @@ TDNFInitRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     if (pRepoData->nHasMetaData) {
+        dwError = TDNFUtilsMakeDirs(pszRepoDataDir);
+        if (dwError == ERROR_TDNF_ALREADY_EXISTS)
+        {
+            dwError = 0;
+        }
         dwError = TDNFGetRepoMD(pTdnf,
                                 pRepoData,
                                 pszRepoDataDir,

@@ -41,6 +41,7 @@
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
 #define TDNF_CONF_KEY_MINVERSIONS         "minversions"
 #define TDNF_CONF_KEY_OPENMAX             "openmax"
+#define TDNF_CONF_KEY_VARS_DIRS           "varsdir"
 #define TDNF_CONF_KEY_CHECK_UPDATE_COMPAT "dnf_check_update_compat"
 #define TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED "distrosync_reinstall_changed"
 
@@ -82,6 +83,7 @@
 // repo defaults
 #define TDNF_DEFAULT_REPO_LOCATION        "/etc/yum.repos.d"
 #define TDNF_DEFAULT_CACHE_LOCATION       "/var/cache/tdnf"
+#define TDNF_DEFAULT_VARS_DIRS            "/etc/tdnf/vars /etc/dnf/vars /etc/yum/vars"
 
 /* pszPersistDir - default is configurable at build time,
    and configurable with "persistdir" at run time */
@@ -114,8 +116,8 @@
 #define TDNF_REPO_DEFAULT_SKIP_MD_OTHER      0
 
 // var names
-#define TDNF_VAR_RELEASEVER               "$releasever"
-#define TDNF_VAR_BASEARCH                 "$basearch"
+#define TDNF_VAR_RELEASEVER               "releasever"
+#define TDNF_VAR_BASEARCH                 "basearch"
 /* dummy setopt values */
 #define TDNF_SETOPT_NAME_DUMMY             "opt.dummy.name"
 #define TDNF_SETOPT_VALUE_DUMMY            "opt.dummy.value"
