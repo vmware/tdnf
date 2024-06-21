@@ -267,22 +267,15 @@ TDNFPopulatePkgInfoArray(
         dwError = SolvGetPackageId(pPkgList, dwPkgIndex, &dwPkgId);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgNameFromId(pSack, dwPkgId, &pPkgInfo->pszName);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvGetPkgArchFromId(pSack, dwPkgId, &pPkgInfo->pszArch);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvGetPkgVersionFromId(
+        dwError = SolvGetNevraFromId(
                       pSack,
                       dwPkgId,
-                      &pPkgInfo->pszVersion);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = SolvGetPkgReleaseFromId(
-                      pSack,
-                      dwPkgId,
-                      &pPkgInfo->pszRelease);
+                      &pPkgInfo->dwEpoch,
+                      &pPkgInfo->pszName,
+                      &pPkgInfo->pszVersion,
+                      &pPkgInfo->pszRelease,
+                      &pPkgInfo->pszArch,
+                      &pPkgInfo->pszEVR);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = SolvGetPkgRepoNameFromId(
