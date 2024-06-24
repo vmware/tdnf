@@ -276,6 +276,12 @@ TDNFCliParseArgs(
 
         while (optind < argc)
         {
+            if (argv[optind][0] == 0) {
+                pr_err("argument is empty string\n");
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
             dwError = TDNFAllocateString(
                           argv[optind++],
                           &pCmdArgs->ppszCmds[nIndex++]);
