@@ -77,6 +77,13 @@ TDNFInitRepo(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    /* tdnf (and dnf) have an opposite sense of priority, therefore negate it.
+       tdnf/dnf: lower value prefered
+       libsolv: higher value prefered
+    */
+    pRepo->priority = -pRepoData->nPriority;
+
     pSolvRepoInfo->pRepo = pRepo;
     pSolvRepoInfo->pszRepoCacheDir = pszRepoCacheDir;
     pRepo->appdata = pSolvRepoInfo;
