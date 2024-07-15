@@ -373,6 +373,7 @@ JDPkgList(
         CHECK_JD_RC(jd_map_add_string(jd_pkg, "Arch", pPkgInfo->pszArch));
         CHECK_JD_RC(jd_map_add_fmt(jd_pkg, "Evr", "%s-%s", pPkgInfo->pszVersion, pPkgInfo->pszRelease));
         CHECK_JD_RC(jd_map_add_int(jd_pkg, "InstallSize", pPkgInfo->dwInstallSizeBytes));
+        CHECK_JD_RC(jd_map_add_string(jd_pkg, "Repo", pPkgInfo->pszRepoName));
 
         CHECK_JD_RC(jd_list_add_child(jd_list, jd_pkg));
         JD_SAFE_DESTROY(jd_pkg);
