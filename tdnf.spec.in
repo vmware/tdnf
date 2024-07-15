@@ -26,6 +26,7 @@ BuildRequires:  curl-devel
 BuildRequires:  libxml2-devel
 BuildRequires:  zlib-devel
 BuildRequires:  systemd
+BuildRequires:  sqlite-devel
 
 #metalink plugin
 BuildRequires:  libxml2-devel
