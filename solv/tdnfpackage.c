@@ -2217,7 +2217,7 @@ SolvGetDependenciesFromId(
 
     for (i = 0; i < nNumDeps; i++)
     {
-        pszDep = pool_id2str(pSack->pPool, queueDeps.elements[i]);
+        pszDep = pool_dep2str(pSack->pPool, queueDeps.elements[i]);
         dwError = TDNFAllocateString(pszDep, &ppszDependencies[i]);
         BAIL_ON_TDNF_ERROR(dwError);
     }

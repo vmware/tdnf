@@ -510,7 +510,7 @@ TDNFResolveBuildDependencies(
     }
 
     for (i = 0; i < qDeps.count; i++) {
-        pszDep = pool_id2str(pTdnf->pSack->pPool, qDeps.elements[i]);
+        pszDep = pool_dep2str(pTdnf->pSack->pPool, qDeps.elements[i]);
         if (!pszDep) {
             dwError = ERROR_TDNF_INVALID_PARAMETER;
             BAIL_ON_TDNF_ERROR(dwError);
