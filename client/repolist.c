@@ -47,7 +47,8 @@ TDNFCreateRepo(
     const char *pszId
     );
 
-
+static
+uint32_t
 TDNFRepoConfigFromCnfTree(PTDNF_REPO_DATA pRepo, struct cnfnode *cn_top)
 {
     uint32_t dwError = 0;
@@ -77,7 +78,7 @@ TDNFRepoConfigFromCnfTree(PTDNF_REPO_DATA pRepo, struct cnfnode *cn_top)
         }
         else if (strcmp(cn->name, TDNF_REPO_KEY_MIRRORLIST) == 0)
         {
-            pRepo->pszMirrorList = strdup(cn->value);
+            SET_STRING(pRepo->pszMirrorList, cn->value);
         }
         else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
         {
