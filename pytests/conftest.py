@@ -195,8 +195,9 @@ class TestUtils(object):
 
     def check_package(self, package, version=None):
         ''' Check if a package exists '''
-        ret = self.run(["tdnf", "list", "-j", "--installed", package])
+        ret = self.run(["tdnf", "--disablerepo=*", "list", "-j", "--installed", package])
         pkglist = json.loads('\n'.join(ret['stdout']))
+        assert type(pkglist) is list, f"unexpected json type from 'tdnf list': pkglist={pkglist}"
         for p in pkglist:
             if p['Name'] == package and (version is None or p['Evr'] == version):
                 return True

@@ -538,7 +538,7 @@ TDNFGetRepoMD(
     char *pszRepoMDUrl = NULL;
     char *pszTmpRepoDataDir = NULL;
     char *pszTmpRepoMDFile = NULL;
-    char *pszBaseUrlFile = NULL;
+    char *pszMirrorFile = NULL;
     char *pszTempBaseUrlFile = NULL;
     char* pszLastRefreshMarker = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
@@ -566,6 +566,48 @@ TDNFGetRepoMD(
                   pRepoData->pszId,
                   pszRepoDataDir);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pRepoData->pszMirrorList) {
+        time_t now = time(NULL);
+        int needDownload = 0;
+        struct stat st = {0};
+
+        dwError = TDNFGetCachePath(pTdnf, pRepoData,
+                                   TDNF_REPO_METADATA_MIRRORLIST, NULL,
+                                   &pszMirrorFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (stat(pszMirrorFile, &st) < 0) {
+            if (errno == ENOENT)
+                needDownload = 1;
+            else {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        } else if ((now - st.st_ctime) > pRepoData->lMetadataExpire)
+            needDownload = 1;
+
+        if (needDownload) {
+            dwError = TDNFDownloadFile(pTdnf, pRepoData, pRepoData->pszMirrorList, pszMirrorFile, pRepoData->pszId);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        dwError = TDNFReadFileToStringArray(pszMirrorFile, &pRepoData->ppszBaseUrls);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        /* remove comments from mirror file */
+        int i, j;
+        for(i = 0, j = 0; pRepoData->ppszBaseUrls[i]; i++) {
+            if (pRepoData->ppszBaseUrls[i][0] == '#')
+                continue;
+            if (i != j) {
+                pRepoData->ppszBaseUrls[j++] = pRepoData->ppszBaseUrls[i];
+            } else
+                j++;
+        }
+        for (; pRepoData->ppszBaseUrls[j] != NULL; j++)
+            pRepoData->ppszBaseUrls[j] = NULL;
+    }
 
     if (!pRepoData->ppszBaseUrls || IsNullOrEmptyString(pRepoData->ppszBaseUrls[0]))
     {
@@ -597,12 +639,6 @@ TDNFGetRepoMD(
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFAllocateString(pRepoData->pszId, &pRepoMDRel->pszRepo);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFJoinPath(&pszBaseUrlFile,
-                           pszRepoDataDir,
-                           TDNF_REPO_BASEURL_FILE_NAME,
-                           NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     /* if repomd.xml file is not present, set flag to download */
@@ -736,7 +772,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszTmpRepoDataDir);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDFile);
     TDNF_SAFE_FREE_MEMORY(pszRepoMDUrl);
-    TDNF_SAFE_FREE_MEMORY(pszBaseUrlFile);
+    TDNF_SAFE_FREE_MEMORY(pszMirrorFile);
     TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszError);
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);

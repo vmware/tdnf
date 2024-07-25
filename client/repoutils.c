@@ -224,14 +224,16 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
-TDNFRemoveLastRefreshMarker(
+_TDNFRemoveRepoCacheFile(
     PTDNF pTdnf,
-    PTDNF_REPO_DATA pRepo
+    PTDNF_REPO_DATA pRepo,
+    const char *pszFilename
     )
 {
     uint32_t dwError = 0;
-    char* pszLastRefreshMarker = NULL;
+    char *pszPath = NULL;
 
     if(!pTdnf || !pRepo || !pTdnf->pConf)
     {
@@ -240,22 +242,40 @@ TDNFRemoveLastRefreshMarker(
     }
 
     dwError = TDNFGetCachePath(pTdnf, pRepo,
-                               TDNF_REPO_METADATA_MARKER, NULL,
-                               &pszLastRefreshMarker);
+                               pszFilename, NULL,
+                               &pszPath);
     BAIL_ON_TDNF_ERROR(dwError);
-    if (pszLastRefreshMarker)
+    if (pszPath)
     {
-        if(unlink(pszLastRefreshMarker) && errno != ENOENT)
+        if(unlink(pszPath) && errno != ENOENT)
         {
            dwError = errno;
            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
     }
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
+    TDNF_SAFE_FREE_MEMORY(pszPath);
     return dwError;
 error:
     goto cleanup;
+}
+
+uint32_t
+TDNFRemoveLastRefreshMarker(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    )
+{
+    return _TDNFRemoveRepoCacheFile(pTdnf, pRepo, TDNF_REPO_METADATA_MARKER);
+}
+
+uint32_t
+TDNFRemoveMirrorList(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    )
+{
+    return _TDNFRemoveRepoCacheFile(pTdnf, pRepo, TDNF_REPO_METADATA_MIRRORLIST);
 }
 
 uint32_t
