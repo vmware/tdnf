@@ -751,6 +751,14 @@ TDNFRepoListFinalize(
             dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszSnapshotUrl);
             BAIL_ON_TDNF_ERROR(dwError);
         }
+        if (pRepo->ppszUrlGPGKeys)
+        {
+            for (int i = 0; pRepo->ppszUrlGPGKeys[i]; i++)
+            {
+                dwError = TDNFConfigReplaceVars(pTdnf, &(pRepo->ppszUrlGPGKeys[i]));
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
         if (pRepo->pszMetaLink)
         {
             dwError = SolvCreateRepoCacheName(pRepo->pszId,
