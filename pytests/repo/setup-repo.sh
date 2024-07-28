@@ -160,6 +160,7 @@ repodir=${TEST_REPO_DIR}/yum.repos.d
 cachedir=${TEST_REPO_DIR}/cache/tdnf
 EOF
 
+# size field is a dummy value - it will be ignored
 cat << EOF > ${PUBLISH_PATH}/metalink
 <?xml version="1.0" encoding="utf-8"?>
 <metalink version="3.0" xmlns="http://www.metalinker.org/" type="dynamic" pubdate="Wed, 05 Feb 2020 08:14:56 GMT">
@@ -167,6 +168,7 @@ cat << EOF > ${PUBLISH_PATH}/metalink
   <file name="repomd.xml">
    <verification>
    </verification>
+   <size>123</size>
    <resources maxconnections="1">
     <url protocol="http" type="file" location="IN" preference="100">http://localhost:8080/photon-test/repodata/repomd.xml</url>
    </resources>

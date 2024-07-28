@@ -472,24 +472,8 @@ TDNFXmlParseData(
         elementInfo->dwError = TDNFParseFileTag(userData);
         BAIL_ON_TDNF_ERROR(elementInfo->dwError);
     }
-    else if(!strcmp(elementInfo->startElement, TAG_NAME_SIZE))
-    {
-        //Get File Size.
-        TDNFAllocateStringN(val, len, &size);
-
-        if(!size)
-        {
-            elementInfo->dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_SIZE;
-            pr_err("XML Parser Error:File size is missing: %s", size);
-            BAIL_ON_TDNF_ERROR(elementInfo->dwError);
-        }
-        if(sscanf(size, "%ld", &(elementInfo->ml_ctx->size)) != 1)
-        {
-            elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
-            pr_err("XML Parser Warning: size is invalid value: %s\n", size);
-            BAIL_ON_TDNF_ERROR(elementInfo->dwError);
-        }
-    }
+    /* ignore "size" field for now. */
+    /* else if(!strcmp(elementInfo->startElement, TAG_NAME_SIZE)) {} */
     else if(!strcmp(elementInfo->startElement, TAG_NAME_HASH))
     {
         elementInfo->dwError = TDNFParseHashTag(userData, val, len);
