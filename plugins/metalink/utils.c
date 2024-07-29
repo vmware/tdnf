@@ -455,7 +455,6 @@ TDNFXmlParseData(
     )
 {
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
-    char *size = NULL;
 
     if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename) || elementInfo->dwError)
     {
@@ -467,6 +466,9 @@ TDNFXmlParseData(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (elementInfo->startElement == NULL)
+        return;
+
     if(!strcmp(elementInfo->startElement, TAG_NAME_FILE))
     {
         elementInfo->dwError = TDNFParseFileTag(userData);
@@ -474,21 +476,23 @@ TDNFXmlParseData(
     }
     else if(!strcmp(elementInfo->startElement, TAG_NAME_SIZE))
     {
-        //Get File Size.
-        TDNFAllocateStringN(val, len, &size);
+        /* 12-1 chars is sufficient to hold a file size in decimal digits */
+        char size_buf[12], *p = size_buf;
+        const char *q = val;
 
-        if(!size)
-        {
+        while (*q &&
+               q < val + len &&
+               p < size_buf + sizeof(size_buf) - 1 &&
+               isdigit(*q))
+            *p++ = *q++;
+        *p = 0;
+
+        if (!size_buf[0]) {
             elementInfo->dwError = ERROR_TDNF_METALINK_PARSER_MISSING_FILE_SIZE;
-            pr_err("XML Parser Error:File size is missing: %s", size);
+            pr_err("XML Parser Error: file size is missing: '%s'", size_buf);
             BAIL_ON_TDNF_ERROR(elementInfo->dwError);
         }
-        if(sscanf(size, "%ld", &(elementInfo->ml_ctx->size)) != 1)
-        {
-            elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
-            pr_err("XML Parser Warning: size is invalid value: %s\n", size);
-            BAIL_ON_TDNF_ERROR(elementInfo->dwError);
-        }
+        elementInfo->ml_ctx->size = strtoi(size_buf);
     }
     else if(!strcmp(elementInfo->startElement, TAG_NAME_HASH))
     {
@@ -502,9 +506,6 @@ TDNFXmlParseData(
     }
 
 cleanup:
-    if(size != NULL){
-       TDNF_SAFE_FREE_MEMORY(size);
-    }
     return;
 error:
     goto cleanup;
@@ -518,6 +519,7 @@ TDNFXmlParseEndElement(
 {
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
     elementInfo->endElement = name;
+    elementInfo->startElement = NULL;
 
     if(elementInfo->dwError != 0)
        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
