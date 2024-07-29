@@ -963,9 +963,9 @@ TDNFTouchFile(
     );
 
 uint32_t
-TDNFRawGetPackageVersion(
+TDNFGetReleaseVersion(
    const char* pszRootDir,
-   const char* pszPkg,
+   const char* pszDistroVerPkg,
    char** ppszVersion
    );
 

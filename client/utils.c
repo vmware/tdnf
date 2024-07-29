@@ -374,9 +374,9 @@ error:
 
 //get package version using rpmlib
 uint32_t
-TDNFRawGetPackageVersion(
+TDNFGetReleaseVersion(
    const char* pszRootDir,
-   const char* pszPkg,
+   const char* pszDistroVerPkg,
    char** ppszVersion
    )
 {
@@ -386,9 +386,10 @@ TDNFRawGetPackageVersion(
     rpmts pTS = NULL;
     Header pHeader = NULL;
     rpmdbMatchIterator pIter = NULL;
+    rpmds pProvides = NULL;
 
     if(IsNullOrEmptyString(pszRootDir) ||
-       IsNullOrEmptyString(pszPkg) ||
+       IsNullOrEmptyString(pszDistroVerPkg) ||
        !ppszVersion)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -408,7 +409,7 @@ TDNFRawGetPackageVersion(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pIter = rpmtsInitIterator(pTS, RPMTAG_PROVIDES, pszPkg, 0);
+    pIter = rpmtsInitIterator(pTS, RPMTAG_PROVIDES, pszDistroVerPkg, 0);
     if(!pIter)
     {
         dwError = ERROR_TDNF_NO_DISTROVERPKG;
@@ -427,11 +428,34 @@ TDNFRawGetPackageVersion(
         dwError = ERROR_TDNF_DISTROVERPKG_READ;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    /*
+        Follow logic in dnf/rpm/__init__.py  - if the package provides distroverpkg,
+        check which version it provides. Otherwise, use the version of the
+        package itself.
+    */
     pszVersionTemp = headerGetString(pHeader, RPMTAG_VERSION);
     if(IsNullOrEmptyString(pszVersionTemp))
     {
         dwError = ERROR_TDNF_DISTROVERPKG_READ;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pProvides = rpmdsNew(pHeader, RPMTAG_PROVIDENAME, 0);
+    if(!pProvides)
+    {
+        dwError = ERROR_TDNF_DISTROVERPKG_READ;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    while (rpmdsNext(pProvides) >= 0) {
+        const char *pszName = rpmdsN(pProvides);
+        if (strcmp(pszName, pszDistroVerPkg) == 0) {
+            if (rpmdsFlags(pProvides) & RPMSENSE_EQUAL) {
+                pszVersionTemp = rpmdsEVR(pProvides);
+                break;
+            }
+        }
     }
 
     dwError = TDNFAllocateString(pszVersionTemp, &pszVersion);
@@ -450,6 +474,9 @@ cleanup:
     if(pTS)
     {
         rpmtsFree(pTS);
+    }
+    if (pProvides) {
+        rpmdsFree(pProvides);
     }
     return dwError;
 

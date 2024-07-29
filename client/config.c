@@ -369,7 +369,7 @@ TDNFConfigExpandVars(
     if(!pConf->pszVarReleaseVer &&
        !IsNullOrEmptyString(pConf->pszDistroVerPkg))
     {
-        dwError = TDNFRawGetPackageVersion(
+        dwError = TDNFGetReleaseVersion(
                       pTdnf->pArgs->pszInstallRoot,
                       pConf->pszDistroVerPkg,
                       &pConf->pszVarReleaseVer);

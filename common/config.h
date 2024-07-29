@@ -92,7 +92,7 @@
    and configurable with "persistdir" at run time */
 #define TDNF_DEFAULT_DB_LOCATION          HISTORY_DB_DIR
 
-#define TDNF_DEFAULT_DISTROVERPKG         "system-release"
+#define TDNF_DEFAULT_DISTROVERPKG         "system-release(releasever)"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"
