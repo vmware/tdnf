@@ -447,9 +447,6 @@ TDNFConfigReplaceVars(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFConfigExpandVars(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     cn_vars = parse_varsdirs(pTdnf->pConf->ppszVarsDirs);
     if (cn_vars == NULL) {
         pr_err("parsing vars failed: %s (%d)\n", strerror(errno), errno);
