@@ -263,7 +263,7 @@ typedef struct _TDNF_CONF
     char* pszPersistDir;
     char* pszProxy;
     char* pszProxyUserPass;
-    char* pszDistroVerPkg;
+    char** ppszDistroVerPkgs;
     char* pszBaseArch;
     char* pszVarReleaseVer;
     char* pszVarBaseArch;

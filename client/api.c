@@ -675,6 +675,9 @@ TDNFOpenHandle(
                   TDNF_CONF_GROUP);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFConfigExpandVars(pTdnf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     GlobalSetDnfCheckUpdateCompat(pTdnf->pConf->nCheckUpdateCompat);
 
     dwError = TDNFHasOpt(pTdnf->pArgs, TDNF_CONF_KEY_REPOSDIR, &nHasOptReposDir);

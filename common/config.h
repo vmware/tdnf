@@ -30,7 +30,7 @@
 #define TDNF_CONF_KEY_PROXY_USER          "proxy_username"
 #define TDNF_CONF_KEY_PROXY_PASS          "proxy_password"
 #define TDNF_CONF_KEY_KEEP_CACHE          "keepcache"
-#define TDNF_CONF_KEY_DISTROVERPKG        "distroverpkg"
+#define TDNF_CONF_KEY_DISTROVERPKGS       "distroverpkg"
 #define TDNF_CONF_KEY_DISTROARCHPKG       "distroarchpkg"
 #define TDNF_CONF_KEY_MAX_STRING_LEN      "maxstringlen"
 #define TDNF_CONF_KEY_PLUGINS             "plugins"
@@ -92,7 +92,7 @@
    and configurable with "persistdir" at run time */
 #define TDNF_DEFAULT_DB_LOCATION          HISTORY_DB_DIR
 
-#define TDNF_DEFAULT_DISTROVERPKG         "system-release"
+#define TDNF_DEFAULT_DISTROVERPKGS        "system-release(releasever) system-release redhat-release"
 #define TDNF_DEFAULT_DISTROARCHPKG        "x86_64"
 #define TDNF_RPM_CACHE_DIR_NAME           "rpms"
 #define TDNF_REPODATA_DIR_NAME            "repodata"

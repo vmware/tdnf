@@ -192,9 +192,11 @@ TDNFReadConfig(
         {
             pConf->pszPersistDir = strdup(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKG) == 0)
+        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKGS) == 0)
         {
-            pConf->pszDistroVerPkg = strdup(cn->value);
+            dwError = TDNFSplitStringToArray(cn->value,
+                                             " ", &pConf->ppszDistroVerPkgs);
+            BAIL_ON_TDNF_ERROR(dwError);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_EXCLUDE) == 0)
         {
@@ -283,8 +285,11 @@ TDNFReadConfig(
         pConf->pszRepoDir = strdup(TDNF_DEFAULT_REPO_LOCATION);
     if (pConf->pszCacheDir == NULL)
         pConf->pszCacheDir = strdup(TDNF_DEFAULT_CACHE_LOCATION);
-    if (pConf->pszDistroVerPkg == NULL)
-        pConf->pszDistroVerPkg = strdup(TDNF_DEFAULT_DISTROVERPKG);
+    if (pConf->ppszDistroVerPkgs == NULL) {
+        dwError = TDNFSplitStringToArray(TDNF_DEFAULT_DISTROVERPKGS,
+                                         " ", &pConf->ppszDistroVerPkgs);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     if (pConf->pszPersistDir == NULL)
         pConf->pszPersistDir = strdup(TDNF_DEFAULT_DB_LOCATION);
 
@@ -366,14 +371,21 @@ TDNFConfigExpandVars(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(!pConf->pszVarReleaseVer &&
-       !IsNullOrEmptyString(pConf->pszDistroVerPkg))
+    if(!pConf->pszVarReleaseVer)
     {
-        dwError = TDNFRawGetPackageVersion(
-                      pTdnf->pArgs->pszInstallRoot,
-                      pConf->pszDistroVerPkg,
-                      &pConf->pszVarReleaseVer);
-        BAIL_ON_TDNF_ERROR(dwError);
+        int i;
+
+        for (i = 0; pConf->ppszDistroVerPkgs[i]; i++) {
+            dwError = TDNFGetReleaseVersion(
+                          pTdnf->pArgs->pszInstallRoot,
+                          pConf->ppszDistroVerPkgs[i],
+                          &pConf->pszVarReleaseVer);
+
+            if (dwError == 0)
+                break;
+            else if (dwError != ERROR_TDNF_NO_DISTROVERPKG)
+                BAIL_ON_TDNF_ERROR(dwError);
+        }
     }
 
     if(!pConf->pszVarBaseArch)
@@ -400,7 +412,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
         TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
         TDNF_SAFE_FREE_MEMORY(pConf->pszPersistDir);
-        TDNF_SAFE_FREE_MEMORY(pConf->pszDistroVerPkg);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszDistroVerPkgs);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
         TDNF_SAFE_FREE_MEMORY(pConf->pszBaseArch);
@@ -434,9 +446,6 @@ TDNFConfigReplaceVars(
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    dwError = TDNFConfigExpandVars(pTdnf);
-    BAIL_ON_TDNF_ERROR(dwError);
 
     cn_vars = parse_varsdirs(pTdnf->pConf->ppszVarsDirs);
     if (cn_vars == NULL) {
