@@ -1,6 +1,5 @@
 # automake
 
-Makefile
 Makefile.in
 
 *.guess
