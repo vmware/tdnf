@@ -165,6 +165,7 @@ cat << EOF > ${PUBLISH_PATH}/metalink
 <metalink version="3.0" xmlns="http://www.metalinker.org/" type="dynamic" pubdate="Wed, 05 Feb 2020 08:14:56 GMT">
  <files>
   <file name="repomd.xml">
+   <size>1234</size>
    <verification>
    </verification>
    <resources maxconnections="1">
