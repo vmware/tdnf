@@ -82,77 +82,14 @@ error:
     goto cleanup;
 }
 
+static
 uint32_t
-TDNFReadConfig(
-    PTDNF pTdnf,
-    const char* pszConfFile,
-    const char* pszGroup
-    )
+TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
 {
     uint32_t dwError = 0;
-    PTDNF_CONF pConf = NULL;
-    char *pszConfDir = NULL;
-    char *pszMinVersionsDir = NULL;
-    char *pszPkgLocksDir = NULL;
-    char *pszProtectedDir = NULL;
-
-    const char *pszTdnfVersion = NULL;
+    struct cnfnode *cn;
     const char *pszProxyUser = NULL;
     const char *pszProxyPass = NULL;
-
-    struct cnfnode *cn_conf = NULL, *cn_top, *cn;
-    struct cnfmodule *mod_ini;
-
-    if(!pTdnf ||
-       IsNullOrEmptyString(pszConfFile) ||
-       IsNullOrEmptyString(pszGroup))
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFAllocateMemory(
-                  1,
-                  sizeof(TDNF_CONF),
-                  (void**)&pConf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    /* defaults */
-    pConf->nGPGCheck = 0;
-    pConf->nCleanRequirementsOnRemove = 0;
-    pConf->nKeepCache = 0;
-    pConf->nOpenMax = TDNF_CONF_DEFAULT_OPENMAX;
-    pConf->nInstallOnlyLimit = TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT;
-    pConf->nSSLVerify = TDNF_CONF_DEFAULT_SSLVERIFY;
-
-    register_ini(NULL);
-    mod_ini = find_cnfmodule("ini");
-    if (mod_ini == NULL) {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    cn_conf = cnfmodule_parse_file(mod_ini, pszConfFile);
-    if (cn_conf == NULL)
-    {
-        if (errno != 0)
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
-        else
-        {
-            dwError = ERROR_TDNF_CONF_FILE_LOAD;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-    }
-
-    dwError = TDNFParseOSInfo(pConf);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    /* cn_conf == NULL => we will not reach here */
-    /* coverity[var_deref_op] */
-    cn_top = cn_conf->first_child;
 
     for(cn = cn_top->first_child; cn; cn = cn->next)
     {
@@ -260,6 +197,95 @@ TDNFReadConfig(
         }
     }
 
+    if (pszProxyUser && pszProxyPass)
+    {
+        dwError = TDNFAllocateStringPrintf(
+                      &pConf->pszProxyUserPass,
+                      "%s:%s",
+                      pszProxyUser,
+                      pszProxyPass);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+
+uint32_t
+TDNFReadConfig(
+    PTDNF pTdnf,
+    const char* pszConfFile,
+    const char* pszGroup
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_CONF pConf = NULL;
+    char *pszConfDir = NULL;
+    char *pszMinVersionsDir = NULL;
+    char *pszPkgLocksDir = NULL;
+    char *pszProtectedDir = NULL;
+
+    const char *pszTdnfVersion = NULL;
+
+    struct cnfnode *cn_conf = NULL;
+    struct cnfmodule *mod_ini;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszConfFile) ||
+       IsNullOrEmptyString(pszGroup))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateMemory(
+                  1,
+                  sizeof(TDNF_CONF),
+                  (void**)&pConf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* defaults */
+    pConf->nGPGCheck = 0;
+    pConf->nInstallOnlyLimit = 1;
+    pConf->nCleanRequirementsOnRemove = 0;
+    pConf->nKeepCache = 0;
+    pConf->nOpenMax = TDNF_CONF_DEFAULT_OPENMAX;
+    pConf->nInstallOnlyLimit = TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT;
+    pConf->nSSLVerify = TDNF_CONF_DEFAULT_SSLVERIFY;
+
+    register_ini(NULL);
+    mod_ini = find_cnfmodule("ini");
+    if (mod_ini == NULL) {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    cn_conf = cnfmodule_parse_file(mod_ini, pszConfFile);
+    if (cn_conf == NULL)
+    {
+        if (errno != 0)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+        else
+        {
+            dwError = ERROR_TDNF_CONF_FILE_LOAD;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    dwError = TDNFParseOSInfo(pConf);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* cn_conf == NULL => we will not reach here */
+    /* coverity[var_deref_op] */
+    dwError = TDNFConfigFromCnfTree(pConf, cn_conf->first_child);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     pszTdnfVersion = TDNFGetVersion();
 
     if (pConf->pszOSName == NULL)
@@ -270,16 +296,6 @@ TDNFReadConfig(
 
     dwError = TDNFAllocateStringPrintf(&pConf->pszUserAgentHeader, "tdnf/%s %s/%s", pszTdnfVersion, pConf->pszOSName, pConf->pszOSVersion);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    if (pszProxyUser && pszProxyPass)
-    {
-        dwError = TDNFAllocateStringPrintf(
-                      &pConf->pszProxyUserPass,
-                      "%s:%s",
-                      pszProxyUser,
-                      pszProxyPass);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
 
     if (pConf->pszRepoDir == NULL)
         pConf->pszRepoDir = strdup(TDNF_DEFAULT_REPO_LOCATION);
