@@ -221,6 +221,7 @@ def test_download_vs_cache_size_multiple_packages(utils):
 @pytest.mark.skipif(try_mount_small_cache() != 0, reason="Failed to mount small cache directory.")
 def test_cache_directory_out_of_disk_space(utils):
     small_cache_path = utils.config['small_cache_path']
+    orig_cache_path = utils.tdnf_config.get('main', 'cachedir')
     switch_cache_path(utils, small_cache_path)
     enable_cache(utils)
     clean_small_cache(utils)
@@ -232,7 +233,7 @@ def test_cache_directory_out_of_disk_space(utils):
         run_args.append(pkgname)
     ret = utils.run(run_args)
 
-    switch_cache_path(utils, utils.tdnf_config.get('main', 'cachedir'))
+    switch_cache_path(utils, orig_cache_path)
     clean_cache(utils)
     clean_small_cache(utils)
     assert ret['retval'] == 1036
