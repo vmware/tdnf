@@ -789,7 +789,7 @@ TDNFAlterRepoState(
 {
     uint32_t dwError = 0;
     int nIsGlob = 0;
-    if(!pRepos && IsNullOrEmptyString(pszId))
+    if(!pRepos || IsNullOrEmptyString(pszId))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
