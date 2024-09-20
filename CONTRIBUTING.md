@@ -95,7 +95,7 @@ Please follow the existing coding style in the files you are changing - even if 
 
 Commit messages should adequately describe the change. This can be one line or more.
 
-Use the PR description for more details. For example, describe new comnmands or flags added, with examples. If applicable, it should be possible to copy straight to the wiki.
+Use the PR description for more details. For example, describe new commands or flags added, with examples. If applicable, it should be possible to copy straight to the wiki.
 
 ## Reporting Bugs and Creating Issues
 
