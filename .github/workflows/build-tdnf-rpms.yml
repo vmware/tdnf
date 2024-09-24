@@ -22,7 +22,7 @@ jobs:
               run: |
                 docker run --rm -v$(pwd)/rpms:/rpms ${DIST} /bin/sh -c 'tdnf -y --repofrompath=tdnf,/rpms install tdnf-pytests && pytest /usr/share/tdnf/pytests/'
             - name: upload RPMs
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                   name: tdnf-rpms
                   path: rpms
