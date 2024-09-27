@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include "../llconf/nodes.h"
 
 void
 TDNFFreeCmdOpt(
@@ -41,7 +42,6 @@ cleanup:
     return dwError;
 
 error:
-    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszConfFile);
     goto cleanup;
 }
 
@@ -228,113 +228,5 @@ error:
     {
         dwError = 0;
     }
-    goto cleanup;
-}
-
-uint32_t
-TDNFGetCmdOptValue(
-    PTDNF_CMD_ARGS pArgs,
-    const char *pszOptName,
-    char **ppszOptValue
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CMD_OPT pOpt = NULL;
-    char *pszOptValue = NULL;
-
-    if(!pArgs || !pArgs->pSetOpt ||
-       IsNullOrEmptyString(pszOptName) || !ppszOptValue)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = _TDNFGetCmdOpt(pArgs, pszOptName, &pOpt);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (pOpt->pszOptValue)
-    {
-        dwError = TDNFAllocateString(pOpt->pszOptValue, &pszOptValue);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    *ppszOptValue = pszOptValue;
-
-cleanup:
-    return dwError;
-
-error:
-    TDNF_SAFE_FREE_MEMORY(pszOptValue);
-    goto cleanup;
-}
-
-/*
- * if get fails, use the default value (if supplied)
-*/
-uint32_t
-TDNFGetOptWithDefault(
-    PTDNF_CMD_ARGS pArgs,
-    const char *pszOptName,
-    const char *pszDefault,
-    char **ppszOptValue
-    )
-{
-    uint32_t dwError = 0;
-    char *pszOptValue = NULL;
-
-    dwError = TDNFGetCmdOptValue(pArgs, pszOptName, &pszOptValue);
-    if (!IsNullOrEmptyString(pszDefault) &&
-        dwError == ERROR_TDNF_OPT_NOT_FOUND)
-    {
-        dwError = TDNFAllocateString(pszDefault, &pszOptValue);
-    }
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    *ppszOptValue = pszOptValue;
-error:
-    return dwError;
-}
-
-uint32_t
-TDNFSetOpt(
-    PTDNF_CMD_ARGS pArgs,
-    const char *pszOptName,
-    const char *pszOptValue
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CMD_OPT pOpt = NULL;
-
-    if (!pArgs || IsNullOrEmptyString(pszOptName) ||
-        IsNullOrEmptyString(pszOptValue))
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = _TDNFGetCmdOpt(pArgs, pszOptName, &pOpt);
-    if (dwError == ERROR_TDNF_OPT_NOT_FOUND)
-    {
-        dwError = 0;
-    }
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if (pOpt)
-    {
-        TDNF_SAFE_FREE_MEMORY(pOpt->pszOptValue);
-
-        dwError = TDNFAllocateString(pszOptValue, &pOpt->pszOptValue);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    else
-    {
-        dwError = AddSetOptWithValues(pArgs, pszOptName, pszOptValue);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-cleanup:
-    return dwError;
-
-error:
     goto cleanup;
 }

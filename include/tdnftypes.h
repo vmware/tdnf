@@ -9,6 +9,7 @@
 #pragma once
 
 #include <curl/curl.h>
+#include <rpm/rpmts.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -242,6 +243,8 @@ typedef struct _TDNF_CMD_ARGS
     char** ppszCmds;
     int nCmdCount;
     PTDNF_CMD_OPT pSetOpt;
+    struct cnfnode *cn_setopts;
+    struct cnfnode *cn_repoopts;
 
     int nArgc;
     char **ppszArgv;
@@ -257,6 +260,7 @@ typedef struct _TDNF_CONF
     int nOpenMax;          //set max number of open files
     int nCheckUpdateCompat;
     int nDistroSyncReinstallChanged;
+    rpmtransFlags rpmTransFlags;
     int nPluginsEnabled;
     char* pszRepoDir;
     char* pszCacheDir;

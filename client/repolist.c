@@ -47,7 +47,123 @@ TDNFCreateRepo(
     const char *pszId
     );
 
+static
+uint32_t
+TDNFRepoConfigFromCnfTree(PTDNF_REPO_DATA pRepo, struct cnfnode *cn_top)
+{
+    uint32_t dwError = 0;
+    struct cnfnode *cn;
 
+    for(cn = cn_top->first_child; cn; cn = cn->next)
+    {
+        if ((cn->name[0] == '.') || (cn->value == NULL))
+            continue;
+
+        if (strcmp(cn->name, TDNF_REPO_KEY_ENABLED) == 0)
+        {
+            pRepo->nEnabled = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_NAME) == 0)
+        {
+            SET_STRING(pRepo->pszName, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_BASEURL) == 0)
+        {
+            dwError = TDNFAddStringArray(&pRepo->ppszBaseUrls, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_METALINK) == 0)
+        {
+            SET_STRING(pRepo->pszMetaLink, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_MIRRORLIST) == 0)
+        {
+            SET_STRING(pRepo->pszMirrorList, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
+        {
+            pRepo->nSkipIfUnavailable = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_GPGCHECK) == 0)
+        {
+            pRepo->nGPGCheck = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_GPGKEY) == 0)
+        {
+            dwError = TDNFAddStringArray(&pRepo->ppszUrlGPGKeys, cn->value);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_USERNAME) == 0)
+        {
+            SET_STRING(pRepo->pszUser, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_PASSWORD) == 0)
+        {
+            SET_STRING(pRepo->pszPass, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_PRIORITY) == 0)
+        {
+            pRepo->nPriority = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_TIMEOUT) == 0)
+        {
+            pRepo->nTimeout = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_RETRIES) == 0)
+        {
+            pRepo->nRetries = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_MINRATE) == 0)
+        {
+            pRepo->nMinrate = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_THROTTLE) == 0)
+        {
+            pRepo->nThrottle = strtoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_VERIFY) == 0)
+        {
+            pRepo->nSSLVerify = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CA_CERT) == 0)
+        {
+            SET_STRING(pRepo->pszSSLCaCert, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CLI_CERT) == 0)
+        {
+            SET_STRING(pRepo->pszSSLClientCert, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CLI_KEY) == 0)
+        {
+            SET_STRING(pRepo->pszSSLClientKey, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_METADATA_EXPIRE) == 0)
+        {
+            dwError = TDNFParseMetadataExpire(
+                          cn->value,
+                          &pRepo->lMetadataExpire);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_FILELISTS) == 0)
+        {
+            pRepo->nSkipMDFileLists = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_UPDATEINFO) == 0)
+        {
+            pRepo->nSkipMDUpdateInfo = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_OTHER) == 0)
+        {
+            pRepo->nSkipMDOther = isTrue(cn->value);
+        }
+    }
+
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
 
 uint32_t
 TDNFLoadRepoData(
@@ -66,6 +182,8 @@ TDNFLoadRepoData(
     char **ppszUrlIdTuple = NULL;
     PTDNF_REPO_DATA pRepoParsePre = NULL;
     PTDNF_REPO_DATA pRepoParseNext = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
+    struct cnfnode *cn_repo;
 
     if(!pTdnf || !pTdnf->pConf || !pTdnf->pArgs || !ppReposAll)
     {
@@ -159,11 +277,20 @@ TDNFLoadRepoData(
     }
 
     for (pRepoParsePre = pReposAll; pRepoParsePre; pRepoParsePre = pRepoParsePre->pNext) {
-
         for (pRepoParseNext = pRepoParsePre->pNext; pRepoParseNext; pRepoParseNext = pRepoParseNext->pNext) {
             if (!strcmp(pRepoParsePre->pszId, pRepoParseNext->pszId)) {
                 pr_err("ERROR: duplicate repo id: %s\n", pRepoParsePre->pszId);
                 dwError = ERROR_TDNF_DUPLICATE_REPO_ID;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+
+    /* look for setopt settings */
+    if (pTdnf->pArgs->cn_repoopts != NULL) {
+        for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
+            if ((cn_repo = find_child(pTdnf->pArgs->cn_repoopts, pRepo->pszId)) != NULL) {
+                dwError = TDNFRepoConfigFromCnfTree(pRepo, cn_repo);
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
@@ -490,7 +617,7 @@ TDNFLoadReposFromFile(
     PTDNF_REPO_DATA pRepos = NULL;
     PTDNF_REPO_DATA pRepo = NULL;
 
-    struct cnfnode *cn_conf = NULL, *cn_section, *cn;
+    struct cnfnode *cn_conf = NULL, *cn_section;
     struct cnfmodule *mod_ini;
 
     mod_ini = find_cnfmodule("ini");
@@ -528,111 +655,9 @@ TDNFLoadReposFromFile(
         dwError = TDNFEventRepoReadConfigStart(pTdnf, cn_section);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        for(cn = cn_section->first_child; cn; cn = cn->next)
-        {
-            if ((cn->name[0] == '.') || (cn->value == NULL))
-                continue;
+        dwError = TDNFRepoConfigFromCnfTree(pRepo, cn_section);
+        BAIL_ON_TDNF_ERROR(dwError);
 
-            if (strcmp(cn->name, TDNF_REPO_KEY_ENABLED) == 0)
-            {
-                pRepo->nEnabled = isTrue(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_NAME) == 0)
-            {
-                SET_STRING(pRepo->pszName, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_BASEURL) == 0)
-            {
-                dwError = TDNFSplitStringToArray(cn->value,
-                                                 " ", &pRepo->ppszBaseUrls);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_METALINK) == 0)
-            {
-                SET_STRING(pRepo->pszMetaLink, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_MIRRORLIST) == 0)
-            {
-                pRepo->pszMirrorList = strdup(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
-            {
-                pRepo->nSkipIfUnavailable = isTrue(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_GPGCHECK) == 0)
-            {
-                pRepo->nGPGCheck = isTrue(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_GPGKEY) == 0)
-            {
-                dwError = TDNFSplitStringToArray(cn->value,
-                                                 " ", &pRepo->ppszUrlGPGKeys);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_USERNAME) == 0)
-            {
-                SET_STRING(pRepo->pszUser, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_PASSWORD) == 0)
-            {
-                SET_STRING(pRepo->pszPass, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_PRIORITY) == 0)
-            {
-                pRepo->nPriority = strtoi(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_TIMEOUT) == 0)
-            {
-                pRepo->nTimeout = strtoi(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_RETRIES) == 0)
-            {
-                pRepo->nRetries = strtoi(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_MINRATE) == 0)
-            {
-                pRepo->nMinrate = strtoi(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_THROTTLE) == 0)
-            {
-                pRepo->nThrottle = strtoi(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_VERIFY) == 0)
-            {
-                pRepo->nSSLVerify = isTrue(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CA_CERT) == 0)
-            {
-                SET_STRING(pRepo->pszSSLCaCert, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CLI_CERT) == 0)
-            {
-                SET_STRING(pRepo->pszSSLClientCert, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SSL_CLI_KEY) == 0)
-            {
-                SET_STRING(pRepo->pszSSLClientKey, cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_METADATA_EXPIRE) == 0)
-            {
-                dwError = TDNFParseMetadataExpire(
-                              cn->value,
-                              &pRepo->lMetadataExpire);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_FILELISTS) == 0)
-            {
-                pRepo->nSkipMDFileLists = isTrue(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_UPDATEINFO) == 0)
-            {
-                pRepo->nSkipMDUpdateInfo = isTrue(cn->value);
-            }
-            else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_OTHER) == 0)
-            {
-                pRepo->nSkipMDOther = isTrue(cn->value);
-            }
-        }
         /* plugin event repo readconfig end */
         dwError = TDNFEventRepoReadConfigEnd(pTdnf, cn_section);
         BAIL_ON_TDNF_ERROR(dwError);

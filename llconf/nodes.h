@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 struct cnfnode *create_cnfnode(const char *name);
+struct cnfnode *create_cnfnode_keyval(const char *keyval);
 
 struct cnfnode *clone_cnfnode(const struct cnfnode *cn);
 struct cnfnode *clone_cnftree(const struct cnfnode *cn_root);
@@ -46,6 +47,7 @@ const char *cnfnode_getname(const struct cnfnode *cn);
 
 void cnfnode_setval(struct cnfnode *cn, const char *value);
 void cnfnode_setname(struct cnfnode *cn, const char *name);
+void cnfnode_setname_n(struct cnfnode *cn, const char *name, size_t n);
 
 /* free memory of node, leaving children intact */
 void destroy_cnfnode(struct cnfnode *cn);

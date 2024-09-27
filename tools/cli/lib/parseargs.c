@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include "../../../llconf/nodes.h"
 
 static TDNF_CMD_ARGS _opt = {0};
 
@@ -143,6 +144,9 @@ TDNFCliParseArgs(
                   sizeof(TDNF_CMD_ARGS),
                   (void**)&pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
+
+    pCmdArgs->cn_setopts = create_cnfnode("(setopts)");
+    pCmdArgs->cn_repoopts = create_cnfnode("(repoopts)");
 
     /*
      * when invoked as 'tdnfj', act as if invoked with with '-j' and '-y'
@@ -398,16 +402,39 @@ ParseOption(
     }
     else if (!strcasecmp(pszName, "setopt"))
     {
+        struct cnfnode *cn;
+        char *psep_eq, *pseq_dot;
+
         if (!optarg)
         {
             dwError = ERROR_TDNF_CLI_OPTION_ARG_REQUIRED;
             BAIL_ON_CLI_ERROR(dwError);
         }
 
-        dwError = AddSetOpt(pCmdArgs, optarg);
-        if (dwError == ERROR_TDNF_SETOPT_NO_EQUALS)
-        {
+        psep_eq = strstr(optarg, "=");
+        if (psep_eq) {
+            *psep_eq = 0;
+
+            pseq_dot = strstr(optarg, ".");
+            if (pseq_dot == NULL) {
+                cn = create_cnfnode(optarg);
+                cnfnode_setval(cn, psep_eq + 1);
+                append_node(pCmdArgs->cn_setopts, cn);
+            } else {
+                struct cnfnode *cn_repo;
+                *pseq_dot = 0;
+                cn_repo = find_child(pCmdArgs->cn_repoopts, optarg);
+                if (!cn_repo) {
+                    cn_repo = create_cnfnode(optarg);
+                    append_node(pCmdArgs->cn_repoopts, cn_repo);
+                }
+                cn = create_cnfnode(pseq_dot+1);
+                cnfnode_setval(cn, psep_eq + 1);
+                append_node(cn_repo, cn);
+            }
+        } else {
             dwError = ERROR_TDNF_CLI_SETOPT_NO_EQUALS;
+            BAIL_ON_CLI_ERROR(dwError);
         }
     }
     else if (!strcasecmp(pszName, "exclude"))

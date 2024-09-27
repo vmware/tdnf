@@ -23,12 +23,12 @@ def setup_test(utils):
 
 def teardown_test(utils):
     pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
     if os.path.isdir(WORKDIR):
         shutil.rmtree(WORKDIR)
     filename = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
     if os.path.isfile(filename):
         os.remove(filename)
+    utils.erase_package(pkgname)
 
 
 def test_multiple_baseurls(utils):
@@ -54,4 +54,34 @@ def test_multiple_baseurls(utils):
                      '--disablerepo=*', '--enablerepo={}'.format(reponame),
                      'install', pkgname],
                     cwd=workdir)
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
+
+
+def test_multiple_baseurls_setopt(utils):
+    reponame = REPONAME
+    workdir = WORKDIR
+    utils.makedirs(workdir)
+
+    filename = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
+    # we should get a 404 for the first url and skip to the next one
+    baseurls = "http://localhost:8080/doesntexist"
+    utils.create_repoconf(filename, baseurls, reponame)
+
+    ret = utils.run(['tdnf',
+                     '--disablerepo=*', '--enablerepo={}'.format(reponame),
+                     f'--setopt={reponame}.baseurl=http://localhost:8080/photon-test',
+                     'makecache'],
+                    cwd=workdir)
+    assert ret['retval'] == 0
+
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+    ret = utils.run(['tdnf',
+                     '-y', '--nogpgcheck',
+                     '--disablerepo=*', '--enablerepo={}'.format(reponame),
+                     f'--setopt={reponame}.baseurl=http://localhost:8080/photon-test',
+                     'install', pkgname],
+                    cwd=workdir)
+    assert ret['retval'] == 0
     assert utils.check_package(pkgname)
