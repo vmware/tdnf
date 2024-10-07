@@ -1024,7 +1024,19 @@ uint32_t
 TDNFCliRefresh(
     PTDNF_CLI_CONTEXT pContext)
 {
-    return TDNFRefresh(pContext->hTdnf);
+    uint32_t dwError = 0;
+    dwError = TDNFRefresh(pContext->hTdnf);
+
+    if (dwError == ERROR_TDNF_SYSTEM_BASE + EACCES) {
+        if (geteuid()) {
+            pr_err("\ntdnf repo cache needs to be refreshed but you have insufficient permissions\n"
+                   "You can use one of the below methods to workaround this\n"
+                   "1. Login as root and refresh cache\n"
+                   "2. Use -c (--config) with a configuration file that has 'cachedir' set to a directory where you have access\n"
+                   "3. Use -C (--cacheonly) and use the existing cache in the system\n\n");
+        }
+    }
+    return dwError;
 }
 
 static
