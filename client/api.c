@@ -10,7 +10,7 @@
 
 uid_t gEuid;
 
-static TDNF_ENV gEnv = {0};
+static int gInitialized;
 
 static tdnflock instance_lock;
 
@@ -44,44 +44,27 @@ static void IsTdnfAlreadyRunning(void)
 
 uint32_t TDNFInit(void)
 {
-    int nLocked = 0;
     uint32_t dwError = 0;
 
-    pthread_mutex_lock(&gEnv.mutexInitialize);
-    nLocked = 1;
-    if(!gEnv.nInitialized)
+    if (!gInitialized)
     {
         dwError = rpmReadConfigFiles(NULL, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        gEnv.nInitialized = 1;
+        gInitialized = 1;
     }
-
-cleanup:
-    if(nLocked)
-    {
-        pthread_mutex_unlock(&gEnv.mutexInitialize);
-    }
-    return dwError;
 
 error:
-    goto cleanup;
+    return dwError;
 }
 
-void
-TDNFUninit(
-    void
-    )
+void TDNFUninit(void)
 {
-    pthread_mutex_lock (&gEnv.mutexInitialize);
-
-    if(gEnv.nInitialized)
+    if (gInitialized)
     {
         rpmFreeRpmrc();
+        gInitialized = 0;
     }
-    gEnv.nInitialized = 0;
-
-    pthread_mutex_unlock(&gEnv.mutexInitialize);
 }
 
 //Check all available packages

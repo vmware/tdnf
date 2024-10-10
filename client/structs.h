@@ -51,12 +51,6 @@ typedef struct _TDNF_RPM_TS_
     PTDNF_CACHED_RPM_LIST   pCachedRpmsArray;
 } TDNFRPMTS, *PTDNFRPMTS;
 
-typedef struct _TDNF_ENV_
-{
-    pthread_mutex_t mutexInitialize;
-    int nInitialized;
-} TDNF_ENV, *PTDNF_ENV;
-
 typedef struct _TDNF_REPO_METADATA
 {
     char *pszRepoCacheDir;
