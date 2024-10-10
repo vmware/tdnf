@@ -31,7 +31,6 @@
 #include <sys/types.h>
 
 #include <dirent.h>
-#include <pthread.h>
 
 #include "../solv/includes.h"
 
