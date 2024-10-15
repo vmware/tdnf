@@ -347,7 +347,7 @@ TDNFTouchFile(
     }
 
     old_mask = umask(022);
-    fd = creat(pszFile, S_IRUSR | S_IRGRP | S_IROTH);
+    fd = creat(pszFile, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd < 0)
     {
         if (errno == EEXIST)

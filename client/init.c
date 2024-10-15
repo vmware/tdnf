@@ -307,30 +307,17 @@ TDNFRefreshSack(
 
         if (nMetadataExpired)
         {
-            if (gEuid)
-            {
-                if (!pTdnf->pArgs->nCacheOnly)
-                {
-                    pr_err("\ntdnf repo cache needs to be refreshed\n"
-                           "You can use one of the below methods to workaround this\n"
-                           "1. Login as root & refresh cache\n"
-                           "2. Use -c (--config) option & create repo cache where you have access\n"
-                           "3. Use -C (--cacheonly) & use existing cache in the system\n\n");
-                }
-                goto cleanup;
-            }
-
             dwError = TDNFRepoRemoveCache(pTdnf, pRepo);
             if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
-                dwError = 0;//Ignore non existent folders
+                dwError = 0; // ignore not existing folders
             }
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFRemoveSolvCache(pTdnf, pRepo);
             if (dwError == ERROR_TDNF_FILE_NOT_FOUND)
             {
-                dwError = 0;//Ignore non existent folders
+                dwError = 0; // ignore not existing folders
             }
             BAIL_ON_TDNF_ERROR(dwError);
         }
@@ -341,9 +328,11 @@ TDNFRefreshSack(
         }
         if (dwError && pRepo->nSkipIfUnavailable)
         {
-            pRepo->nEnabled = 0;
-            pr_info("Disabling Repo: '%s'\n", pRepo->pszName);
-            dwError = 0;
+            if (dwError != (ERROR_TDNF_SYSTEM_BASE + EACCES)) {
+                pRepo->nEnabled = 0;
+                pr_info("Disabling Repo: '%s'\n", pRepo->pszName);
+                dwError = 0;
+            }
         }
         BAIL_ON_TDNF_ERROR(dwError);
     }
