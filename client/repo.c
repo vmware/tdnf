@@ -24,11 +24,28 @@ TDNFInitRepo(
     Pool* pPool = NULL;
     int nUseMetaDataCache = 0;
     PSOLV_REPO_INFO_INTERNAL pSolvRepoInfo = NULL;
+    PTDNF_CMD_OPT pSetOpt = NULL;
+    char * pszSnapshotTime = NULL;
 
     if (!pTdnf || !pRepoData || !pSack || !pSack->pPool)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    // set local POSIX limit if conf or cmd line opt is present
+    if (pTdnf->pConf != NULL && pTdnf->pConf->pszSnapshotTime!= NULL) 
+    {
+        pszSnapshotTime = pTdnf->pConf->pszSnapshotTime;
+    }
+
+    // take command line over config if both are present
+    for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext) 
+    {
+        if(strncmp(pSetOpt->pszOptName, TDNF_CONF_KEY_SNAPSHOT_TIME, strlen(TDNF_CONF_KEY_SNAPSHOT_TIME)) == 0)
+        {
+            pszSnapshotTime = pSetOpt->pszOptValue;
+        }
     }
 
     pPool = pSack->pPool;
@@ -82,20 +99,27 @@ TDNFInitRepo(
     pRepo->appdata = pSolvRepoInfo;
 
     if (pRepoData->nHasMetaData) {
-        dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
-        BAIL_ON_TDNF_ERROR(dwError);
-        pSolvRepoInfo->nCookieSet = 1;
+        if (!pRepoData->nExcludeSnapshot && pszSnapshotTime != NULL) {
+            dwError = TDNFInitRepoFromMetadata(pRepo, pRepoData->pszId, pRepoMD, pszSnapshotTime);
+            BAIL_ON_TDNF_ERROR(dwError);
+        } else {
+            dwError = SolvCalculateCookieForFile(pRepoMD->pszRepoMD, pSolvRepoInfo->cookie);
+            BAIL_ON_TDNF_ERROR(dwError);
+            pSolvRepoInfo->nCookieSet = 1;
 
-        dwError = SolvUseMetaDataCache(pSack, pSolvRepoInfo, &nUseMetaDataCache);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        if (nUseMetaDataCache == 0) {
-            dwError = TDNFInitRepoFromMetadata(pRepo, pRepoData->pszId, pRepoMD);
+            dwError = SolvUseMetaDataCache(pSack, pSolvRepoInfo, &nUseMetaDataCache);
             BAIL_ON_TDNF_ERROR(dwError);
 
-            dwError = SolvCreateMetaDataCache(pSack, pSolvRepoInfo);
-            BAIL_ON_TDNF_ERROR(dwError);
+            //force load from repo if POSIX time limit is present
+            if (nUseMetaDataCache == 0) {
+                dwError = TDNFInitRepoFromMetadata(pRepo, pRepoData->pszId, pRepoMD, NULL);
+                BAIL_ON_TDNF_ERROR(dwError);
+
+                dwError = SolvCreateMetaDataCache(pSack, pSolvRepoInfo);
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
         }
+        
     } else {
         dwError = SolvReadRpmsFromDirectory(pRepo, pRepoData->ppszBaseUrls[0]);
         BAIL_ON_TDNF_ERROR(dwError);
@@ -136,7 +160,8 @@ uint32_t
 TDNFInitRepoFromMetadata(
     Repo *pRepo,
     const char* pszRepoName,
-    PTDNF_REPO_METADATA pRepoMD
+    PTDNF_REPO_METADATA pRepoMD,
+    char * pszSnapshotTime
     )
 {
     uint32_t dwError = 0;
@@ -153,7 +178,8 @@ TDNFInitRepoFromMetadata(
                   pRepoMD->pszPrimary,
                   pRepoMD->pszFileLists,
                   pRepoMD->pszUpdateInfo,
-                  pRepoMD->pszOther);
+                  pRepoMD->pszOther,
+                  pszSnapshotTime);
 cleanup:
     return dwError;
 

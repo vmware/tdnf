@@ -26,6 +26,11 @@ _tdnf__process_if_prev_is_option()
             COMPREPLY=( $(compgen -W "$opts" -- $cur) )
             return 0
             ;;
+        --snapshotexcluderepos)
+            opts=`tdnf repolist enabled | awk '{if (NR > 1) print $1}'`
+            COMPREPLY=( $(compgen -W "$opts" -- $cur) )
+            return 0
+            ;;
         --installroot)
             COMPREPLY=( $(compgen -d -- $cur) )
             return 0
@@ -92,7 +97,7 @@ _tdnf()
 {
     local c=0 cur __opts __cmds
     COMPREPLY=()
-    __opts="--assumeno --assumeyes --cacheonly --debugsolver --disableexcludes --disableplugin --disablerepo --downloaddir --downloadonly --enablerepo --enableplugin --exclude --installroot --noautoremove --nogpgcheck --noplugins --quiet --reboot --refresh --releasever --repo --repofrompath --repoid --rpmverbosity --security --sec --setopt --skip --skipconflicts --skipdigest --skipsignature --skipobsoletes --testonly --version --available --duplicates --extras --file --installed --whatdepends --whatrequires --whatenhances --whatobsoletes --whatprovides --whatrecommends --whatrequires --whatsuggests --whatsupplements --depends --enhances --list --obsoletes --provides --recommends --requires --requires --suggests --source --supplements --arch --delete --download --download --gpgcheck --metadata --newest --norepopath --source --urls"
+    __opts="--assumeno --assumeyes --cacheonly --debugsolver --disableexcludes --disableplugin --disablerepo --downloaddir --downloadonly --enablerepo --enableplugin --exclude --installroot --noautoremove --nogpgcheck --noplugins --quiet --reboot --refresh --releasever --repo --repofrompath --repoid --rpmverbosity --security --sec --setopt --skip --skipconflicts --skipdigest --skipsignature --skipobsoletes --snapshotexcluderepos --snapshottime --testonly --version --available --duplicates --extras --file --installed --whatdepends --whatrequires --whatenhances --whatobsoletes --whatprovides --whatrecommends --whatrequires --whatsuggests --whatsupplements --depends --enhances --list --obsoletes --provides --recommends --requires --requires --suggests --source --supplements --arch --delete --download --download --gpgcheck --metadata --newest --norepopath --source --urls"
     __cmds="autoerase autoremove check check-local check-update clean distro-sync downgrade erase help history info install list makecache mark provides whatprovides reinstall remove repolist repoquery reposync search update update-to updateinfo upgrade upgrade-to"
     cur="${COMP_WORDS[COMP_CWORD]}"
     _tdnf__process_if_prev_is_option && return 0

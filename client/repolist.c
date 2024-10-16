@@ -380,6 +380,7 @@ TDNFCreateRepo(
     BAIL_ON_TDNF_ERROR(dwError);
 
     pRepo->nEnabled = TDNF_REPO_DEFAULT_ENABLED;
+    pRepo->nExcludeSnapshot = 0;
     pRepo->nHasMetaData = 1;
     pRepo->nSkipIfUnavailable = TDNF_REPO_DEFAULT_SKIP;
     pRepo->nGPGCheck = TDNF_REPO_DEFAULT_GPGCHECK;
@@ -675,6 +676,7 @@ TDNFRepoListFinalize(
     PTDNF_CMD_OPT pSetOpt = NULL;
     PTDNF_REPO_DATA pRepo = NULL;
     int nRepoidSeen = 0;
+    char ** ppszRepos = NULL;
 
     if(!pTdnf || !pTdnf->pArgs || !pTdnf->pRepos)
     {
@@ -714,6 +716,22 @@ TDNFRepoListFinalize(
                           pTdnf->pRepos,
                           1,
                           pSetOpt->pszOptValue);
+        }
+        else if (strcmp(pSetOpt->pszOptName, "snapshotexcluderepos") == 0)
+        {
+            ppszRepos = NULL;
+            int i = 0;
+            dwError = TDNFSplitStringToArray(pSetOpt->pszOptValue, ",", &ppszRepos);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            while (ppszRepos && ppszRepos[i]){
+                dwError = TDNFExcludeFromSnapshot(
+                pTdnf->pRepos,
+                ppszRepos[i]);
+                BAIL_ON_TDNF_ERROR(dwError);
+                i++;
+            }
+            
         }
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -775,6 +793,7 @@ TDNFRepoListFinalize(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
+    TDNFFreeStringArray(ppszRepos);
     return dwError;
 error:
     goto cleanup;
@@ -819,6 +838,53 @@ TDNFAlterRepoState(
             }
         }
     }
+cleanup:
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFExcludeFromSnapshot(
+    PTDNF_REPO_DATA pRepos,
+    const char* pszId
+    )
+{
+    uint32_t dwError = 0;
+    int nIsGlob = 0;
+    if(!pRepos || IsNullOrEmptyString(pszId))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nIsGlob = TDNFIsGlob(pszId);
+
+    for (int nMatch = 0; pRepos; pRepos = pRepos->pNext)
+    {
+        if(nIsGlob)
+        {
+            if(!fnmatch(pszId, pRepos->pszId, 0))
+            {
+                nMatch = 1;
+            }
+        }
+        else if(!strcmp(pRepos->pszId, pszId))
+        {
+            nMatch = 1;
+        }
+
+        if(nMatch)
+        {
+            pRepos->nExcludeSnapshot = 1;
+            if(!nIsGlob)
+            {
+                break;
+            }
+        }
+    }
+
 cleanup:
     return dwError;
 

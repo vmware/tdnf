@@ -9,6 +9,7 @@
 #pragma once
 
 #include <curl/curl.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -259,6 +260,7 @@ typedef struct _TDNF_CONF
     int nDistroSyncReinstallChanged;
     int nPluginsEnabled;
     char* pszRepoDir;
+    char* pszSnapshotTime;
     char* pszCacheDir;
     char* pszPersistDir;
     char* pszProxy;
@@ -283,6 +285,7 @@ typedef struct _TDNF_CONF
 typedef struct _TDNF_REPO_DATA
 {
     int nEnabled;
+    int nExcludeSnapshot;
     int nSkipIfUnavailable;
     int nGPGCheck;
     int nHasMetaData;

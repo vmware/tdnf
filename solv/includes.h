@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <dirent.h>
 
 // libsolv
@@ -43,5 +42,10 @@
 #include "../common/prototypes.h"
 #include "../history/history.h"
 #include "prototypes.h"
+
+#include <expat.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
 
 #endif /* __SOLV_INCLUDES_H__ */

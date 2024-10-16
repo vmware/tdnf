@@ -100,6 +100,10 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         {
             pConf->nInstallOnlyLimit = strtoi(cn->value);
         }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_SNAPSHOT_TIME) == 0)
+        {
+            pConf->pszSnapshotTime = strdup(cn->value);
+        }
         else if (strcmp(cn->name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
         {
             pConf->nCleanRequirementsOnRemove = isTrue(cn->value);
@@ -255,6 +259,7 @@ TDNFReadConfig(
     pConf->nOpenMax = TDNF_CONF_DEFAULT_OPENMAX;
     pConf->nInstallOnlyLimit = TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT;
     pConf->nSSLVerify = TDNF_CONF_DEFAULT_SSLVERIFY;
+    pConf->pszSnapshotTime = NULL;
 
     register_ini(NULL);
     mod_ini = find_cnfmodule("ini");

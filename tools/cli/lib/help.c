@@ -44,6 +44,8 @@ static const char *help_msg =
  "           [--skipdigest]\n"
  "           [--skipsignature]\n"
  "           [--skipobsoletes]\n"
+ "           [--snapshotexcluderepos=<repoid>[,<repoid2>,...]\n"
+ "           [--snapshottime=<POSIX_time>]\n"
  "           [--testonly]\n"
  "           [--version]\n\n"
  "repoquery select options:\n"

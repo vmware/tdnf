@@ -578,7 +578,8 @@ uint32_t
 TDNFInitRepoFromMetadata(
     Repo *pRepo,
     const char* pszRepoName,
-    PTDNF_REPO_METADATA pRepoMD
+    PTDNF_REPO_METADATA pRepoMD,
+    char * pszSnapshotTime
     );
 
 uint32_t
@@ -733,6 +734,12 @@ uint32_t
 TDNFAlterRepoState(
     PTDNF_REPO_DATA pRepos,
     int nEnable,
+    const char* pszId
+    );
+
+uint32_t
+TDNFExcludeFromSnapshot(
+    PTDNF_REPO_DATA pRepos,
     const char* pszId
     );
 
