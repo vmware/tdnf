@@ -7,4 +7,3 @@
 #
 
 install(PROGRAMS "tdnf-automatic" DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary)
-install(PROGRAMS "tdnf-cache-updateinfo" DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary)

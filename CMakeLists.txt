@@ -101,6 +101,5 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tools")
 add_subdirectory("${PROJECT_SOURCE_DIR}/pytests")
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/bin/tdnf-automatic.in ${PROJECT_SOURCE_DIR}/bin/tdnf-automatic @ONLY)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/bin/tdnf-cache-updateinfo.in ${PROJECT_SOURCE_DIR}/bin/tdnf-cache-updateinfo @ONLY)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/tdnf.spec.in ${CMAKE_SOURCE_DIR}/tdnf.spec @ONLY)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/build-tdnf-rpms.in ${CMAKE_SOURCE_DIR}/scripts/build-tdnf-rpms @ONLY)
