@@ -65,6 +65,19 @@ def test_install_srpm_file_with_source_option(utils):
     assert len(glob.glob(os.path.join(RPMBUILD_DIR, 'SPECS', '*.spec'))) > 0
 
 
+# test srpm install if binary is installed (issue #515)
+def test_install_srpm_binary_isinstalled(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    assert ret['retval'] == 0
+    ret = utils.run(['tdnf', 'install', '--repoid=photon-test-src', '-y', '--source', '--nogpgcheck', pkgname])
+    assert ret['retval'] == 0
+
+    assert len(glob.glob(os.path.join(RPMBUILD_DIR, 'SPECS', '*.spec'))) > 0
+
+
 # fail if trying to install an rpm with --source option
 def test_install_rpm_file_with_source_option(utils):
     pkgname = utils.config["sglversion_pkgname"]
