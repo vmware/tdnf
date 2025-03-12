@@ -678,7 +678,7 @@ TDNFAddPackagesForInstall(
                   &dwInstallPackage);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if(dwInstallPackage == 1)
+    if(dwInstallPackage == 1 || nSource)
     {
         queue_push(pQueueGoal, dwHighestAvailable);
     }
