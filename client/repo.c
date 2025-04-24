@@ -20,6 +20,80 @@
 
 #include "includes.h"
 
+
+uint32_t
+TDNFApplySnapshot(
+    PTDNF_REPO_DATA pRepoData,
+    PSolvSack pSack,
+    Repo* pRepo
+    )
+{
+    uint32_t dwError = 0;
+    Pool* pPool = NULL;
+    char** ppszSnapshotPackages;
+    char *pszPkg;
+    int i;
+    size_t l;
+    Queue qResult = {0};
+
+    if(!pRepoData || !pRepoData->pszSnapshotUrl || !pSack || !pSack->pPool)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    pPool = pSack->pPool;
+
+    queue_init(&qResult);
+
+    dwError = TDNFReadFileToStringArray(pRepoData->pszSnapshotUrl, &ppszSnapshotPackages);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for(i = 0; ppszSnapshotPackages[i]; i++) {
+        pszPkg = ppszSnapshotPackages[i];
+        if (pszPkg[0] == '#')
+            continue;
+
+        /* strip ".rpm" ending if present */
+        l = strlen(pszPkg);
+        if (l > 4 && (strcmp(&pszPkg[l-4], ".rpm") == 0)) {
+            pszPkg[l-4] = 0;
+        }
+
+        dwError = SolvFindSolvablesByNevraStr(pPool,
+                                              pszPkg, &qResult, 0);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (!pPool->considered)
+    {
+        dwError = TDNFAllocateMemory(
+                             1,
+                             sizeof(Map),
+                             (void**)&pPool->considered);
+        map_init(pPool->considered, pPool->nsolvables);
+        map_setall(pPool->considered);
+    }
+
+    /* unset all solvables from repo */
+    for (i = pRepo->start; i < pRepo->end; i++) {
+        Solvable *solvable = pool_id2solvable(pPool, i);
+        if (solvable->repo == pRepo)
+            MAPCLR(pPool->considered, i);
+    }
+    /* then set solvables from our snapshot list, if they are in the repo */
+    for (i = 0; i < qResult.count; i++) {
+        Id s = qResult.elements[i];
+        Solvable *solvable = pool_id2solvable(pPool, s);
+        if (solvable->repo == pRepo)
+            MAPSET(pPool->considered, s);
+    }
+
+error:
+    TDNF_SAFE_FREE_STRINGARRAY(ppszSnapshotPackages);
+    queue_free(&qResult);
+    return dwError;
+}
+
 //Download repo metadata and initialize
 uint32_t
 TDNFInitRepo(
@@ -108,6 +182,12 @@ TDNFInitRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (pRepoData->pszSnapshotUrl) {
+        dwError = TDNFApplySnapshot(pRepoData, pSack, pRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pool_addfileprovides(pPool);
     pool_createwhatprovides(pPool);
 
 cleanup:

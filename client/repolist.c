@@ -535,6 +535,10 @@ TDNFLoadReposFromFile(
             {
                 pRepo->pszMetaLink = strdup(cn->value);
             }
+            else if (strcmp(cn->name, TDNF_REPO_KEY_SNAPSHOT_URL) == 0)
+            {
+                pRepo->pszSnapshotUrl = strdup(cn->value);
+            }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
             {
                 pRepo->nSkipIfUnavailable = isTrue(cn->value);
@@ -720,7 +724,11 @@ TDNFRepoListFinalize(
             dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMetaLink);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-
+        if(pRepo->pszSnapshotUrl)
+        {
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszSnapshotUrl);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
         if (pRepo->pszMetaLink)
         {
             dwError = SolvCreateRepoCacheName(pRepo->pszId,

@@ -282,6 +282,7 @@ typedef struct _TDNF_REPO_DATA
     char* pszName;
     char** ppszBaseUrls;
     char* pszMetaLink;
+    char* pszSnapshotUrl;
     char** ppszUrlGPGKeys;
     int nSSLVerify;
     char* pszSSLCaCert;

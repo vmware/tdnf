@@ -65,6 +65,7 @@
 #define TDNF_REPO_KEY_SKIP_MD_FILELISTS   "skip_md_filelists"
 #define TDNF_REPO_KEY_SKIP_MD_UPDATEINFO  "skip_md_updateinfo"
 #define TDNF_REPO_KEY_SKIP_MD_OTHER       "skip_md_other"
+#define TDNF_REPO_KEY_SNAPSHOT_URL        "snapshot"
 
 //setopt keys
 #define TDNF_SETOPT_KEY_REPOSDIR          "reposdir"
