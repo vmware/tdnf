@@ -452,6 +452,9 @@ TDNFPackageGetDowngrade(
                                     &dwAvailableId);
         BAIL_ON_TDNF_ERROR(dwError);
 
+        if (pSack->pPool->considered && !MAPTST(pSack->pPool->considered, dwAvailableId))
+            continue;
+
         dwError = SolvCmpEvr(
                       pSack,
                       dwAvailableId,

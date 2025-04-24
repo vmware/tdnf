@@ -277,6 +277,8 @@ typedef struct _TDNF_CONF
     char** ppszProtectedPkgs;
 }TDNF_CONF, *PTDNF_CONF;
 
+typedef struct s_Repo Repo;
+
 typedef struct _TDNF_REPO_DATA
 {
     int nEnabled;
@@ -288,6 +290,7 @@ typedef struct _TDNF_REPO_DATA
     char* pszName;
     char** ppszBaseUrls;
     char* pszMetaLink;
+    char* pszSnapshotUrl;
     char** ppszUrlGPGKeys;
     int nSSLVerify;
     char* pszSSLCaCert;
@@ -304,6 +307,8 @@ typedef struct _TDNF_REPO_DATA
     int nSkipMDUpdateInfo;
     int nSkipMDOther;
     char *pszCacheName;
+
+    Repo *pRepo;
 
     struct _TDNF_REPO_DATA* pNext;
 }TDNF_REPO_DATA, *PTDNF_REPO_DATA;

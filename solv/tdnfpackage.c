@@ -918,6 +918,7 @@ error:
     goto cleanup;
 }
 
+/* dead function, remove */
 uint32_t
 SolvGetLatest(
     PSolvSack pSack,
@@ -1402,14 +1403,18 @@ SolvFindBestAvailable(
     queue_init(&q);
 
     /* step 1: look at packages with the specified name */
-    FOR_PROVIDES(p, pp, idName)
-    if (pool->solvables[p].name == idName)
-        queue_push(&q, p);
+    FOR_PROVIDES(p, pp, idName) {
+        if (pool->considered && !MAPTST(pool->considered, p))
+            continue;
+        if (pool->solvables[p].name == idName)
+            queue_push(&q, p);
+    }
     if (!q.count)
     {
         dwError = ERROR_TDNF_NO_MATCH;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
     pool_best_solvables(pool, &q, 0);
     queue_truncate(&q, 1);        /* use the first element */
 
@@ -1445,6 +1450,7 @@ SolvFindHighestAvailable(
     uint32_t dwError = 0;
     PSolvPackageList pAvailablePkgList = NULL;
     Queue *pqAvail;
+    int i;
 
     if(!pSack || IsNullOrEmptyString(pszPkgName) || !pdwId)
     {
@@ -1476,7 +1482,19 @@ SolvFindHighestAvailable(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    *pdwId = pqAvail->elements[0];
+    if (pSack->pPool->considered) {
+        for (i = 0; i < pqAvail->count; i++) {
+            if (MAPTST(pSack->pPool->considered, pqAvail->elements[i])) {
+                *pdwId = pqAvail->elements[i];
+                break;
+            }
+        }
+        if (i == pqAvail->count) {
+            dwError = ERROR_TDNF_NO_MATCH;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    } else
+        *pdwId = pqAvail->elements[0];
 
 cleanup:
     if(pAvailablePkgList)

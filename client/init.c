@@ -339,6 +339,15 @@ TDNFRefreshSack(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    for (i = 0; i < nCount; i++) {
+        pRepo = ppRepoArray[i];
+
+        if (pRepo->nEnabled && pRepo->pszSnapshotUrl) {
+            dwError = TDNFApplySnapshot(pRepo, pSack, pRepo->pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     TDNF_SAFE_FREE_MEMORY(ppRepoArray);

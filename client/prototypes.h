@@ -582,6 +582,14 @@ TDNFReadConfFilesFromDir(
     );
 
 //repo.c
+
+uint32_t
+TDNFApplySnapshot(
+    PTDNF_REPO_DATA pRepoData,
+    PSolvSack pSack,
+    Repo* pRepo
+    );
+
 uint32_t
 TDNFInitRepoFromMetadata(
     Repo *pRepo,

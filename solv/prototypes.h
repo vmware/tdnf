@@ -635,6 +635,14 @@ SolvFindSolvablesByNevraStr(
     );
 
 uint32_t
+SolvFindSolvablesByNEqualsEvrFromRepo(
+    Pool *pool,
+    Repo *repo,
+    const char *nevra,
+    Queue* qresult
+    );
+
+uint32_t
 SolvRequiresFromQueue(
     Pool *pool,
     Queue *pq_pkgs,  /* solvable ids */
