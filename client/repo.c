@@ -59,8 +59,8 @@ TDNFApplySnapshot(
             pszPkg[l-4] = 0;
         }
 
-        dwError = SolvFindSolvablesByNevraStr(pPool,
-                                              pszPkg, &qResult, 0);
+        dwError = SolvFindSolvablesByNEqualsEvrFromRepo(pPool, pRepo,
+                                                        pszPkg, &qResult);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
