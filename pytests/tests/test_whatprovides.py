@@ -40,3 +40,27 @@ def test_whatprovides_valid_file_installed(utils):
     ret = utils.run(['tdnf', 'whatprovides', '/lib/systemd/system/tdnf-test-one.service'])
     assert 'tdnf-test-one' in "\n".join(ret['stdout'])
     assert ret['retval'] == 0
+
+
+def test_whatprovides_alter_path(utils):
+    # '/lib/rpm/macros' is a path present in both fedora and photon minimal
+    # container images.
+    ret = utils.run(['tdnf', 'whatprovides', '/lib/rpm/macros'])
+    assert ': @System' in "\n".join(ret['stdout'])
+    assert ret['retval'] == 0
+
+    ret = utils.run(['tdnf', 'provides', '/lib/rpm/macros'])
+    assert ': @System' in "\n".join(ret['stdout'])
+    assert ret['retval'] == 0
+
+
+def test_whatprovides_glob(utils):
+    # '/lib/rpm/macros' is a path present in both fedora and photon minimal
+    # container images.
+    ret = utils.run(['tdnf', 'whatprovides', '*/rpm'])
+    assert ': @System' in "\n".join(ret['stdout'])
+    assert ret['retval'] == 0
+
+    ret = utils.run(['tdnf', 'provides', '*/rpm'])
+    assert ': @System' in "\n".join(ret['stdout'])
+    assert ret['retval'] == 0

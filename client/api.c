@@ -15,6 +15,7 @@ static int instanceLockFd = -1;
 
 static void TdnfExitHandler(void);
 static void IsTdnfAlreadyRunning(void);
+static void alterSpecStr(const char *pszSpec, char *buf);
 
 static void TdnfExitHandler(void)
 {
@@ -922,6 +923,25 @@ error:
     goto cleanup;
 }
 
+static void
+alterSpecStr(const char *pszSpec, char *buf)
+{
+    char *dst = buf;
+    const char *src = pszSpec;
+
+    *dst++ = '*';
+    if (*src != '/')
+        *dst++ = '/';
+
+    size_t len = strlen(src);
+    while (len && src[len - 1] == '/')
+      --len;
+
+    strncpy(dst, src, len);
+
+    dst[len] = '\0';
+}
+
 uint32_t
 TDNFProvides(
     PTDNF pTdnf,
@@ -947,8 +967,21 @@ TDNFProvides(
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = SolvApplySinglePackageFilter(pQuery, pszSpec);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (pszSpec[0] != '*')
+    {
+      char alteredSpecStr[1024] = {};
+
+      /*
+       * Prepend any given path with '*'/<path>
+       * User may try searching for a file from an arbitrary path
+       * The file maybe packaged in at any path in rpm like:
+       * /var/, /etc, /opt, /srv etc
+       * This is an optimistic effort to do a generic global search
+       */
+      alterSpecStr(pszSpec, alteredSpecStr);
+      dwError = SolvApplySinglePackageFilter(pQuery, alteredSpecStr);
+      BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = SolvApplyProvidesQuery(pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -960,6 +993,7 @@ TDNFProvides(
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
+
 cleanup:
     if(pQuery)
     {
@@ -970,6 +1004,7 @@ cleanup:
         SolvFreePackageList(pPkgList);
     }
     return dwError;
+
 error:
     if(ppPkgInfo)
     {
