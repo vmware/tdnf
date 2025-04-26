@@ -301,23 +301,9 @@ log_console(
     ...
     );
 
-int tdnflockAcquire(tdnflock lock);
+int tdnfLockAcquire(const char *lockPath);
 
-void tdnflockRelease(tdnflock lock);
-
-tdnflock tdnflockFree(tdnflock lock);
-
-tdnflock
-tdnflockNew(
-    const char *lock_path,
-    const char *descr
-    );
-
-tdnflock
-tdnflockNewAcquire(
-    const char *lock_path,
-    const char *descr
-    );
+void tdnfLockFree(const char *lockPath, const int lockFd);
 
 int32_t strtoi(const char *ptr);
 
@@ -354,4 +340,5 @@ TDNFChecksumFromHexDigest(
     const char *hex_digest,
     unsigned char *ppdigest
     );
+
 #endif /* __COMMON_PROTOTYPES_H__ */

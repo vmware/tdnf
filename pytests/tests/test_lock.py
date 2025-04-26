@@ -21,7 +21,7 @@ t1_failed = False
 t2_failed = False
 t3_failed = False
 
-expected_str = 'waiting for tdnf_instance lock on /var/run/.tdnf-instance-lockfile'
+expected_str = 'WARNING: failed to acquire lock on: /var/run/.tdnf-instance-lockfile, retrying ...'
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -62,7 +62,7 @@ def run_tdnf_search_cmd(utils, pkgname):
     t2_started = True
     ret = utils.run(cmd)  # this gets blocked till install finishes
     try:
-        assert expected_str in ret['stdout']
+        assert expected_str in ret['stderr']
         assert 'tdnf-test-one : basic install test file.' in ret['stdout']
     except Exception:
         global t2_failed
@@ -77,7 +77,7 @@ def run_tdnf_info_cmd(utils, pkgname):
     ret = utils.run(cmd)  # this gets blocked till install finishes
     print(ret['stdout'])
     try:
-        assert expected_str in ret['stdout']
+        assert expected_str in ret['stderr']
         assert 'Name          : tdnf-test-one' in ret['stdout']
     except Exception:
         global t3_failed

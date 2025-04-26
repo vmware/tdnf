@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <limits.h>
+#include <sys/file.h>
 
 #include <tdnftypes.h>
 #include <tdnferror.h>

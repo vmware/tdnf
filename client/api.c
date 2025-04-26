@@ -11,8 +11,7 @@
 uid_t gEuid;
 
 static int gInitialized;
-
-static tdnflock instance_lock;
+static int instanceLockFd = -1;
 
 static void TdnfExitHandler(void);
 static void IsTdnfAlreadyRunning(void);
@@ -24,7 +23,7 @@ static void TdnfExitHandler(void)
         return;
     }
 
-    tdnflockFree(instance_lock);
+    tdnfLockFree(TDNF_INSTANCE_LOCK_FILE, instanceLockFd);
 }
 
 static void IsTdnfAlreadyRunning(void)
@@ -34,11 +33,10 @@ static void IsTdnfAlreadyRunning(void)
         return;
     }
 
-    instance_lock = tdnflockNewAcquire(TDNF_INSTANCE_LOCK_FILE,
-                                       "tdnf_instance");
-    if (!instance_lock)
+    instanceLockFd = tdnfLockAcquire(TDNF_INSTANCE_LOCK_FILE);
+    if (instanceLockFd < 0)
     {
-        pr_err("Failed to acquire tdnf_instance lock\n");
+        pr_err("Failed to acquire tdnfInstance lock\n");
     }
 }
 
