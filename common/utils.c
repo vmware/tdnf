@@ -266,6 +266,7 @@ TDNFFreePackageInfoContents(
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLicense);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszDescription);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedSize);
+        TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszFormattedDownloadSize);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszRelease);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pszLocation);
         TDNF_SAFE_FREE_MEMORY(pPkgInfo->pbChecksum);
