@@ -105,7 +105,8 @@ uint32_t
 SolvInitSack(
     PSolvSack *ppSack,
     const char* pszCacheDir,
-    const char* pszRootDir
+    const char* pszRootDir,
+    const char *pszArch
     )
 {
     uint32_t dwError = 0;
@@ -140,13 +141,17 @@ SolvInitSack(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (uname(&systemInfo))
-    {
-        dwError = ERROR_TDNF_SOLV_IO;
-        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    if (pszArch == NULL) {
+        if (uname(&systemInfo)) {
+            dwError = ERROR_TDNF_SOLV_IO;
+            BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+        }
+        pool_setarch(pPool, systemInfo.machine);
+    } else {
+        printf("%s: setting arch to %s\n", __FUNCTION__, pszArch);
+        pool_setarch(pPool, pszArch);
     }
 
-    pool_setarch(pPool, systemInfo.machine);
     pool_set_flag(pPool, POOL_FLAG_ADDFILEPROVIDESFILTERED, 1);
 
     pRepo = repo_create(pPool, SYSTEM_REPO_NAME);

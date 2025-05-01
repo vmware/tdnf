@@ -83,6 +83,8 @@ TDNFRpmCreateTS(
 
     //Allow downgrades
     pTS->nProbFilterFlags = RPMPROB_FILTER_OLDPACKAGE;
+    if (pTdnf->pArgs->pszArch)
+        pTS->nProbFilterFlags |= RPMPROB_FILTER_IGNOREARCH;
     if(pSolvedInfo->pPkgsToReinstall)
     {
         pTS->nProbFilterFlags = pTS->nProbFilterFlags | RPMPROB_FILTER_REPLACEPKG;

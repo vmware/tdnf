@@ -32,6 +32,7 @@ static struct option pstOptions[] =
     {"enableplugin",  required_argument, 0, 0},            //--enableplugin
     {"enablerepo",    required_argument, 0, 0},            //--enablerepo
     {"exclude",       required_argument, 0, 0},            //--exclude
+    {"forcearch",     required_argument, 0, 0},
     {"help",          no_argument, 0, 'h'},                //-h --help
     {"installroot",   required_argument, 0, 'i'},          //--installroot
     {"json",          no_argument, &_opt.nJsonOutput, 1},
@@ -389,6 +390,10 @@ ParseOption(
     else if (!strcasecmp(pszName, "installroot"))
     {
         dwError = TDNFAllocateString(optarg, &pCmdArgs->pszInstallRoot);
+    }
+    else if (!strcasecmp(pszName, "forcearch") && !pCmdArgs->pszArch)
+    {
+        dwError = TDNFAllocateString(optarg, &pCmdArgs->pszArch);
     }
     else if (!strcasecmp(pszName, "downloaddir"))
     {

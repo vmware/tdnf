@@ -411,6 +411,7 @@ TDNFFreeCmdArgs(
         TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds[nIndex]);
     }
 
+    TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszArch);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->ppszCmds);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszDownloadDir);
     TDNF_SAFE_FREE_MEMORY(pCmdArgs->pszInstallRoot);
