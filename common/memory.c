@@ -81,6 +81,7 @@ cleanup:
 error:
     if (ppMemory)
     {
+        free(*ppMemory);
         *ppMemory = NULL;
     }
     TDNF_SAFE_FREE_MEMORY(pMemory);
