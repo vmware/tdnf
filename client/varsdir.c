@@ -48,10 +48,14 @@ struct cnfnode *parse_varsdirs(char *dirs[])
             if (*p) {
                 continue;
             }
+
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
             snprintf(path, sizeof(path), "%s/%s", dirs[i], dent->d_name);
 #pragma GCC diagnostic pop
+#endif /* __GNUC__ && !__clang__ */
+
             fptr = fopen(path, "rt");
             if (fptr == NULL) {
                 goto error;
