@@ -47,6 +47,7 @@ endif()
 ## C Flags
 ##
 add_c_compiler_flag(-Wall)
+add_c_compiler_flag(-Werror)
 add_c_compiler_flag(-Wextra)
 add_c_compiler_flag(-std=gnu99)
 add_c_compiler_flag(-fPIC)
