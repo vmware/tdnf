@@ -700,6 +700,11 @@ TDNFRunTransaction(
     //TODO do callbacks for output
     pr_info("Testing transaction\n");
 
+    if (pTdnf->pConf->nGPGCheck)
+    {
+        rpmtsSetVfyLevel(pTS->pTS, RPMSIG_VERIFIABLE_TYPE);
+    }
+
     if (pTdnf->pArgs->nNoGPGCheck)
     {
         rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
