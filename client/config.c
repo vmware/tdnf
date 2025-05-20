@@ -220,6 +220,20 @@ TDNFReadConfig(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+
+    /* override from cmd line */
+    if (pTdnf->pArgs->nNoGPGCheck) {
+        pConf->nGPGCheck = 0;
+    }
+
+    /* these two have no config setting (future?) */
+    if (pTdnf->pArgs->nSkipDigest) {
+        pConf->nSkipDigest = 1;
+    }
+    if (pTdnf->pArgs->nSkipSignature) {
+        pConf->nSkipSignature = 1;
+    }
+
     if (pszProxyUser && pszProxyPass)
     {
         dwError = TDNFAllocateStringPrintf(

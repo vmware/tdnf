@@ -224,166 +224,34 @@ error:
 }
 
 uint32_t
-TDNFGetGPGCheck(
-    PTDNF pTdnf,
-    const char* pszRepo,
-    int* pnGPGCheck
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_REPO_DATA pRepo = NULL;
-    int nGPGCheck = 0;
-
-    if(!pTdnf || IsNullOrEmptyString(pszRepo) || !pnGPGCheck)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-    if(!pTdnf->pArgs->nNoGPGCheck)
-    {
-        dwError = TDNFGetRepoById(pTdnf, pszRepo, &pRepo);
-        if(dwError == ERROR_TDNF_NO_DATA)
-        {
-            dwError = 0;
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
-        if(pRepo)
-        {
-            nGPGCheck = pRepo->nGPGCheck;
-        }
-    }
-
-    *pnGPGCheck = nGPGCheck;
-
-cleanup:
-    return dwError;
-
-error:
-    goto cleanup;
-}
-
-uint32_t
-TDNFGetSkipSignatureOption(
-    PTDNF pTdnf,
-    uint32_t *pdwSkipSignature
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CMD_OPT pSetOpt = NULL;
-    uint32_t dwSkipSignature = 0;
-
-    if(!pTdnf || !pTdnf->pArgs)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pSetOpt = pTdnf->pArgs->pSetOpt;
-
-    while(pSetOpt)
-    {
-        if(!strcasecmp(pSetOpt->pszOptName, "skipsignature"))
-        {
-            dwSkipSignature = 1;
-            break;
-        }
-        pSetOpt = pSetOpt->pNext;
-    }
-    *pdwSkipSignature = dwSkipSignature;
-cleanup:
-    return dwError;
-
-error:
-    if(pdwSkipSignature)
-    {
-       *pdwSkipSignature = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
-TDNFGetSkipDigestOption(
-    PTDNF pTdnf,
-    uint32_t *pdwSkipDigest
-    )
-{
-    uint32_t dwError = 0;
-    PTDNF_CMD_OPT pSetOpt = NULL;
-    uint32_t dwSkipDigest = 0;
-
-    if(!pTdnf || !pTdnf->pArgs)
-    {
-        dwError = ERROR_TDNF_INVALID_PARAMETER;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    pSetOpt = pTdnf->pArgs->pSetOpt;
-
-    while(pSetOpt)
-    {
-        if(!strcasecmp(pSetOpt->pszOptName, "skipdigest"))
-        {
-            dwSkipDigest = 1;
-            break;
-        }
-        pSetOpt = pSetOpt->pNext;
-    }
-    *pdwSkipDigest = dwSkipDigest;
-cleanup:
-    return dwError;
-
-error:
-    if(pdwSkipDigest)
-    {
-       *pdwSkipDigest = 0;
-    }
-    goto cleanup;
-}
-
-uint32_t
-TDNFGetGPGSignatureCheck(
+TDNFGetGPGKeys(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepo,
-    int* pnGPGSigCheck,
     char*** pppszUrlGPGKeys
     )
 {
     uint32_t dwError = 0;
-    int nGPGSigCheck = 0;
-    uint32_t dwSkipSignature = 0;
     char** ppszUrlGPGKeys = NULL;
 
-    if(!pTdnf || !pRepo || !pnGPGSigCheck)
+    if(!pTdnf || !pRepo)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFGetSkipSignatureOption(pTdnf, &dwSkipSignature);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    if(!(pTdnf->pArgs->nNoGPGCheck || dwSkipSignature))
+    if (pppszUrlGPGKeys != NULL)
     {
-        if(pRepo->nGPGCheck)
+        if (pRepo->ppszUrlGPGKeys == NULL ||
+            IsNullOrEmptyString(pRepo->ppszUrlGPGKeys[0]))
         {
-            nGPGSigCheck = 1;
-            if (pppszUrlGPGKeys != NULL)
-            {
-                if (pRepo->ppszUrlGPGKeys == NULL ||
-                    IsNullOrEmptyString(pRepo->ppszUrlGPGKeys[0]))
-                {
-                    dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
-                dwError = TDNFAllocateStringArray(
-                    pRepo->ppszUrlGPGKeys,
-                    &ppszUrlGPGKeys);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
+            dwError = ERROR_TDNF_NO_GPGKEY_CONF_ENTRY;
+            BAIL_ON_TDNF_ERROR(dwError);
         }
+        dwError = TDNFAllocateStringArray(
+            pRepo->ppszUrlGPGKeys,
+            &ppszUrlGPGKeys);
+        BAIL_ON_TDNF_ERROR(dwError);
     }
-
-    *pnGPGSigCheck = nGPGSigCheck;
     if (pppszUrlGPGKeys)
     {
         *pppszUrlGPGKeys = ppszUrlGPGKeys;

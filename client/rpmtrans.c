@@ -667,9 +667,6 @@ TDNFRunTransaction(
     )
 {
     uint32_t dwError = 0;
-    int rpmVfyLevelMask = 0;
-    uint32_t dwSkipSignature = 0;
-    uint32_t dwSkipDigest = 0;
     int rc;
     FD_t fdScript = NULL;
 
@@ -686,12 +683,8 @@ TDNFRunTransaction(
     BAIL_ON_TDNF_ERROR(dwError);
 
     rpmtsClean(pTS->pTS);
-
-    dwError = TDNFGetSkipSignatureOption(pTdnf, &dwSkipSignature);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFGetSkipDigestOption(pTdnf, &dwSkipDigest);
-    BAIL_ON_TDNF_ERROR(dwError);
+    /* we checked already for the signature during TDNFTransAddInstallPkgs() */
+    rpmtsSetVfyLevel(pTS->pTS, rpmtsVfyLevel(pTS->pTS) & ~RPMSIG_VERIFIABLE_TYPE);
 
     /* When json output is enabled redirect stdout from scripts to stderr
        to not mess with the json syntax ("json decode failed at ...") */
@@ -708,26 +701,6 @@ TDNFRunTransaction(
     //TODO do callbacks for output
     pr_info("Testing transaction\n");
 
-    if (pTdnf->pArgs->nNoGPGCheck)
-    {
-        rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
-        rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
-    }
-
-    else if (dwSkipSignature || dwSkipDigest)
-    {
-         if (dwSkipSignature)
-         {
-             rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NOSIGNATURES);
-             rpmVfyLevelMask |= RPMSIG_SIGNATURE_TYPE;
-         }
-         if (dwSkipDigest)
-         {
-             rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS);
-             rpmVfyLevelMask |= RPMSIG_DIGEST_TYPE;
-         }
-         rpmtsSetVfyLevel(pTS->pTS, ~rpmVfyLevelMask);
-    }
     rpmtsSetFlags(pTS->pTS, RPMTRANS_FLAG_TEST);
     rc = rpmtsRun(pTS->pTS, NULL, pTS->nProbFilterFlags);
     if (rc != 0)
@@ -826,7 +799,6 @@ TDNFTransAddInstallPkg(
     )
 {
     uint32_t dwError = 0;
-    int nGPGCheck = 0;
     char* pszFilePath = NULL;
     Header rpmHeader = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
@@ -938,9 +910,7 @@ TDNFTransAddInstallPkg(
     dwError = TDNFGPGCheckPackage(pTS, pTdnf, pRepo, pszFilePath, &rpmHeader);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFGetGPGCheck(pTdnf, pRepo->pszId, &nGPGCheck);
-    BAIL_ON_TDNF_ERROR(dwError);
-    if (!nGPGCheck)
+    if (!pRepo->nGPGCheck)
     {
         rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
         rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
