@@ -61,8 +61,32 @@ def setup_test_function(utils):
     utils.erase_package(pkgname)
 
 
-def test_install_package(utils):
+def test_install_package_authed(utils):
     pkgname = utils.config["sglversion_pkgname"]
+
+    utils.edit_config({'password': PASSWORD}, repo='photon-test-auth')
+    utils.edit_config({'username': USERNAME}, repo='photon-test-auth')
+
+    ret = utils.run(['tdnf', 'install', '--repoid=photon-test-auth', '-y', '--nogpgcheck', pkgname])
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
+
+
+def test_install_package_authed_vars(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+
+    vars_path = os.path.join(utils.config['repo_path'], "vars")
+    os.makedirs(vars_path, exist_ok=True)
+
+    with open(os.path.join(vars_path, "user"), "wt") as f:
+        f.write(USERNAME)
+    with open(os.path.join(vars_path, "pass"), "wt") as f:
+        f.write(PASSWORD)
+
+    utils.edit_config({'varsdir': vars_path})
+
+    utils.edit_config({'password': "$pass"}, repo='photon-test-auth')
+    utils.edit_config({'username': "$user"}, repo='photon-test-auth')
 
     ret = utils.run(['tdnf', 'install', '--repoid=photon-test-auth', '-y', '--nogpgcheck', pkgname])
     assert ret['retval'] == 0

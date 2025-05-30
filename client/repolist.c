@@ -759,6 +759,17 @@ TDNFRepoListFinalize(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
         }
+        if(pRepo->pszUser)
+        {
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszUser);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if(pRepo->pszPass)
+        {
+            dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszPass);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
         if (pRepo->pszMetaLink)
         {
             dwError = SolvCreateRepoCacheName(pRepo->pszId,
