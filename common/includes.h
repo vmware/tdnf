@@ -31,4 +31,7 @@
 #include "structs.h"
 #include "prototypes.h"
 
+#include "../tools/cli/defines.h"
+#include "../include/tdnfclierror.h"
+
 #endif /* __COMMON_INCLUDES_H__ */
