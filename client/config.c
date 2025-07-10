@@ -316,11 +316,21 @@ TDNFConfigExpandVars(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if(!pConf->pszVarBaseArch)
+    /* pszArch (from --forcearch) overrides variable */
+    if (!IsNullOrEmptyString(pTdnf->pArgs->pszArch)) {
+        TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
+        dwError = TDNFAllocateString(pTdnf->pArgs->pszArch,
+                      &pConf->pszVarBaseArch);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* use system arch if unset */
+    if(IsNullOrEmptyString(pConf->pszVarBaseArch))
     {
         dwError = TDNFGetKernelArch(&pConf->pszVarBaseArch);
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
 cleanup:
     return dwError;
 
