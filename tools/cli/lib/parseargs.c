@@ -68,9 +68,9 @@ static struct option pstOptions[] =
     {"setopt",        required_argument, 0, 0},            //--set or override options
     {"skip-broken",   no_argument, &_opt.nSkipBroken, 1},
     {"skipconflicts", no_argument, 0, 0},                  //--skipconflicts to skip conflict problems
-    {"skipdigest",    no_argument, 0, 0},                  //--skipdigest to skip verifying RPM digest
+    {"skipdigest",    no_argument, &_opt.nSkipDigest, 1},  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
-    {"skipsignature", no_argument, 0, 0},                  //--skipsignature to skip verifying RPM signatures
+    {"skipsignature", no_argument, &_opt.nSkipSignature, 1}, //--skipsignature to skip verifying RPM signatures
     {"source",        no_argument, &_opt.nSource, 1},
     {"testonly",      no_argument, &_opt.nTestOnly, 1},
     {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
@@ -345,6 +345,8 @@ TDNFCopyOptions(
     pArgs->nDebugSolver   = pOptionArgs->nDebugSolver;
     pArgs->nNoDeps        = pOptionArgs->nNoDeps;
     pArgs->nNoGPGCheck    = pOptionArgs->nNoGPGCheck;
+    pArgs->nSkipSignature = pOptionArgs->nSkipSignature;
+    pArgs->nSkipDigest    = pOptionArgs->nSkipDigest;
     pArgs->nNoOutput      = pOptionArgs->nQuiet && pOptionArgs->nAssumeYes;
     pArgs->nQuiet         = pOptionArgs->nQuiet;
     pArgs->nRefresh       = pOptionArgs->nRefresh;

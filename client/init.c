@@ -46,6 +46,8 @@ TDNFCloneCmdArgs(
     pCmdArgs->nDebugSolver   = pCmdArgsIn->nDebugSolver;
     pCmdArgs->nNoDeps        = pCmdArgsIn->nNoDeps;
     pCmdArgs->nNoGPGCheck    = pCmdArgsIn->nNoGPGCheck;
+    pCmdArgs->nSkipSignature = pCmdArgsIn->nSkipSignature;
+    pCmdArgs->nSkipDigest    = pCmdArgsIn->nSkipDigest;
     pCmdArgs->nNoOutput      = pCmdArgsIn->nNoOutput;
     pCmdArgs->nQuiet         = pCmdArgsIn->nQuiet;
     pCmdArgs->nRefresh       = pCmdArgsIn->nRefresh;

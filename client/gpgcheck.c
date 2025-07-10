@@ -356,7 +356,6 @@ TDNFGPGCheckPackage(
     uint32_t dwError = 0;
     Header rpmHeader = NULL;
     rpmKeyring pKeyring = NULL;
-    int nGPGSigCheck = 0;
     FD_t fp = NULL;
     char** ppszUrlGPGKeys = NULL;
     char* pszLocalGPGKey = NULL;
@@ -364,9 +363,34 @@ TDNFGPGCheckPackage(
     int nRemote = 0;
     int i;
     int nMatched = 0;
+    char *pszTmp = NULL;
+    int nSavedVfyLevel = 0;
+    rpmVSFlags savedVfyflags = 0;
 
-    dwError = TDNFGetGPGSignatureCheck(pTdnf, pRepo, &nGPGSigCheck, NULL);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if(pTS == NULL || pTdnf == NULL || pRepo == NULL || IsNullOrEmptyString(pszFilePath))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    nSavedVfyLevel = rpmtsVfyLevel(pTS->pTS);
+    savedVfyflags = rpmtsVfyFlags(pTS->pTS);
+
+    if (pRepo->nGPGCheck)
+    {
+        int level = RPMSIG_VERIFIABLE_TYPE;
+        if (pTdnf->pConf->nSkipSignature) {
+            level &= ~RPMSIG_SIGNATURE_TYPE;
+            rpmtsSetVSFlags(pTS->pTS, rpmtsVfyFlags(pTS->pTS) | RPMVSF_MASK_NOSIGNATURES);
+        }
+        if (pTdnf->pConf->nSkipDigest) {
+            level &= ~RPMSIG_DIGEST_TYPE;
+            rpmtsSetVSFlags(pTS->pTS, rpmtsVfyFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS);
+        }
+        rpmtsSetVfyLevel(pTS->pTS, level);
+    } else {
+        rpmtsSetVfyLevel(pTS->pTS, RPMSIG_NONE_TYPE);
+    }
 
     fp = Fopen (pszFilePath, "r.ufdio");
     if(!fp)
@@ -380,17 +404,28 @@ TDNFGPGCheckPackage(
                   fp,
                   pszFilePath,
                   &rpmHeader);
-
     Fclose(fp);
     fp = NULL;
+
+    if (pRepo->nGPGCheck && !pTdnf->pConf->nSkipSignature) {
+        /* refuse to install an unsigned package if gpgcheck is enabled */
+        if (((pszTmp = headerGetAsString(rpmHeader, RPMTAG_SIGPGP)) == NULL) &&
+            ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_SIGGPG)) == NULL) &&
+            ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_DSAHEADER)) == NULL) &&
+            ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_RSAHEADER)) == NULL))
+        {
+            dwError = ERROR_TDNF_RPM_CHECK;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
 
     if (dwError != RPMRC_NOTTRUSTED && dwError != RPMRC_NOKEY)
     {
         BAIL_ON_TDNF_RPM_ERROR(dwError);
     }
-    else if(nGPGSigCheck)
+    else if(pRepo->nGPGCheck && !pTdnf->pConf->nSkipSignature)
     {
-        dwError = TDNFGetGPGSignatureCheck(pTdnf, pRepo, &nGPGSigCheck, &ppszUrlGPGKeys);
+        dwError = TDNFGetGPGKeys(pTdnf, pRepo, &ppszUrlGPGKeys);
         BAIL_ON_TDNF_ERROR(dwError);
 
         for (i = 0; ppszUrlGPGKeys[i]; i++) {
@@ -489,8 +524,11 @@ TDNFGPGCheckPackage(
     }
 
 cleanup:
+    rpmtsSetVSFlags(pTS->pTS, savedVfyflags);
+    rpmtsSetVfyLevel(pTS->pTS, nSavedVfyLevel);
     TDNF_SAFE_FREE_STRINGARRAY(ppszUrlGPGKeys);
     TDNF_SAFE_FREE_MEMORY(pszLocalGPGKey);
+    TDNF_SAFE_FREE_MEMORY(pszTmp);
     if(fp)
     {
         Fclose(fp);

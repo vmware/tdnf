@@ -603,30 +603,10 @@ TDNFInitCmdLineRepo(
     );
 
 uint32_t
-TDNFGetGPGCheck(
-    PTDNF pTdnf,
-    const char* pszRepo,
-    int* pnGPGCheck
-    );
-
-uint32_t
-TDNFGetGPGSignatureCheck(
+TDNFGetGPGKeys(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepo,
-    int* pnGPGSigCheck,
-    char*** ppszUrlGPGKeys
-    );
-
-uint32_t
-TDNFGetSkipSignatureOption(
-    PTDNF pTdnf,
-    uint32_t *pdwSkipSignature
-    );
-
-uint32_t
-TDNFGetSkipDigestOption(
-    PTDNF pTdnf,
-    uint32_t *pdwSkipDigest
+    char*** pppszUrlGPGKeys
     );
 
 uint32_t
@@ -728,11 +708,13 @@ TDNFLoadReposFromFile(
 
 uint32_t
 TDNFCreateCmdLineRepo(
+    PTDNF pTdnf,    
     PTDNF_REPO_DATA* ppRepo
     );
 
 uint32_t
 TDNFCreateRepoFromPath(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo,
     const char *pzsId,
     const char *pszPath
@@ -740,6 +722,7 @@ TDNFCreateRepoFromPath(
 
 uint32_t
 TDNFCreateRepoFromDirectory(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo,
     const char *pzsId,
     const char *pszPath
@@ -747,6 +730,7 @@ TDNFCreateRepoFromDirectory(
 
 uint32_t
 TDNFCreateRepo(
+    PTDNF pTdnf,
     PTDNF_REPO_DATA* ppRepo,
     const char *pszId
     );
