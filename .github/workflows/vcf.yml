@@ -31,10 +31,16 @@ jobs:
                           create-pkg \
                           -v 5.0 tdnf --skip-checksum -o
 
-            - name: copy artifacts
+            - name: copy artifacts and create repo
               run: |
                   rm -rf photon/RPMS/repodata
                   mkdir -p ${HOME}/artifacts/tdnf/${GITHUB_SHA::7}
                   cp -r photon/RPMS/ ${HOME}/artifacts/tdnf/${GITHUB_SHA::7}/
                   cp -r photon/SRPMS/ ${HOME}/artifacts/tdnf/${GITHUB_SHA::7}/
                   cd ${HOME}/artifacts/tdnf/${GITHUB_SHA::7} && createrepo .
+
+            - name: set symlink for stable-3.5
+              run: |
+                  if [[ "${{ github.ref_name }}" == "stable-3.5" ]] ; then
+                      cd ${HOME}/artifacts/tdnf/ && rm -f stable-3.5 && ln -fs ${GITHUB_SHA::7} ./stable-3.5
+                  fi
