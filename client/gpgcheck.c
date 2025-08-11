@@ -414,7 +414,7 @@ TDNFGPGCheckPackage(
             ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_DSAHEADER)) == NULL) &&
             ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_RSAHEADER)) == NULL))
         {
-            dwError = ERROR_TDNF_RPM_CHECK;
+            dwError = ERROR_TDNF_RPM_UNSIGNED;
             BAIL_ON_TDNF_ERROR(dwError);
         }
     }

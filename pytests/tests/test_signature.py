@@ -32,7 +32,11 @@ def teardown_test(utils):
 
 
 def set_gpgcheck(utils, enabled, repo='photon-test'):
-    utils.edit_config({'gpgcheck': '1' if enabled else '0'}, repo)
+    if enabled is None:
+        # None means remove that entry (to use default)
+        utils.edit_config({'gpgcheck': None}, repo)
+    else:
+        utils.edit_config({'gpgcheck': '1' if enabled else '0'}, repo)
 
 
 def set_repo_key(utils, url):
@@ -46,7 +50,19 @@ def test_install_unsigned(utils):
     set_repo_key(utils, DEFAULT_KEY)
     pkgname = utils.config["sglversion_pkgname"]
     ret = utils.run(['tdnf', '--repoid', 'photon-test-unsigned', 'install', '-y', pkgname])
-    assert ret['retval'] == 1515
+    assert ret['retval'] == 1531
+    assert not utils.check_package(pkgname)
+
+
+# install unsigned package with gpgcheck enabled in global config,
+# expect failure
+def test_install_unsigned_global_gpgcheck(utils):
+    set_gpgcheck(utils, True, repo=None)
+    set_gpgcheck(utils, None, repo='photon-test-unsigned')
+    set_repo_key(utils, DEFAULT_KEY)
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run(['tdnf', '--repoid', 'photon-test-unsigned', 'install', '-y', pkgname])
+    assert ret['retval'] == 1531
     assert not utils.check_package(pkgname)
 
 

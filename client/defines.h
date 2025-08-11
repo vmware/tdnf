@@ -251,6 +251,7 @@ typedef enum
     {ERROR_TDNF_URL_INVALID,                          "ERROR_TDNF_URL_INVALID",          "URL is invalid."}, \
     {ERROR_TDNF_SIZE_MISMATCH,                       "ERROR_TDNF_SIZE_MISMATCH",                       "File size does not match."}, \
     {ERROR_TDNF_CHECKSUM_MISMATCH,                   "ERROR_TDNF_CHECKSUM_MISMATCH",                   "File checksum does not match."}, \
+    {ERROR_TDNF_RPM_UNSIGNED,                        "ERROR_TDNF_RPM_UNSIGNED",                        "RPM package is not signed."}, \
     {ERROR_TDNF_BASEURL_DOES_NOT_EXISTS,             "ERROR_TDNF_BASEURL_DOES_NOT_EXISTS",             "Base URL and Metalink URL not found in the repo file"},\
     {ERROR_TDNF_CHECKSUM_VALIDATION_FAILED,          "ERROR_TDNF_CHECKSUM_VALIDATION_FAILED",          "Checksum Validation failed for the repomd.xml downloaded using URL from metalink"},\
     {ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED, "ERROR_TDNF_METALINK_RESOURCE_VALIDATION_FAILED", "No Resource present in metalink file for file download"},\
@@ -259,7 +260,7 @@ typedef enum
     {ERROR_TDNF_CURLE_FAILED_INIT,                   "ERROR_TDNF_CURLE_FAILED_INIT",                   "Curl Init Failed"},\
     {ERROR_TDNF_CURLE_URL_MALFORMAT,                 "ERROR_TDNF_CURLE_URL_MALFORMAT",                 "URL seems to be corrupted. Please clean all and makecache"},\
     {ERROR_TDNF_SYSTEM_BASE,                         "ERROR_TDNF_SYSTEM_BASE",                         "unknown system error"},\
-    {ERROR_TDNF_HISTORY_NODB,                        "ERROR_TDNF_HISTORY_ERROR",                       "History database error"},\
+    {ERROR_TDNF_HISTORY_ERROR,                       "ERROR_TDNF_HISTORY_ERROR",                       "History database error"},\
     {ERROR_TDNF_HISTORY_NODB,                        "ERROR_TDNF_HISTORY_NODB",                        "History database does not exist"},\
 };
 
