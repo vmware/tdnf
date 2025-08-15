@@ -61,14 +61,14 @@ TDNFSafeAllocateString(
 
 uint32_t
 TDNFStringSepCount(
-    char *pszBuf,
+    const char *pszBuf,
     char *pszSep,
     size_t *nSepCount
     );
 
 uint32_t
 TDNFSplitStringToArray(
-    char *pszBuf,
+    const char *pszBuf,
     char *pszSep,
     char ***pppszTokens
     );

@@ -187,6 +187,12 @@ TDNFReadConfig(
         {
             pszProxyPass = cn->value;
         }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_VARS_DIRS) == 0)
+        {
+            dwError = TDNFSplitStringToArray(cn->value,
+                                             " ", &pConf->ppszVarsDirs);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
         else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
         {
             /* presence of option disables plugins, no matter the value */
@@ -252,6 +258,12 @@ TDNFReadConfig(
         pConf->pszDistroVerPkg = strdup(TDNF_DEFAULT_DISTROVERPKG);
     if (pConf->pszPersistDir == NULL)
         pConf->pszPersistDir = strdup(TDNF_DEFAULT_DB_LOCATION);
+
+    if (pConf->ppszVarsDirs == NULL) {
+        dwError = TDNFSplitStringToArray(TDNF_DEFAULT_VARS_DIRS,
+                                         " ", &pConf->ppszVarsDirs);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     dwError = TDNFDirName(pszConfFile, &pszConfDir);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -372,6 +384,7 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszMinVersions);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszPkgLocks);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszProtectedPkgs);
+        TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszVarsDirs);
         TDNFFreeMemory(pConf);
     }
 }
@@ -384,8 +397,7 @@ TDNFConfigReplaceVars(
 {
     uint32_t dwError = 0;
     char* pszDst = NULL;
-    char* pszReplacedTemp = NULL;
-    PTDNF_CONF pConf = NULL;
+    struct cnfnode * cn_vars = NULL, *cn;
 
     if(!pTdnf || !ppszString || IsNullOrEmptyString(*ppszString))
     {
@@ -396,31 +408,33 @@ TDNFConfigReplaceVars(
     dwError = TDNFConfigExpandVars(pTdnf);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    /* fill variable values such as release and basearch
-       if required */
-    if(strstr(*ppszString, TDNF_VAR_RELEASEVER) ||
-       strstr(*ppszString, TDNF_VAR_BASEARCH))
-    {
-        pConf = pTdnf->pConf;
-        dwError = TDNFReplaceString(
-                      *ppszString,
-                      TDNF_VAR_RELEASEVER,
-                      pConf->pszVarReleaseVer,
-                      &pszReplacedTemp);
+    cn_vars = parse_varsdirs(pTdnf->pConf->ppszVarsDirs);
+    if (cn_vars == NULL) {
+        pr_err("parsing vars failed: %s (%d)\n", strerror(errno), errno);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
-
-        dwError = TDNFReplaceString(
-                      pszReplacedTemp,
-                      TDNF_VAR_BASEARCH,
-                      pConf->pszVarBaseArch,
-                      &pszDst);
-        BAIL_ON_TDNF_ERROR(dwError);
-
-        TDNFFreeMemory(*ppszString);
-        *ppszString = pszDst;
     }
+
+    cn = create_cnfnode(TDNF_VAR_RELEASEVER);
+    cnfnode_setval(cn, pTdnf->pConf->pszVarReleaseVer);
+    append_node(cn_vars, cn);
+
+    cn = create_cnfnode(TDNF_VAR_BASEARCH);
+    cnfnode_setval(cn, pTdnf->pConf->pszVarBaseArch);
+    append_node(cn_vars, cn);
+
+    pszDst = replace_vars(cn_vars, *ppszString);
+    if (pszDst == NULL) {
+        pr_err("replacing vars in %s failed\n", *ppszString);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    TDNFFreeMemory(*ppszString);
+    *ppszString = pszDst;
+
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszReplacedTemp);
+    destroy_cnftree(cn_vars);
     return dwError;
 
 error:

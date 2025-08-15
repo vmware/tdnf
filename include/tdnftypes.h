@@ -275,6 +275,7 @@ typedef struct _TDNF_CONF
     char** ppszMinVersions;
     char** ppszPkgLocks;
     char** ppszProtectedPkgs;
+    char **ppszVarsDirs;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct s_Repo Repo;

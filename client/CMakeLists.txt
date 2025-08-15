@@ -40,6 +40,7 @@ add_library(${LIB_TDNF} SHARED
     updateinfo.c
     utils.c
     history.c
+    varsdir.c
 )
 
 target_link_libraries(${LIB_TDNF}

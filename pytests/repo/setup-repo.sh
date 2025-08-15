@@ -144,6 +144,17 @@ gpgcheck=0
 enabled=0
 EOF
 
+cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test-auth.repo
+[photon-test-auth]
+name=basic
+baseurl=http://localhost:8088/photon-test
+gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY
+gpgcheck=0
+enabled=0
+username=cassian
+password=andor
+EOF
+
 cat << EOF > ${TEST_REPO_DIR}/yum.repos.d/photon-test-sha512.repo
 [photon-test-sha512]
 name=basic
