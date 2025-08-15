@@ -54,6 +54,26 @@ int split_nevra(char *nevra, char **name, char **evr, char **arch)
     return 0;
 }
 
+/* split string like "pkg-name=1.2.4-1.ph5"
+   into "pkg-name" and "1.2.4-1.ph5" 
+   There is no arch
+*/
+static
+int split_name_equals_evr(char *nevr, char **name, char **evr)
+{
+    char *p = nevr;
+    while(*p && *p != '=')
+        p++;
+    if (*p)
+        *p = 0;
+    else
+        return -1;
+    *evr = p+1;
+    *name = nevr;
+
+    return 0;
+}
+
 /* Find packages by nevra as specified with ids. Must be either installed
    or not as set by the 'installed' flag. Adds result to qresult, can
    be multiples if package is in multiple repos. */
@@ -85,7 +105,36 @@ SolvFindSolvablesByNevraId(
 
 cleanup:
     return dwError;
+error:
+    goto cleanup;
+}
 
+/* Find packages specfied by nevr (no arch),
+   from specified repository */
+uint32_t
+SolvFindSolvablesByNevrIdFromRepo(
+    Pool *pool,
+    Repo *repo,
+    Id name,
+    Id evr,
+    Queue* qresult
+    )
+{
+    uint32_t dwError = 0;
+    Id p;
+
+    ASSERT_ARG(pool);
+    ASSERT_ARG(qresult);
+
+    for (p = repo->start; p < repo->end; p++) {
+        Solvable *s = pool_id2solvable(pool, p);
+        if (s->name == name && s->evr == evr) {
+            queue_push(qresult, p);
+        }
+    }
+
+cleanup:
+    return dwError;
 error:
     goto cleanup;
 }
@@ -122,6 +171,49 @@ SolvFindSolvablesByNevraStr(
     if (id_name && id_evr && id_arch)
     {
         dwError = SolvFindSolvablesByNevraId(pool, id_name, id_evr, id_arch, qresult, installed);
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+cleanup:
+    if (n)
+        free(n);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+/* Find packages in repo matching string of the
+   form "pkg-name=1.2-4.ph5" */
+uint32_t
+SolvFindSolvablesByNEqualsEvrFromRepo(
+    Pool *pool,
+    Repo *repo,
+    const char *nevr,
+    Queue* qresult
+)
+{
+    uint32_t dwError = 0;
+    char *n = NULL, *name, *evr;
+    Id id_name, id_evr;
+
+    ASSERT_ARG(pool);
+    ASSERT_ARG(qresult);
+
+    n = strdup(nevr);
+    ASSERT_MEM(n);
+
+    if (split_name_equals_evr(n, &name, &evr) != 0)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    id_name = pool_str2id(pool, name, 0);
+    id_evr = pool_str2id(pool, evr, 0);
+    if (id_name && id_evr)
+    {
+        dwError = SolvFindSolvablesByNevrIdFromRepo(pool, repo, id_name, id_evr, qresult);
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
