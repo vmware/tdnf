@@ -249,7 +249,7 @@ SolvApplySinglePackageFilter(
 {
     uint32_t dwError = 0;
     char** ppCopyOfpkgNames = NULL;
-    if(!pQuery || !pszPackageName || IsNullOrEmptyString(pszPackageName))
+    if(!pQuery || IsNullOrEmptyString(pszPackageName))
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
