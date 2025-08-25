@@ -399,13 +399,10 @@ SolvAddAvailableRepoFilter(
     pool = pQuery->pSack->pPool;
     FOR_REPOS(i, pRepo)
     {
-        if (strcasecmp(SYSTEM_REPO_NAME, pRepo->name))
-        {
-            queue_push2(
-                &pQuery->queueRepoFilter,
-                SOLVER_SOLVABLE_REPO | SOLVER_SETREPO | SOLVER_SETVENDOR,
-                pRepo->repoid);
-        }
+        queue_push2(
+            &pQuery->queueRepoFilter,
+            SOLVER_SOLVABLE_REPO | SOLVER_SETREPO | SOLVER_SETVENDOR,
+            pRepo->repoid);
     }
 
 cleanup:
