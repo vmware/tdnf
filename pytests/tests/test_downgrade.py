@@ -21,8 +21,10 @@ def teardown_test(utils):
 
 
 def test_downgrade_no_arg(utils):
-    ret = utils.run(['tdnf', 'downgrade'])
-    assert ret['retval'] == 1011
+    cmd = "tdnf downgrade -y --disablerepo=* --enablerepo=photon-test".split()
+    ret = utils.run(cmd)
+    assert ret['retval'] == 0
+    assert "Downgrading: tdnf-test-multiversion" in " ".join(ret["stdout"])
 
 
 def test_downgrade_install(utils):
