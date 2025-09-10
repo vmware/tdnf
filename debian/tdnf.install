@@ -1,0 +1,12 @@
+usr/bin/tdnf
+usr/bin/tyum
+usr/bin/yum
+usr/bin/tdnfj
+usr/bin/tdnf-config
+usr/lib/*/libtdnf.so.*
+usr/libexec/tdnf/tdnf-history-util
+etc/tdnf/tdnf.conf
+etc/motdgen.d/02-tdnf-updateinfo.sh
+etc/yum.repos.d
+var/cache/tdnf
+usr/share/bash-completion/completions/tdnf

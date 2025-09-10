@@ -1,0 +1,62 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: tdnf
+Upstream-Contact: VMware, Inc. <support@vmware.com>
+Source: https://github.com/vmware/tdnf
+
+Files: *
+Copyright: 2019-2023 VMware, Inc.
+License: LGPL-2.1+ or GPL-2+
+Comment: The libtdnf source code is distributed under LGPL-2.1+,
+ while the tdnf utility source code is distributed under GPL-2+.
+
+Files: client/* include/* common/* solv/* history/* jsondump/* llconf/*
+Copyright: 2019-2023 VMware, Inc.
+License: LGPL-2.1+
+
+Files: bin/* tools/*
+Copyright: 2019-2023 VMware, Inc.
+License: GPL-2+
+
+Files: pytests/*
+Copyright: 2019-2023 VMware, Inc.
+License: GPL-2+
+
+Files: debian/*
+Copyright: 2025 VMware, Inc.
+License: GPL-2+
+
+License: LGPL-2.1+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+ .
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ .
+ On Debian systems, the complete text of the GNU Lesser General Public
+ License version 2.1 can be found in "/usr/share/common-licenses/LGPL-2.1".
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License along
+ with this program; if not, write to the Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ .
+ On Debian systems, the complete text of the GNU General Public
+ License version 2 can be found in "/usr/share/common-licenses/GPL-2".

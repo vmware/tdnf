@@ -1,0 +1,2 @@
+etc/tdnf/pluginconf.d/tdnfrepogpgcheck.conf
+usr/lib/*/tdnf-plugins/libtdnfrepogpgcheck.so
