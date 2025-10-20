@@ -28,6 +28,7 @@
 
 //Conf file key names
 #define TDNF_CONF_KEY_GPGCHECK            "gpgcheck"
+#define TDNF_CONF_KEY_CMDLINEGPGCHECK     "cligpgcheck"
 #define TDNF_CONF_KEY_INSTALLONLY_LIMIT   "installonly_limit"
 #define TDNF_CONF_KEY_INSTALLONLYPKGS     "installonlypkgs"
 #define TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE "clean_requirements_on_remove"
@@ -120,7 +121,6 @@
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0
 #define TDNF_REPO_DEFAULT_SKIP               0
-#define TDNF_REPO_DEFAULT_GPGCHECK           1
 #define TDNF_REPO_DEFAULT_MINRATE            0
 #define TDNF_REPO_DEFAULT_THROTTLE           0
 #define TDNF_REPO_DEFAULT_TIMEOUT            0

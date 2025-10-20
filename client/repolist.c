@@ -340,6 +340,8 @@ TDNFCreateCmdLineRepo(
     dwError = TDNFCreateRepo(pTdnf, &pRepo, CMDLINE_REPO_NAME);
     BAIL_ON_TDNF_ERROR(dwError);
     pRepo->nHasMetaData = 0;
+    if (pTdnf->pConf->nCliGPGCheck == 0)
+        pRepo->nGPGCheck = 0;
 
     dwError = TDNFSafeAllocateString(CMDLINE_REPO_NAME, &pRepo->pszName);
     BAIL_ON_TDNF_ERROR(dwError);

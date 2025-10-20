@@ -160,6 +160,10 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         {
             pConf->nGPGCheck = isTrue(cn->value);
         }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CMDLINEGPGCHECK) == 0)
+        {
+            pConf->nCliGPGCheck = isTrue(cn->value);
+        }
         else if (strcmp(cn->name, TDNF_CONF_KEY_SSL_VERIFY) == 0)
         {
             pConf->nSSLVerify = isTrue(cn->value);
@@ -335,7 +339,7 @@ TDNFReadConfig(
 
     /* defaults */
     pConf->nGPGCheck = 0;
-    pConf->nInstallOnlyLimit = 1;
+    pConf->nCliGPGCheck = -1; /* mark as unset */
     pConf->nCleanRequirementsOnRemove = 0;
     pConf->nKeepCache = 0;
     pConf->nOpenMax = TDNF_CONF_DEFAULT_OPENMAX;
@@ -431,6 +435,14 @@ TDNFReadConfig(
     }
 
     pszTdnfVersion = TDNFGetVersion();
+
+    /* override from cmd line */
+    if (pTdnf->pArgs->nNoCmdLineGPGCheck) {
+        pConf->nCliGPGCheck = 0;
+        /* if unset, same as general nGPGCheck */
+    } else if (pConf->nCliGPGCheck == -1) {
+        pConf->nCliGPGCheck = pConf->nGPGCheck;
+    }
 
     if (pConf->pszOSName == NULL)
         TDNFAllocateString("UNKNOWN", &pConf->pszOSName);

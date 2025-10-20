@@ -40,8 +40,9 @@ static struct option pstOptions[] =
     {"noautoremove",  no_argument, &_opt.nNoAutoRemove, 1},
     {"nodeps",        no_argument, &_opt.nNoDeps, 1},
     {"nogpgcheck",    no_argument, &_opt.nNoGPGCheck, 1},  //--nogpgcheck
+    {"nocligpgcheck", no_argument, &_opt.nNoCmdLineGPGCheck, 1},  //--nocligpgcheck
     {"noplugins",     no_argument, 0, 0},                  //--noplugins
-    {"quiet",         no_argument, &_opt.nQuiet, 1},       //--nogpgcheck
+    {"quiet",         no_argument, &_opt.nQuiet, 1},       //--quiet
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh
     {"releasever",    required_argument, 0, 0},            //--releasever
     {"reboot-required", no_argument, 0, 0},                //--reboot-required
@@ -338,6 +339,7 @@ TDNFCopyOptions(
     pArgs->nDebugSolver   = pOptionArgs->nDebugSolver;
     pArgs->nNoDeps        = pOptionArgs->nNoDeps;
     pArgs->nNoGPGCheck    = pOptionArgs->nNoGPGCheck;
+    pArgs->nNoCmdLineGPGCheck = pOptionArgs->nNoCmdLineGPGCheck;
     pArgs->nSkipSignature = pOptionArgs->nSkipSignature;
     pArgs->nSkipDigest    = pOptionArgs->nSkipDigest;
     pArgs->nNoOutput      = pOptionArgs->nQuiet && pOptionArgs->nAssumeYes;
