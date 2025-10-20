@@ -174,3 +174,14 @@ def test_reinstall_as_file(utils):
     assert utils.check_package(pkgname)
     assert "Nothing to do" not in "\n".join(ret['stderr'])
     assert "Reinstalling" in "\n".join(ret['stdout'])
+
+
+# test something like "tdnf install /path/to/pkg.rpm"
+# with nocmdlinegpgcheck option
+def test_install_as_file_nocmdlinegpgcheck(utils):
+    pkgname = utils.config["sglversion_pkgname"]
+    path = get_pkg_file_path(utils, pkgname)
+
+    ret = utils.run(['tdnf', 'install', '-y', '--nocligpgcheck', path])
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)

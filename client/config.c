@@ -82,7 +82,7 @@ TDNFReadConfig(
 
     /* defaults */
     pConf->nGPGCheck = 0;
-    pConf->nInstallOnlyLimit = 1;
+    pConf->nCliGPGCheck = -1; /* mark as unset */
     pConf->nCleanRequirementsOnRemove = 0;
     pConf->nKeepCache = 0;
     pConf->nOpenMax = TDNF_DEFAULT_OPENMAX;
@@ -129,6 +129,10 @@ TDNFReadConfig(
         else if (strcmp(cn->name, TDNF_CONF_KEY_GPGCHECK) == 0)
         {
             pConf->nGPGCheck = isTrue(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CMDLINEGPGCHECK) == 0)
+        {
+            pConf->nCliGPGCheck = isTrue(cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
         {
@@ -232,6 +236,14 @@ TDNFReadConfig(
         pConf->nGPGCheck = 0;
     }
 
+    /* override from cmd line */
+    if (pTdnf->pArgs->nNoCmdLineGPGCheck) {
+        pConf->nCliGPGCheck = 0;
+        /* if unset, same as general nGPGCheck */
+    } else if (pConf->nCliGPGCheck == -1) {
+        pConf->nCliGPGCheck = pConf->nGPGCheck;
+    }
+
     /* these two have no config setting (future?) */
     if (pTdnf->pArgs->nSkipDigest) {
         pConf->nSkipDigest = 1;
@@ -247,6 +259,7 @@ TDNFReadConfig(
                       "%s:%s",
                       pszProxyUser,
                       pszProxyPass);
+
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

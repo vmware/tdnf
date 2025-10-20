@@ -220,6 +220,7 @@ typedef struct _TDNF_CMD_ARGS
     int nShowVersion;      //show version and exit
     int nNoDeps;           //download no dependencies
     int nNoGPGCheck;       //skip gpg check
+    int nNoCmdLineGPGCheck;  //skip gpg check for local packages (from command line)
     int nSkipSignature;
     int nSkipDigest;
     int nNoOutput;         //if quiet and assumeyes are provided
@@ -253,6 +254,7 @@ typedef struct _TDNF_CMD_ARGS
 typedef struct _TDNF_CONF
 {
     int nGPGCheck;
+    int nCliGPGCheck;
     int nInstallOnlyLimit;
     int nCleanRequirementsOnRemove;
     int nKeepCache;
