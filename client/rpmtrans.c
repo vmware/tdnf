@@ -783,7 +783,7 @@ TDNFTransAddInstallPkg(
     const char* pszPkgName = NULL;
     uint8_t digest_from_file[EVP_MAX_MD_SIZE] = {0};
     hash_op *hash = NULL;
-    int nSize;
+    int nSize = 0;
 
     if(!pTS || !pTdnf || !pInfo || !pRepo)
     {
@@ -942,7 +942,7 @@ cleanup:
     return dwError;
 
 error:
-    pr_err("Error processing package: %s\n", pszPackageLocation);
+    pr_err("Error processing package: %s\n", pszPackageLocation ? pszPackageLocation : "(null)");
     TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pRpmCache);
     goto cleanup;

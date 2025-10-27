@@ -376,7 +376,7 @@ TDNFDownloadPackage(
     uint32_t dwError = 0;
     char *pszPackageFile = NULL;
     char *pszCopyOfPackageLocation = NULL;
-    int nSize;
+    int nSize = 0;
 
     if(!pTdnf ||
        !pTdnf->pArgs ||
