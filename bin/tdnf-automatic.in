@@ -589,7 +589,7 @@ if [ ${EUID} -ne 0 ]; then
   exit 13
 fi
 
-if ! which tdnf &> /dev/null; then
+if ! command -v tdnf &> /dev/null; then
   EchoErr "tdnf command not found..."
   exit 65
 fi

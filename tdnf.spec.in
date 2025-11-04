@@ -70,7 +70,6 @@ Provides:       yum
 
 %package    devel
 Summary:    A Library providing a C API for %{name}
-Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   libsolv-devel
 
@@ -79,7 +78,6 @@ Development files for %{name}
 
 %package    pytests
 Summary:    Test suite for %{name}
-Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   %{name}-automatic = %{version}-%{release}
 Requires:   %{name}-plugin-repogpgcheck = %{version}-%{release}
@@ -100,14 +98,12 @@ Test suite for %{name}
 
 %package    cli-libs
 Summary:    Library providing cli libs for %{name} like clients
-Group:      Development/Libraries
 
 %description cli-libs
 Library providing cli libs for %{name} like clients.
 
 %package    plugin-metalink
 Summary:    tdnf plugin providing metalink functionality for repo configurations
-Group:      Development/Libraries
 Requires:   gpgme
 
 %description plugin-metalink
@@ -115,7 +111,6 @@ tdnf plugin providing metalink functionality for repo configurations
 
 %package    plugin-repogpgcheck
 Summary:    %{name} plugin providing gpg verification for repository metadata
-Group:      Development/Libraries
 Requires:   gpgme
 
 %description plugin-repogpgcheck
@@ -123,7 +118,6 @@ Requires:   gpgme
 
 %package automatic
 Summary:   %{name} - automated upgrades
-Group:     Development/Libraries
 Requires:  %{name} = %{version}-%{release}
 %{?systemd_requires}
 
