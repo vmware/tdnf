@@ -508,7 +508,7 @@ TDNFRepoApplySSLSettings(
     if(curl_easy_setopt(
             pCurl,
             CURLOPT_SSL_VERIFYPEER,
-            ((pRepo->nSSLVerify) ? 1 : 0)) != CURLE_OK)
+            ((pRepo->nSSLVerify) ? 1L : 0L)) != CURLE_OK)
     {
         dwError = ERROR_TDNF_SET_SSL_SETTINGS;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -517,7 +517,7 @@ TDNFRepoApplySSLSettings(
     if(curl_easy_setopt(
             pCurl,
             CURLOPT_SSL_VERIFYHOST,
-            ((pRepo->nSSLVerify) ? 2 : 0)) != CURLE_OK)
+            ((pRepo->nSSLVerify) ? 2L : 0L)) != CURLE_OK)
     {
         dwError = ERROR_TDNF_SET_SSL_SETTINGS;
         BAIL_ON_TDNF_ERROR(dwError);

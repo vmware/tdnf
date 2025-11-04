@@ -312,9 +312,9 @@ typedef struct _TDNF_REPO_DATA
     char* pszUser;
     char* pszPass;
     int nPriority;
-    int nTimeout;
-    int nMinrate;
-    int nThrottle;
+    long int nTimeout;
+    long int nMinrate;
+    long int nThrottle;
     int nRetries;
     int nSkipMDFileLists;
     int nSkipMDUpdateInfo;
