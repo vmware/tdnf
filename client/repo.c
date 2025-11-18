@@ -23,7 +23,7 @@ TDNFApplySnapshot(
     int i;
     Queue qResult = {0};
 
-    if(!pRepoData || !pRepoData->pszSnapshotUrl || !pSack || !pSack->pPool)
+    if(!pRepoData || !pRepoData->pszSnapshotFile || !pSack || !pSack->pPool)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -32,7 +32,7 @@ TDNFApplySnapshot(
 
     queue_init(&qResult);
 
-    dwError = TDNFReadFileToStringArray(pRepoData->pszSnapshotUrl, &ppszSnapshotPackages);
+    dwError = TDNFReadFileToStringArray(pRepoData->pszSnapshotFile, &ppszSnapshotPackages);
     BAIL_ON_TDNF_ERROR(dwError);
 
     for(i = 0; ppszSnapshotPackages[i]; i++) {
@@ -475,6 +475,7 @@ TDNFGetRepoMD(
     char *pszTmpRepoDataDir = NULL;
     char *pszTmpRepoMDFile = NULL;
     char *pszMirrorFile = NULL;
+    char *pszSnapshotFile = NULL;
     char *pszTempBaseUrlFile = NULL;
     char* pszLastRefreshMarker = NULL;
     PTDNF_REPO_METADATA pRepoMDRel = NULL;
@@ -691,6 +692,60 @@ TDNFGetRepoMD(
                   pRepoMDRel,
                   &pRepoMD);
     BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pRepoData->pszSnapshotUrl) {
+        time_t now = time(NULL);
+        int needDownload = 0, nIsRemote = 0;
+        struct stat st = {0};
+
+        if (pRepoData->pszSnapshotUrl[0] == '/') {
+            SET_STRING(pRepoData->pszSnapshotFile, pRepoData->pszSnapshotUrl);
+        } else {
+            dwError = TDNFUriIsRemote(pRepoData->pszSnapshotUrl, &nIsRemote);
+            if (dwError) {
+                /* should be a relative path, relative to repo dir */
+                dwError = TDNFJoinPath(
+                              &pRepoData->pszSnapshotFile,
+                              pTdnf->pConf->pszRepoDir,
+                              pRepoData->pszSnapshotUrl,
+                              NULL);
+                BAIL_ON_TDNF_ERROR(dwError);
+            } else {
+                if (nIsRemote) {
+                    /* we need a unique name based on URL locally, so we automatically refresh on config changes
+                       "snapshot" % URL => "snapshot-12345678" */
+                    dwError = SolvCreateRepoCacheName(TDNF_REPO_METADATA_SNAPSHOT, pRepoData->pszSnapshotUrl, &pszSnapshotFile);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    dwError = TDNFGetCachePath(pTdnf, pRepoData,
+                                               pszSnapshotFile, NULL,
+                                               &pRepoData->pszSnapshotFile);
+                    BAIL_ON_TDNF_ERROR(dwError);
+
+                    if (stat(pRepoData->pszSnapshotFile, &st) < 0) {
+                        if (errno == ENOENT)
+                            needDownload = 1;
+                        else {
+                            dwError = errno;
+                            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+                        }
+                    } else if ((now - st.st_ctime) > pRepoData->lMetadataExpire)
+                        needDownload = 1;
+
+                    if (needDownload) {
+                        dwError = TDNFDownloadFile(pTdnf, pRepoData, pRepoData->pszSnapshotUrl, pRepoData->pszSnapshotFile, pRepoData->pszId);
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    }
+                } else if (strncmp(pRepoData->pszSnapshotUrl, "file://", 7) == 0) {
+                    SET_STRING(pRepoData->pszSnapshotFile, &pRepoData->pszSnapshotUrl[7]);
+                } else {
+                    /* we should never get here if TDNFUriIsRemote() behaves correctly */
+                    dwError = ERROR_TDNF_URL_INVALID;
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
+        }
+    }
     *ppRepoMD = pRepoMD;
 
 cleanup:
@@ -712,6 +767,7 @@ cleanup:
     TDNF_SAFE_FREE_MEMORY(pszTempBaseUrlFile);
     TDNF_SAFE_FREE_MEMORY(pszError);
     TDNF_SAFE_FREE_MEMORY(pszLastRefreshMarker);
+    TDNF_SAFE_FREE_MEMORY(pszSnapshotFile);
     return dwError;
 
 error:

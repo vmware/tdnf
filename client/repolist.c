@@ -56,6 +56,8 @@ TDNFRepoConfigFromCnfTree(PTDNF pTdnf,
     uint32_t dwError = 0;
     struct cnfnode *cn;
 
+    UNUSED(pTdnf);
+
     for(cn = cn_top->first_child; cn; cn = cn->next)
     {
         if ((cn->name[0] == '.') || (cn->value == NULL))
@@ -84,18 +86,7 @@ TDNFRepoConfigFromCnfTree(PTDNF pTdnf,
         }
         else if (strcmp(cn->name, TDNF_REPO_KEY_SNAPSHOT_URL) == 0)
         {
-            /* we do not support URLs yet, just filenames */
-            if (cn->value[0] == '/') {
-                SET_STRING(pRepo->pszSnapshotUrl, cn->value);
-            } else {
-                /* path should be relative to repo dir */
-                dwError = TDNFJoinPath(
-                              &pRepo->pszSnapshotUrl,
-                              pTdnf->pConf->pszRepoDir,
-                              cn->value,
-                              NULL);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
+            SET_STRING(pRepo->pszSnapshotUrl, cn->value);
         }
         else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
         {

@@ -7,6 +7,8 @@
  */
 
 #include "includes.h"
+#include <glob.h>
+
 
 uint32_t
 TDNFRepoGetUserPass(
@@ -276,6 +278,49 @@ TDNFRemoveMirrorList(
     )
 {
     return _TDNFRemoveRepoCacheFile(pTdnf, pRepo, TDNF_REPO_METADATA_MIRRORLIST);
+}
+
+uint32_t
+TDNFRemoveSnapshot(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    )
+{
+    uint32_t dwError = 0;
+    int i, ret = 0;
+    char *pszPathPattern = NULL;
+    glob_t globbuf =  {0};
+
+    if(!pTdnf || !pRepo || !pTdnf->pConf)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    /* glob for all files matching TDNF_REPO_METADATA_MIRRORLIST"-*" ("snapshot*")
+       and remove them */
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               TDNF_REPO_METADATA_SNAPSHOT"-*", NULL,
+                               &pszPathPattern);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    ret = glob(pszPathPattern, 0, NULL, &globbuf);
+    if (ret == 0) {
+        for (i = 0; globbuf.gl_pathv[i]; i++) {
+            if(unlink(globbuf.gl_pathv[i]) && errno != ENOENT)
+            {
+               dwError = errno;
+               BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+        }
+    }
+
+cleanup:
+    globfree(&globbuf);
+    TDNF_SAFE_FREE_MEMORY(pszPathPattern);
+    return dwError;
+error:
+    goto cleanup;
 }
 
 uint32_t

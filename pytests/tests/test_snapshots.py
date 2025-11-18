@@ -102,6 +102,56 @@ def test_list(utils):
         assert nevr not in EXCLUDED_PKGS
 
 
+def test_list_file_absolute(utils):
+    snapshot_file = os.path.join(utils.config['repo_path'], "yum.repos.d", f"{REPONAME}.list")
+
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", f"--setopt=snapshot.{REPONAME}={snapshot_file}", "list"])
+    infolist = json.loads("\n".join(ret['stdout']))
+
+    # excluded packages should not be listed
+    for info in infolist:
+        nevr = f"{info['Name']}={info['Evr']}"
+        assert nevr not in EXCLUDED_PKGS
+
+
+def test_list_file_notfound(utils):
+    snapshot_file = os.path.join(utils.config['repo_path'], "yum.repos.d", f"{REPONAME}.list.invalid")
+
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", f"--setopt=snapshot.{REPONAME}={snapshot_file}", "list"])
+    assert ret['retval'] != 0
+
+
+def test_list_file_url(utils):
+    snapshot_file = os.path.join(utils.config['repo_path'], "yum.repos.d", f"{REPONAME}.list")
+
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", f"--setopt=snapshot.{REPONAME}=file://{snapshot_file}", "list"])
+    infolist = json.loads("\n".join(ret['stdout']))
+
+    # excluded packages should not be listed
+    for info in infolist:
+        nevr = f"{info['Name']}={info['Evr']}"
+        assert nevr not in EXCLUDED_PKGS
+
+
+def test_list_http(utils):
+    snapshot_url = f"http://localhost:8080/yum.repos.d/{REPONAME}.list"
+
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", f"--setopt=snapshot.{REPONAME}={snapshot_url}", "list"])
+    infolist = json.loads("\n".join(ret['stdout']))
+
+    # excluded packages should not be listed
+    for info in infolist:
+        nevr = f"{info['Name']}={info['Evr']}"
+        assert nevr not in EXCLUDED_PKGS
+
+
+def test_list_http_404(utils):
+    snapshot_url = f"http://localhost:8080/yum.repos.d/{REPONAME}.list.invalid"
+
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", f"--setopt=snapshot.{REPONAME}={snapshot_url}", "list"])
+    assert ret['retval'] != 0
+
+
 def test_info(utils):
     ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", "info"])
     infolist = json.loads("\n".join(ret['stdout']))

@@ -87,6 +87,7 @@
 //file names
 #define TDNF_REPO_METADATA_MARKER         "lastrefresh"
 #define TDNF_REPO_METADATA_MIRRORLIST     "mirrorlist"
+#define TDNF_REPO_METADATA_SNAPSHOT       "snapshot"
 #define TDNF_REPO_METADATA_FILE_PATH      "repodata/repomd.xml"
 #define TDNF_REPO_METADATA_FILE_NAME      "repomd.xml"
 #define TDNF_REPO_METALINK_FILE_NAME      "metalink"

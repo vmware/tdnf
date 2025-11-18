@@ -303,6 +303,7 @@ typedef struct _TDNF_REPO_DATA
     char* pszMetaLink;
     char* pszMirrorList;
     char* pszSnapshotUrl;
+    char* pszSnapshotFile;
     char** ppszUrlGPGKeys;
     int nSSLVerify;
     char* pszSSLCaCert;
