@@ -149,6 +149,13 @@ TDNFRemoveLastRefreshMarker(
     );
 
 uint32_t
+TDNFRemoveSnapshot(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    );
+
+uint32_t
+
 TDNFRemoveTmpRepodata(
     const char* pszTmpRepodataDir
     );

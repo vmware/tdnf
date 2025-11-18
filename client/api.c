@@ -406,6 +406,8 @@ TDNFClean(
             pr_info(" expire-cache");
             dwError = TDNFRemoveLastRefreshMarker(pTdnf, pRepo);
             BAIL_ON_TDNF_ERROR(dwError);
+            dwError = TDNFRemoveSnapshot(pTdnf, pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
         }
 
         /* remove the top level repo cache dir if it's not empty */
