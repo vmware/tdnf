@@ -849,18 +849,20 @@ TDNFAlterRepoState(
 
     nIsGlob = TDNFIsGlob(pszId);
 
-    for (int nMatch = 0; pRepos; pRepos = pRepos->pNext)
+    for (; pRepos; pRepos = pRepos->pNext)
     {
+        bool nMatch = false;
+
         if(nIsGlob)
         {
             if(!fnmatch(pszId, pRepos->pszId, 0))
             {
-                nMatch = 1;
+                nMatch = true;
             }
         }
         else if(!strcmp(pRepos->pszId, pszId))
         {
-            nMatch = 1;
+            nMatch = true;
         }
         if(nMatch)
         {
