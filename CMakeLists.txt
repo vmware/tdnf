@@ -56,9 +56,17 @@ pkg_check_modules(EXPAT REQUIRED expat)
 pkg_check_modules(SQLITE3 sqlite3)
 include_directories(${RPM_INCLUDE_DIRS})
 include_directories(${EXPAT_INCLUDE_DIRS})
+if(APPLE)
+    include_directories(${OPENSSL_INCLUDE_DIRS})
+    link_directories(${RPM_LIBRARY_DIRS})
+    link_directories(${EXPAT_LIBRARY_DIRS})
+endif()
 
 ### External dependency: libsolv
 find_package(LibSolv REQUIRED ext)
+if(APPLE)
+    include_directories(${LibSolv_INCLUDE_DIRS})
+endif()
 
 ### External dependency: libcurl
 find_package(CURL REQUIRED)

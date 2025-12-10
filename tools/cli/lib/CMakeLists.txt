@@ -31,7 +31,14 @@ add_library(${LIB_TDNF_CLI} SHARED
 
 target_link_libraries(${LIB_TDNF_CLI}
     ${LIB_TDNF_JSONDUMP}
+    ${LIB_TDNF}
 )
+
+if(APPLE)
+    target_link_libraries(${LIB_TDNF_CLI}
+        ${OPENSSL_LIBRARIES}
+    )
+endif()
 
 set_target_properties(${LIB_TDNF_CLI} PROPERTIES
     VERSION ${PROJECT_VERSION}

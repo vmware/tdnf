@@ -10,8 +10,13 @@ find_library(GPGME_LIBRARY NAMES gpgme)
 
 # handle the QUIETLY and REQUIRED arguments and set GPGME_FOUND to TRUE
 # if all listed variables are TRUE
-find_package_handle_standard_args(gpgme DEFAULT_MSG
-                                  GPGME_LIBRARY GPGME_INCLUDE_DIR)
+if(APPLE)
+    find_package_handle_standard_args(Gpgme DEFAULT_MSG
+                                      GPGME_LIBRARY GPGME_INCLUDE_DIR)
+else()
+    find_package_handle_standard_args(gpgme DEFAULT_MSG
+                                      GPGME_LIBRARY GPGME_INCLUDE_DIR)
+endif()
 
 mark_as_advanced(GPGME_INCLUDE_DIR GPGME_LIBRARY )
 
