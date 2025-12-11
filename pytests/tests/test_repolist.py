@@ -213,6 +213,36 @@ def test_repolist_disable_comma_separated(utils):
     assert not find_repo(repolist, 'foo-debug')
 
 
+# Test comma-separated repo names for repoid
+def test_repolist_repoid_comma_separated(utils):
+    ret = utils.run(['tdnf', 'repolist', '--repoid=foo-debug,bar', '-j'])
+    assert ret['retval'] == 0
+    repolist = json.loads("\n".join(ret['stdout']))
+    # repoid disables all repos first, then enables only the specified ones
+    assert find_repo(repolist, 'foo-debug')
+    assert find_repo(repolist, 'bar')
+    # foo should be disabled (repoid disables all others)
+    assert not find_repo(repolist, 'foo')
+    # example repos should be disabled
+    assert not find_repo(repolist, 'example-test')
+    assert not find_repo(repolist, 'example-debug')
+
+
+# Test comma-separated repo names for repo (alias for repoid)
+def test_repolist_repo_comma_separated(utils):
+    ret = utils.run(['tdnf', 'repolist', '--repo=foo-debug,bar', '-j'])
+    assert ret['retval'] == 0
+    repolist = json.loads("\n".join(ret['stdout']))
+    # repo disables all repos first, then enables only the specified ones
+    assert find_repo(repolist, 'foo-debug')
+    assert find_repo(repolist, 'bar')
+    # foo should be disabled (repo disables all others)
+    assert not find_repo(repolist, 'foo')
+    # example repos should be disabled
+    assert not find_repo(repolist, 'example-test')
+    assert not find_repo(repolist, 'example-debug')
+
+
 # Test glob pattern for enablerepo
 def test_repolist_enable_glob(utils):
     ret = utils.run(['tdnf', 'repolist', '--enablerepo=example*', '-j'])

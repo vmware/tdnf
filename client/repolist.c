@@ -753,8 +753,16 @@ TDNFRepoListFinalize(
               nRepoidSeen = 1;
             }
 
-            dwError = TDNFAlterRepoState(pTdnf->pRepos, 1, cn->value);
+            ppszRepos = NULL;
+            dwError = TDNFSplitStringToArray(cn->value, ",", &ppszRepos);
             BAIL_ON_TDNF_ERROR(dwError);
+
+            for (int i = 0; ppszRepos[i]; ++i) {
+              dwError = TDNFAlterRepoState(pTdnf->pRepos, 1, ppszRepos[i]);
+              BAIL_ON_TDNF_ERROR(dwError);
+            }
+
+            TDNF_SAFE_FREE_STRINGARRAY(ppszRepos);
         }
     }
 
