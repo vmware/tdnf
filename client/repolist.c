@@ -544,18 +544,7 @@ TDNFLoadReposFromFile(
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SNAPSHOT_URL) == 0)
             {
-                /* we do not support URLs yet, just filenames */
-                if (cn->value[0] == '/')
-                    pRepo->pszSnapshotUrl = strdup(cn->value);
-                else {
-                    /* path should be relative to repo dir */
-                    dwError = TDNFJoinPath(
-                                  &pRepo->pszSnapshotUrl,
-                                  pTdnf->pConf->pszRepoDir,
-                                  cn->value,
-                                  NULL);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                }
+                pRepo->pszSnapshotUrl = strdup(cn->value);
             }
             else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP) == 0)
             {
