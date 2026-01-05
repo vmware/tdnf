@@ -120,6 +120,14 @@ TDNFCloneCmdArgs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if(!IsNullOrEmptyString(pCmdArgsIn->pszArch))
+    {
+        dwError = TDNFAllocateString(
+                      pCmdArgsIn->pszArch,
+                      &pCmdArgs->pszArch);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     if(!IsNullOrEmptyString(pCmdArgsIn->pszDownloadDir))
     {
         dwError = TDNFAllocateString(
