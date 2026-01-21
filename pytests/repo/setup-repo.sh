@@ -109,6 +109,19 @@ cp -r ${BUILD_PATH}/RPMS ${PUBLISH_SHA512_PATH}
 mkdir -p ${PUBLISH_PATH}/keys
 gpg --armor --export tdnftest@tdnf.test > ${PUBLISH_PATH}/keys/pubkey.asc
 
+gpg --batch --generate-key <<EOF
+Key-Type: RSA
+Key-Length: 4096
+Name-Real: tdnf test wrong
+Name-Email: tdnftest@tdnf.wrong
+Expire-Date: 0
+%no-protection
+%commit
+EOF
+
+WRONG_FPR=$(gpg --list-keys --with-colons tdnftest@tdnf.wrong | awk -F: '/^fpr:/ {print $10; exit}')
+gpg --armor --export "${WRONG_FPR}" > ${PUBLISH_PATH}/keys/pubkey.wrong.asc
+
 createrepo ${PUBLISH_PATH}
 createrepo ${PUBLISH_SRC_PATH}
 createrepo -s sha512 ${PUBLISH_SHA512_PATH}

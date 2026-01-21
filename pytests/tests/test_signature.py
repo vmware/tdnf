@@ -216,8 +216,10 @@ def test_install_nokey(utils):
 # 'wrong' key in repo config, expect fail
 def test_install_nokey1(utils):
     set_gpgcheck(utils, True)
-    set_repo_key(utils, DEFAULT_KEY)
+    keypath = os.path.join(utils.config['repo_path'], 'photon-test', 'keys', 'pubkey.wrong.asc')
+    set_repo_key(utils, f"file://{keypath}")
     pkgname = utils.config["sglversion_pkgname"]
+    utils.run(['rpm', '--import', keypath])
     ret = utils.run(['tdnf', 'install', '-y', pkgname])
     assert ret['retval'] == 1514
     assert not utils.check_package(pkgname)
