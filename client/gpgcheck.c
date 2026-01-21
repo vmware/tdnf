@@ -266,6 +266,9 @@ TDNFGPGCheckPackage(
         if (((pszTmp = headerGetAsString(rpmHeader, RPMTAG_SIGPGP)) == NULL) &&
             ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_SIGGPG)) == NULL) &&
             ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_DSAHEADER)) == NULL) &&
+#ifdef BUILD_WITH_RPM_6X
+            ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_OPENPGP)) == NULL) &&
+#endif
             ((pszTmp = headerGetAsString(rpmHeader, RPMTAG_RSAHEADER)) == NULL))
         {
             dwError = ERROR_TDNF_RPM_UNSIGNED;

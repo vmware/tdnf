@@ -48,7 +48,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-### External dependency: rpm-devel
+# External dependency: rpm-devel
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(RPM REQUIRED rpm)
 find_package(OpenSSL REQUIRED)
@@ -57,15 +57,25 @@ pkg_check_modules(SQLITE3 sqlite3)
 include_directories(${RPM_INCLUDE_DIRS})
 include_directories(${EXPAT_INCLUDE_DIRS})
 
-### External dependency: libsolv
+# External dependency: libsolv
 find_package(LibSolv REQUIRED ext)
 
-### External dependency: libcurl
+# External dependency: libcurl
 find_package(CURL REQUIRED)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/tdnf")
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/pytests/tests/" DESTINATION "${CMAKE_INSTALL_DATADIR}/tdnf/pytests/tests")
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/pytests/repo/" DESTINATION "${CMAKE_INSTALL_DATADIR}/tdnf/pytests/repo")
+
+pkg_check_modules(RPM REQUIRED rpm)
+
+if(RPM_VERSION VERSION_GREATER_EQUAL "6.0")
+  message(STATUS "rpm ${RPM_VERSION} >= 6.0")
+  message(STATUS "Enabling BUILD_WITH_RPM_6X macro")
+  add_compile_definitions(BUILD_WITH_RPM_6X)
+else()
+  message(STATUS "rpm ${RPM_VERSION} < 6.0")
+endif()
 
 set(LIB_TDNF "tdnf")
 set(LIB_TDNF_SOLV "tdnfsolv")
