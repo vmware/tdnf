@@ -1420,17 +1420,17 @@ TDNFRepoQuery(
 
     if (!pRepoqueryArgs->nExtras)
     {
-        if (!pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable)
+        if(pRepoqueryArgs->nUpgrades)
+        {
+            nScope = SCOPE_UPGRADES;
+        }
+        else if (!pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable)
         {
             nScope = SCOPE_AVAILABLE;
         }
         else if (pRepoqueryArgs->nInstalled || pRepoqueryArgs->nDuplicates)
         {
             nScope = SCOPE_INSTALLED;
-        }
-        else if(pRepoqueryArgs->nUpgrades)
-        {
-            nScope = SCOPE_UPGRADES;
         }
     }
     dwError = TDNFApplyScopeFilter(pQuery, nScope);
