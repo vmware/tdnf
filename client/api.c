@@ -1424,6 +1424,10 @@ TDNFRepoQuery(
         {
             nScope = SCOPE_UPGRADES;
         }
+        else if(pRepoqueryArgs->nDowngrades)
+        {
+            nScope = SCOPE_DOWNGRADES;
+        }
         else if (!pRepoqueryArgs->nInstalled || pRepoqueryArgs->nAvailable)
         {
             nScope = SCOPE_AVAILABLE;

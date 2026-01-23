@@ -148,6 +148,10 @@ TDNFCliParseRepoQueryArgs(
         {
             pRepoqueryArgs->nUpgrades = 1;
         }
+        else if (strcasecmp(cn->name, "downgrades") == 0)
+        {
+            pRepoqueryArgs->nDowngrades = 1;
+        }
         else if (strcasecmp(cn->name, "userinstalled") == 0)
         {
             pRepoqueryArgs->nUserInstalled = 1;

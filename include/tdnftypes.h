@@ -429,6 +429,7 @@ typedef struct _TDNF_REPOQUERY_ARGS
     int nLocation;
     int nInstalled;
     int nUpgrades;
+    int nDowngrades;
     int nUserInstalled;
     char *pszFile;         /* packages that own this file */
     char ***pppszWhatKeys;

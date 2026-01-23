@@ -177,8 +177,27 @@ def test_upgrades(utils):
                      'repoquery',
                      '--upgrades'])
     assert ret['retval'] == 0
-    assert pkg_high in '\n'.join(ret['stdout'])
+    assert len(ret['stdout']) == 1
+    assert pkg_high in ret['stdout'][0]
     utils.erase_package(pkg_low)
+
+
+def test_downgrades(utils):
+    pkg_low = "{}-{}".format(utils.config["mulversion_pkgname"], utils.config["mulversion_lower"])
+    pkg_high = "{}-{}".format(utils.config["mulversion_pkgname"], utils.config["mulversion_higher"])
+
+    ret = utils.run(['tdnf',
+                     'install', '-y', '--nogpgcheck',
+                     pkg_high])
+    assert ret['retval'] == 0
+
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--downgrades'])
+    assert ret['retval'] == 0
+    assert len(ret['stdout']) == 1
+    assert pkg_low in ret['stdout'][0]
+    utils.erase_package(pkg_high)
 
 
 def test_changelog(utils):
