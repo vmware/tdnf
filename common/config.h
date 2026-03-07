@@ -52,6 +52,7 @@
 #define TDNF_CONF_KEY_VARS_DIRS           "varsdir"
 #define TDNF_CONF_KEY_CHECK_UPDATE_COMPAT "dnf_check_update_compat"
 #define TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED "distrosync_reinstall_changed"
+#define TDNF_CONF_KEY_CONNECT_TIMEOUT     "connect_timeout"
 
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"

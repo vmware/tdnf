@@ -145,6 +145,7 @@ typedef enum
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
 
 #define TDNF_DEFAULT_OPENMAX              1024
+#define TDNF_CONF_DEFAULT_CONNECT_TIMEOUT 0  // seconds (unlimited)
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0

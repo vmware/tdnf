@@ -264,6 +264,7 @@ typedef struct _TDNF_CONF
     int nPluginsEnabled;
     int nSkipDigest;
     int nSkipSignature;
+    int nConnectTimeout;
     char* pszRepoDir;
     char* pszCacheDir;
     char* pszPersistDir;
