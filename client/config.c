@@ -144,6 +144,13 @@ TDNFReadConfig(
                   &pConf->nOpenMax);
     BAIL_ON_TDNF_ERROR(dwError);
 
+    dwError = TDNFReadKeyValueInt(
+                  pSection,
+                  TDNF_CONF_KEY_CONNECT_TIMEOUT,
+                  TDNF_CONF_DEFAULT_CONNECT_TIMEOUT,
+                  &pConf->nConnectTimeout);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     dwError = TDNFConfigReadProxySettings(
                   pSection,
                   pConf);
