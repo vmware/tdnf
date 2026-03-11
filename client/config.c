@@ -86,6 +86,7 @@ TDNFReadConfig(
     pConf->nCleanRequirementsOnRemove = 0;
     pConf->nKeepCache = 0;
     pConf->nOpenMax = TDNF_DEFAULT_OPENMAX;
+    pConf->nConnectTimeout = TDNF_CONF_DEFAULT_CONNECT_TIMEOUT;
 
     register_ini(NULL);
     mod_ini = find_cnfmodule("ini");
@@ -170,6 +171,10 @@ TDNFReadConfig(
         else if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
         {
             pConf->nOpenMax = atoi(cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CONNECT_TIMEOUT) == 0)
+        {
+            pConf->nConnectTimeout = strtoi(cn->value);
         }
         else if (strcmp(cn->name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
         {
