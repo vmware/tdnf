@@ -88,6 +88,7 @@ typedef enum
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
 #define TDNF_CONF_KEY_MINVERSIONS         "minversions"
 #define TDNF_CONF_KEY_OPENMAX             "openmax"
+#define TDNF_CONF_KEY_CONNECT_TIMEOUT     "connect_timeout"
 
 //Repo file key names
 #define TDNF_REPO_KEY_BASEURL             "baseurl"
@@ -137,6 +138,7 @@ typedef enum
 #define TDNF_REPO_METADATA_EXPIRE_NEVER   "never"
 
 #define TDNF_DEFAULT_OPENMAX              1024
+#define TDNF_CONF_DEFAULT_CONNECT_TIMEOUT 0  // seconds (unlimited)
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0

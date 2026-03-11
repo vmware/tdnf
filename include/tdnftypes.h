@@ -242,6 +242,7 @@ typedef struct _TDNF_CONF
     int nCleanRequirementsOnRemove;
     int nKeepCache;
     int nOpenMax;          //set max number of open files
+    int nConnectTimeout;
     char* pszRepoDir;
     char* pszCacheDir;
     char* pszProxy;
