@@ -164,6 +164,10 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         {
             pConf->nCliGPGCheck = isTrue(cn->value);
         }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_CONNECT_TIMEOUT) == 0)
+        {
+            pConf->nConnectTimeout = strtoi(cn->value);
+        }
         else if (strcmp(cn->name, TDNF_CONF_KEY_SSL_VERIFY) == 0)
         {
             pConf->nSSLVerify = isTrue(cn->value);
@@ -345,6 +349,7 @@ TDNFReadConfig(
     pConf->nOpenMax = TDNF_CONF_DEFAULT_OPENMAX;
     pConf->nInstallOnlyLimit = TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT;
     pConf->nSSLVerify = TDNF_CONF_DEFAULT_SSLVERIFY;
+    pConf->nConnectTimeout = TDNF_CONF_DEFAULT_CONNECT_TIMEOUT;
 
     register_ini(NULL);
     mod_ini = find_cnfmodule("ini");

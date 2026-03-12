@@ -56,6 +56,7 @@
 #define TDNF_CONF_KEY_VARS_DIRS           "varsdir"
 #define TDNF_CONF_KEY_CHECK_UPDATE_COMPAT "dnf_check_update_compat"
 #define TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED "distrosync_reinstall_changed"
+#define TDNF_CONF_KEY_CONNECT_TIMEOUT     "connect_timeout"
 
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 
@@ -117,6 +118,7 @@
 #define TDNF_CONF_DEFAULT_OPENMAX            1024
 #define TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT  2
 #define TDNF_CONF_DEFAULT_SSLVERIFY          1
+#define TDNF_CONF_DEFAULT_CONNECT_TIMEOUT    0  // seconds (unlimited)
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0

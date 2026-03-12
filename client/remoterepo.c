@@ -218,6 +218,12 @@ TDNFDownloadFile(
     dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
     BAIL_ON_TDNF_CURL_ERROR(dwError);
 
+    if (pTdnf->pConf->nConnectTimeout > 0)
+    {
+        curl_easy_setopt(pCurl, CURLOPT_CONNECTTIMEOUT,
+                          (long)pTdnf->pConf->nConnectTimeout);
+    }
+
     if (!pTdnf->pArgs->nQuiet && pszProgressData != NULL)
     {
         //print progress only if tty or verbose is specified.
