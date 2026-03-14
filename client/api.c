@@ -832,9 +832,9 @@ TDNFAddCmdLinePackages(
         queue_push(pQueueGoal, id);
     }
 
+    repo_internalize(pTdnf->pSolvCmdLineRepo);
     pool_addfileprovides(pSack->pPool);
     pool_createwhatprovides(pSack->pPool);
-    repo_internalize(pTdnf->pSolvCmdLineRepo);
 
 cleanup:
     TDNF_SAFE_FREE_MEMORY(pszRPMPath);
