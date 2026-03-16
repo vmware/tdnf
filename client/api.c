@@ -2396,6 +2396,84 @@ error:
 }
 
 uint32_t
+TDNFGetPackageUrls(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    char ***pppszUrls,
+    int *pnCount)
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pInfo = NULL;
+    PTDNF_REPO_DATA pRepo = NULL;
+    char **ppszUrls = NULL;
+    char *pszUrl = NULL;
+    int nCount = 0;
+    int nIndex = 0;
+
+    /* lists that require downloading RPMs */
+    PTDNF_PKG_INFO *apLists[] = {
+        &pSolvedPkgInfo->pPkgsToInstall,
+        &pSolvedPkgInfo->pPkgsToUpgrade,
+        &pSolvedPkgInfo->pPkgsToDowngrade,
+        &pSolvedPkgInfo->pPkgsToReinstall,
+    };
+
+    if (!pTdnf || !pSolvedPkgInfo || !pppszUrls || !pnCount)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (int i = 0; i < (int)(sizeof(apLists)/sizeof(apLists[0])); i++)
+    {
+        for (pInfo = *apLists[i]; pInfo; pInfo = pInfo->pNext)
+        {
+            /* skip local packages (absolute path) */
+            if (!IsNullOrEmptyString(pInfo->pszLocation) &&
+                pInfo->pszLocation[0] != '/')
+            {
+                nCount++;
+            }
+        }
+    }
+
+    dwError = TDNFAllocateMemory(nCount + 1, sizeof(char *), (void **)&ppszUrls);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (int i = 0; i < (int)(sizeof(apLists)/sizeof(apLists[0])); i++)
+    {
+        for (pInfo = *apLists[i]; pInfo; pInfo = pInfo->pNext)
+        {
+            if (IsNullOrEmptyString(pInfo->pszLocation) ||
+                pInfo->pszLocation[0] == '/')
+            {
+                continue;
+            }
+
+            dwError = TDNFFindRepoById(pTdnf, pInfo->pszRepoName, &pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFCreatePackageUrl(pRepo, pInfo->pszLocation, &pszUrl);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            ppszUrls[nIndex++] = pszUrl;
+            pszUrl = NULL;
+        }
+    }
+
+    *pppszUrls = ppszUrls;
+    *pnCount = nCount;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszUrl);
+    return dwError;
+
+error:
+    TDNFFreeStringArray(ppszUrls);
+    goto cleanup;
+}
+
+uint32_t
 TDNFMark(
     PTDNF pTdnf,
     char** ppszPackageNameSpecs,

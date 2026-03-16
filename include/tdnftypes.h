@@ -231,6 +231,7 @@ typedef struct _TDNF_CMD_ARGS
     int nIPv6;             //resolve to IPv6 addresses only
     int nDisableExcludes;  //disable excludes from tdnf.conf
     int nDownloadOnly;     //download packages only, no install
+    int nUrlsOnly;         //print package URLs only, no download or install
     int nNoAutoRemove;     //overide clean_requirements_on_remove config option
     int nJsonOutput;       //output in json format
     int nTestOnly;         //run test transaction only

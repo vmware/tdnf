@@ -132,6 +132,14 @@ TDNFCliInvokeAlterHistory(
     PTDNF_HISTORY_ARGS pHistoryArgs
     );
 
+uint32_t
+TDNFCliInvokeGetPackageUrls(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,
+    char ***pppszUrls,
+    int *pnCount
+);
+
 void
 TDNFCliShowNoSuchOption(
     const char* pszOption

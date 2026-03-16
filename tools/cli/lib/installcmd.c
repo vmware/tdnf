@@ -333,6 +333,26 @@ TDNFCliAlterCommand(
                   &pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 
+    if (pCmdArgs->nUrlsOnly)
+    {
+        char **ppszUrls = NULL;
+        int nCount = 0;
+
+        dwError = pContext->pFnGetPackageUrls(
+                      pContext,
+                      pSolvedPkgInfo,
+                      &ppszUrls,
+                      &nCount);
+        BAIL_ON_CLI_ERROR(dwError);
+
+        for (int i = 0; i < nCount; i++)
+        {
+            pr_crit("%s\n", ppszUrls[i]);
+        }
+        TDNFFreeStringArray(ppszUrls);
+        goto cleanup;
+    }
+
     dwError = TDNFCliAskAndAlter(pContext, pCmdArgs, pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
 

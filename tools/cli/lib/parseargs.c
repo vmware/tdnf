@@ -11,6 +11,7 @@
 
 static TDNF_CMD_ARGS _opt = {0};
 
+/* options must be grouped if specific for sub commands, and sorted alphabetically */
 static struct option pstOptions[] =
 {
     {"4",             no_argument, 0, '4'},                //-4 resolve to IPv4 addresses only
@@ -62,6 +63,7 @@ static struct option pstOptions[] =
     {"skipsignature", no_argument, &_opt.nSkipSignature, 1}, //--skipsignature to skip verifying RPM signatures
     {"source",        no_argument, &_opt.nSource, 1},
     {"testonly",      no_argument, &_opt.nTestOnly, 1},
+    {"urls",          no_argument, &_opt.nUrlsOnly, 1},    //--urls
     {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
     // reposync options
@@ -73,7 +75,6 @@ static struct option pstOptions[] =
     {"metadata-path", required_argument, 0, 0},
     {"newest-only",   no_argument, 0, 0},
     {"norepopath",    no_argument, 0, 0},
-    {"urls",          no_argument, 0, 0},
     // repoquery option
     // repoquery select options
     {"available",     no_argument, 0, 0},
@@ -289,12 +290,12 @@ TDNFCliParseArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    if (pCmdArgs->nAllDeps && !pCmdArgs->nDownloadOnly) {
+    if (pCmdArgs->nAllDeps && !pCmdArgs->nDownloadOnly && !pCmdArgs->nUrlsOnly) {
         dwError = ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY;
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    if (pCmdArgs->nNoDeps && !pCmdArgs->nDownloadOnly) {
+    if (pCmdArgs->nNoDeps && !pCmdArgs->nDownloadOnly && !pCmdArgs->nUrlsOnly) {
         dwError = ERROR_TDNF_CLI_NODEPS_REQUIRES_DOWNLOADONLY;
         BAIL_ON_CLI_ERROR(dwError);
     }
@@ -353,6 +354,7 @@ TDNFCopyOptions(
     pArgs->nIPv6          = pOptionArgs->nIPv6;
     pArgs->nDisableExcludes = pOptionArgs->nDisableExcludes;
     pArgs->nDownloadOnly  = pOptionArgs->nDownloadOnly;
+    pArgs->nUrlsOnly      = pOptionArgs->nUrlsOnly;
     pArgs->nNoAutoRemove  = pOptionArgs->nNoAutoRemove;
     pArgs->nJsonOutput    = pOptionArgs->nJsonOutput;
     pArgs->nTestOnly      = pOptionArgs->nTestOnly;
