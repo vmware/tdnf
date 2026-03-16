@@ -257,6 +257,8 @@ SolvCountPackages(
     pool = pSack->pPool;
     FOR_POOL_SOLVABLES(p)
     {
+        if (pool->considered && !MAPTST(pool->considered, p))
+            continue;
         dwCount++;
     }
     *pdwCount = dwCount;

@@ -96,6 +96,8 @@ SolvFindSolvablesByNevraId(
     FOR_POOL_SOLVABLES(p)
     {
         const Solvable *s = &pool->solvables[p];
+        if (pool->considered && !MAPTST(pool->considered, p))
+            continue;
         if (installed == (s->repo == pool->installed)) {
             if (s->name == name && s->evr == evr && s->arch == arch) {
                 queue_push(qresult, p);

@@ -1422,6 +1422,8 @@ SolvFindBestAvailable(
     * for the best package */
     FOR_PROVIDES(p, pp, idName)
     {
+        if (pool->considered && !MAPTST(pool->considered, p))
+            continue;
         if (pool->solvables[p].name == idName)
             continue;               /* already done in step 1 */
         if (!is_obsoleting(pool, pool->solvables + p, pool->solvables + q.elements[0]))
