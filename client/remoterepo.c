@@ -131,6 +131,9 @@ TDNFDownloadFileFromRepo(
             if (dwError == 0) {
                 break;
             }
+            if (pRepo->ppszBaseUrls[i + 1]) {
+                pr_err("Warning: failed to download %s, trying next base URL\n", pszUrl);
+            }
             TDNF_SAFE_FREE_MEMORY(pszUrl);
         }
     } else {
@@ -266,6 +269,8 @@ TDNFDownloadFile(
         }
         if (i == pRepo->nRetries || TDNFCurlErrorIsFatal(dwError))
         {
+            pr_err("Error: failed to download %s: %s\n",
+                   pszFileUrl, curl_easy_strerror(dwError));
             BAIL_ON_TDNF_CURL_ERROR(dwError);
         }
         fclose(fp);
@@ -286,7 +291,7 @@ TDNFDownloadFile(
     if(lStatus >= 400)
     {
         pr_err(
-                "Error: %ld when downloading %s\n. Please check repo url "
+                "Error: %ld when downloading %s. Please check repo url "
                 "or refresh metadata with 'tdnf makecache'.\n",
                 lStatus,
                 pszFileUrl);
