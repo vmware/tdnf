@@ -293,6 +293,35 @@ def test_history_redo_and_autoinstall(utils):
     assert pkgname_req not in "\n".join(ret['stdout'])
 
 
+def test_history_id(utils):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+
+    # record id before install
+    ret = utils.run(['tdnf', 'history', 'id'])
+    assert ret['retval'] == 0
+    id_before = int(ret['stdout'][0].strip())
+
+    utils.install_package(pkgname)
+
+    # id must have increased by exactly 1 after a single install transaction
+    ret = utils.run(['tdnf', 'history', 'id'])
+    assert ret['retval'] == 0
+    id_after = int(ret['stdout'][0].strip())
+    assert id_after == id_before + 1
+
+
+def test_history_id_json(utils):
+    import json
+
+    ret = utils.run(['tdnf', '-j', 'history', 'id'])
+    assert ret['retval'] == 0
+    data = json.loads(ret['stdout'][0])
+    assert 'Id' in data
+    assert isinstance(data['Id'], int)
+    assert data['Id'] > 0
+
+
 def test_history_memcheck(utils):
     ret = utils.run_memcheck(['tdnf', 'history'])
     assert ret['retval'] == 0
