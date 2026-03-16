@@ -120,6 +120,12 @@ TDNFCliInvokeHistoryResolve(
 );
 
 uint32_t
+TDNFCliInvokeHistoryGetId(
+    PTDNF_CLI_CONTEXT pContext,
+    int *pnId
+);
+
+uint32_t
 TDNFCliInvokeAlterHistory(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo,

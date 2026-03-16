@@ -92,6 +92,7 @@ int main(int argc, char **argv)
         _context.pFnHistoryResolve = TDNFCliInvokeHistoryResolve;
         _context.pFnAlterHistory = TDNFCliInvokeAlterHistory;
         _context.pFnMark = TDNFCliInvokeMark;
+        _context.pFnHistoryGetId = TDNFCliInvokeHistoryGetId;
 
         pszCmd = pCmdArgs->ppszCmds[0];
 
@@ -484,6 +485,15 @@ TDNFCliInvokeHistoryResolve(
         pContext->hTdnf,
         pHistoryArgs,
         ppSolvedPkgInfo);
+}
+
+uint32_t
+TDNFCliInvokeHistoryGetId(
+    PTDNF_CLI_CONTEXT pContext,
+    int *pnId
+)
+{
+    return TDNFHistoryGetId(pContext->hTdnf, pnId);
 }
 
 uint32_t
