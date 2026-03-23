@@ -7,12 +7,15 @@
 #
 
 import os
+import glob
 import shutil
 import pytest
 import fnmatch
+import tempfile
 
 INSTALLROOT = '/root/installroot'
 REPOFILENAME = 'photon-test.repo'
+RELEASE_VER = '5.0'
 
 REPODIR = '/root/yum.repos.d'
 REPONAME = 'reposdir-test'
@@ -128,3 +131,42 @@ def test_setopt_reposdir_with_installroot(utils):
     assert REPONAME in "\n".join(ret['stdout'])
 
     shutil.rmtree(INSTALLROOT)
+
+
+def test_installroot_local_rpms_disablerepo_after_download(utils):
+
+    workdir = tempfile.mkdtemp(prefix='test-tdnf-')
+    try:
+        installroot = os.path.join(workdir, 'installroot')
+        rpm_repo = os.path.join(workdir, 'rpm-repo')
+        os.makedirs(rpm_repo, exist_ok=True)
+        os.makedirs(installroot, exist_ok=True)
+
+        repo_url = "http://localhost:8080/photon-test"
+
+        ret = utils.run(
+            ['tdnf', 'install', '-y', 'tdnf-test3', 'tdnf-test4',
+             '--refresh', '--downloadonly',
+             '--releasever', RELEASE_VER,
+             '--installroot', installroot,
+             '--downloaddir', rpm_repo,
+             '--nogpgcheck',
+             '--disablerepo=*', '--enablerepo=pkgs',
+             f'--repofrompath=pkgs,{repo_url}'],
+            cwd=workdir
+        )
+        assert ret['retval'] == 0, 'downloadonly failed: {}'.format(ret.get('stderr', []))
+
+        rpms = glob.glob(os.path.join(rpm_repo, '*.rpm'))
+        assert len(rpms) >= 1, 'no RPMs downloaded into rpm-repo'
+
+        ret = utils.run(
+            ['tdnf', 'install', '-y', '--refresh', '--releasever', RELEASE_VER,
+             '--installroot', installroot, '--disablerepo=*', '--nogpgcheck'] + rpms,
+            cwd=workdir
+        )
+        assert ret['retval'] == 0, (
+            'install from local RPMs into installroot with --disablerepo=* failed: {}'
+        ).format(ret.get('stderr', []))
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
