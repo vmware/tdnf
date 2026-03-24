@@ -810,19 +810,38 @@ TDNFTransAddInstallPkg(
             int i;
 
             /* avoid copying a file to cache if we can access it directly */
-            for (i = 0; pRepo->ppszBaseUrls[i]; i++) {
-                if (strncasecmp(pRepo->ppszBaseUrls[i], "file://", 7) == 0)
+
+            /* location may already be an absolute file:// URL (from xml:base) */
+            if (strncasecmp(pszPackageLocation, "file://", 7) == 0)
+            {
+                dwError = TDNFAllocateString(pszPackageLocation + 7, &pszFilePath);
+                BAIL_ON_TDNF_ERROR(dwError);
+                if (access(pszFilePath, F_OK) == 0)
                 {
-                    dwError = TDNFJoinPath(&pszFilePath,
-                                           &(pRepo->ppszBaseUrls[i][7]),
-                                           pszPackageLocation,
-                                           NULL);
-                    BAIL_ON_TDNF_ERROR(dwError);
-                    if(access(pszFilePath, F_OK) == 0) {
-                        nInPlace = 1;
-                        break;
-                    }
+                    nInPlace = 1;
+                }
+                else
+                {
                     TDNF_SAFE_FREE_MEMORY(pszFilePath);
+                }
+            }
+
+            if (!nInPlace)
+            {
+                for (i = 0; pRepo->ppszBaseUrls[i]; i++) {
+                    if (strncasecmp(pRepo->ppszBaseUrls[i], "file://", 7) == 0)
+                    {
+                        dwError = TDNFJoinPath(&pszFilePath,
+                                               &(pRepo->ppszBaseUrls[i][7]),
+                                               pszPackageLocation,
+                                               NULL);
+                        BAIL_ON_TDNF_ERROR(dwError);
+                        if(access(pszFilePath, F_OK) == 0) {
+                            nInPlace = 1;
+                            break;
+                        }
+                        TDNF_SAFE_FREE_MEMORY(pszFilePath);
+                    }
                 }
             }
 

@@ -9,6 +9,61 @@
 #define _GNU_SOURCE 1
 #include "includes.h"
 
+/*
+ * Retrieve the effective package location, incorporating xml:base if present.
+ *
+ * If the solvable has SOLVABLE_MEDIABASE set (from <location xml:base="..."/>),
+ * the mediabase and href are joined with TDNFJoinPath. Since mediabase is always
+ * the first argument, URL schemes (e.g. "file:///pool") are preserved correctly.
+ * The result is either an absolute URL (e.g. "file:///pool/pkg.rpm") or a
+ * relative path (e.g. "snap-merged/pkg.rpm") that downstream callers join with
+ * the repo base URL as normal.
+ *
+ * When no mediabase is present the bare href is returned unchanged, preserving
+ * existing behaviour for normal repositories.
+ */
+static uint32_t
+GetPkgLocationWithMediaBase(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char **ppszLocation)
+{
+    uint32_t dwError = 0;
+    char *pszLocation = NULL;
+    char *pszMediaBase = NULL;
+    char *pszComposed = NULL;
+
+    dwError = SolvGetPkgLocationFromId(pSack, dwPkgId, &pszLocation);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pszLocation)
+    {
+        dwError = SolvGetPkgMediaBaseFromId(pSack, dwPkgId, &pszMediaBase);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (pszMediaBase)
+        {
+            dwError = TDNFJoinPath(&pszComposed, pszMediaBase, pszLocation, NULL);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            TDNF_SAFE_FREE_MEMORY(pszLocation);
+            pszLocation = pszComposed;
+            pszComposed = NULL;
+        }
+    }
+
+    *ppszLocation = pszLocation;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszMediaBase);
+    TDNF_SAFE_FREE_MEMORY(pszComposed);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszLocation);
+    goto cleanup;
+}
+
 uint32_t
 TDNFMatchForReinstall(
     PSolvSack pSack,
@@ -190,7 +245,7 @@ TDNFPopulatePkgInfoQueryFormat(
                       pszSrcName, pszSrcEVR, pszSrcArch);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgLocationFromId(
+        dwError = GetPkgLocationWithMediaBase(
                       pSack,
                       dwPkgId,
                       &pPkgInfo->pszLocation);
@@ -346,7 +401,7 @@ TDNFPopulatePkgInfoArray(
         }
         else if (nDetail == DETAIL_LOCATION)
         {
-            dwError = SolvGetPkgLocationFromId(
+            dwError = GetPkgLocationWithMediaBase(
                           pSack,
                           dwPkgId,
                           &pPkgInfo->pszLocation);
@@ -462,7 +517,7 @@ TDNFPopulatePkgInfoForRepoSync(
                       &pPkgInfo->pszRepoName);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgLocationFromId(
+        dwError = GetPkgLocationWithMediaBase(
                       pSack,
                       dwPkgId,
                       &pPkgInfo->pszLocation);
@@ -1159,7 +1214,7 @@ TDNFPopulatePkgInfos(
                       &pPkgInfo->pszSummary);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = SolvGetPkgLocationFromId(
+        dwError = GetPkgLocationWithMediaBase(
                       pSack,
                       dwPkgId,
                       &pPkgInfo->pszLocation);
