@@ -1,0 +1,487 @@
+#!/usr/bin/env python3
+#
+# make-snapshot-repo - create a filtered repodata directory from a snapshot list
+#
+# Given an upstream repository base URL and a snapshot package list, this script
+# fetches the upstream primary.xml (and filelists.xml / other.xml), selects only
+# the packages named in the snapshot (matching both name and version), and writes
+# a new repodata directory with xml:base pointing at the original base URL so
+# that clients fetch RPMs directly from the upstream server.
+#
+# The generated metadata is usable by tdnf (and dnf/yum) directly:
+#
+#   [snapshot-92]
+#   name=Photon 5.0 snapshot 92
+#   baseurl=file:///path/to/output/dir
+#   enabled=1
+#   gpgcheck=0
+#
+# Usage:
+#   make-snapshot-repo <base-url> <snapshot-list> <output-dir>
+#
+#   base-url       Upstream repo base URL, e.g.
+#                    https://host/path/photon_5.0_x86_64
+#   snapshot-list  Local path or URL to the snapshot list file
+#                  (lines of "name=version", comments with # are ignored)
+#   output-dir     Directory to write the new repodata/ into
+#
+# Only XML files are generated (no SQLite databases).
+# filelists and other metadata are filtered to match the kept packages
+# using the pkgid (sha256 checksum) from primary.xml.
+#
+
+import argparse
+import gzip
+import hashlib
+import io
+import os
+import re
+import sys
+import time
+import urllib.request
+import xml.etree.ElementTree as ET
+
+
+# ---------------------------------------------------------------------------
+# XML namespace constants used in repodata files
+# ---------------------------------------------------------------------------
+NS_COMMON    = 'http://linux.duke.edu/metadata/common'
+NS_RPM       = 'http://linux.duke.edu/metadata/rpm'
+NS_REPO      = 'http://linux.duke.edu/metadata/repo'
+NS_FILELISTS = 'http://linux.duke.edu/metadata/filelists'
+NS_OTHER     = 'http://linux.duke.edu/metadata/other'
+NS_XML       = 'http://www.w3.org/XML/1998/namespace'
+
+# Register stable prefixes for parsing; we avoid registering '' (default)
+# because it conflicts across documents with different default namespaces.
+ET.register_namespace('rpm', NS_RPM)
+ET.register_namespace('xml', NS_XML)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _fetch(url_or_path):
+    """Return bytes from a URL or local file path."""
+    if url_or_path.startswith(('http://', 'https://', 'ftp://')):
+        with urllib.request.urlopen(url_or_path) as r:
+            return r.read()
+    with open(url_or_path, 'rb') as f:
+        return f.read()
+
+
+def _fetch_text(url_or_path):
+    return _fetch(url_or_path).decode('utf-8')
+
+
+def _open_gz_stream(url_or_path):
+    """
+    Return a file-like object that yields decompressed bytes from a .gz file
+    without reading the whole thing into memory first.
+
+    For URLs the HTTP response is streamed directly into GzipFile.
+    For local paths the file is opened and wrapped in GzipFile.
+    The caller is responsible for closing the returned objects.
+    """
+    if url_or_path.startswith(('http://', 'https://', 'ftp://')):
+        response = urllib.request.urlopen(url_or_path)
+        return gzip.GzipFile(fileobj=response), response
+    else:
+        f = open(url_or_path, 'rb')
+        return gzip.GzipFile(fileobj=f), f
+
+
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _parse_repomd(repomd_url):
+    """Return a dict of {type: href} from repomd.xml."""
+    data = _fetch_text(repomd_url)
+    root = ET.fromstring(data)
+    result = {}
+    for data_el in root.findall(f'{{{NS_REPO}}}data'):
+        dtype = data_el.get('type')
+        loc   = data_el.find(f'{{{NS_REPO}}}location')
+        if loc is not None:
+            result[dtype] = loc.get('href')
+    return result
+
+
+def _load_snapshot(url_or_path):
+    """
+    Parse a snapshot list.  Returns a dict of {name: version-release}.
+    Lines have the format:  name=version-release  (e.g. acl=2.3.1-6.ph5)
+    Blank lines and lines starting with '#' are ignored.
+    """
+    text = _fetch_text(url_or_path)
+    packages = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        if '=' not in line:
+            print(f'WARNING: ignoring malformed line: {line!r}', file=sys.stderr)
+            continue
+        name, ver = line.split('=', 1)
+        packages[name.strip()] = ver.strip()
+    return packages
+
+
+def _evr_from_element(ver_el):
+    """Return (epoch, ver, rel) strings from a <version> element."""
+    return ver_el.get('epoch', '0'), ver_el.get('ver', ''), ver_el.get('rel', '')
+
+
+def _snapshot_ver_matches(epoch, ver, rel, snapshot_ver):
+    """
+    Check whether a primary.xml package entry matches the snapshot version string.
+
+    The snapshot file uses  "version-release"  (e.g. "2.3.1-6.ph5").
+    It may optionally include an epoch prefix "epoch:version-release"
+    (e.g. "1:2.3.1-6.ph5"), but in practice Photon snapshots do not.
+    """
+    if ':' in snapshot_ver:
+        snap_epoch, rest = snapshot_ver.split(':', 1)
+    else:
+        snap_epoch = None
+        rest = snapshot_ver
+
+    snap_ver, snap_rel = rest.rsplit('-', 1) if '-' in rest else (rest, None)
+
+    if snap_ver != ver:
+        return False
+    if snap_rel is not None and snap_rel != rel:
+        return False
+    if snap_epoch is not None and snap_epoch != epoch:
+        return False
+    return True
+
+
+def _xml_escape(s):
+    """Escape a string for use in XML attribute values or text content."""
+    return (s.replace('&', '&amp;')
+             .replace('<', '&lt;')
+             .replace('>', '&gt;')
+             .replace('"', '&quot;'))
+
+
+# ---------------------------------------------------------------------------
+# Streaming XML serialization
+#
+# ElementTree's namespace handling is too fragile for our use case (mixed
+# default namespaces, xml: prefix attributes).  Instead we serialize the
+# package elements via ET (which handles the complex inner structure
+# correctly once namespaces are resolved) and wrap them in a hand-written
+# root element with the correct namespace declaration.
+# ---------------------------------------------------------------------------
+
+def _et_to_str(elem):
+    """
+    Serialize an ElementTree element to a UTF-8 string, stripping the
+    XML declaration that ET.tostring adds when encoding='unicode' is not used.
+    We serialize with encoding='unicode' to get a plain string, then let the
+    caller handle encoding and the outer document wrapper.
+    """
+    # ElementTree may prefix element tags with namespace URIs in Clark notation;
+    # we need to temporarily register the default namespace to get clean output.
+    # We do this per-element by using a BytesIO round-trip with a document wrapper.
+    buf = io.BytesIO()
+    ET.ElementTree(elem).write(buf, encoding='UTF-8', xml_declaration=False)
+    return buf.getvalue().decode('utf-8')
+
+
+def _strip_ns_prefix(xml_str, ns_uri):
+    """
+    Replace Clark-notation namespace prefixes like '{uri}tag' patterns in
+    serialized XML with the appropriate form given a known default namespace.
+
+    ElementTree serializes unknown-default-namespace elements as ns0:tag etc.
+    We post-process to get clean output matching the original file format.
+    """
+    # Replace xmlns:ns0="..." and ns0: with xmlns="..." and bare tags
+    xml_str = re.sub(
+        r' xmlns:ns\d+="' + re.escape(ns_uri) + r'"',
+        f' xmlns="{ns_uri}"',
+        xml_str
+    )
+    xml_str = re.sub(r'<(/?)\s*ns\d+:', r'<\1', xml_str)
+    return xml_str
+
+
+# ---------------------------------------------------------------------------
+# Filter functions
+# ---------------------------------------------------------------------------
+
+def filter_primary_xml(url_or_path, snapshot_pkgs, base_url):
+    """
+    Keep only packages matching snapshot_pkgs; add xml:base to each <location>.
+    Returns (filtered_gz, kept_pkgids) where kept_pkgids is the set of sha256
+    checksums of kept packages (used to filter filelists / other).
+
+    Streams the gzip-compressed XML from url_or_path without loading the whole
+    decompressed document into memory.
+    """
+    gz_stream, underlying = _open_gz_stream(url_or_path)
+    try:
+        root = ET.parse(gz_stream).getroot()
+    finally:
+        gz_stream.close()
+        underlying.close()
+
+    kept_pkgids   = set()
+    matched_names = set()
+    pkg_chunks    = []
+
+    for pkg in root.findall(f'{{{NS_COMMON}}}package'):
+        name_el = pkg.find(f'{{{NS_COMMON}}}name')
+        ver_el  = pkg.find(f'{{{NS_COMMON}}}version')
+        if name_el is None or ver_el is None:
+            continue
+
+        name = name_el.text
+        if name not in snapshot_pkgs:
+            continue
+
+        epoch, ver, rel = _evr_from_element(ver_el)
+        if not _snapshot_ver_matches(epoch, ver, rel, snapshot_pkgs[name]):
+            continue
+
+        cs_el = pkg.find(f'{{{NS_COMMON}}}checksum')
+        if cs_el is not None and cs_el.text:
+            kept_pkgids.add(cs_el.text.strip())
+
+        # Set xml:base on the <location> element
+        loc_el = pkg.find(f'{{{NS_COMMON}}}location')
+        if loc_el is not None:
+            loc_el.set('xml:base', base_url)
+
+        pkg_chunks.append(_et_to_str(pkg))
+        matched_names.add(name)
+
+    missing = set(snapshot_pkgs) - matched_names
+    for m in sorted(missing):
+        print(f'WARNING: package not found in primary.xml: '
+              f'{m}={snapshot_pkgs[m]}', file=sys.stderr)
+
+    n_kept = len(pkg_chunks)
+    print(f'primary: kept {n_kept} entries '
+          f'({len(matched_names)} names, {len(missing)} not found)',
+          file=sys.stderr)
+
+    # Assemble the document with a hand-written root to guarantee correct namespaces
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>\n',
+        f'<metadata xmlns="{NS_COMMON}" xmlns:rpm="{NS_RPM}" packages="{n_kept}">\n',
+    ]
+    for chunk in pkg_chunks:
+        chunk = _strip_ns_prefix(chunk, NS_COMMON)
+        # xml:base may have been serialized as ns1:base or similar; normalize
+        chunk = re.sub(r'\bns\d+:base=', 'xml:base=', chunk)
+        parts.append(chunk)
+        parts.append('\n')
+    parts.append('</metadata>\n')
+
+    xml_bytes = ''.join(parts).encode('utf-8')
+    return gzip.compress(xml_bytes), kept_pkgids
+
+
+def filter_pkgid_xml(url_or_path, kept_pkgids, root_tag, ns, root_attr='packages'):
+    """
+    Generic filter for filelists.xml and other.xml, both of which use
+    <package pkgid="..."> keyed by the sha256 from primary.xml.
+
+    Streams the gzip-compressed XML from url_or_path via iterparse so that
+    neither the compressed nor the decompressed data is fully buffered.
+
+    root_tag  e.g. 'filelists' or 'otherdata'
+    ns        the namespace URI for that document
+    """
+    gz_stream, underlying = _open_gz_stream(url_or_path)
+    kept    = []
+    pkg_tag = f'{{{ns}}}package'
+
+    try:
+        for event, elem in ET.iterparse(gz_stream, events=('end',)):
+            if elem.tag == pkg_tag:
+                if elem.get('pkgid', '') in kept_pkgids:
+                    kept.append(_et_to_str(elem))
+                elem.clear()
+    finally:
+        gz_stream.close()
+        underlying.close()
+
+    print(f'{root_tag}: kept {len(kept)} entries', file=sys.stderr)
+
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>\n',
+        f'<{root_tag} xmlns="{ns}" packages="{len(kept)}">\n',
+    ]
+    for chunk in kept:
+        chunk = _strip_ns_prefix(chunk, ns)
+        parts.append(chunk)
+        parts.append('\n')
+    parts.append(f'</{root_tag}>\n')
+
+    xml_bytes = ''.join(parts).encode('utf-8')
+    return gzip.compress(xml_bytes)
+
+
+# ---------------------------------------------------------------------------
+# Write output
+# ---------------------------------------------------------------------------
+
+def _write_gz_file(output_dir, label, gz_data):
+    """Write gz_data to <checksum>-<label>.xml.gz; return metadata tuple."""
+    checksum      = _sha256(gz_data)
+    open_data     = gzip.decompress(gz_data)
+    open_checksum = _sha256(open_data)
+    filename      = f'{checksum}-{label}.xml.gz'
+    path          = os.path.join(output_dir, filename)
+    with open(path, 'wb') as f:
+        f.write(gz_data)
+    print(f'Wrote {path}', file=sys.stderr)
+    return filename, checksum, open_checksum, len(gz_data), len(open_data)
+
+
+def write_output(output_repodata_dir, primary_gz,
+                 filelists_gz=None, other_gz=None, timestamp=None):
+    if timestamp is None:
+        timestamp = int(time.time())
+
+    entries = []
+    for dtype, gz, label in [
+        ('primary',   primary_gz,   'primary'),
+        ('filelists', filelists_gz, 'filelists'),
+        ('other',     other_gz,     'other'),
+    ]:
+        if gz is None:
+            continue
+        fname, cs, ocs, sz, osz = _write_gz_file(output_repodata_dir, label, gz)
+        entries.append((dtype, fname, cs, ocs, sz, osz))
+
+    # Write repomd.xml as a plain string to avoid namespace issues
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>\n',
+        f'<repomd xmlns="{NS_REPO}">\n',
+        f'  <revision>{timestamp}</revision>\n',
+    ]
+    for dtype, fname, cs, ocs, sz, osz in entries:
+        parts += [
+            f'  <data type="{dtype}">\n',
+            f'    <checksum type="sha256">{cs}</checksum>\n',
+            f'    <open-checksum type="sha256">{ocs}</open-checksum>\n',
+            f'    <location href="repodata/{fname}"/>\n',
+            f'    <timestamp>{timestamp}</timestamp>\n',
+            f'    <size>{sz}</size>\n',
+            f'    <open-size>{osz}</open-size>\n',
+            f'  </data>\n',
+        ]
+    parts.append('</repomd>\n')
+
+    repomd_path = os.path.join(output_repodata_dir, 'repomd.xml')
+    with open(repomd_path, 'w', encoding='utf-8') as f:
+        f.write(''.join(parts))
+    print(f'Wrote {repomd_path}', file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# Main logic
+# ---------------------------------------------------------------------------
+
+def run(base_url, snapshot_list, output_dir, filelists=True, other=True):
+    base_url = base_url.rstrip('/')
+
+    # ---- fetch repomd.xml ---------------------------------------------------
+    repomd_url = f'{base_url}/repodata/repomd.xml'
+    print(f'Fetching {repomd_url}', file=sys.stderr)
+    repomd_parts = _parse_repomd(repomd_url)
+
+    if 'primary' not in repomd_parts:
+        print('ERROR: no primary entry in repomd.xml', file=sys.stderr)
+        sys.exit(1)
+
+    # ---- load snapshot list -------------------------------------------------
+    print(f'Loading snapshot list from {snapshot_list}', file=sys.stderr)
+    snapshot_pkgs = _load_snapshot(snapshot_list)
+    print(f'Snapshot contains {len(snapshot_pkgs)} package entries', file=sys.stderr)
+
+    # ---- filter primary.xml — also collect kept pkgids ----------------------
+    primary_url = f'{base_url}/{repomd_parts["primary"]}'
+    print(f'Fetching {primary_url}', file=sys.stderr)
+    filtered_primary_gz, kept_pkgids = filter_primary_xml(
+        primary_url, snapshot_pkgs, base_url)
+
+    # ---- filter filelists.xml.gz --------------------------------------------
+    filtered_filelists_gz = None
+    if filelists:
+        if 'filelists' in repomd_parts:
+            filelists_url = f'{base_url}/{repomd_parts["filelists"]}'
+            print(f'Fetching {filelists_url}', file=sys.stderr)
+            filtered_filelists_gz = filter_pkgid_xml(
+                filelists_url, kept_pkgids, 'filelists', NS_FILELISTS)
+        else:
+            print('WARNING: no filelists in upstream repomd.xml', file=sys.stderr)
+
+    # ---- filter other.xml.gz ------------------------------------------------
+    filtered_other_gz = None
+    if other:
+        if 'other' in repomd_parts:
+            other_url = f'{base_url}/{repomd_parts["other"]}'
+            print(f'Fetching {other_url}', file=sys.stderr)
+            filtered_other_gz = filter_pkgid_xml(
+                other_url, kept_pkgids, 'otherdata', NS_OTHER)
+        else:
+            print('WARNING: no other metadata in upstream repomd.xml', file=sys.stderr)
+
+    # ---- write output -------------------------------------------------------
+    output_repodata_dir = os.path.join(output_dir, 'repodata')
+    os.makedirs(output_repodata_dir, exist_ok=True)
+
+    write_output(output_repodata_dir,
+                 filtered_primary_gz,
+                 filtered_filelists_gz,
+                 filtered_other_gz)
+
+    print('Done.', file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Create a snapshot repodata directory using xml:base.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s \\
+    https://packages.vcfd.broadcom.net/artifactory/photonos-official-generic-prod-local/5.0/photon_5.0_x86_64 \\
+    https://packages.vcfd.broadcom.net/artifactory/photonos-official-generic-prod-local/5.0/photon_snapshots_5.0_x86_64/92/snapshot-92-Update750.x86_64.list \\
+    /srv/repos/snapshot-92
+
+  %(prog)s \\
+    https://packages.vcfd.broadcom.net/artifactory/.../photon_5.0_x86_64 \\
+    /local/snapshot.list \\
+    /srv/repos/snapshot-92
+""")
+    parser.add_argument('base_url',
+                        help='Upstream repository base URL (no trailing slash)')
+    parser.add_argument('snapshot_list',
+                        help='Snapshot package list (local path or URL)')
+    parser.add_argument('output_dir',
+                        help='Directory to write repodata/ into')
+    parser.add_argument('--no-filelists', action='store_true',
+                        help='Skip generating filelists metadata')
+    parser.add_argument('--no-other', action='store_true',
+                        help='Skip generating other metadata (changelogs)')
+    args = parser.parse_args()
+    run(args.base_url, args.snapshot_list, args.output_dir,
+        filelists=not args.no_filelists,
+        other=not args.no_other)
+
+
+if __name__ == '__main__':
+    main()
