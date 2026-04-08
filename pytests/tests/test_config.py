@@ -79,3 +79,10 @@ def test_config_reposdir(utils):
     utils.edit_config({'reposdir': WORKDIR, 'repodir': None}, section='main', filename=TEST_CONF_PATH)
     ret = utils.run(['tdnf', '--config', TEST_CONF_PATH, 'list', pkg])
     assert ret['retval'] == 0
+
+
+def test_config_empty_file(utils):
+    # Using /dev/null simulates an empty config file.
+    # Prior to the fix, this would segfault and return 139.
+    ret = utils.run(['tdnf', '--config', '/dev/null', 'list'])
+    assert ret['retval'] != 139
