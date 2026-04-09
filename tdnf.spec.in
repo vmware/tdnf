@@ -1,6 +1,4 @@
 %define hist_db_dir     %{_libdir}/sysimage/%{name}
-%define history_db_fn   %{hist_db_dir}/history.db
-%define history_util    %{_libexecdir}/%{name}/%{name}-history-util
 %define _tdnfpluginsdir %{_libdir}/%{name}-plugins
 
 %global automatic_services %{name}-automatic.timer %{name}-automatic-notifyonly.timer %{name}-automatic-install.timer
@@ -155,16 +153,10 @@ pip3 install flake8
 
 %post
 /sbin/ldconfig
+[ -d %{hist_db_dir} ] || mkdir -p %{hist_db_dir}
 
 %postun
 /sbin/ldconfig
-
-%posttrans
-# must be postrans because we read the rpm db
-# cannot use tdnf because that is still running even in postrans
-[ -d %{hist_db_dir} ] || mkdir -p %{hist_db_dir}
-[ -f %{history_db_fn} ] || %{history_util} init
-exit 0
 
 %triggerin -- motd
 [ $2 -eq 1 ] || exit 0
