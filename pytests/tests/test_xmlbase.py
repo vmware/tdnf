@@ -492,3 +492,16 @@ class TestAbsoluteHttpBase:
         d = env(xmlbase_repos['http_abs_base_dir'],
                 f'file://{xmlbase_repos["http_abs_base_dir"]}')
         _assert_downloadonly(utils, d)
+
+
+def test_xmlbase_urls(utils, env, xmlbase_repos):
+    d = env(xmlbase_repos['http_abs_base_dir'],
+            f'file://{xmlbase_repos["http_abs_base_dir"]}')
+    conf = os.path.join(d, 'tdnf.conf')
+
+    ret = utils.run(['tdnf', '-c', conf, '--disablerepo=*',
+                     '--enablerepo=test-repo', 'install', '-y', '--urls',
+                     'tdnf-test-one'])
+    print(ret['stdout'])
+    print(ret['stderr'])
+    assert ret['retval'] == 0
