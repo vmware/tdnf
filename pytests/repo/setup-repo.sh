@@ -84,6 +84,7 @@ check_err "Failed to generate gpg key."
 cat << EOF > ~/.rpmmacros
 %_gpg_name tdnftest@tdnf.test
 %__gpg /usr/bin/gpg
+%__transaction_unshare %{nil}
 EOF
 
 
