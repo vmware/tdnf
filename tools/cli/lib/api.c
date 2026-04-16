@@ -1315,6 +1315,46 @@ TDNFCliRefresh(
 
 static
 uint32_t
+TDNFCliHistoryId(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+)
+{
+    uint32_t dwError = 0;
+    int nId = 0;
+    struct json_dump *jd = NULL;
+
+    if (!pContext || !pCmdArgs)
+    {
+        dwError = ERROR_TDNF_CLI_INVALID_ARGUMENT;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    dwError = pContext->pFnHistoryGetId(pContext, &nId);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    if (pCmdArgs->nJsonOutput)
+    {
+        jd = jd_create(0);
+        CHECK_JD_NULL(jd);
+        CHECK_JD_RC(jd_map_start(jd));
+        CHECK_JD_RC(jd_map_add_int(jd, "Id", nId));
+        pr_json(jd->buf);
+    }
+    else
+    {
+        pr_crit("%d\n", nId);
+    }
+
+cleanup:
+    JD_SAFE_DESTROY(jd);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+static
+uint32_t
 TDNFCliHistoryAlter(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs,
@@ -1548,6 +1588,11 @@ TDNFCliHistoryCommand(
     if (pHistoryArgs->nCommand == HISTORY_CMD_LIST)
     {
         dwError = TDNFCliHistoryList(pContext, pCmdArgs, pHistoryArgs);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    else if (pHistoryArgs->nCommand == HISTORY_CMD_ID)
+    {
+        dwError = TDNFCliHistoryId(pContext, pCmdArgs);
         BAIL_ON_CLI_ERROR(dwError);
     }
     else

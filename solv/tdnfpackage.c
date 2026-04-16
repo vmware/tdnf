@@ -746,6 +746,48 @@ error:
 }
 
 uint32_t
+SolvGetPkgMediaBaseFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char** ppszMediaBase)
+{
+    uint32_t dwError = 0;
+    const char* pszTemp = NULL;
+    char* pszMediaBase = NULL;
+    Solvable *pSolv = NULL;
+
+    if(!pSack || !ppszMediaBase)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
+    }
+
+    *ppszMediaBase = NULL;
+
+    pSolv = pool_id2solvable(pSack->pPool, dwPkgId);
+    if(!pSolv)
+    {
+        dwError = ERROR_TDNF_NO_DATA;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    pszTemp = solvable_lookup_str(pSolv, SOLVABLE_MEDIABASE);
+    if(pszTemp)
+    {
+        dwError = TDNFAllocateString(pszTemp, &pszMediaBase);
+        BAIL_ON_TDNF_ERROR(dwError);
+        *ppszMediaBase = pszMediaBase;
+    }
+
+cleanup:
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszMediaBase);
+    goto cleanup;
+}
+
+uint32_t
 SolvGetPkgLocationFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,

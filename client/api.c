@@ -2398,6 +2398,33 @@ error:
 }
 
 uint32_t
+TDNFHistoryGetId(
+    PTDNF pTdnf,
+    int *pnId)
+{
+    uint32_t dwError = 0;
+    struct history_ctx *ctx = NULL;
+
+    if (!pTdnf || !pnId)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetHistoryCtx(pTdnf, &ctx, 1);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *pnId = ctx->trans_id;
+
+cleanup:
+    destroy_history_ctx(ctx);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFMark(
     PTDNF pTdnf,
     char** ppszPackageNameSpecs,

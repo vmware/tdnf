@@ -541,7 +541,7 @@ TDNFPathFromUri(
     uint32_t dwError = 0;
     const char* pszPath = NULL;
     char *pszPathTmp = NULL;
-    size_t nOffset;
+    size_t nOffset = 0;
     const char *szProtocols[] = {"http://", "https://", "ftp://",
                                 "ftps://", "file://", NULL};
     int i = 0;

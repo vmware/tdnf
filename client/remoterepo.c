@@ -115,7 +115,8 @@ TDNFDownloadFileFromRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0]) {
+    if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0] &&
+        strstr(pszLocation, "://") == NULL) {
         /* Try one base URL after the other until we succeed */
         /* Note: this can be improved:
          * 1) we could start with the last good URL next time instead of
@@ -130,11 +131,14 @@ TDNFDownloadFileFromRepo(
             if (dwError == 0) {
                 break;
             }
+            if (pRepo->ppszBaseUrls[i + 1]) {
+                pr_err("Warning: failed to download %s, trying next base URL\n", pszUrl);
+            }
             TDNF_SAFE_FREE_MEMORY(pszUrl);
         }
     } else {
-        /* If there is no base url, pszLocation should contain the whole URL.
-           This is the case for packages from the command line. */
+        /* pszLocation is already an absolute URL (xml:base was absolute), or
+           there is no base URL (command line packages): use it directly. */
         dwError = TDNFDownloadFile(pTdnf, pRepo, pszLocation, pszFile, pszProgressData);
     }
     BAIL_ON_TDNF_ERROR(dwError);
@@ -265,6 +269,8 @@ TDNFDownloadFile(
         }
         if (i == pRepo->nRetries || TDNFCurlErrorIsFatal(dwError))
         {
+            pr_err("Error: failed to download %s: %s\n",
+                   pszFileUrl, curl_easy_strerror(dwError));
             BAIL_ON_TDNF_CURL_ERROR(dwError);
         }
         fclose(fp);
@@ -285,7 +291,7 @@ TDNFDownloadFile(
     if(lStatus >= 400)
     {
         pr_err(
-                "Error: %ld when downloading %s\n. Please check repo url "
+                "Error: %ld when downloading %s. Please check repo url "
                 "or refresh metadata with 'tdnf makecache'.\n",
                 lStatus,
                 pszFileUrl);
@@ -352,12 +358,15 @@ TDNFCreatePackageUrl(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0]) {
+    if (pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[0] &&
+        strstr(pszPackageLocation, "://") == NULL) {
         dwError = TDNFJoinPath(&pszPackageUrl, pRepo->ppszBaseUrls[0], pszPackageLocation, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
     }
     else
     {
+        /* pszPackageLocation is already an absolute URL (xml:base was absolute),
+           or there is no base URL: use it as-is. */
         dwError = TDNFAllocateString(pszPackageLocation, &pszPackageUrl);
         BAIL_ON_TDNF_ERROR(dwError);
     }

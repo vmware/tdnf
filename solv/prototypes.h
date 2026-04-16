@@ -126,6 +126,12 @@ SolvGetPkgUrlFromId(
     char** ppszUrl);
 
 uint32_t
+SolvGetPkgMediaBaseFromId(
+    PSolvSack pSack,
+    uint32_t dwPkgId,
+    char** ppszMediaBase);
+
+uint32_t
 SolvGetPkgLocationFromId(
     PSolvSack pSack,
     uint32_t dwPkgId,

@@ -170,6 +170,11 @@ typedef uint32_t
     char **ppszPkgNameSpecs,
     uint32_t nValue);
 
+typedef uint32_t
+(*PFN_TDNF_HISTORY_GET_ID)(
+    PTDNF_CLI_CONTEXT,
+    int *);
+
 typedef struct _TDNF_CLI_CONTEXT_
 {
     HTDNF hTdnf;
@@ -195,6 +200,7 @@ typedef struct _TDNF_CLI_CONTEXT_
     PFN_TDNF_HISTORY_RESOLVE_CMD  pFnHistoryResolve;
     PFN_TDNF_ALTER_HISTORY        pFnAlterHistory;
     PFN_TDNF_MARK_COMMAND         pFnMark;
+    PFN_TDNF_HISTORY_GET_ID       pFnHistoryGetId;
 } TDNF_CLI_CONTEXT;
 
 #ifdef __cplusplus

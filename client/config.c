@@ -143,6 +143,11 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
     const char *pszProxyUser = NULL;
     const char *pszProxyPass = NULL;
 
+    if (!cn_top)
+    {
+        goto cleanup;
+    }
+
     for(cn = cn_top->first_child; cn; cn = cn->next)
     {
         if ((cn->name[0] == '.') || (cn->value == NULL))

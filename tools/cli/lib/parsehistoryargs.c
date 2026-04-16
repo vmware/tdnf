@@ -67,6 +67,10 @@ TDNFCliParseHistoryArgs(
         {
             pHistoryArgs->nCommand = HISTORY_CMD_REDO;
         }
+        else if (strcmp(pArgs->ppszCmds[1], "id") == 0)
+        {
+            pHistoryArgs->nCommand = HISTORY_CMD_ID;
+        }
     }
 
     if (pArgs->nCmdCount > 2 && isdigit(pArgs->ppszCmds[2][0]))

@@ -123,10 +123,6 @@ int main(int argc, char *argv[])
         fail(ERR_RPMTS, "could not set rpm root dir\n");
     }
 
-    if(rpmtsOpenDB(ts, O_RDONLY)) {
-        fail(ERR_RPMTS, "could not open rpmdb\n");
-    }
-
     ctx = create_history_ctx(db_file);
     check_ptr(ctx);
 
