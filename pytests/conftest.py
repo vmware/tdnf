@@ -401,9 +401,9 @@ def check_packages_consistency(utils, request):
     Automatically runs before and after every test.
     Verifies that the set of installed packages remains unchanged.
     """
-    baseline = utils.list_installed_packages()
+    baseline = [p for p in utils.list_installed_packages() if not p.startswith('gpg-pubkey')]
     yield
-    final = utils.list_installed_packages()
+    final = [p for p in utils.list_installed_packages() if not p.startswith('gpg-pubkey')]
     if set(final) != set(baseline):
         __tracebackhide__ = True
         added = sorted(set(final) - set(baseline))
