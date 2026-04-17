@@ -138,10 +138,23 @@ TDNFRunTransactionWithHistory(
 {
     uint32_t dwError = 0;
     int rc;
+    char *pszDataDir = NULL;
 
     if(!pTdnf || !pTS || !pHistoryCtx)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFJoinPath(&pszDataDir,
+                           pTdnf->pArgs->pszInstallRoot,
+                           pTdnf->pConf->pszPersistDir,
+                           NULL);
+    if (dwError == 0 && pszDataDir)
+    {
+        dwError = TDNFUtilsMakeDirs(pszDataDir);
+        if (dwError == ERROR_TDNF_ALREADY_EXISTS)
+            dwError = 0;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -162,6 +175,7 @@ TDNFRunTransactionWithHistory(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszDataDir);
     return dwError;
 error:
     goto cleanup;
