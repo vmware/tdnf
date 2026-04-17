@@ -56,25 +56,8 @@ elif grep -qw "Photon" ${rel_file}; then
     zlib-devel
   )
 
-  tdnf-config edit photon-updates enabled=0
-  if [ -f /etc/yum.repos.d/photon-snapshot.repo ] ; then
-    tdnf-config edit photon-snapshot enabled=1
-  else
-     mkdir -p  /etc/tdnf/vars && echo latest > /etc/tdnf/vars/updatenumber && echo 92 > /etc/tdnf/vars/subrelease
-     cat << 'EOF' > /etc/yum.repos.d/photon-snapshot.repo
-[photon-snapshot]
-name=VMware Photon Linux $releasever ($basearch) Snapshot for Updates
-baseurl=https://packages.broadcom.com/photon/$releasever/photon_$releasever_$basearch
-snapshot=https://packages.broadcom.com/photon/$releasever/photon_snapshots_$releasever_$basearch/$subrelease/snapshot-$subrelease-$updatenumber.$basearch.list
-gpgkey=file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY file:///etc/pki/rpm-gpg/VMWARE-RPM-GPG-KEY-4096
-gpgcheck=1
-enabled=1
-skip_if_unavailable=1
-skip_md_filelists=1
-EOF
-  fi
-
   tdnf -y upgrade --refresh
   tdnf remove -y toybox
   tdnf -y install --enablerepo=photon-debuginfo ${photon_packages[@]}
 fi
+
