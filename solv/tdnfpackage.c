@@ -1856,7 +1856,7 @@ check_for_providers(
     char *prv_pkgname
     )
 {
-    char *beg;
+    const char *beg;
     const char *end = NULL;
     uint32_t dwError = 0;
     char pkgname[256] = {0};

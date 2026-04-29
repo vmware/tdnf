@@ -53,7 +53,7 @@ struct cnfnode *
 create_cnfnode_keyval(const char *keyval)
 {
     struct cnfnode *cn = NULL;
-    char *psep;
+    const char *psep;
 
     psep = strstr(keyval, "=");
     if (psep) {
