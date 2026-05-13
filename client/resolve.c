@@ -276,6 +276,11 @@ TDNFGetAutoInstalledOrphans(
     pSack = pTdnf->pSack;
 
     dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 1);
+    if (dwError == ERROR_TDNF_HISTORY_NODB)
+    {
+        dwError = 0;
+        goto cleanup;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetAutoInstalledOrphans(pSack, pHistoryCtx, pQueueGoal);

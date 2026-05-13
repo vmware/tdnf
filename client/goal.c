@@ -262,6 +262,11 @@ TDNFAddUserInstalledToJobs(
     }
 
     dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 1);
+    if (dwError == ERROR_TDNF_HISTORY_NODB)
+    {
+        dwError = 0;
+        goto cleanup;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvAddUserInstalledToJobs(pQueueJobs,
@@ -541,9 +546,8 @@ TDNFGoal(
         nAlterType == ALTER_AUTOERASEALL;
     if(nAllowErasing)
     {
-        TDNFAddUserInstalledToJobs(pTdnf, &queueJobs);
+        dwError = TDNFAddUserInstalledToJobs(pTdnf, &queueJobs);
         BAIL_ON_TDNF_ERROR(dwError);
-        /* TODO: deal with no db error? */
     }
 
     dwError = TDNFSolv(pTdnf, &queueJobs, ppszExcludes, dwExcludeCount,
@@ -686,6 +690,11 @@ TDNFMarkAutoInstalledSinglePkg(
     }
 
     dwError = TDNFGetHistoryCtx(pTdnf, &pHistoryCtx, 1);
+    if (dwError == ERROR_TDNF_HISTORY_NODB)
+    {
+        dwError = 0;
+        goto cleanup;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     rc = history_set_auto_flag(pHistoryCtx, pszPkgName, 0);

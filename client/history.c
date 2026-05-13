@@ -9,6 +9,54 @@
 #include "includes.h"
 
 uint32_t
+TDNFHistorySyncState(
+    PTDNF pTdnf,
+    struct history_ctx *ctx
+)
+{
+    uint32_t dwError = 0;
+    rpmts ts = NULL;
+    int rc = 0;
+
+    ts = rpmtsCreate();
+    if(!ts)
+    {
+        dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if (rpmtsOpenDB(ts, O_RDONLY))
+    {
+        dwError = ERROR_TDNF_RPMTS_OPENDB_FAILED;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    if(rpmtsSetRootDir(ts, pTdnf->pArgs->pszInstallRoot))
+    {
+        dwError = ERROR_TDNF_RPMTS_BAD_ROOT_DIR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    rc = history_sync(ctx, ts);
+    if (rc != 0)
+    {
+        dwError = ERROR_TDNF_HISTORY_ERROR;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    if (ts)
+    {
+        rpmtsCloseDB(ts);
+        rpmtsFree(ts);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+uint32_t
 TDNFGetHistoryCtx(
     PTDNF pTdnf,
     struct history_ctx **ppCtx,
@@ -19,6 +67,7 @@ TDNFGetHistoryCtx(
     char *pszDataDir = NULL;
     char *pszHistoryDb = NULL;
     struct history_ctx *ctx = NULL;
+    int nExists = 0;
 
     if(!pTdnf || !ppCtx)
     {
@@ -38,16 +87,14 @@ TDNFGetHistoryCtx(
             NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (nMustExist)
+    nExists = 0;
+    dwError = TDNFIsFileOrSymlink(pszHistoryDb, &nExists);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (nMustExist && !nExists)
     {
-        int nExists = 0;
-        dwError = TDNFIsFileOrSymlink(pszHistoryDb, &nExists);
+        dwError = ERROR_TDNF_HISTORY_NODB;
         BAIL_ON_TDNF_ERROR(dwError);
-        if (!nExists)
-        {
-            dwError = ERROR_TDNF_HISTORY_NODB;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
     }
 
     dwError = TDNFUtilsMakeDirs(pszDataDir);
