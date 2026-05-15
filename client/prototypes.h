@@ -1019,6 +1019,12 @@ TDNFListInternal(
     );
 
 uint32_t
+TDNFHistorySyncState(
+    PTDNF pTdnf,
+    struct history_ctx *ctx
+);
+
+uint32_t
 TDNFGetHistoryCtx(
     PTDNF pTdnf,
     struct history_ctx **ppCtx,

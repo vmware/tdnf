@@ -2022,7 +2022,6 @@ TDNFHistoryResolve(
     PTDNF_SOLVED_PKG_INFO *ppSolvedPkgInfo)
 {
     uint32_t dwError = 0;
-    int rc = 0;
     char **ppszPkgsNotResolved = NULL;
     Queue queueGoal = {0};
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo = NULL;
@@ -2030,7 +2029,6 @@ TDNFHistoryResolve(
     struct history_delta *hd = NULL;
     struct history_flags_delta *hfd = NULL;
     struct history_nevra_map *hnm = NULL;
-    rpmts ts = NULL;
     Queue qInstall = {0};
     Queue qErase = {0};
 
@@ -2071,35 +2069,12 @@ TDNFHistoryResolve(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    ts = rpmtsCreate();
-    if(!ts)
-    {
-        dwError = ERROR_TDNF_RPMTS_CREATE_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if (rpmtsOpenDB(ts, O_RDONLY))
-    {
-        dwError = ERROR_TDNF_RPMTS_OPENDB_FAILED;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(rpmtsSetRootDir(ts, pTdnf->pArgs->pszInstallRoot))
-    {
-        dwError = ERROR_TDNF_RPMTS_BAD_ROOT_DIR;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
     dwError = TDNFGetHistoryCtx(pTdnf, &ctx,
                                 pHistoryArgs->nCommand != HISTORY_CMD_INIT);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    rc = history_sync(ctx, ts);
-    if (rc != 0)
-    {
-        dwError = ERROR_TDNF_HISTORY_ERROR;
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
+    dwError = TDNFHistorySyncState(pTdnf, ctx);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     switch (pHistoryArgs->nCommand)
     {
@@ -2255,10 +2230,6 @@ cleanup:
     queue_free(&queueGoal);
     queue_free(&qInstall);
     queue_free(&qErase);
-    if (ts) {
-        rpmtsCloseDB(ts);
-        rpmtsFree(ts);
-    }
     return dwError;
 
 error:

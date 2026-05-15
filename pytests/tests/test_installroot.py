@@ -104,6 +104,38 @@ def test_install(utils):
     shutil.rmtree(INSTALLROOT)
 
 
+def test_install_already_installed_no_history_db(utils):
+    install_root(utils)
+    pkgname = utils.config["mulversion_pkgname"]
+    erase_package(utils, pkgname)
+
+    # 1. Install the package
+    ret = utils.run(['tdnf', 'install',
+                     '-y', '--nogpgcheck',
+                     '--installroot', INSTALLROOT,
+                     '--releasever=4.0', pkgname], noconfig=True)
+    assert ret['retval'] == 0
+    assert check_package(utils, pkgname)
+
+    # 2. Delete the history database
+    hist_db = os.path.join(INSTALLROOT, 'var/lib/tdnf/history.db')
+    if os.path.exists(hist_db):
+        os.remove(hist_db)
+
+    # 3. Try to install the same package again
+    ret = utils.run(['tdnf', 'install',
+                     '-y', '--nogpgcheck',
+                     '--installroot', INSTALLROOT,
+                     '--releasever=4.0', pkgname], noconfig=True)
+
+    # 4. It should succeed and say "already installed"
+    assert ret['retval'] == 0
+    output_str = "\n".join(ret['stdout'] + ret['stderr']).lower()
+    assert "already installed" in output_str
+
+    shutil.rmtree(INSTALLROOT)
+
+
 def test_makecache(utils):
     install_root(utils)
     ret = utils.run(['tdnf', 'makecache',
