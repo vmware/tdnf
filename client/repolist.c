@@ -504,7 +504,7 @@ TDNFCreateRepo(
     uint32_t dwError = 0;
     PTDNF_REPO_DATA pRepo = NULL;
 
-    if(!pTdnf || !pTdnf->pArgs || !ppRepo || !pszId)
+    if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !ppRepo || !pszId)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -524,6 +524,21 @@ TDNFCreateRepo(
     pRepo->nSkipIfUnavailable = TDNF_REPO_DEFAULT_SKIP;
     pRepo->nGPGCheck = pTdnf->pConf->nGPGCheck;
     pRepo->nSSLVerify = pTdnf->pConf->nSSLVerify;
+    if (pTdnf->pConf->pszSSLCaCert)
+    {
+        dwError = TDNFSafeAllocateString(pTdnf->pConf->pszSSLCaCert, &pRepo->pszSSLCaCert);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (pTdnf->pConf->pszSSLClientCert)
+    {
+        dwError = TDNFSafeAllocateString(pTdnf->pConf->pszSSLClientCert, &pRepo->pszSSLClientCert);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (pTdnf->pConf->pszSSLClientKey)
+    {
+        dwError = TDNFSafeAllocateString(pTdnf->pConf->pszSSLClientKey, &pRepo->pszSSLClientKey);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     pRepo->lMetadataExpire = TDNF_REPO_DEFAULT_METADATA_EXPIRE;
     pRepo->nPriority = TDNF_REPO_DEFAULT_PRIORITY;
     pRepo->nTimeout = TDNF_REPO_DEFAULT_TIMEOUT;
@@ -960,6 +975,11 @@ TDNFFreeReposInternal(
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszBaseUrls);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMirrorList);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSnapshotUrl);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSnapshotFile);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLCaCert);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLClientCert);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLClientKey);
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);

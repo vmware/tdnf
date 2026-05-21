@@ -259,6 +259,9 @@ typedef struct _TDNF_CONF
     int nGPGCheck;
     int nCliGPGCheck;
     int nSSLVerify;
+    char* pszSSLCaCert;
+    char* pszSSLClientCert;
+    char* pszSSLClientKey;
     int nInstallOnlyLimit;
     int nCleanRequirementsOnRemove;
     int nKeepCache;
