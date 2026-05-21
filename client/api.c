@@ -2579,7 +2579,7 @@ TDNFCloseHandle(
     {
         if(pTdnf->pRepos)
         {
-            TDNFFreeReposInternal(pTdnf->pRepos);
+            TDNFFreeRepos(pTdnf->pRepos);
         }
         if(pTdnf->pConf)
         {

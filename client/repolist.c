@@ -316,7 +316,7 @@ error:
     }
     if(pReposAll)
     {
-        TDNFFreeReposInternal(pReposAll);
+        TDNFFreeRepos(pReposAll);
     }
     goto cleanup;
 }
@@ -352,7 +352,7 @@ cleanup:
 error:
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -416,7 +416,7 @@ error:
     }
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -488,7 +488,7 @@ error:
     }
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -559,7 +559,7 @@ error:
     }
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -719,7 +719,7 @@ error:
     TDNF_SAFE_FREE_MEMORY(pRepo);
     if(pRepos)
     {
-        TDNFFreeReposInternal(pRepos);
+        TDNFFreeRepos(pRepos);
     }
     goto cleanup;
 }
@@ -961,30 +961,3 @@ error:
     goto cleanup;
 }
 
-void
-TDNFFreeReposInternal(
-    PTDNF_REPO_DATA pRepos
-    )
-{
-    PTDNF_REPO_DATA pRepo = NULL;
-    while(pRepos)
-    {
-        pRepo = pRepos;
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
-        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszBaseUrls);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszMirrorList);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszSnapshotUrl);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszSnapshotFile);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLCaCert);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLClientCert);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLClientKey);
-        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszCacheName);
-        pRepos = pRepo->pNext;
-        TDNF_SAFE_FREE_MEMORY(pRepo);
-    }
-}
