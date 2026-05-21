@@ -171,15 +171,15 @@ typedef uint32_t
     uint32_t nValue);
 
 typedef uint32_t
+(*PFN_TDNF_HISTORY_GET_ID)(
+    PTDNF_CLI_CONTEXT,
+    int *);
+
+typedef uint32_t
 (*PFN_TDNF_GET_PKG_URLS)(
     PTDNF_CLI_CONTEXT,
     PTDNF_SOLVED_PKG_INFO,
     char ***,
-    int *);
-
-typedef uint32_t
-(*PFN_TDNF_HISTORY_GET_ID)(
-    PTDNF_CLI_CONTEXT,
     int *);
 
 typedef struct _TDNF_CLI_CONTEXT_
@@ -207,8 +207,8 @@ typedef struct _TDNF_CLI_CONTEXT_
     PFN_TDNF_HISTORY_RESOLVE_CMD  pFnHistoryResolve;
     PFN_TDNF_ALTER_HISTORY        pFnAlterHistory;
     PFN_TDNF_MARK_COMMAND         pFnMark;
-    PFN_TDNF_GET_PKG_URLS         pFnGetPackageUrls;
     PFN_TDNF_HISTORY_GET_ID       pFnHistoryGetId;
+    PFN_TDNF_GET_PKG_URLS         pFnGetPackageUrls;
 } TDNF_CLI_CONTEXT;
 
 #ifdef __cplusplus
