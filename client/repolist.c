@@ -289,6 +289,16 @@ TDNFLoadRepoData(
         }
     }
 
+    /* Apply SSL_CERT_FILE environment variable, unless overridden by global setopt */
+    if (getenv("SSL_CERT_FILE") &&
+        (!pTdnf->pArgs->cn_setopts || !find_child(pTdnf->pArgs->cn_setopts, TDNF_CONF_KEY_SSL_CA_CERT))) {
+        for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
+            TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLCaCert);
+            dwError = TDNFSafeAllocateString(getenv("SSL_CERT_FILE"), &pRepo->pszSSLCaCert);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
     /* look for setopt settings */
     if (pTdnf->pArgs->cn_repoopts != NULL) {
         for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
