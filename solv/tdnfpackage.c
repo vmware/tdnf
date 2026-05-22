@@ -1912,7 +1912,8 @@ uint32_t
 SolvReportProblems(
     PSolvSack pSack,
     Solver* pSolv,
-    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem,
+    int nVerbose
     )
 {
     int nCount = 0;
@@ -1932,20 +1933,17 @@ SolvReportProblems(
     nCount = solver_problem_count(pSolv);
     for ( ; nCount > 0; nCount--)
     {
+        Id dwProblemId = solver_findproblemrule(pSolv, nCount);
         const char *pszProblem = NULL;
 
-        Id dwProblemId = solver_findproblemrule(pSolv, nCount);
+        type = solver_ruleinfo(pSolv, dwProblemId, &dwSource, &dwTarget, &dwDep);
 
-        type = solver_ruleinfo(pSolv, dwProblemId,
-                               &dwSource, &dwTarget, &dwDep);
+        if (SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
+        {
+            continue;
+        }
 
-       if (SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
-       {
-           continue;
-       }
-
-        pszProblem = solver_problemruleinfo2str(pSolv, type, dwSource,
-                                                dwTarget, dwDep);
+        pszProblem = solver_problemruleinfo2str(pSolv, type, dwSource, dwTarget, dwDep);
 
         if (dwSkipProblem != SKIPPROBLEM_NONE &&
             type == SOLVER_RULE_PKG_REQUIRES)
@@ -1956,13 +1954,60 @@ SolvReportProblems(
             }
         }
 
+        total_prblms++;
         dwError = ERROR_TDNF_SOLV_FAILED;
-        pr_err("%u. %s\n", ++total_prblms, pszProblem);
+
+        if (nVerbose)
+        {
+            Queue rids;
+            queue_init(&rids);
+
+            solver_findallproblemrules(pSolv, nCount, &rids);
+
+            pr_err("Problem %u:\n", total_prblms);
+
+            for (int j = 0; j < rids.count; j++)
+            {
+                const char *pszSubProblem = NULL;
+                Id probr = rids.elements[j];
+                type = solver_ruleinfo(pSolv, probr, &dwSource, &dwTarget, &dwDep);
+
+                if (type == SOLVER_RULE_JOB)
+                {
+                    pszSubProblem = pool_tmpjoin(pSolv->pool, "job ", pool_job2str(pSolv->pool, dwTarget, dwDep, 0), " conflicts with other jobs");
+                }
+                else
+                {
+                    pszSubProblem = solver_problemruleinfo2str(pSolv, type, dwSource, dwTarget, dwDep);
+                }
+
+                if (dwSkipProblem != SKIPPROBLEM_NONE &&
+                    type == SOLVER_RULE_PKG_REQUIRES)
+                {
+                    if (!check_for_providers(pSack, type, pszSubProblem, prv_pkgname))
+                    {
+                        continue;
+                    }
+                }
+
+                pr_err("  - %s\n", pszSubProblem);
+            }
+
+            queue_free(&rids);
+        }
+        else
+        {
+            pr_err("%u. %s\n", total_prblms, pszProblem);
+        }
     }
 
     if (dwError)
     {
         pr_err("Found %u problem(s) while resolving\n", total_prblms);
+        if (!nVerbose)
+        {
+            pr_err("Please retry with --verbose to see detailed solver rules\n");
+        }
     }
 
     return dwError;

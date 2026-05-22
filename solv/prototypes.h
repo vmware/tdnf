@@ -570,7 +570,8 @@ uint32_t
 SolvReportProblems(
     PSolvSack pSack,
     Solver* pSolv,
-    TDNF_SKIPPROBLEM_TYPE dwSkipProblem
+    TDNF_SKIPPROBLEM_TYPE dwSkipProblem,
+    int nVerbose
     );
 
 uint32_t
