@@ -110,6 +110,7 @@ typedef enum
     {ERROR_TDNF_CACHE_DIR_OUT_OF_DISK_SPACE, "ERROR_TDNF_CACHE_DIR_OUT_OF_DISK_SPACE", "Insufficient disk space at cache directory /var/cache/tdnf (unless specified differently in config). Try freeing space first."},\
     {ERROR_TDNF_DUPLICATE_REPO_ID,         "ERROR_TDNF_DUPLICATE_REPO_ID",         "Duplicate repo id"}, \
     {ERROR_TDNF_INVALID_REPO_NAME,         "ERROR_TDNF_INVALID_REPO_NAME",         "repo name is invalid"}, \
+    {ERROR_TDNF_UNKNOWN_CONFIG_OPTION,     "ERROR_TDNF_UNKNOWN_CONFIG_OPTION",     "Unknown configuration option"}, \
     {ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND, "ERROR_TDNF_EVENT_CTXT_ITEM_NOT_FOUND", "An event context item was not found. This is usually related to plugin events. Try --noplugins to deactivate all plugins or --disableplugin=<plugin> to deactivate a specific one. You can permanently deactivate an offending plugin by setting enable=0 in the plugin config file."},\
     {ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE, "ERROR_TDNF_EVENT_CTXT_ITEM_INVALID_TYPE", "An event item type had a mismatch. This is usually related to plugin events. Try --noplugins to deactivate all plugins or --disableplugin=<plugin> to deactivate a specific one. You can permanently deactivate an offending plugin by setting enable=0 in the plugin config file."},\
     {ERROR_TDNF_NO_GPGKEY_CONF_ENTRY,         "ERROR_TDNF_NO_GPGKEY_CONF_ENTRY",         "gpgkey entry is missing for this repo. please add gpgkey in repo file or use --nogpgcheck to ignore."}, \

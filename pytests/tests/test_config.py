@@ -62,7 +62,7 @@ def test_config_list_with_disable_repos(utils):
     assert ret['retval'] == 0
 
     for line in ret['stdout']:
-        if not line or '@System' in line:
+        if not line or '@System' in line or 'Warning: Unknown configuration option' in line:
             continue
         assert (False)  # force fail test
 
@@ -86,3 +86,33 @@ def test_config_empty_file(utils):
     # Prior to the fix, this would segfault and return 139.
     ret = utils.run(['tdnf', '--config', '/dev/null', 'list'])
     assert ret['retval'] != 139
+
+def test_config_strict(utils):
+    # Add an unknown option to the config file
+    utils.edit_config({'unknown_option': '1'}, section='main', filename=TEST_CONF_PATH)
+    
+    # Without strict-config, it should succeed
+    ret = utils.run(['tdnf', '--config', TEST_CONF_PATH, 'repolist'])
+    assert ret['retval'] == 0
+    
+    # With strict-config, it should fail
+    ret = utils.run(['tdnf', '--strict-config', '--config', TEST_CONF_PATH, 'repolist'])
+    assert ret['retval'] == 1039 # ERROR_TDNF_UNKNOWN_CONFIG_OPTION
+    
+    # Clean up the unknown option
+    utils.edit_config({'unknown_option': None}, section='main', filename=TEST_CONF_PATH)
+
+def test_repo_config_strict(utils):
+    # Add an unknown option to the repo file
+    utils.edit_config({'unknown_repo_option': '1'}, section=TEST_REPO, filename=TEST_REPO_PATH)
+    
+    # Without strict-config, it should succeed
+    ret = utils.run(['tdnf', '--config', TEST_CONF_PATH, 'repolist'])
+    assert ret['retval'] == 0
+    
+    # With strict-config, it should fail
+    ret = utils.run(['tdnf', '--strict-config', '--config', TEST_CONF_PATH, 'repolist'])
+    assert ret['retval'] == 1039 # ERROR_TDNF_UNKNOWN_CONFIG_OPTION
+    
+    # Clean up the unknown option
+    utils.edit_config({'unknown_repo_option': None}, section=TEST_REPO, filename=TEST_REPO_PATH)

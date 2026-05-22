@@ -136,7 +136,7 @@ struct {
 
 static
 uint32_t
-TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
+TDNFConfigFromCnfTree(PTDNF pTdnf, PTDNF_CONF pConf, struct cnfnode *cn_top)
 {
     uint32_t dwError = 0;
     struct cnfnode *cn;
@@ -150,114 +150,127 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
 
     for(cn = cn_top->first_child; cn; cn = cn->next)
     {
-        if ((cn->name[0] == '.') || (cn->value == NULL))
+        const char *actual_name = cn->name;
+
+        if (pTdnf && pTdnf->pArgs && cn_top == pTdnf->pArgs->cn_setopts) {
+            if (strncmp(cn->name, "setopt:", 7) == 0) {
+                actual_name = cn->name + 7;
+            } else {
+                continue;
+            }
+        }
+
+        if ((actual_name[0] == '.') || (cn->value == NULL))
             continue;
 
-        if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLY_LIMIT) == 0)
+        if (strcmp(actual_name, "strict-config") == 0)
+            continue;
+
+        if (strcmp(actual_name, TDNF_CONF_KEY_INSTALLONLY_LIMIT) == 0)
         {
             pConf->nInstallOnlyLimit = strtoi(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_CLEAN_REQ_ON_REMOVE) == 0)
         {
             pConf->nCleanRequirementsOnRemove = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_GPGCHECK) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_GPGCHECK) == 0)
         {
             pConf->nGPGCheck = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CMDLINEGPGCHECK) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_CMDLINEGPGCHECK) == 0)
         {
             pConf->nCliGPGCheck = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CONNECT_TIMEOUT) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_CONNECT_TIMEOUT) == 0)
         {
             pConf->nConnectTimeout = strtoi(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_SSL_VERIFY) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_SSL_VERIFY) == 0)
         {
             pConf->nSSLVerify = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
         {
             pConf->nKeepCache = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_REPOSDIR) == 0 ||
-                 strcmp(cn->name, TDNF_CONF_KEY_REPODIR) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_REPOSDIR) == 0 ||
+                 strcmp(actual_name, TDNF_CONF_KEY_REPODIR) == 0)
         {
             SET_STRING(pConf->pszRepoDir, cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CACHEDIR) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_CACHEDIR) == 0)
         {
             SET_STRING(pConf->pszCacheDir, cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PERSISTDIR) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PERSISTDIR) == 0)
         {
             SET_STRING(pConf->pszPersistDir, cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROVERPKGS) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_DISTROVERPKGS) == 0)
         {
             dwError = TDNFSplitStringToArray(cn->value,
                                              (char *)" ", &pConf->ppszDistroVerPkgs);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_EXCLUDE) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_EXCLUDE) == 0)
         {
             dwError = TDNFAddStringArray(&pConf->ppszExcludes, cn->value);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_MINVERSIONS) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_MINVERSIONS) == 0)
         {
             dwError = TDNFAddStringArray(&pConf->ppszMinVersions, cn->value);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_OPENMAX) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_OPENMAX) == 0)
         {
             pConf->nOpenMax = strtoi(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_CHECK_UPDATE_COMPAT) == 0)
         {
             pConf->nCheckUpdateCompat = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED) == 0)
         {
             pConf->nDistroSyncReinstallChanged = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PROXY) == 0)
         {
             SET_STRING(pConf->pszProxy, cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_USER) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PROXY_USER) == 0)
         {
             pszProxyUser = cn->value;
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PROXY_PASS) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PROXY_PASS) == 0)
         {
             pszProxyPass = cn->value;
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_INSTALLONLYPKGS) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_INSTALLONLYPKGS) == 0)
         {
             dwError = TDNFAddStringArray(&pConf->ppszInstallOnlyPkgs, cn->value);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_VARS_DIRS) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_VARS_DIRS) == 0)
         {
             dwError = TDNFSplitStringToArray(cn->value,
                                              (char *)" ", &pConf->ppszVarsDirs);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGINS) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PLUGINS) == 0)
         {
             pConf->nPluginsEnabled = isTrue(cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PLUGIN_CONF_PATH) == 0)
         {
             SET_STRING(pConf->pszPluginConfPath, cn->value);
         }
-        else if (strcmp(cn->name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
+        else if (strcmp(actual_name, TDNF_CONF_KEY_PLUGIN_PATH) == 0)
         {
             SET_STRING(pConf->pszPluginPath, cn->value);
         }
-        else if  (strcmp(cn->name, TDNF_CONF_KEY_TSFLAGS) == 0)
+        else if  (strcmp(actual_name, TDNF_CONF_KEY_TSFLAGS) == 0)
         {
             if (cn->value == NULL || strcmp(cn->value, "") == 0) {
                 pConf->rpmTransFlags = RPMTRANS_FLAG_NONE;
@@ -291,6 +304,16 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
                     }
                 }
                 free(value);
+            }
+        }
+        else
+        {
+            if (pTdnf && pTdnf->pArgs && pTdnf->pArgs->nStrictConfig) {
+                pr_err("Error: Unknown configuration option '%s'\n", actual_name);
+                dwError = ERROR_TDNF_UNKNOWN_CONFIG_OPTION;
+                BAIL_ON_TDNF_ERROR(dwError);
+            } else {
+                pr_info("Warning: Unknown configuration option '%s'\n", actual_name);
             }
         }
     }
@@ -383,7 +406,7 @@ TDNFReadConfig(
 
     /* cn_conf == NULL => we will not reach here */
     /* coverity[var_deref_op] */
-    dwError = TDNFConfigFromCnfTree(pConf, cn_conf->first_child);
+    dwError = TDNFConfigFromCnfTree(pTdnf, pConf, cn_conf->first_child);
     BAIL_ON_TDNF_ERROR(dwError);
 
     /* override from cmd line */
@@ -440,7 +463,7 @@ TDNFReadConfig(
     }
 
     if (pTdnf->pArgs->cn_setopts) {
-        dwError = TDNFConfigFromCnfTree(pConf, pTdnf->pArgs->cn_setopts);
+        dwError = TDNFConfigFromCnfTree(pTdnf, pConf, pTdnf->pArgs->cn_setopts);
         BAIL_ON_TDNF_ERROR(dwError);
     }
 

@@ -75,6 +75,7 @@ extern "C" {
 // There are duplicate repo id
 #define ERROR_TDNF_DUPLICATE_REPO_ID        1037
 #define ERROR_TDNF_INVALID_REPO_NAME        1038
+#define ERROR_TDNF_UNKNOWN_CONFIG_OPTION    1039
 
 //curl errors
 #define ERROR_TDNF_CURL_INIT                  1200

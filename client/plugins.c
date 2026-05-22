@@ -169,6 +169,7 @@ _TDNFFreePlugin(
 static
 uint32_t
 _TDNFLoadPluginConfig(
+    PTDNF pTdnf,
     const char *pszConfigFile,
     PTDNF_PLUGIN *ppPlugin
     )
@@ -221,11 +222,34 @@ _TDNFLoadPluginConfig(
             {
                 if ((cn->name[0] == '.') || (cn->value == NULL))
                     continue;
+                    
+                if (strcmp(cn->name, "strict-config") == 0)
+                    continue;
 
                 if (strcmp(cn->name, TDNF_PLUGIN_CONF_KEY_ENABLED) == 0)
                 {
                     pPlugin->nEnabled = isTrue(cn->value);
                 }
+                else
+                {
+                    if (pTdnf && pTdnf->pArgs && pTdnf->pArgs->nStrictConfig) {
+                        pr_err("Error: Unknown configuration option '%s' in plugin config '%s'\n", cn->name, pszConfigFile);
+                        dwError = ERROR_TDNF_UNKNOWN_CONFIG_OPTION;
+                        BAIL_ON_TDNF_ERROR(dwError);
+                    } else {
+                        pr_info("Warning: Unknown configuration option '%s' in plugin config '%s'\n", cn->name, pszConfigFile);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (pTdnf && pTdnf->pArgs && pTdnf->pArgs->nStrictConfig) {
+                pr_err("Error: Unknown configuration section '%s' in plugin config '%s'\n", cn_section->name, pszConfigFile);
+                dwError = ERROR_TDNF_UNKNOWN_CONFIG_OPTION;
+                BAIL_ON_TDNF_ERROR(dwError);
+            } else {
+                pr_info("Warning: Unknown configuration section '%s' in plugin config '%s'\n", cn_section->name, pszConfigFile);
             }
         }
     }
@@ -286,7 +310,7 @@ _TDNFLoadPluginConfigs(
                       NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = _TDNFLoadPluginConfig(pszPluginConfig, &pPlugin);
+        dwError = _TDNFLoadPluginConfig(pTdnf, pszPluginConfig, &pPlugin);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFAllocateStringN(pEnt->d_name, nLen - nExtLen, &pPlugin->pszName);

@@ -56,11 +56,12 @@ TDNFRepoConfigFromCnfTree(PTDNF pTdnf,
     uint32_t dwError = 0;
     struct cnfnode *cn;
 
-    UNUSED(pTdnf);
-
     for(cn = cn_top->first_child; cn; cn = cn->next)
     {
         if ((cn->name[0] == '.') || (cn->value == NULL))
+            continue;
+            
+        if (strcmp(cn->name, "strict-config") == 0)
             continue;
 
         if (strcmp(cn->name, TDNF_REPO_KEY_ENABLED) == 0)
@@ -163,6 +164,16 @@ TDNFRepoConfigFromCnfTree(PTDNF pTdnf,
         else if (strcmp(cn->name, TDNF_REPO_KEY_SKIP_MD_OTHER) == 0)
         {
             pRepo->nSkipMDOther = isTrue(cn->value);
+        }
+        else
+        {
+            if (pTdnf && pTdnf->pArgs && pTdnf->pArgs->nStrictConfig) {
+                pr_err("Error: Unknown configuration option '%s' in repo '%s'\n", cn->name, pRepo->pszId);
+                dwError = ERROR_TDNF_UNKNOWN_CONFIG_OPTION;
+                BAIL_ON_TDNF_ERROR(dwError);
+            } else {
+                pr_info("Warning: Unknown configuration option '%s' in repo '%s'\n", cn->name, pRepo->pszId);
+            }
         }
     }
 

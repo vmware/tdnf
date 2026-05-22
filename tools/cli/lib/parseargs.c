@@ -61,6 +61,7 @@ static struct option pstOptions[] =
     {"skipdigest",    no_argument, &_opt.nSkipDigest, 1},  //--skipdigest to skip verifying RPM digest
     {"skipobsoletes", no_argument, 0, 0},                  //--skipobsoletes to skip obsolete problems
     {"skipsignature", no_argument, &_opt.nSkipSignature, 1}, //--skipsignature to skip verifying RPM signatures
+    {"strict-config", no_argument, &_opt.nStrictConfig, 1},
     {"source",        no_argument, &_opt.nSource, 1},
     {"testonly",      no_argument, &_opt.nTestOnly, 1},
     {"urls",          no_argument, &_opt.nUrlsOnly, 1},    //--urls
@@ -257,7 +258,7 @@ TDNFCliParseArgs(
         BAIL_ON_CLI_ERROR(dwError);
     }
 
-    dwError = TDNFCopyOptions(&_opt, pCmdArgs);
+        dwError = TDNFCopyOptions(&_opt, pCmdArgs);
     BAIL_ON_CLI_ERROR(dwError);
 
     //Collect extra args
@@ -343,6 +344,7 @@ TDNFCopyOptions(
     pArgs->nNoCmdLineGPGCheck = pOptionArgs->nNoCmdLineGPGCheck;
     pArgs->nSkipSignature = pOptionArgs->nSkipSignature;
     pArgs->nSkipDigest    = pOptionArgs->nSkipDigest;
+    pArgs->nStrictConfig  = pOptionArgs->nStrictConfig;
     pArgs->nNoOutput      = pOptionArgs->nQuiet && pOptionArgs->nAssumeYes;
     pArgs->nQuiet         = pOptionArgs->nQuiet;
     pArgs->nRefresh       = pOptionArgs->nRefresh;
@@ -432,7 +434,14 @@ ParseOption(
 
             pseq_dot = strstr(pszCopyArgs, ".");
             if (pseq_dot == NULL) {
-                cn = create_cnfnode(pszCopyArgs);
+                char *prefixed_name = malloc(strlen(pszCopyArgs) + 8);
+                if (!prefixed_name) {
+                    dwError = ERROR_TDNF_OUT_OF_MEMORY;
+                    BAIL_ON_CLI_ERROR(dwError);
+                }
+                sprintf(prefixed_name, "setopt:%s", pszCopyArgs);
+                cn = create_cnfnode(prefixed_name);
+                free(prefixed_name);
                 cnfnode_setval(cn, psep_eq + 1);
                 append_node(pCmdArgs->cn_setopts, cn);
             } else {
