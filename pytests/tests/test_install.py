@@ -172,3 +172,32 @@ def xxx_test_install_memcheck(utils):
 
     utils.run_memcheck(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
     assert utils.check_package(pkgname)
+
+
+# install a package with non-existing requirement, expect brief output without verbose
+def test_install_no_providers_non_verbose(utils):
+    pkgname = utils.config['dummy_requires_pkgname']
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
+    # ERROR_TDNF_SOLV_FAILED - "Solv general runtime error"
+    assert ret['retval'] == 1301
+    stderr = '\n'.join(ret['stderr'])
+    assert "nothing provides" in stderr
+    # Should recommend the verbose flag
+    assert "Please retry with --verbose to see detailed solver rules" in stderr
+    # Should NOT contain the detailed block format
+    assert "Problem 1:" not in stderr
+
+
+# install a package with non-existing requirement, expect detailed output with verbose
+def test_install_no_providers_verbose(utils):
+    pkgname = utils.config['dummy_requires_pkgname']
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck', '--verbose', pkgname])
+    # ERROR_TDNF_SOLV_FAILED - "Solv general runtime error"
+    assert ret['retval'] == 1301
+    stderr = '\n'.join(ret['stderr'])
+    # Should contain the detailed block format
+    assert "Problem 1:" in stderr
+    assert "  - " in stderr
+    assert "nothing provides" in stderr
+    # Should NOT recommend the verbose flag
+    assert "Please retry with --verbose to see detailed solver rules" not in stderr

@@ -380,7 +380,7 @@ TDNFSolv(
         {
             dwError = TDNFGetSkipProblemOption(pTdnf, &dwSkipProblem);
             BAIL_ON_TDNF_ERROR(dwError);
-            dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem);
+            dwError = SolvReportProblems(pTdnf->pSack, pSolv, dwSkipProblem, pTdnf->pArgs->nVerbose);
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
