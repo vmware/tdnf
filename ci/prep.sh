@@ -37,6 +37,7 @@ if grep -qw "Fedora" ${rel_file}; then
     glib2-devel
     libcurl-devel
     make
+    openssl
     python3-flake8
     rpm-devel
     rpm-sign

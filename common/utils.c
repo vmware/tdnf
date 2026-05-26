@@ -441,7 +441,13 @@ TDNFFreeRepos(
         TDNF_SAFE_FREE_MEMORY(pRepo->pszMirrorList);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszSnapshotUrl);
         TDNF_SAFE_FREE_MEMORY(pRepo->pszSnapshotFile);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLCaCert);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLClientCert);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLClientKey);
         TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
+        TDNF_SAFE_FREE_MEMORY(pRepo->pszCacheName);
 
         pRepos = pRepo->pNext;
         TDNF_SAFE_FREE_MEMORY(pRepo);

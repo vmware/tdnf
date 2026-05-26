@@ -48,6 +48,9 @@
 #define TDNF_CONF_KEY_PLUGIN_PATH         "pluginpath"
 #define TDNF_CONF_KEY_PLUGIN_CONF_PATH    "pluginconfpath"
 #define TDNF_CONF_KEY_SSL_VERIFY          "sslverify"
+#define TDNF_CONF_KEY_SSL_CA_CERT         "sslcacert"
+#define TDNF_CONF_KEY_SSL_CLI_CERT        "sslclientcert"
+#define TDNF_CONF_KEY_SSL_CLI_KEY         "sslclientkey"
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 #define TDNF_CONF_KEY_TSFLAGS             "tsflags"
 #define TDNF_CONF_KEY_EXCLUDE             "excludepkgs"
@@ -78,9 +81,9 @@
 #define TDNF_REPO_KEY_MINRATE             "minrate"
 #define TDNF_REPO_KEY_THROTTLE            "throttle"
 #define TDNF_REPO_KEY_SSL_VERIFY          TDNF_CONF_KEY_SSL_VERIFY
-#define TDNF_REPO_KEY_SSL_CA_CERT         "sslcacert"
-#define TDNF_REPO_KEY_SSL_CLI_CERT        "sslclientcert"
-#define TDNF_REPO_KEY_SSL_CLI_KEY         "sslclientkey"
+#define TDNF_REPO_KEY_SSL_CA_CERT         TDNF_CONF_KEY_SSL_CA_CERT
+#define TDNF_REPO_KEY_SSL_CLI_CERT        TDNF_CONF_KEY_SSL_CLI_CERT
+#define TDNF_REPO_KEY_SSL_CLI_KEY         TDNF_CONF_KEY_SSL_CLI_KEY
 #define TDNF_REPO_KEY_SKIP_MD_FILELISTS   "skip_md_filelists"
 #define TDNF_REPO_KEY_SKIP_MD_UPDATEINFO  "skip_md_updateinfo"
 #define TDNF_REPO_KEY_SKIP_MD_OTHER       "skip_md_other"

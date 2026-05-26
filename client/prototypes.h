@@ -713,11 +713,6 @@ TDNFCloneRepo(
     PTDNF_REPO_DATA* ppRepo
     );
 
-void
-TDNFFreeReposInternal(
-    PTDNF_REPO_DATA pRepos
-    );
-
 //resolve.c
 uint32_t
 TDNFPrepareAllPackages(

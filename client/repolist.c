@@ -289,6 +289,16 @@ TDNFLoadRepoData(
         }
     }
 
+    /* Apply SSL_CERT_FILE environment variable, unless overridden by global setopt */
+    if (getenv("SSL_CERT_FILE") &&
+        (!pTdnf->pArgs->cn_setopts || !find_child(pTdnf->pArgs->cn_setopts, TDNF_CONF_KEY_SSL_CA_CERT))) {
+        for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
+            TDNF_SAFE_FREE_MEMORY(pRepo->pszSSLCaCert);
+            dwError = TDNFSafeAllocateString(getenv("SSL_CERT_FILE"), &pRepo->pszSSLCaCert);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
     /* look for setopt settings */
     if (pTdnf->pArgs->cn_repoopts != NULL) {
         for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
@@ -316,7 +326,7 @@ error:
     }
     if(pReposAll)
     {
-        TDNFFreeReposInternal(pReposAll);
+        TDNFFreeRepos(pReposAll);
     }
     goto cleanup;
 }
@@ -352,7 +362,7 @@ cleanup:
 error:
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -416,7 +426,7 @@ error:
     }
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -488,7 +498,7 @@ error:
     }
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -504,7 +514,7 @@ TDNFCreateRepo(
     uint32_t dwError = 0;
     PTDNF_REPO_DATA pRepo = NULL;
 
-    if(!pTdnf || !pTdnf->pArgs || !ppRepo || !pszId)
+    if(!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || !ppRepo || !pszId)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
@@ -524,6 +534,21 @@ TDNFCreateRepo(
     pRepo->nSkipIfUnavailable = TDNF_REPO_DEFAULT_SKIP;
     pRepo->nGPGCheck = pTdnf->pConf->nGPGCheck;
     pRepo->nSSLVerify = pTdnf->pConf->nSSLVerify;
+    if (pTdnf->pConf->pszSSLCaCert)
+    {
+        dwError = TDNFSafeAllocateString(pTdnf->pConf->pszSSLCaCert, &pRepo->pszSSLCaCert);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (pTdnf->pConf->pszSSLClientCert)
+    {
+        dwError = TDNFSafeAllocateString(pTdnf->pConf->pszSSLClientCert, &pRepo->pszSSLClientCert);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (pTdnf->pConf->pszSSLClientKey)
+    {
+        dwError = TDNFSafeAllocateString(pTdnf->pConf->pszSSLClientKey, &pRepo->pszSSLClientKey);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
     pRepo->lMetadataExpire = TDNF_REPO_DEFAULT_METADATA_EXPIRE;
     pRepo->nPriority = TDNF_REPO_DEFAULT_PRIORITY;
     pRepo->nTimeout = TDNF_REPO_DEFAULT_TIMEOUT;
@@ -544,7 +569,7 @@ error:
     }
     if(pRepo)
     {
-        TDNFFreeReposInternal(pRepo);
+        TDNFFreeRepos(pRepo);
     }
     goto cleanup;
 }
@@ -704,7 +729,7 @@ error:
     TDNF_SAFE_FREE_MEMORY(pRepo);
     if(pRepos)
     {
-        TDNFFreeReposInternal(pRepos);
+        TDNFFreeRepos(pRepos);
     }
     goto cleanup;
 }
@@ -946,25 +971,3 @@ error:
     goto cleanup;
 }
 
-void
-TDNFFreeReposInternal(
-    PTDNF_REPO_DATA pRepos
-    )
-{
-    PTDNF_REPO_DATA pRepo = NULL;
-    while(pRepos)
-    {
-        pRepo = pRepos;
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszId);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszName);
-        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszBaseUrls);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszMetaLink);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszMirrorList);
-        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszUser);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszPass);
-        TDNF_SAFE_FREE_MEMORY(pRepo->pszCacheName);
-        pRepos = pRepo->pNext;
-        TDNF_SAFE_FREE_MEMORY(pRepo);
-    }
-}

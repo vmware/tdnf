@@ -177,6 +177,18 @@ TDNFConfigFromCnfTree(PTDNF_CONF pConf, struct cnfnode *cn_top)
         {
             pConf->nSSLVerify = isTrue(cn->value);
         }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_SSL_CA_CERT) == 0)
+        {
+            SET_STRING(pConf->pszSSLCaCert, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_SSL_CLI_CERT) == 0)
+        {
+            SET_STRING(pConf->pszSSLClientCert, cn->value);
+        }
+        else if (strcmp(cn->name, TDNF_CONF_KEY_SSL_CLI_KEY) == 0)
+        {
+            SET_STRING(pConf->pszSSLClientKey, cn->value);
+        }
         else if (strcmp(cn->name, TDNF_CONF_KEY_KEEP_CACHE) == 0)
         {
             pConf->nKeepCache = isTrue(cn->value);
@@ -604,6 +616,9 @@ TDNFFreeConfig(
         TDNF_SAFE_FREE_MEMORY(pConf->pszRepoDir);
         TDNF_SAFE_FREE_MEMORY(pConf->pszCacheDir);
         TDNF_SAFE_FREE_MEMORY(pConf->pszPersistDir);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszSSLCaCert);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszSSLClientCert);
+        TDNF_SAFE_FREE_MEMORY(pConf->pszSSLClientKey);
         TDNF_SAFE_FREE_STRINGARRAY(pConf->ppszDistroVerPkgs);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarReleaseVer);
         TDNF_SAFE_FREE_MEMORY(pConf->pszVarBaseArch);
