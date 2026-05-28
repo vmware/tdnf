@@ -16,8 +16,12 @@ Group:          Applications/RPM
 Source0:        %{name}-%{version}.tar.gz
 %define sha512  %{name}=4c6756aa1778464e3d8eefe69271809f9b9b29ba4ab7756f6c230352f9bcc40eabc541f21f385adfc8d78420101411038e49cf56409ec889beac062571c21d5f
 
+%if %{defined rocky}
+Requires:       rpm-libs >= 4.14.3
+%else
 Requires:       rpm-libs >= 4.16.1.3-1
-%if %{defined rhel} || %{defined fedora}
+%endif
+%if %{defined rhel} || %{defined fedora} || %{defined rocky}
 Requires:       libcurl
 Requires:       expat
 %else
@@ -60,8 +64,10 @@ BuildRequires:  python3-pyOpenSSL
 BuildRequires:  python3-pytest
 %endif
 
+%if %{undefined fedora} && %{undefined rocky}
 Obsoletes:      yum
 Provides:       yum
+%endif
 
 %description
 %{name} is a yum/dnf equivalent which uses libsolv and libcurl
@@ -126,6 +132,8 @@ Systemd units that can periodically download package upgrades and apply them.
 %autosetup -p1
 
 %build
+mkdir -p build
+cd build
 %{cmake} \
   -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_INSTALL_PREFIX=%{_prefix} \
@@ -136,11 +144,14 @@ Systemd units that can periodically download package upgrades and apply them.
 %{cmake_build}
 
 %install
+cd build
 %{cmake_install}
 
 mkdir -p %{buildroot}{%{_var}/cache/%{name},%{_unitdir}}
 ln -sv %{name} %{buildroot}%{_bindir}/tyum
+%if %{undefined fedora} && %{undefined rocky}
 ln -sv %{name} %{buildroot}%{_bindir}/yum
+%endif
 ln -sv %{name} %{buildroot}%{_bindir}/tdnfj
 
 find %{buildroot} -name '*.a' -delete
@@ -148,7 +159,8 @@ find %{buildroot} -name '*.a' -delete
 %if 0%{?with_check}
 %check
 pip3 install flake8
-%make_build -C %{__cmake_builddir} check
+cd build
+%make_build check
 %endif
 
 %post
@@ -189,7 +201,9 @@ rm -f %{_var}/cache/%{name}/cached-updateinfo.txt
 %defattr(-,root,root,0755)
 %{_bindir}/%{name}
 %{_bindir}/tyum
+%if %{undefined fedora} && %{undefined rocky}
 %{_bindir}/yum
+%endif
 %{_bindir}/tdnfj
 %{_bindir}/%{name}-config
 %{_libdir}/libtdnf.so.*

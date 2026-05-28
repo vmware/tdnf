@@ -45,6 +45,23 @@ if grep -qw "Fedora" ${rel_file}; then
   )
   dnf -y upgrade --refresh
   dnf -y install ${fedora_packages[@]}
+elif grep -qw "Rocky" ${rel_file}; then
+  rocky_packages=(
+    ${common_pkgs[@]}
+    gcc
+    glib2-devel
+    libcurl-devel
+    make
+    openssl
+    python3-flake8
+    rpm-devel
+    rpm-sign
+    shadow-utils
+  )
+  dnf -y upgrade --refresh
+  dnf -y install epel-release dnf-plugins-core
+  dnf config-manager --set-enabled powertools
+  dnf -y install ${rocky_packages[@]}
 elif grep -qw "Photon" ${rel_file}; then
   photon_packages=(
     ${common_pkgs[@]}

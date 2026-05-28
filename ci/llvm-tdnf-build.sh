@@ -15,6 +15,8 @@ if ! rpm -q ${pkgs[@]} > /dev/null; then
     tdnf install -y --refresh ${pkgs[@]}
   elif grep -qw ID=fedora /etc/os-release; then
     dnf install -y --refresh ${pkgs[@]}
+  elif grep -qw ID=\"rocky\" /etc/os-release; then
+    dnf install -y --refresh ${pkgs[@]}
   fi
 fi
 

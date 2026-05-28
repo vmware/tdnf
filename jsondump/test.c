@@ -50,7 +50,7 @@ int main(void)
 
     CHECK_RC(jd_list_start(jd));
     for(int i = 0; i < 10; i++) {
-        char buf[3];
+        char buf[12];
         snprintf(buf, sizeof(buf), "%d", i);
         jd_list_add_string(jd, buf);
     }

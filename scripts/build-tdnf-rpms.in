@@ -29,6 +29,8 @@ if ! rpm -q ${build_tools[@]} ${build_deps} > /dev/null; then
     tdnf install -y --refresh ${build_tools[@]} ${build_deps}
   elif grep -qw ID=fedora /etc/os-release; then
     dnf install -y --refresh ${build_tools[@]} ${build_deps}
+  elif grep -qw ID=\"rocky\" /etc/os-release; then
+    dnf install -y --refresh ${build_tools[@]} ${build_deps}
   fi
 fi
 

@@ -1,0 +1,7 @@
+FROM quay.io/rockylinux/rockylinux:8
+
+COPY ci/prep.sh /prep.sh
+RUN chmod +x /prep.sh
+RUN /prep.sh
+
+CMD ["/bin/bash"]
