@@ -84,11 +84,52 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/pytests/repo/" DESTINATION "${CMA
 pkg_check_modules(RPM REQUIRED rpm)
 
 include(CheckSymbolExists)
+include(CheckCSourceCompiles)
 set(CMAKE_REQUIRED_INCLUDES ${RPM_INCLUDE_DIRS})
 set(CMAKE_REQUIRED_LIBRARIES ${RPM_LIBRARIES})
 check_symbol_exists(rpmdbCookie "rpm/rpmdb.h" HAVE_RPMDB_COOKIE)
 if(HAVE_RPMDB_COOKIE)
   add_compile_definitions(HAVE_RPMDB_COOKIE)
+endif()
+
+check_c_source_compiles("
+#include <rpm/rpmts.h>
+int main(void) { int a = RPMTRANS_FLAG_NODB; (void)a; return 0; }
+" HAVE_RPMTRANS_FLAG_NODB)
+if(HAVE_RPMTRANS_FLAG_NODB)
+  add_compile_definitions(HAVE_RPMTRANS_FLAG_NODB)
+else()
+  message(STATUS "RPMTRANS_FLAG_NODB not found")
+endif()
+
+check_c_source_compiles("
+#include <rpm/rpmts.h>
+int main(void) { int a = RPMTRANS_FLAG_NOARTIFACTS; (void)a; return 0; }
+" HAVE_RPMTRANS_FLAG_NOARTIFACTS)
+if(HAVE_RPMTRANS_FLAG_NOARTIFACTS)
+  add_compile_definitions(HAVE_RPMTRANS_FLAG_NOARTIFACTS)
+else()
+  message(STATUS "RPMTRANS_FLAG_NOARTIFACTS not found")
+endif()
+
+check_c_source_compiles("
+#include <rpm/rpmts.h>
+int main(void) { int a = RPMTRANS_FLAG_NOCONFIGS; (void)a; return 0; }
+" HAVE_RPMTRANS_FLAG_NOCONFIGS)
+if(HAVE_RPMTRANS_FLAG_NOCONFIGS)
+  add_compile_definitions(HAVE_RPMTRANS_FLAG_NOCONFIGS)
+else()
+  message(STATUS "RPMTRANS_FLAG_NOCONFIGS not found")
+endif()
+
+check_c_source_compiles("
+#include <rpm/rpmts.h>
+int main(void) { int a = RPMTRANS_FLAG_DEPLOOPS; (void)a; return 0; }
+" HAVE_RPMTRANS_FLAG_DEPLOOPS)
+if(HAVE_RPMTRANS_FLAG_DEPLOOPS)
+  add_compile_definitions(HAVE_RPMTRANS_FLAG_DEPLOOPS)
+else()
+  message(STATUS "RPMTRANS_FLAG_DEPLOOPS not found")
 endif()
 
 if(RPM_VERSION VERSION_GREATER_EQUAL "6.0")

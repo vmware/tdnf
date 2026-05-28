@@ -110,7 +110,7 @@ struct {
     {"noplugins",       RPMTRANS_FLAG_NOPLUGINS },
     {"nocontexts",      RPMTRANS_FLAG_NOCONTEXTS },
     {"nocaps",          RPMTRANS_FLAG_NOCAPS},
-#ifdef RPMTRANS_FLAG_NODB
+#ifdef HAVE_RPMTRANS_FLAG_NODB
     {"nodb",            RPMTRANS_FLAG_NODB},
 #endif
 
@@ -130,13 +130,13 @@ struct {
     {"nomd5",           RPMTRANS_FLAG_NOMD5},
     {"nofiledigest",    RPMTRANS_FLAG_NOFILEDIGEST},
 
-#ifdef RPMTRANS_FLAG_NOARTIFACTS
+#ifdef HAVE_RPMTRANS_FLAG_NOARTIFACTS
     {"noartifacts",     RPMTRANS_FLAG_NOARTIFACTS},
 #endif
-#ifdef RPMTRANS_FLAG_NOCONFIGS
+#ifdef HAVE_RPMTRANS_FLAG_NOCONFIGS
     {"noconfigs",       RPMTRANS_FLAG_NOCONFIGS},
 #endif
-#ifdef RPMTRANS_FLAG_DEPLOOPS
+#ifdef HAVE_RPMTRANS_FLAG_DEPLOOPS
     {"deploops",        RPMTRANS_FLAG_DEPLOOPS},
 #endif
     {NULL,              RPMTRANS_FLAG_NONE}
