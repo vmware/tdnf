@@ -12,7 +12,7 @@ configure_file(
     tdnf-cli-libs.pc @ONLY
 )
 
-add_library(${LIB_TDNF_CLI} SHARED
+add_library(${LIB_TDNF_CLI} ${TDNF_LIBRARY_TYPE}
     api.c
     help.c
     installcmd.c

@@ -20,8 +20,35 @@
 #include <rpm/rpmps.h>
 #include <rpm/rpmts.h>
 #include <rpm/rpmdb.h>
+#include <rpm/rpmmacro.h>
 
 #include "history.h"
+
+#ifndef HAVE_RPMDB_COOKIE
+#include <sys/stat.h>
+
+static char *rpmdbCookie(rpmdb db) {
+    char *path = rpmGetPath("%{_dbpath}/Packages", NULL);
+    struct stat st;
+    char *cookie = NULL;
+    (void)db;
+    if (stat(path, &st) == 0) {
+        cookie = malloc(64);
+        if (cookie) snprintf(cookie, 64, "mtime:%ld", (long)st.st_mtime);
+    } else {
+        free(path);
+        path = rpmGetPath("%{_dbpath}/rpmdb.sqlite", NULL);
+        if (stat(path, &st) == 0) {
+            cookie = malloc(64);
+            if (cookie) snprintf(cookie, 64, "mtime:%ld", (long)st.st_mtime);
+        } else {
+            cookie = strdup("unknown");
+        }
+    }
+    free(path);
+    return cookie;
+}
+#endif
 
 #define check_cond(COND) if(!(COND)) { \
     fprintf(stderr, "check_cond failed in %s line %d\n", \

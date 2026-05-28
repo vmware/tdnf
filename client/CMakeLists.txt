@@ -21,7 +21,7 @@ configure_file(
     tdnf.pc @ONLY
 )
 
-add_library(${LIB_TDNF} SHARED
+add_library(${LIB_TDNF} ${TDNF_LIBRARY_TYPE}
     api.c
     client.c
     config.c

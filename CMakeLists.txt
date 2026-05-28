@@ -28,6 +28,19 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+option(BUILD_STATIC "Build tdnf statically" OFF)
+
+if(BUILD_STATIC)
+    set(TDNF_LIBRARY_TYPE STATIC)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+
+    # Force pkg-config to look for static libraries
+    set(PKG_CONFIG_USE_STATIC_LIBS TRUE)
+else()
+    set(TDNF_LIBRARY_TYPE SHARED)
+endif()
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -54,6 +67,7 @@ pkg_check_modules(RPM REQUIRED rpm)
 find_package(OpenSSL REQUIRED)
 pkg_check_modules(EXPAT REQUIRED expat)
 pkg_check_modules(SQLITE3 sqlite3)
+
 include_directories(${RPM_INCLUDE_DIRS})
 include_directories(${EXPAT_INCLUDE_DIRS})
 
@@ -68,6 +82,14 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/pytests/tests/" DESTINATION "${CM
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/pytests/repo/" DESTINATION "${CMAKE_INSTALL_DATADIR}/tdnf/pytests/repo")
 
 pkg_check_modules(RPM REQUIRED rpm)
+
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_INCLUDES ${RPM_INCLUDE_DIRS})
+set(CMAKE_REQUIRED_LIBRARIES ${RPM_LIBRARIES})
+check_symbol_exists(rpmdbCookie "rpm/rpmdb.h" HAVE_RPMDB_COOKIE)
+if(HAVE_RPMDB_COOKIE)
+  add_compile_definitions(HAVE_RPMDB_COOKIE)
+endif()
 
 if(RPM_VERSION VERSION_GREATER_EQUAL "6.0")
   message(STATUS "rpm ${RPM_VERSION} >= 6.0")
