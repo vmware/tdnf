@@ -108,7 +108,6 @@ Library providing cli libs for %{name} like clients.
 
 %package    plugin-metalink
 Summary:    tdnf plugin providing metalink functionality for repo configurations
-Requires:   gpgme
 
 %description plugin-metalink
 tdnf plugin providing metalink functionality for repo configurations

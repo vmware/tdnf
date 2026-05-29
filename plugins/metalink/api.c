@@ -8,7 +8,6 @@
 
 #include "includes.h"
 #include "config.h"
-#include <gpgme.h>
 
 TDNF_PLUGIN_INTERFACE _interface = {0};
 
