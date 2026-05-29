@@ -47,7 +47,9 @@ BuildRequires:  systemd-rpm-macros
 BuildRequires:  expat-devel
 
 #repogpgcheck plugin
+%if %{undefined rocky}
 BuildRequires:  gpgme-devel
+%endif
 
 BuildRequires:  gcc
 BuildRequires:  make
@@ -84,7 +86,9 @@ Development files for %{name}
 Summary:    Test suite for %{name}
 Requires:   %{name} = %{version}-%{release}
 Requires:   %{name}-automatic = %{version}-%{release}
+%if %{undefined rocky}
 Requires:   %{name}-plugin-repogpgcheck = %{version}-%{release}
+%endif
 Requires:   %{name}-plugin-metalink = %{version}-%{release}
 Requires:   python3-pytest
 Requires:   python3-requests
@@ -112,12 +116,14 @@ Summary:    tdnf plugin providing metalink functionality for repo configurations
 %description plugin-metalink
 tdnf plugin providing metalink functionality for repo configurations
 
+%if %{undefined rocky}
 %package    plugin-repogpgcheck
 Summary:    %{name} plugin providing gpg verification for repository metadata
 Requires:   gpgme
 
 %description plugin-repogpgcheck
 %{name} plugin providing gpg verification for repository metadata
+%endif
 
 %package automatic
 Summary:   %{name} - automated upgrades
@@ -138,6 +144,9 @@ cd build
   -DCMAKE_INSTALL_PREFIX=%{_prefix} \
   -DCMAKE_INSTALL_LIBDIR=%{_libdir} \
   -DSYSTEMD_DIR=%{_unitdir} \
+%if %{defined rocky}
+  -DENABLE_PLUGIN_REPOGPGCHECK=OFF \
+%endif
   ..
 
 %{cmake_build}
@@ -236,11 +245,13 @@ rm -f %{_var}/cache/%{name}/cached-updateinfo.txt
 %config(noreplace) %{_sysconfdir}/%{name}/pluginconf.d/tdnfmetalink.conf
 %{_tdnfpluginsdir}/libtdnfmetalink.so
 
+%if %{undefined rocky}
 %files plugin-repogpgcheck
 %defattr(-,root,root)
 %dir %{_sysconfdir}/%{name}/pluginconf.d
 %config(noreplace) %{_sysconfdir}/%{name}/pluginconf.d/tdnfrepogpgcheck.conf
 %{_tdnfpluginsdir}/libtdnfrepogpgcheck.so
+%endif
 
 %files automatic
 %defattr(-,root,root,0755)

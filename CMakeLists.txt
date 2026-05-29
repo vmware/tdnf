@@ -29,6 +29,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(BUILD_STATIC "Build tdnf statically" OFF)
+option(ENABLE_PLUGIN_REPOGPGCHECK "Build repogpgcheck plugin" ON)
 
 if(BUILD_STATIC)
     set(TDNF_LIBRARY_TYPE STATIC)

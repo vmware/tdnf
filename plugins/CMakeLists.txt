@@ -6,5 +6,7 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
-add_subdirectory("repogpgcheck")
+if(ENABLE_PLUGIN_REPOGPGCHECK)
+    add_subdirectory("repogpgcheck")
+endif()
 add_subdirectory("metalink")
