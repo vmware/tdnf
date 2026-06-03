@@ -1691,7 +1691,7 @@ TDNFResolve(
         dwError = TDNFResolveBuildDependencies(
                         pTdnf,
                         ppszPkgNames,
-                        ppszPkgsNotResolved,
+                        &ppszPkgsNotResolved,
                         &queueGoal);
     }
     BAIL_ON_TDNF_ERROR(dwError);
