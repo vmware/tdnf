@@ -741,7 +741,7 @@ uint32_t
 TDNFResolveBuildDependencies(
     PTDNF pTdnf,
     char **ppszPackageNameSpecs,
-    char **ppszPkgsNotResolved,
+    char ***pppszPkgsNotResolved,
     Queue* queueGoal
     );
 

@@ -482,7 +482,7 @@ uint32_t
 TDNFResolveBuildDependencies(
     PTDNF pTdnf,
     char **ppszPackageNameSpecs,
-    char **ppszPkgsNotResolved,
+    char ***pppszPkgsNotResolved,
     Queue* queueGoal
     )
 {
@@ -530,6 +530,14 @@ TDNFResolveBuildDependencies(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (qDeps.count > 0) {
+        dwError = TDNFReAllocateMemory(
+                      (pTdnf->pArgs->nCmdCount + qDeps.count + 1) * sizeof(char*),
+                      (void**)pppszPkgsNotResolved);
+        BAIL_ON_TDNF_ERROR(dwError);
+        memset(*pppszPkgsNotResolved + pTdnf->pArgs->nCmdCount, 0, (qDeps.count + 1) * sizeof(char*));
+    }
+
     for (i = 0; i < qDeps.count; i++) {
         pszDep = pool_dep2str(pTdnf->pSack->pPool, qDeps.elements[i]);
         if (!pszDep) {
@@ -545,7 +553,7 @@ TDNFResolveBuildDependencies(
                       pTdnf,
                       pszDep,
                       ALTER_INSTALL,
-                      ppszPkgsNotResolved,
+                      *pppszPkgsNotResolved,
                       queueGoal);
         BAIL_ON_TDNF_ERROR(dwError);
     }
