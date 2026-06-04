@@ -19,6 +19,7 @@ import pytest
 import atexit
 import platform
 import requests
+import tempfile
 import subprocess
 import configparser
 from OpenSSL import crypto
@@ -286,14 +287,48 @@ class TestUtils(object):
         if not self.config['valgrind_enabled']:
             pytest.skip(self.config['valgrind_disabled_reason'])
 
-    def run_memcheck(self, cmd):
+    def run_memcheck(self, cmd, assertOnLeak=True):
         self._skip_if_valgrind_disabled()
         self._decorate_tdnf_cmd_for_test(cmd)
-        memcheck_cmd = ['valgrind',
-                        '--leak-check=full',
-                        '--exit-on-first-error=yes',
-                        '--error-exitcode=1']
-        return self._run(memcheck_cmd + cmd, retvalonly=True)
+
+        with tempfile.NamedTemporaryFile(
+            prefix="valgrind_memcheck_",
+            suffix=".log",
+            delete=False
+        ) as f:
+            log_file = f.name
+
+        try:
+            memcheck_cmd = [
+                "valgrind",
+                "--leak-check=full",
+                "--show-leak-kinds=all",
+                f"--log-file={log_file}",
+                "--error-exitcode=1",
+            ]
+
+            ret = self._run(memcheck_cmd + cmd, retvalonly=True)
+
+            valgrind_errors = 0
+            content = ""
+
+            if os.path.exists(log_file):
+                with open(log_file) as f:
+                    content = f.read()
+
+                match = re.search(r"ERROR SUMMARY: (\d+) errors", content)
+                if match:
+                    valgrind_errors = int(match.group(1))
+                    print(content, file=sys.stderr)
+
+            if valgrind_errors and assertOnLeak:
+                assert False, "valgrind memory leak check failed"
+
+            return ret
+
+        finally:
+            if os.path.exists(log_file):
+                os.unlink(log_file)
 
     def run(self, cmd, cwd=None, noconfig=False, env=None):
         if isinstance(cmd, str):
