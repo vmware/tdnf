@@ -327,11 +327,16 @@ TDNFPrepareSinglePkg(
     dwError = SolvCountPkgByName(pSack, pszPkgName, pTdnf->pArgs->nSource, &dwCount);
     if (dwError == ERROR_TDNF_NO_MATCH)
     {
+        /*
+         * The package name didn't match anything. Don't bail out here:
+         * record it as unresolved and keep going so that the full list of
+         * packages that could not be found is reported before tdnf exits.
+         * The actual transaction failure (when --skip-broken is not set) is
+         * enforced later, once every package has been processed.
+         */
         pr_err("%s package not found or not installed\n", pszPkgName);
-        if (pTdnf->pArgs->nSkipBroken)
-        {
-            dwError = 0;
-        }
+        dwError = 0;
+        dwCount = 0;
     }
     BAIL_ON_TDNF_ERROR(dwError);
 

@@ -1696,6 +1696,21 @@ TDNFResolve(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
+    /*
+     * Every package that could not be found has been collected in
+     * ppszPkgsNotResolved (and already reported individually). Without
+     * --skip-broken, any such package fails the whole transaction, so bail
+     * out here - after the complete list has been printed - instead of
+     * proceeding to solve and install a partial set.
+     */
+    if (!pTdnf->pArgs->nSkipBroken &&
+        ppszPkgsNotResolved &&
+        ppszPkgsNotResolved[0])
+    {
+        dwError = ERROR_TDNF_NO_MATCH;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     if (!pTdnf->pArgs->nSource && !pTdnf->pArgs->nNoDeps) {
         dwError = TDNFGoal(
                       pTdnf,
