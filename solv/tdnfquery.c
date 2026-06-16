@@ -1034,10 +1034,12 @@ SolvApplyDepsFilter(
     REPOQUERY_WHAT_KEY whatKey)
 {
     uint32_t dwError = 0;
-    Queue queueDeps = {0};
+    Queue sel = {0};
     Queue queueFiltered = {0};
+    Queue queuePkgs = {0};
+    Map m = {0};
+    int bMapInit = 0;
     int i, j;
-    Id idDep;
 
     if(!pQuery || !pQuery->pSack || !ppszDeps)
     {
@@ -1045,77 +1047,59 @@ SolvApplyDepsFilter(
         BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
     }
 
-    /* convert string dep array to id queue */
-    queue_init(&queueDeps);
+    queue_init(&sel);
     for(i = 0; ppszDeps[i] != NULL; i++)
     {
-        idDep = pool_str2id(pQuery->pSack->pPool, ppszDeps[i], 0);
-        /* if it's not found, nothing can depend on it */
-        if (idDep)
+        int flags = SELECTION_GLOB | SELECTION_REL | SELECTION_ADD;
+        if (whatKey != REPOQUERY_WHAT_KEY_DEPENDS)
         {
-            queue_push(&queueDeps, idDep);
+            Id _allDepKeyIds[] = {
+                SOLVABLE_PROVIDES,
+                SOLVABLE_OBSOLETES,
+                SOLVABLE_CONFLICTS,
+                SOLVABLE_REQUIRES,
+                SOLVABLE_RECOMMENDS,
+                SOLVABLE_SUGGESTS,
+                SOLVABLE_SUPPLEMENTS,
+                SOLVABLE_ENHANCES
+            };
+            selection_make_matchdeps(pQuery->pSack->pPool, &sel, ppszDeps[i], flags, _allDepKeyIds[whatKey], 0);
         }
+        else
+        {
+            size_t k;
+            Id allDepKeys[] = {
+                SOLVABLE_REQUIRES,
+                SOLVABLE_RECOMMENDS,
+                SOLVABLE_SUGGESTS,
+                SOLVABLE_SUPPLEMENTS,
+                SOLVABLE_ENHANCES
+            };
+            for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+            {
+                selection_make_matchdeps(pQuery->pSack->pPool, &sel, ppszDeps[i], flags, allDepKeys[k], 0);
+            }
+        }
+    }
+
+    queue_init(&queuePkgs);
+    selection_solvables(pQuery->pSack->pPool, &sel, &queuePkgs);
+
+    map_init(&m, pQuery->pSack->pPool->nsolvables);
+    bMapInit = 1;
+    for (i = 0; i < queuePkgs.count; i++)
+    {
+        map_set(&m, queuePkgs.elements[i]);
     }
 
     queue_init(&queueFiltered);
     for (j = 0; j < pQuery->queueResult.count; j++)
     {
         Id idPkg = pQuery->queueResult.elements[j];
-        Solvable *pSolvable = pool_id2solvable(pQuery->pSack->pPool, idPkg);
 
-        if(!pSolvable)
+        if (MAPTST(&m, idPkg))
         {
-            dwError = ERROR_TDNF_NO_DATA;
-            BAIL_ON_TDNF_ERROR(dwError);
-        }
-
-        for (i = 0; i < queueDeps.count; i++)
-        {
-            idDep = queueDeps.elements[i];
-
-            if (whatKey != REPOQUERY_WHAT_KEY_DEPENDS)
-            {
-                Id _allDepKeyIds[] = {
-                    SOLVABLE_PROVIDES,
-                    SOLVABLE_OBSOLETES,
-                    SOLVABLE_CONFLICTS,
-                    SOLVABLE_REQUIRES,
-                    SOLVABLE_RECOMMENDS,
-                    SOLVABLE_SUGGESTS,
-                    SOLVABLE_SUPPLEMENTS,
-                    SOLVABLE_ENHANCES
-                };
-                /* single dependency type */
-                if (solvable_matchesdep(pSolvable, _allDepKeyIds[whatKey], idDep, 0))
-                {
-                    queue_push(&queueFiltered, idPkg);
-                    break;
-                }
-            }
-            else
-            {
-                size_t k;
-                Id allDepKeys[] = {
-                    SOLVABLE_REQUIRES,
-                    SOLVABLE_RECOMMENDS,
-                    SOLVABLE_SUGGESTS,
-                    SOLVABLE_SUPPLEMENTS,
-                    SOLVABLE_ENHANCES
-                };
-
-                for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
-                {
-                    if (solvable_matchesdep(pSolvable, allDepKeys[k], idDep, 0))
-                    {
-                        queue_push(&queueFiltered, idPkg);
-                        break;
-                    }
-                }
-                if (k < ARRAY_SIZE(allDepKeys))
-                {
-                    break;
-                }
-            }
+            queue_push(&queueFiltered, idPkg);
         }
     }
 
@@ -1123,7 +1107,12 @@ SolvApplyDepsFilter(
     pQuery->queueResult = queueFiltered;
 
 cleanup:
-    queue_free(&queueDeps);
+    queue_free(&sel);
+    queue_free(&queuePkgs);
+    if (bMapInit)
+    {
+        map_free(&m);
+    }
     return dwError;
 
 error:

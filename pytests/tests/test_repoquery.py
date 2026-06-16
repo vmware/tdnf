@@ -351,3 +351,12 @@ def test_queryformat(utils):
 
     assert BASE_PKG in '\n'.join(ret['stdout'])
     assert '\n'.join(ret['stdout']).startswith("http://localhost:8080/photon-test")
+
+
+def test_repoquery_wildcard_whatrequires(utils):
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--whatrequires',
+                     'tdnf*'])
+    assert ret['retval'] == 0
+    assert 'tdnf-repoquery-requires' in '\n'.join(ret['stdout'])
