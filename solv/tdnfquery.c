@@ -1375,7 +1375,7 @@ SolvApplyArchFilter(
     uint32_t dwError = 0;
     Pool *pPool;
     Queue queueFiltered = {0};
-    Queue queueArches = {0};
+    Map archMap = {0};
     int i, j;
 
     if(!pQuery || !ppszArchs) {
@@ -1384,12 +1384,13 @@ SolvApplyArchFilter(
     }
     pPool = pQuery->pSack->pPool;
 
-    queue_init(&queueArches);
+    /* Create a map for O(1) architecture lookup */
+    map_init(&archMap, pPool->ss.nstrings);
+
     for (j = 0; ppszArchs[j]; j++) {
-        Id idArch;
-        idArch = pool_str2id(pPool, ppszArchs[j], 0);
+        Id idArch = pool_str2id(pPool, ppszArchs[j], 0);
         if (idArch) {
-            queue_push(&queueArches, idArch);
+            map_set(&archMap, idArch);
         }
     }
 
@@ -1398,26 +1399,22 @@ SolvApplyArchFilter(
     {
         Id idPkg = pQuery->queueResult.elements[i];
         const Solvable *pSolvable = pool_id2solvable(pPool, idPkg);
-        int nFound = 0;
 
         if(!pSolvable)
         {
             dwError = ERROR_TDNF_NO_DATA;
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        for (j = 0; j < queueArches.count; j++){
-            if (pSolvable->arch == queueArches.elements[j]) {
-                nFound = 1;
-            }
-        }
-        if (nFound) {
+
+        /* Use O(1) map lookup instead of O(n) queue search */
+        if (MAPTST(&archMap, pSolvable->arch)) {
             queue_push(&queueFiltered, idPkg);
         }
     }
     queue_free(&pQuery->queueResult);
     pQuery->queueResult = queueFiltered;
 cleanup:
-    queue_free(&queueArches);
+    map_free(&archMap);
     return dwError;
 error:
     queue_free(&queueFiltered);

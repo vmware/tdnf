@@ -360,3 +360,56 @@ def test_repoquery_wildcard_whatrequires(utils):
                      'tdnf*'])
     assert ret['retval'] == 0
     assert 'tdnf-repoquery-requires' in '\n'.join(ret['stdout'])
+
+
+def test_repoquery_arch_filter_optimization(utils):
+    """Test the optimized architecture filtering with Map-based lookup"""
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--arch', ARCH,
+                     'tdnf-repoquery-*'])
+    assert ret['retval'] == 0
+    output = '\n'.join(ret['stdout'])
+    assert BASE_PKG in output
+    assert 'noarch' not in output
+
+
+def test_repoquery_arch_filter_multiple_archs(utils):
+    """Test architecture filtering with multiple architectures"""
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--arch', 'noarch',
+                     '--arch', ARCH,
+                     BASE_PKG])
+    assert ret['retval'] == 0
+    assert BASE_PKG in '\n'.join(ret['stdout'])
+
+
+def test_repoquery_file_provides_optimization(utils):
+    """Test the optimized file provides filtering using selection APIs"""
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--file',
+                     '/usr/lib/repoquery/tdnf-repoquery-conflicts'])
+    assert ret['retval'] == 0
+    assert 'tdnf-repoquery-conflicts' in '\n'.join(ret['stdout'])
+
+
+def test_repoquery_whatrequires_optimization(utils):
+    """Test optimized whatrequires functionality using pool_whatmatchesdep"""
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--whatrequires',
+                     BASE_PKG])
+    assert ret['retval'] == 0
+    assert 'tdnf-repoquery-requires' in '\n'.join(ret['stdout'])
+
+
+def test_repoquery_complex_pattern_performance(utils):
+    """Test performance with complex patterns that benefit from optimizations"""
+    ret = utils.run(['tdnf',
+                     'repoquery',
+                     '--whatrequires',
+                     'tdnf-repoquery*'])
+    assert ret['retval'] == 0
+    assert 'tdnf-repoquery-requires' in '\n'.join(ret['stdout'])
