@@ -726,7 +726,7 @@ error:
     {
         *ppRepos = NULL;
     }
-    TDNF_SAFE_FREE_MEMORY(pRepo);
+    TDNFFreeRepos(pRepo);
     if(pRepos)
     {
         TDNFFreeRepos(pRepos);
