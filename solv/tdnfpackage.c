@@ -2605,8 +2605,7 @@ SolvIdIsOrphaned(
 )
 {
     uint32_t dwError = 0;
-    Id q;
-    Solvable *s, *t;
+    Solvable *s;
     int nIsOrphan = 1;
     Id allDepKeys[] = {
         SOLVABLE_REQUIRES,
@@ -2618,6 +2617,9 @@ SolvIdIsOrphaned(
     Pool *pPool;
     Queue qFiles = {0};
     Queue qProvides = {0};
+    Queue qMatches = {0};
+    int i;
+    size_t k; /* size_t to avoid signed/unsigned warning when compared with ARRAY_SIZE() */
 
     if(!pSack || !pnIsOrphan)
     {
@@ -2627,47 +2629,47 @@ SolvIdIsOrphaned(
     pPool = pSack->pPool;
     s = pool_id2solvable(pPool, p);
 
-    /* Loop through installed, if any one requires p (aka s) it's not an orphan. */
-    FOR_REPO_SOLVABLES(pPool->installed, q, t)
-    {
-        if (p == q)
-        {
-            continue;
-        }
+    queue_init(&qMatches);
 
-        for (unsigned int k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+    /* Check if any installed package requires this package's name */
+    for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+    {
+        pool_whatmatchesdep(pPool, allDepKeys[k], s->name, &qMatches, 0);
+        /* Filter to only installed packages */
+        for (i = 0; i < qMatches.count; i++)
         {
-            /* deps are names, not solvables, hence we check for s->name
-               and not p */
-            if (solvable_matchesdep(t, allDepKeys[k], s->name, 0))
+            Id matchId = qMatches.elements[i];
+            Solvable *matchSolvable = pool_id2solvable(pPool, matchId);
+            if (matchSolvable && matchSolvable->repo == pPool->installed && matchId != p)
             {
                 nIsOrphan = 0;
                 goto loopexit; /* we can skip other checks */
             }
         }
+        queue_empty(&qMatches);
     }
 
     /* check if p provides files that are needed by anything installed */
     dwError = SolvGetFileQueueFromId(pSack, p, &qFiles);
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
-    FOR_REPO_SOLVABLES(pPool->installed, q, t)
+    for (i = 0; i < qFiles.count; i++)
     {
-        if (p == q)
+        for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
         {
-            continue;
-        }
-
-        for (int i = 0; i < qFiles.count; i++)
-        {
-            for (unsigned int k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+            pool_whatmatchesdep(pPool, allDepKeys[k], qFiles.elements[i], &qMatches, 0);
+            /* Filter to only installed packages */
+            for (int j = 0; j < qMatches.count; j++)
             {
-                if (solvable_matchesdep(t, allDepKeys[k], qFiles.elements[i], 0))
+                Id matchId = qMatches.elements[j];
+                Solvable *matchSolvable = pool_id2solvable(pPool, matchId);
+                if (matchSolvable && matchSolvable->repo == pPool->installed && matchId != p)
                 {
                     nIsOrphan = 0;
-                    goto loopexit; /* save 3 break statements */
+                    goto loopexit; /* save nested break statements */
                 }
             }
+            queue_empty(&qMatches);
         }
     }
 
@@ -2678,23 +2680,23 @@ SolvIdIsOrphaned(
        one. We mark none of them as an orphan. */
     solvable_lookup_deparray(s, SOLVABLE_PROVIDES, &qProvides, -1);
 
-    FOR_REPO_SOLVABLES(pPool->installed, q, t)
+    for (i = 0; i < qProvides.count; i++)
     {
-        if (p == q)
+        for (k = 0; k < ARRAY_SIZE(allDepKeys); k++)
         {
-            continue;
-        }
-
-        for (int i = 0; i < qProvides.count; i++)
-        {
-            for (unsigned int k = 0; k < ARRAY_SIZE(allDepKeys); k++)
+            pool_whatmatchesdep(pPool, allDepKeys[k], qProvides.elements[i], &qMatches, 0);
+            /* Filter to only installed packages */
+            for (int j = 0; j < qMatches.count; j++)
             {
-                if (solvable_matchesdep(t, allDepKeys[k], qProvides.elements[i], 0))
+                Id matchId = qMatches.elements[j];
+                Solvable *matchSolvable = pool_id2solvable(pPool, matchId);
+                if (matchSolvable && matchSolvable->repo == pPool->installed && matchId != p)
                 {
                     nIsOrphan = 0;
-                    goto loopexit; /* save 3 break statements */
+                    goto loopexit; /* save nested break statements */
                 }
             }
+            queue_empty(&qMatches);
         }
     }
 
@@ -2705,6 +2707,7 @@ loopexit:
 cleanup:
     queue_free(&qFiles);
     queue_free(&qProvides);
+    queue_free(&qMatches);
     return dwError;
 error:
     goto cleanup;
