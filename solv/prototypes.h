@@ -34,6 +34,7 @@ typedef struct _SolvQuery
     Queue       queueResult;
     uint32_t    dwNewPackages;
     TDNF_SCOPE  nScope;
+    uint32_t    queryError;
 } SolvQuery, *PSolvQuery;
 
 typedef struct _SolvPackageList
@@ -404,12 +405,6 @@ SolvApplySearch(
     char** ppszSearchStrings,
     int dwStartIndex,
     int dwCount
-    );
-
-uint32_t
-SolvGenerateCommonJob(
-    PSolvQuery pQuery,
-    uint32_t dwSelectFlags
     );
 
 uint32_t

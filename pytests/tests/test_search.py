@@ -21,19 +21,38 @@ def teardown_test(utils):
 
 def test_search_no_arg(utils):
     ret = utils.run(['tdnf', 'search'])
-    assert ret['retval'] == 1599
+    assert ret['retval'] == 1011
 
 
 def test_search_invalid_arg(utils):
     ret = utils.run(['tdnf', 'search', 'invalid_arg'])
-    assert ret['retval'] == 1599
+    assert "No search results found for 'invalid_arg'" in "\n".join(ret['stderr'])
+    assert ret['retval'] == 1011
 
 
 def test_search_single(utils):
-    ret = utils.run(['tdnf', 'search', 'tdnf'])
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run(['tdnf', 'search', pkgname])
     assert ret['retval'] == 0
 
 
 def test_search_multiple(utils):
-    ret = utils.run(['tdnf', 'search', 'tdnf', 'wget', 'gzip'])
+    sglpkgname = utils.config["sglversion_pkgname"]
+    mulpkgname = utils.config["mulversion_pkgname"]
+    ret = utils.run(['tdnf', 'search', sglpkgname, mulpkgname])
     assert ret['retval'] == 0
+
+
+def test_search_valid_with_invalid(utils):
+    sglpkgname = utils.config["sglversion_pkgname"]
+
+    ret = utils.run(f"tdnf search {sglpkgname} invalid1")
+    assert ret['retval'] == 1599
+    assert "No search results found for 'invalid1'" in "\n".join(ret['stderr'])
+    assert "tdnf-test-one : basic install test file" in "\n".join(ret['stdout'])
+
+    ret = utils.run(f"tdnf search {sglpkgname} invalid1 invalid2")
+    assert ret['retval'] == 1599
+    assert "No search results found for 'invalid1'" in "\n".join(ret['stderr'])
+    assert "No search results found for 'invalid2'" in "\n".join(ret['stderr'])
+    assert "tdnf-test-one : basic install test file" in "\n".join(ret['stdout'])
