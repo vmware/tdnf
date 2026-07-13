@@ -243,6 +243,7 @@ TDNFGPGCheckPackage(
         }
         rpmtsSetVfyLevel(pTS->pTS, level);
     } else {
+        rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NOSIGNATURES | RPMVSF_MASK_NODIGESTS);
         rpmtsSetVfyLevel(pTS->pTS, RPMSIG_NONE_TYPE);
     }
 
