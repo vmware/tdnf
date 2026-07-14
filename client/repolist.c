@@ -184,8 +184,9 @@ TDNFLoadRepoData(
     PTDNF_REPO_DATA pReposAll = NULL;
     PTDNF_REPO_DATA *ppRepoNext = NULL;
     PTDNF_CONF pConf = NULL;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
+    struct dirent **ppDirEntries = NULL;
+    int nDirEntries = -1;
+    int nDirIndex = 0;
     char **ppszUrlIdTuple = NULL;
     PTDNF_REPO_DATA pRepoParsePre = NULL;
     PTDNF_REPO_DATA pRepoParseNext = NULL;
@@ -245,19 +246,22 @@ TDNFLoadRepoData(
         }
     }
 
-    pDir = opendir(pConf->pszRepoDir);
-    if(pDir == NULL)
+    /* sort alphabetically so repo processing order does not depend on
+       filesystem readdir() order, which is not guaranteed stable */
+    nDirEntries = scandir(pConf->pszRepoDir, &ppDirEntries, NULL, alphasort);
+    if (nDirEntries < 0)
     {
         dwError = ERROR_TDNF_REPO_DIR_OPEN;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while ((pEnt = readdir (pDir)) != NULL )
+    for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++)
     {
-        int nLen = strlen(pEnt->d_name);
+        const char *pszName = ppDirEntries[nDirIndex]->d_name;
+        int nLen = strlen(pszName);
         int nLenRepoExt = strlen(TDNF_REPO_EXT);
         if (nLen <= nLenRepoExt ||
-            strcmp(pEnt->d_name + nLen - nLenRepoExt, TDNF_REPO_EXT))
+            strcmp(pszName + nLen - nLenRepoExt, TDNF_REPO_EXT))
         {
             continue;
         }
@@ -265,7 +269,7 @@ TDNFLoadRepoData(
         dwError = TDNFJoinPath(
                       &pszRepoFilePath,
                       pConf->pszRepoDir,
-                      pEnt->d_name,
+                      pszName,
                       NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -311,9 +315,13 @@ TDNFLoadRepoData(
 
     *ppReposAll = pReposAll;
 cleanup:
-    if(pDir)
+    if (ppDirEntries)
     {
-        closedir(pDir);
+        for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++)
+        {
+            free(ppDirEntries[nDirIndex]);
+        }
+        free(ppDirEntries);
     }
     TDNF_SAFE_FREE_MEMORY(pszRepoFilePath);
     TDNF_SAFE_FREE_STRINGARRAY(ppszUrlIdTuple);
