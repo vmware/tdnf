@@ -249,8 +249,9 @@ _TDNFLoadPluginConfigs(
     )
 {
     uint32_t dwError = 0;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
+    struct dirent **ppDirEntries = NULL;
+    int nDirEntries = -1;
+    int nDirIndex;
     int nExtLen = TDNF_PLUGIN_CONF_EXT_LEN;
     PTDNF_PLUGIN pPlugin = NULL;
     PTDNF_PLUGIN pPlugins = NULL;
@@ -263,18 +264,22 @@ _TDNFLoadPluginConfigs(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    pDir = opendir(pTdnf->pConf->pszPluginConfPath);
-    if(pDir == NULL)
+    /* sort alphabetically so plugin load order (and thus event-dispatch
+       order for plugins sharing an event) does not depend on filesystem
+       readdir() order, which is not guaranteed stable */
+    nDirEntries = scandir(pTdnf->pConf->pszPluginConfPath, &ppDirEntries, NULL, alphasort);
+    if(nDirEntries < 0)
     {
         dwError = ERROR_TDNF_NO_PLUGIN_CONF_DIR;
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    while((pEnt = readdir(pDir)) != NULL)
+    for(nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++)
     {
-        int nLen = strlen(pEnt->d_name);
+        const char *pszName = ppDirEntries[nDirIndex]->d_name;
+        int nLen = strlen(pszName);
         if (nLen <= nExtLen ||
-            strcmp(pEnt->d_name + nLen - nExtLen, TDNF_PLUGIN_CONF_EXT))
+            strcmp(pszName + nLen - nExtLen, TDNF_PLUGIN_CONF_EXT))
         {
             continue;
         }
@@ -282,14 +287,14 @@ _TDNFLoadPluginConfigs(
         dwError = TDNFJoinPath(
                       &pszPluginConfig,
                       pTdnf->pConf->pszPluginConfPath,
-                      pEnt->d_name,
+                      pszName,
                       NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = _TDNFLoadPluginConfig(pszPluginConfig, &pPlugin);
         BAIL_ON_TDNF_ERROR(dwError);
 
-        dwError = TDNFAllocateStringN(pEnt->d_name, nLen - nExtLen, &pPlugin->pszName);
+        dwError = TDNFAllocateStringN(pszName, nLen - nExtLen, &pPlugin->pszName);
         BAIL_ON_TDNF_ERROR(dwError);
 
         TDNF_SAFE_FREE_MEMORY(pszPluginConfig);
@@ -309,9 +314,13 @@ _TDNFLoadPluginConfigs(
     *ppPlugins = pPlugins;
 
 cleanup:
-    if(pDir)
+    if (ppDirEntries)
     {
-        closedir(pDir);
+        for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++)
+        {
+            free(ppDirEntries[nDirIndex]);
+        }
+        free(ppDirEntries);
     }
     TDNF_SAFE_FREE_MEMORY(pszPluginConfig);
     return dwError;
