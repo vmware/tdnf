@@ -797,6 +797,17 @@ cleanup:
         }
         free(ppDirEntries);
     }
+    if (pppszArrayList)
+    {
+        /* on error, entries already read from files (but not yet moved
+         * into ppszNewLines) still own their string arrays; free them.
+         * Stop before the appended *pppszLines entry, which the caller
+         * still owns when we bail out before it is replaced below. */
+        for (i = 0; pppszArrayList[i] && pppszArrayList[i] != *pppszLines; i++)
+        {
+            TDNF_SAFE_FREE_STRINGARRAY(pppszArrayList[i]);
+        }
+    }
     TDNF_SAFE_FREE_MEMORY(pppszArrayList);
     TDNF_SAFE_FREE_MEMORY(pszFile);
     return dwError;
