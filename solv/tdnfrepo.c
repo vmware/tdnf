@@ -315,7 +315,8 @@ readRpmsFromDir(
         if (isDir) {
             dwError = readRpmsFromDir(pRepo, pszPath);
             BAIL_ON_TDNF_ERROR(dwError);
-        } else if (strcmp(&pszName[strlen(pszName)-4], ".rpm") == 0) {
+        } else if (strlen(pszName) > 4 &&
+                   strcmp(&pszName[strlen(pszName)-4], ".rpm") == 0) {
             if(!repo_add_rpm(pRepo,
                              pszPath,
                              REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE)) {
