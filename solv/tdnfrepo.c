@@ -277,19 +277,23 @@ readRpmsFromDir(
 )
 {
     uint32_t dwError = 0;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
+    struct dirent **ppDirEntries = NULL;
+    int nDirEntries = -1;
+    int nDirIndex = 0;
     char *pszPath = NULL;
 
-    pDir = opendir(pszDir);
-    if(pDir == NULL) {
+    /* sort alphabetically so rpm processing order does not depend on
+       filesystem readdir() order, which is not guaranteed stable */
+    nDirEntries = scandir(pszDir, &ppDirEntries, NULL, alphasort);
+    if (nDirEntries < 0) {
         dwError = errno;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
-    while ((pEnt = readdir (pDir)) != NULL ) {
+    for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++) {
+        const char *pszName = ppDirEntries[nDirIndex]->d_name;
         int isDir;
 
-        if (pEnt->d_name[0] == '.') {
+        if (pszName[0] == '.') {
             /* skip '.', '..', but also any dir name starting with '.' */
             continue;
         }
@@ -297,7 +301,7 @@ readRpmsFromDir(
         dwError = TDNFJoinPath(
                       &pszPath,
                       pszDir,
-                      pEnt->d_name,
+                      pszName,
                       NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
@@ -311,7 +315,8 @@ readRpmsFromDir(
         if (isDir) {
             dwError = readRpmsFromDir(pRepo, pszPath);
             BAIL_ON_TDNF_ERROR(dwError);
-        } else if (strcmp(&pEnt->d_name[strlen(pEnt->d_name)-4], ".rpm") == 0) {
+        } else if (strlen(pszName) > 4 &&
+                   strcmp(&pszName[strlen(pszName)-4], ".rpm") == 0) {
             if(!repo_add_rpm(pRepo,
                              pszPath,
                              REPO_REUSE_REPODATA|REPO_NO_INTERNALIZE)) {
@@ -322,8 +327,11 @@ readRpmsFromDir(
         TDNF_SAFE_FREE_MEMORY(pszPath);
     }
 cleanup:
-    if(pDir) {
-        closedir(pDir);
+    if (ppDirEntries) {
+        for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++) {
+            free(ppDirEntries[nDirIndex]);
+        }
+        free(ppDirEntries);
     }
     TDNF_SAFE_FREE_MEMORY(pszPath);
 

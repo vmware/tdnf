@@ -700,8 +700,9 @@ TDNFReadConfFilesFromDir(
     )
 {
     uint32_t dwError = 0;
-    DIR *pDir = NULL;
-    struct dirent *pEnt = NULL;
+    struct dirent **ppDirEntries = NULL;
+    int nDirEntries = -1;
+    int nDirIndex;
     char *pszFile = NULL;
     char **ppszNewLines = NULL;
     char ***pppszArrayList = NULL;
@@ -716,40 +717,39 @@ TDNFReadConfFilesFromDir(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    /* first, open directory and count all files match *.conf,
-     * so we know how much memory we need */
-    pDir = opendir(pszDir);
-    if (pDir == NULL)
+    /* read and sort the directory once, so drop-in *.conf files are
+     * applied in a predictable, filename-controllable order instead of
+     * raw filesystem readdir() order (which is not guaranteed stable) */
+    nDirEntries = scandir(pszDir, &ppDirEntries, NULL, alphasort);
+    if (nDirEntries < 0)
     {
         goto cleanup;
     }
 
-    while((pEnt = readdir(pDir)) != NULL)
+    /* count all files matching *.conf, so we know how much memory we need */
+    for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++)
     {
-        if (fnmatch("*.conf", pEnt->d_name, 0) != 0)
+        if (fnmatch("*.conf", ppDirEntries[nDirIndex]->d_name, 0) != 0)
         {
             continue;
         }
         nFileCount++;
     }
-    closedir(pDir);
-    pDir = NULL;
 
     /* allocate memory for our string array */
     dwError = TDNFAllocateMemory(nFileCount + 1, sizeof(char **), (void **)&pppszArrayList);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    /* read directory again and the files, store content of each file
+    /* read the files in sorted order, store content of each file
      * temporarily in pppszArrayList[i] */
     i = 0;
-    pDir = opendir(pszDir);
-    while((pEnt = readdir(pDir)) != NULL && i < nFileCount)
+    for (nDirIndex = 0; nDirIndex < nDirEntries && i < nFileCount; nDirIndex++)
     {
-        if (fnmatch("*.conf", pEnt->d_name, 0) != 0)
+        if (fnmatch("*.conf", ppDirEntries[nDirIndex]->d_name, 0) != 0)
         {
             continue;
         }
-        dwError = TDNFJoinPath(&pszFile, pszDir, pEnt->d_name, NULL);
+        dwError = TDNFJoinPath(&pszFile, pszDir, ppDirEntries[nDirIndex]->d_name, NULL);
         BAIL_ON_TDNF_ERROR(dwError);
 
         dwError = TDNFReadFileToStringArray(pszFile, &pppszArrayList[i]);
@@ -759,8 +759,6 @@ TDNFReadConfFilesFromDir(
 
         i++;
     }
-    closedir(pDir);
-    pDir = NULL;
 
     /* append values that are already set */
     pppszArrayList[i] = *pppszLines;
@@ -791,9 +789,24 @@ TDNFReadConfFilesFromDir(
     *pppszLines = ppszNewLines;
 
 cleanup:
-    if (pDir)
+    if (ppDirEntries)
     {
-        closedir(pDir);
+        for (nDirIndex = 0; nDirIndex < nDirEntries; nDirIndex++)
+        {
+            free(ppDirEntries[nDirIndex]);
+        }
+        free(ppDirEntries);
+    }
+    if (pppszArrayList)
+    {
+        /* on error, entries already read from files (but not yet moved
+         * into ppszNewLines) still own their string arrays; free them.
+         * Stop before the appended *pppszLines entry, which the caller
+         * still owns when we bail out before it is replaced below. */
+        for (i = 0; pppszArrayList[i] && pppszArrayList[i] != *pppszLines; i++)
+        {
+            TDNF_SAFE_FREE_STRINGARRAY(pppszArrayList[i]);
+        }
     }
     TDNF_SAFE_FREE_MEMORY(pppszArrayList);
     TDNF_SAFE_FREE_MEMORY(pszFile);
