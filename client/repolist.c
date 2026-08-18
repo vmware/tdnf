@@ -826,7 +826,7 @@ TDNFRepoListFinalize(
             dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszMirrorList);
             BAIL_ON_TDNF_ERROR(dwError);
         }
-        if(pRepo->pszSnapshotUrl)
+        if(!IsNullOrEmptyString(pRepo->pszSnapshotUrl))
         {
             dwError = TDNFConfigReplaceVars(pTdnf, &pRepo->pszSnapshotUrl);
             BAIL_ON_TDNF_ERROR(dwError);

@@ -26,6 +26,9 @@ def create_snapshot_repo(utils, reponame):
 
     with open(snapshot_file, "wt") as f:
         for pkg in snapshot_list:
+            name, sep, evr = pkg.partition('=')
+            if not sep or not name or ' ' in name or not evr:
+                continue
             if pkg not in EXCLUDED_PKGS:
                 f.write(f"{pkg}\n")
 
@@ -137,6 +140,7 @@ def test_list_http(utils):
     snapshot_url = f"http://localhost:8080/yum.repos.d/{REPONAME}.list"
 
     ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", f"--setopt=snapshot.{REPONAME}={snapshot_url}", "list"])
+    assert ret['retval'] == 0, f"stdout={ret['stdout']} stderr={ret['stderr']}"
     infolist = json.loads("\n".join(ret['stdout']))
 
     # excluded packages should not be listed
@@ -170,3 +174,22 @@ def test_repoquery(utils):
     for info in infolist:
         nevr = f"{info['Name']}={info['Evr']}"
         assert nevr not in EXCLUDED_PKGS
+
+
+def test_disable_snapshot_via_setopt(utils):
+    # With snapshot active, excluded packages must be absent
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available", "list"])
+    assert ret['retval'] == 0
+    infolist = json.loads("\n".join(ret['stdout']))
+    listed = {f"{i['Name']}={i['Evr']}" for i in infolist}
+    for pkg in EXCLUDED_PKGS:
+        assert pkg not in listed
+
+    # Disabling snapshot via --setopt=<repo>.snapshot= must expose excluded packages
+    ret = utils.run(["tdnf", "-j", "--repoid", REPONAME, "--available",
+                     f"--setopt={REPONAME}.snapshot=", "list"])
+    assert ret['retval'] == 0
+    infolist = json.loads("\n".join(ret['stdout']))
+    listed = {f"{i['Name']}={i['Evr']}" for i in infolist}
+    for pkg in EXCLUDED_PKGS:
+        assert pkg in listed

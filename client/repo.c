@@ -693,7 +693,7 @@ TDNFGetRepoMD(
                   &pRepoMD);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pRepoData->pszSnapshotUrl) {
+    if (!IsNullOrEmptyString(pRepoData->pszSnapshotUrl)) {
         time_t now = time(NULL);
         int needDownload = 0, nIsRemote = 0;
         struct stat st = {0};
