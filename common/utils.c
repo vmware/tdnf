@@ -481,8 +481,7 @@ TDNFYesOrNo(
             }
             buf[strlen(buf)-1] = 0;
             if (strcasecmp(buf, "yes") == 0 || strcasecmp(buf, "y") == 0 ||
-                    strcasecmp(buf, "n") == 0 || strcasecmp(buf, "no") == 0 ||
-                    buf[0] == 0) {
+                    strcasecmp(buf, "n") == 0 || strcasecmp(buf, "no") == 0) {
                 opt = tolower(buf[0]);
                 break;
             }
