@@ -34,6 +34,16 @@ def test_install_invalid_arg(utils):
     assert ret['retval'] == 1011
 
 
+# install multiple invalid packages, expect all of them to be reported
+# (not just the first one) before tdnf exits
+def test_install_multiple_invalid_args(utils):
+    ret = utils.run(['tdnf', 'install', '-y', 'invalid_package1', 'invalid_package2'])
+    assert ret['retval'] == 1011
+    output = "\n".join(ret['stdout'] + ret['stderr'])
+    assert 'invalid_package1' in output
+    assert 'invalid_package2' in output
+
+
 def test_install_package_with_version_suffix(utils):
     pkgname = utils.config["mulversion_pkgname"]
     pkgversion = utils.config["mulversion_lower"]
