@@ -1603,7 +1603,10 @@ error:
     TDNFFreePackageInfo(pPkgInfo);
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
-        dwError = ERROR_TDNF_NO_DATA;
+        if (pRepoqueryArgs->pszSpec)
+        {
+            pr_err("ERROR: No match found for: %s\n", pRepoqueryArgs->pszSpec);
+        }
     }
     goto cleanup;
 }
