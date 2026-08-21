@@ -303,10 +303,39 @@ TDNFLoadRepoData(
         }
     }
 
-    /* look for setopt settings */
+    /* Apply per-repo and glob-pattern setopts.
+     * Pass 1: glob patterns first. Pass 2: exact repo-id matches, which
+     * always take precedence over globs regardless of argument order.
+     * For array-valued keys (baseurl, gpgkey), the exact match resets any
+     * values set by globs so it replaces rather than appends. */
     if (pTdnf->pArgs->cn_repoopts != NULL) {
         for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
-            if ((cn_repo = find_child(pTdnf->pArgs->cn_repoopts, pRepo->pszId)) != NULL) {
+            if (strcmp(pRepo->pszId, CMDLINE_REPO_NAME) == 0)
+                continue;
+            for (cn_repo = pTdnf->pArgs->cn_repoopts->first_child;
+                 cn_repo; cn_repo = cn_repo->next) {
+                if (!TDNFIsGlob(cn_repo->name))
+                    continue;
+                if (fnmatch(cn_repo->name, pRepo->pszId, 0) == 0) {
+                    dwError = TDNFRepoConfigFromCnfTree(pTdnf, pRepo, cn_repo);
+                    BAIL_ON_TDNF_ERROR(dwError);
+                }
+            }
+        }
+        for (pRepo = pReposAll; pRepo; pRepo = pRepo->pNext) {
+            for (cn_repo = pTdnf->pArgs->cn_repoopts->first_child;
+                 cn_repo; cn_repo = cn_repo->next) {
+                struct cnfnode *cn_key;
+                if (TDNFIsGlob(cn_repo->name))
+                    continue;
+                if (strcmp(cn_repo->name, pRepo->pszId) != 0)
+                    continue;
+                for (cn_key = cn_repo->first_child; cn_key; cn_key = cn_key->next) {
+                    if (strcmp(cn_key->name, TDNF_REPO_KEY_BASEURL) == 0)
+                        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszBaseUrls);
+                    else if (strcmp(cn_key->name, TDNF_REPO_KEY_GPGKEY) == 0)
+                        TDNF_SAFE_FREE_STRINGARRAY(pRepo->ppszUrlGPGKeys);
+                }
                 dwError = TDNFRepoConfigFromCnfTree(pTdnf, pRepo, cn_repo);
                 BAIL_ON_TDNF_ERROR(dwError);
             }

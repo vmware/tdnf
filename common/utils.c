@@ -1279,6 +1279,17 @@ error:
     goto cleanup;
 }
 
+int TDNFIsGlob(const char *pszString)
+{
+    for ( ; pszString && *pszString; pszString++)
+    {
+        char ch = *pszString;
+        if (ch == '*' || ch == '?' || ch == '[')
+            return 1;
+    }
+    return 0;
+}
+
 /* return true if str is a valid reponame */
 int TDNFStrIsValidRepoName(const char *str)
 {

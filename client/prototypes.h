@@ -903,11 +903,6 @@ TDNFGetFileSize(
     int *pnSize
     );
 
-int
-TDNFIsGlob(
-    const char* pszString
-    );
-
 uint32_t
 TDNFUtilsMakeDir(
     const char* pszPath
