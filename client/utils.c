@@ -123,22 +123,6 @@ TDNFGetCurlError(
     return dwCurlError;
 }
 
-int
-TDNFIsGlob(
-    const char *pszString
-    )
-{
-    for ( ; pszString && *pszString; pszString++)
-    {
-        char ch = *pszString;
-        if (ch == '*' || ch == '?' || ch == '[')
-        {
-            return 1;
-        }
-    }
-
-    return 0;
-}
 
 uint32_t
 TDNFUtilsMakeDir(

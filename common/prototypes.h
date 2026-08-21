@@ -230,6 +230,10 @@ TDNFDirName(
     char **ppszDirName
 );
 
+int TDNFIsGlob(
+    const char *pszString
+);
+
 int TDNFStrIsValidRepoName(
     const char *str
 );
