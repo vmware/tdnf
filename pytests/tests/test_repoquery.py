@@ -413,3 +413,10 @@ def test_repoquery_complex_pattern_performance(utils):
                      'tdnf-repoquery*'])
     assert ret['retval'] == 0
     assert 'tdnf-repoquery-requires' in '\n'.join(ret['stdout'])
+
+
+def test_package_not_found(utils):
+    pkg = "this-package-does-not-exist"
+    ret = utils.run(["tdnf", "repoquery", pkg])
+    assert f"ERROR: No match found for: {pkg}" in "\n".join(ret['stderr'])
+    assert ret['retval'] == 1011
