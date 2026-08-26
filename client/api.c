@@ -234,11 +234,6 @@ TDNFGetSkipProblemOption(
 
     *pdwSkipProblem = SKIPPROBLEM_NONE;
 
-    if (strcasecmp(pTdnf->pArgs->ppszCmds[0], "check"))
-    {
-        goto cleanup;
-    }
-
     for (pSetOpt = pTdnf->pArgs->pSetOpt; pSetOpt; pSetOpt = pSetOpt->pNext)
     {
         if (!strcasecmp(pSetOpt->pszOptName, "skipconflicts"))
@@ -250,6 +245,11 @@ TDNFGetSkipProblemOption(
         {
             *pdwSkipProblem |= SKIPPROBLEM_OBSOLETES;
         }
+    }
+
+    if (pTdnf->pArgs->nSkipBroken)
+    {
+        *pdwSkipProblem |= SKIPPROBLEM_BROKEN;
     }
 
 cleanup:

@@ -316,8 +316,8 @@ TDNFPrepareSinglePkg(
         dwError = 0;
         dwCount = 0;
     }
-
     BAIL_ON_TDNF_ERROR(dwError);
+
     if (dwCount == 0)
     {
         dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
