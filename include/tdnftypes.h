@@ -136,6 +136,7 @@ typedef enum
     SKIPPROBLEM_CONFLICTS = 0x01,
     SKIPPROBLEM_OBSOLETES = 0x02,
     SKIPPROBLEM_DISABLED  = 0x04,
+    SKIPPROBLEM_BROKEN    = 0x08
 } TDNF_SKIPPROBLEM_TYPE;
 
 typedef struct _TDNF_ *PTDNF;
@@ -223,6 +224,7 @@ typedef struct _TDNF_CMD_ARGS
     int nDisableExcludes;  //disable excludes from tdnf.conf
     int nDownloadOnly;     //download packages only, no install
     int nNoAutoRemove;     //overide clean_requirements_on_remove config option
+    int nSkipBroken;       //skip packages that cannot be installed/updated
     int nJsonOutput;       //output in json format
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root

@@ -59,6 +59,7 @@ TDNFCloneCmdArgs(
     pCmdArgs->nDownloadOnly  = pCmdArgsIn->nDownloadOnly;
     pCmdArgs->nNoAutoRemove  = pCmdArgsIn->nNoAutoRemove;
     pCmdArgs->nJsonOutput    = pCmdArgsIn->nJsonOutput;
+    pCmdArgs->nSkipBroken    = pCmdArgsIn->nSkipBroken;
 
     dwError = TDNFAllocateString(
                   pCmdArgsIn->pszInstallRoot,

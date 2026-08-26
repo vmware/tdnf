@@ -1,10 +1,13 @@
 #!/bin/bash
 
-rm -rf build
+set -e
+
+test -d build && rm -rf build
 mkdir -p build
 cd build || exit 1
 
-cmake .. && make -j32 && make python -j32 && make check -j32
+jobs=$(nproc)
+cmake .. && make -j${jobs} && make python -j${jobs} && make check -j${jobs}
 
 if ! flake8 ../pytests ; then
   echo "flake8 tests failed"
