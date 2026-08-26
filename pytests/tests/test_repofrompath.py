@@ -8,6 +8,7 @@
 
 import os
 import glob
+import fnmatch
 import shutil
 import platform
 import pytest
@@ -101,6 +102,50 @@ def test_repofrompath_cmdline_repo(utils):
     assert ret['retval'] == 0
     assert utils.check_package(pkgname)
     utils.erase_package(pkgname)
+
+
+def check_repofrompath_skip_md(utils, mdpart, setopt):
+    workdir = WORKDIR
+    reponame = 'photon-test'
+    synced_dir = os.path.join(workdir, reponame)
+
+    create_repo(utils)
+
+    utils.run(['tdnf',
+               '--repofrompath=synced-repo,{}'.format(synced_dir),
+               '--repo=synced-repo', 'clean', 'all'],
+              cwd=workdir)
+
+    ret = utils.run(['tdnf',
+                     '--repofrompath=synced-repo,{}'.format(synced_dir),
+                     '--repo=synced-repo',
+                     setopt,
+                     'makecache'],
+                    cwd=workdir)
+    assert ret['retval'] == 0
+
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    synced_cache = next(
+        (os.path.join(cache_dir, f) for f in os.listdir(cache_dir)
+         if fnmatch.fnmatch(f, 'synced-repo-*')),
+        None
+    )
+    assert synced_cache is not None, "cache dir for synced-repo not found"
+    md_dir = os.path.join(synced_cache, 'repodata')
+    assert len(glob.glob('{}/*{}*'.format(md_dir, mdpart))) == 0, \
+        "{} must not be downloaded with {}".format(mdpart, setopt)
+
+
+def test_repofrompath_skip_md_filelists_glob_setopt(utils):
+    check_repofrompath_skip_md(utils, 'filelists', '--setopt=*.skip_md_filelists=1')
+
+
+def test_repofrompath_skip_md_other_glob_setopt(utils):
+    check_repofrompath_skip_md(utils, 'other', '--setopt=*.skip_md_other=1')
+
+
+def test_repofrompath_skip_md_filelists_per_repo_setopt(utils):
+    check_repofrompath_skip_md(utils, 'filelists', '--setopt=synced-repo.skip_md_filelists=1')
 
 
 # reposync a repo and install from it using repofromdir

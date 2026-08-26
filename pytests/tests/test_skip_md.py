@@ -82,6 +82,17 @@ def test_skip_md_parts(utils):
         check_skip_md_part(utils, mdpart, False)
 
 
+def test_skip_md_parts_per_repo_setopt(utils):
+    for mdpart in ['filelists', 'other']:
+        repoconf = os.path.join(utils.config['repo_path'], "yum.repos.d", REPOFILENAME)
+        generate_repofile_skip_md(utils, repoconf, REPOID, mdpart, False)
+        utils.run(['tdnf', '--repoid={}'.format(REPOID), 'clean', 'all'])
+        utils.run(['tdnf', '--repoid={}'.format(REPOID),
+                   '--setopt={}.skip_md_{}=1'.format(REPOID, mdpart), 'makecache'])
+        md_dir = os.path.join(find_cache_dir(utils, REPOID), 'repodata')
+        assert len(glob.glob('{}/*{}*'.format(md_dir, mdpart))) == 0
+
+
 # even with filelists dropped, trying to install packages with conflicting files
 # should still fail
 def test_install_conflict_file(utils):
