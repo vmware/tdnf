@@ -391,6 +391,7 @@ TDNFSolv(
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
+        transaction_order(pTrans, 0);
         if (pTdnf->pConf->ppszProtectedPkgs) {
             /* catch protected obsoleted packages, and double check for removals */
             dwError = TDNFSolvCheckProtectPkgsInTrans(pTdnf, pTrans, pTdnf->pSack->pPool);
