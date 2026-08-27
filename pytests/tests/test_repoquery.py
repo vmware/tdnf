@@ -351,3 +351,10 @@ def test_queryformat(utils):
 
     assert BASE_PKG in '\n'.join(ret['stdout'])
     assert '\n'.join(ret['stdout']).startswith("http://localhost:8080/photon-test")
+
+
+def test_package_not_found(utils):
+    pkg = "this-package-does-not-exist"
+    ret = utils.run(["tdnf", "repoquery", pkg])
+    assert f"ERROR: No match found for: {pkg}" in "\n".join(ret['stderr'])
+    assert ret['retval'] == 1011
