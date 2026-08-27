@@ -440,7 +440,8 @@ ParseOption(
 
                 *pseq_dot = 0;
 
-                if (!TDNFStrIsValidRepoName(pszCopyArgs)) {
+                if (!TDNFIsGlob(pszCopyArgs) &&
+                    !TDNFStrIsValidRepoName(pszCopyArgs)) {
                     dwError = ERROR_TDNF_INVALID_REPO_NAME;
                     BAIL_ON_CLI_ERROR(dwError);
                 }
