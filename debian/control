@@ -1,0 +1,120 @@
+Source: tdnf
+Section: admin
+Priority: optional
+Maintainer: VMware, Inc. <support@vmware.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.10),
+               gcc,
+               make,
+               libpopt-dev,
+               librpm-dev (>= 4.16.1.3),
+               libssl-dev (>= 1.1.1),
+               libsolv-dev (>= 0.7.19),
+               libcurl4-openssl-dev,
+               libexpat1-dev,
+               libsqlite3-dev,
+               zlib1g-dev,
+               systemd,
+               libgpgme-dev,
+               pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/vmware/tdnf
+Vcs-Git: https://github.com/vmware/tdnf.git
+Vcs-Browser: https://github.com/vmware/tdnf
+Rules-Requires-Root: no
+
+Package: tdnf
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         librpm9 (>= 4.16.1.3),
+         libcurl4,
+         libexpat1,
+         tdnf-cli-libs (= ${binary:Version}),
+         libsolv1 (>= 0.7.19),
+         zlib1g
+Provides: yum
+Conflicts: yum
+Replaces: yum
+Description: dnf/yum equivalent using C libs
+ tdnf is a yum/dnf equivalent which uses libsolv and libcurl.
+ It provides a command-line interface for package management
+ on RPM-based systems with better performance and lower
+ memory usage compared to traditional Python-based package
+ managers.
+
+Package: tdnf-dev
+Architecture: any
+Section: libdevel
+Depends: ${misc:Depends},
+         tdnf (= ${binary:Version}),
+         libsolv-dev
+Description: Development files for tdnf
+ This package contains the header files and libraries needed
+ to develop applications that use the tdnf library.
+
+Package: tdnf-cli-libs
+Architecture: any
+Section: libs
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Description: Library providing CLI libs for tdnf-like clients
+ This package provides the shared library that contains
+ common functionality for tdnf command-line interface
+ clients.
+
+Package: tdnf-plugin-metalink
+Architecture: any
+Section: admin
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libgpgme11
+Description: tdnf plugin providing metalink functionality
+ This plugin provides metalink functionality for repository
+ configurations in tdnf, allowing for mirror redundancy
+ and checksumming.
+
+Package: tdnf-plugin-repogpgcheck
+Architecture: any
+Section: admin
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libgpgme11
+Description: tdnf plugin providing GPG verification for repository metadata
+ This plugin provides GPG verification functionality for
+ repository metadata in tdnf, ensuring the authenticity
+ and integrity of repository information.
+
+Package: tdnf-automatic
+Architecture: any
+Section: admin
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         tdnf (= ${binary:Version}),
+         systemd
+Description: Automated upgrades for tdnf
+ This package provides systemd units that can periodically
+ download package upgrades and apply them automatically.
+ It includes timer and service units for different upgrade
+ modes: automatic, install-only, and notify-only.
+
+Package: tdnf-pytests
+Architecture: all
+Section: devel
+Depends: ${misc:Depends},
+         tdnf (>= ${source:Version}),
+         tdnf-automatic (>= ${source:Version}),
+         tdnf-plugin-repogpgcheck (>= ${source:Version}),
+         tdnf-plugin-metalink (>= ${source:Version}),
+         python3-pytest,
+         python3-requests,
+         rpm,
+         build-essential,
+         createrepo-c,
+         sudo,
+         e2fsprogs,
+         util-linux,
+         findutils
+Description: Test suite for tdnf
+ This package contains the Python test suite for tdnf,
+ including integration tests and test repositories.
