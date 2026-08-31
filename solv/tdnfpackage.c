@@ -1730,11 +1730,12 @@ SolvReportProblems(
             }
         }
 
-        if (!SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
+        if (SkipBasedOnType(pSolv, type, dwSource, dwSkipProblem))
         {
-            dwError = ERROR_TDNF_SOLV_FAILED;
+            continue;
         }
 
+        dwError = ERROR_TDNF_SOLV_FAILED;
         pr_err("%u. %s\n", ++total_prblms, pszProblem);
     }
 
