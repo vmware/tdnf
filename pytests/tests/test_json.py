@@ -12,6 +12,8 @@ import os
 
 
 PKGNAME_VERBOSE_SCRIPTS = "tdnf-verbose-scripts"
+PKGNAME_EPOCH = "tdnf-test-epoch"
+PKGEVR_EPOCH = "1:1.0.1-1"
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -136,6 +138,41 @@ def test_erase_verbose(utils):
             pkg_found = True
             break
     assert pkg_found
+
+
+# regression test for https://github.com/vmware/tdnf/issues/602:
+# the Evr field of a solved transaction must include a non-zero epoch.
+def test_install_erase_evr_epoch(utils):
+    pkgname = PKGNAME_EPOCH
+    utils.erase_package(pkgname)
+
+    ret = utils.run(['tdnf',
+                     '-j', '-y', '--nogpgcheck',
+                     'install', pkgname])
+    assert utils.check_package(pkgname)
+    install_info = json.loads("\n".join(ret['stdout']))
+
+    pkg = None
+    for p in install_info["Install"]:
+        if p['Name'] == pkgname:
+            pkg = p
+            break
+    assert pkg is not None
+    assert pkg['Evr'] == PKGEVR_EPOCH
+
+    ret = utils.run(['tdnf',
+                     '-j', '-y', '--nogpgcheck',
+                     'erase', pkgname])
+    assert not utils.check_package(pkgname)
+    erase_info = json.loads("\n".join(ret['stdout']))
+
+    pkg = None
+    for p in erase_info["Remove"]:
+        if p['Name'] == pkgname:
+            pkg = p
+            break
+    assert pkg is not None
+    assert pkg['Evr'] == PKGEVR_EPOCH
 
 
 def test_check_update(utils):
