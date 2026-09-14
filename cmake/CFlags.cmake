@@ -10,6 +10,11 @@ set(WARN_CFLAGS
     -Wno-sign-compare
 )
 
+if(APPLE)
+    # Add macOS-specific warning suppressions for external headers
+    list(APPEND WARN_CFLAGS -Wno-unused-parameter)
+endif()
+
 set(OPTIMIZE_CFLAGS
     -O2
     -fno-strict-aliasing
@@ -67,20 +72,36 @@ set(RELEASE_CFLAGS
     -s
 )
 
-set(FEATURE_FLAGS
-    -D_XOPEN_SOURCE=500
-    -D_DEFAULT_SOURCE
-)
+if(APPLE)
+    set(FEATURE_FLAGS
+        -D_DARWIN_C_SOURCE
+    )
+else()
+    set(FEATURE_FLAGS
+        -D_XOPEN_SOURCE=500
+        -D_DEFAULT_SOURCE
+    )
+endif()
 
 ### Combine all flags
-set(TDNF_CFLAGS
-    ${WARN_CFLAGS}
-    ${OPTIMIZE_CFLAGS}
-    ${SECURITY_CFLAGS}
-    ${EXTRA_WARN_CFLAGS}
-    ${EXTRA_SECURITY_CFLAGS}
-    ${FEATURE_FLAGS}
-)
+if(APPLE)
+    # On macOS, skip GCC-specific flags that don't work with Clang
+    set(TDNF_CFLAGS
+        ${WARN_CFLAGS}
+        ${OPTIMIZE_CFLAGS}
+        ${SECURITY_CFLAGS}
+        ${FEATURE_FLAGS}
+    )
+else()
+    set(TDNF_CFLAGS
+        ${WARN_CFLAGS}
+        ${OPTIMIZE_CFLAGS}
+        ${SECURITY_CFLAGS}
+        ${EXTRA_WARN_CFLAGS}
+        ${EXTRA_SECURITY_CFLAGS}
+        ${FEATURE_FLAGS}
+    )
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND TDNF_CFLAGS ${DEBUG_CFLAGS})

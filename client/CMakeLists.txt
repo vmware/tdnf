@@ -43,6 +43,12 @@ add_library(${LIB_TDNF} SHARED
     varsdir.c
 )
 
+if(APPLE)
+    # On macOS, explicitly find and link libsolvext
+    find_library(LIBSOLVEXT_LIBRARY NAMES solvext)
+    target_link_libraries(${LIB_TDNF} ${LIBSOLVEXT_LIBRARY})
+endif()
+
 target_link_libraries(${LIB_TDNF}
     ${LIB_TDNF_COMMON}
     ${LIB_TDNF_SOLV}

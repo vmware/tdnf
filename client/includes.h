@@ -27,7 +27,12 @@
 #include <sys/file.h>
 #include <time.h>
 #include <sys/utsname.h>
+#ifdef __APPLE__
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
 #include <sys/vfs.h>
+#endif
 #include <sys/types.h>
 
 #include <dirent.h>
