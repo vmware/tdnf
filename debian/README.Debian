@@ -1,0 +1,67 @@
+tdnf for Debian
+===============
+
+This package provides tdnf, a lightweight package manager that is compatible
+with yum/dnf but implemented in C using libsolv and libcurl for better
+performance and lower memory usage.
+
+Package Structure
+-----------------
+
+The Debian packaging splits tdnf into several packages:
+
+- tdnf: Main package with the tdnf binary and core functionality
+- tdnf-dev: Development headers and libraries
+- tdnf-cli-libs: Shared libraries for CLI functionality
+- tdnf-plugin-metalink: Plugin for metalink repository support
+- tdnf-plugin-repogpgcheck: Plugin for GPG verification of repository metadata
+- tdnf-automatic: Systemd services for automatic updates
+- tdnf-pytests: Test suite (development/testing only)
+
+Compatibility
+-------------
+
+This package provides yum compatibility through symbolic links and provides/conflicts
+declarations. The following commands are available as alternatives to yum:
+
+- yum -> tdnf
+- tyum -> tdnf (transitional yum)
+- tdnfj -> tdnf (JSON output variant)
+
+Configuration
+-------------
+
+Configuration files are located in:
+- /etc/tdnf/tdnf.conf - Main configuration
+- /etc/tdnf/pluginconf.d/ - Plugin configurations
+
+Cache and data directories:
+- /var/cache/tdnf/ - Package cache
+- /var/lib/tdnf/ - History database and persistent data
+
+Automatic Updates
+-----------------
+
+The tdnf-automatic package provides systemd timers for automatic updates:
+- tdnf-automatic.timer - Full automatic updates
+- tdnf-automatic-install.timer - Install updates automatically
+- tdnf-automatic-notifyonly.timer - Check and notify only
+
+These services are installed but not enabled by default. Enable them with:
+  systemctl enable --now tdnf-automatic.timer
+
+Package Format
+--------------
+
+This is a Debian native package, meaning the Debian packaging is maintained
+directly alongside the upstream source code. This approach is used because
+VMware maintains both the upstream tdnf project and the Debian packaging.
+
+Repository Setup
+----------------
+
+Unlike RPM-based distributions, Debian systems typically use APT repositories.
+This package is primarily useful for managing RPM packages on Debian systems
+or in containerized environments where RPM package management is needed.
+
+ -- VMware, Inc. <support@vmware.com>  Wed, 10 Sep 2025 12:00:00 +0000

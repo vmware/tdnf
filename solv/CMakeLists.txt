@@ -15,3 +15,12 @@ add_library(${LIB_TDNF_SOLV} STATIC
     tdnfrepo.c
     simplequery.c
 )
+
+# Apply appropriate flags for static library
+apply_tdnf_flags(${LIB_TDNF_SOLV} STATIC)
+
+set_target_properties(${LIB_TDNF_SOLV} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    INTERFACE_POSITION_INDEPENDENT_CODE ON
+)
+

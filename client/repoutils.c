@@ -479,7 +479,7 @@ TDNFRepoApplyDownloadSettings(
     if((curlError = curl_easy_setopt(
             pCurl,
             CURLOPT_MAX_RECV_SPEED_LARGE,
-            pRepo->nThrottle)) != CURLE_OK)
+            (curl_off_t)pRepo->nThrottle)) != CURLE_OK)
     {
         dwError = ERROR_TDNF_CURL_BASE + curlError;
         BAIL_ON_TDNF_ERROR(dwError);

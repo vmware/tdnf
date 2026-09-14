@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        ldconfig
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

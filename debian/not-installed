@@ -1,0 +1,6 @@
+# Files that are built but not packaged
+usr/include/tdnf/._*
+usr/include/tdnf/tdnf-common-defines.h.trace
+usr/share/tdnf/pytests/repo/._*
+usr/share/tdnf/pytests/tests/._*
+usr/share/tdnf/pytests/config.json

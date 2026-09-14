@@ -36,7 +36,11 @@ target_link_libraries(${LIB_TDNF_CLI}
 set_target_properties(${LIB_TDNF_CLI} PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
+    POSITION_INDEPENDENT_CODE ON
 )
+
+# Apply appropriate flags for shared library
+apply_tdnf_flags(${LIB_TDNF_CLI} SHARED)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/tdnf-cli-libs.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 install(TARGETS ${LIB_TDNF_CLI} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT library)
