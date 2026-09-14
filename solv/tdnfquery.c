@@ -415,7 +415,7 @@ error:
     goto cleanup;
 }
 
-uint32_t
+static uint32_t
 SolvGenerateCommonJob(
     PSolvQuery pQuery,
     uint32_t dwSelectFlags
@@ -497,6 +497,11 @@ SolvGenerateCommonJob(
                               pQuery->queueJob.count,
                               queueJob.count,
                               queueJob.elements);
+            }
+            else
+            {
+                pr_err("No match found for '%s'\n", *ppszPkgNames);
+                pQuery->queryError = ERROR_TDNF_NO_MATCH;
             }
             ppszPkgNames++;
         }
@@ -611,6 +616,10 @@ SolvApplyListQuery(
     }
 
     dwError = SolvGenerateCommonJob(pQuery, nFlags);
+    if (dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if(pQuery->nScope == SCOPE_UPGRADES)
@@ -728,6 +737,8 @@ SolvApplySearch(
 
     for(nIndex = dwStartIndex; nIndex < dwEndIndex; nIndex++)
     {
+        int countBeforeInsert = 0;
+
         queue_empty(&queueSel);
         queue_empty(&queueResult);
         dataiterator_init(&di, pPool, 0, 0, 0, ppszSearchStrings[nIndex],
@@ -747,10 +758,16 @@ SolvApplySearch(
         dataiterator_free(&di);
 
         selection_solvables(pPool, &queueSel, &queueResult);
+        countBeforeInsert = pQuery->queueResult.count;
         queue_insertn(&pQuery->queueResult,
                       pQuery->queueResult.count,
                       queueResult.count,
                       queueResult.elements);
+
+        if (pQuery->queueResult.count == countBeforeInsert) {
+            pr_err("No search results found for '%s'\n", ppszSearchStrings[nIndex]);
+            pQuery->queryError = ERROR_TDNF_NO_SEARCH_RESULTS;
+        }
     }
 
 cleanup:
@@ -768,6 +785,7 @@ SolvApplyProvidesQuery(
     )
 {
     uint32_t dwError = 0;
+    uint32_t retVal = 0;
     int nIndex = 0;
     Queue queueTmp = {0};
     uint32_t nFlags = 0;
@@ -783,6 +801,11 @@ SolvApplyProvidesQuery(
     nFlags |= SELECTION_CANON| SELECTION_FILELIST|SELECTION_REL;
 
     dwError = SolvGenerateCommonJob(pQuery, nFlags);
+    if (dwError == ERROR_TDNF_NO_MATCH)
+    {
+        retVal = dwError;
+        dwError = 0;
+    }
     BAIL_ON_TDNF_LIBSOLV_ERROR(dwError);
 
     if(pQuery->queueJob.count > 0)
@@ -810,6 +833,10 @@ SolvApplyProvidesQuery(
 
 cleanup:
     queue_free(&queueTmp);
+    if (retVal && !dwError)
+    {
+        dwError = retVal;
+    }
     return dwError;
 
 error:

@@ -177,7 +177,10 @@ TDNFCliListPackagesPrint(
             CHECK_JD_RC(jd_list_add_child(jd, jd_pkg));
             JD_SAFE_DESTROY(jd_pkg);
         }
-        pr_json(jd->buf);
+        if (dwCount)
+        {
+            pr_json(jd->buf);
+        }
         JD_SAFE_DESTROY(jd);
     }
     else
@@ -235,6 +238,7 @@ TDNFCliListCommand(
     )
 {
     uint32_t dwError = 0;
+    uint32_t retVal = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
     uint32_t dwCount = 0;
     PTDNF_LIST_ARGS pListArgs = NULL;
@@ -249,8 +253,9 @@ TDNFCliListCommand(
     BAIL_ON_CLI_ERROR(dwError);
 
     dwError = pContext->pFnList(pContext, pListArgs, &pPkgInfo, &dwCount);
-    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_MATCH)
+    if (dwError == ERROR_TDNF_NO_MATCH)
     {
+        retVal = dwError;
         dwError = 0;
     }
     BAIL_ON_CLI_ERROR(dwError);
@@ -266,6 +271,10 @@ cleanup:
     if(pPkgInfo)
     {
         TDNFFreePackageInfoArray(pPkgInfo, dwCount);
+    }
+    if (!dwError && retVal)
+    {
+        dwError = retVal;
     }
     return dwError;
 
@@ -480,6 +489,7 @@ TDNFCliSearchCommand(
     )
 {
     uint32_t dwError = 0;
+    uint32_t retVal = 0;
     uint32_t dwCount = 0;
     uint32_t dwIndex = 0;
     PTDNF_PKG_INFO pPkgInfo = NULL;
@@ -494,8 +504,9 @@ TDNFCliSearchCommand(
     }
 
     dwError = pContext->pFnSearch(pContext, pCmdArgs, &pPkgInfo, &dwCount);
-    if (pCmdArgs->nJsonOutput && dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
+    if (dwError == ERROR_TDNF_NO_SEARCH_RESULTS)
     {
+        retVal = dwError;
         dwError = 0;
     }
     BAIL_ON_CLI_ERROR(dwError);
@@ -536,6 +547,10 @@ TDNFCliSearchCommand(
 
 cleanup:
     TDNFFreePackageInfoArray(pPkgInfo, dwCount);
+    if (!dwError && retVal)
+    {
+        dwError = retVal;
+    }
     return dwError;
 
 error:

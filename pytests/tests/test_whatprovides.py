@@ -27,8 +27,8 @@ def test_whatprovides_no_arg(utils):
 
 def test_whatprovides_invalid_arg(utils):
     ret = utils.run(['tdnf', 'whatprovides', 'invalid_arg'])
-    assert ret['retval'] == 0
-    assert ret['stderr'][0] == 'No data available'
+    assert ret['retval'] == 1011
+    assert "No match found for 'invalid_arg'" in "\n".join(ret['stderr'])
 
 
 def test_whatprovides_valid_file_notinstalled(utils):

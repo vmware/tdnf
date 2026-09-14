@@ -177,8 +177,8 @@ def test_install_erase_evr_epoch(utils):
 
 def test_check_update(utils):
     ret = utils.run(['tdnf', '-j', 'check-update'])
-    d = json.loads("\n".join(ret['stdout']))
-    assert type(d) is list
+    assert not ret['retval']
+    assert not ret['stdout']
 
 
 def test_repolist(utils):
