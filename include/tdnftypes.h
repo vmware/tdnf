@@ -233,6 +233,7 @@ typedef struct _TDNF_CMD_ARGS
     int nNoAutoRemove;     //overide clean_requirements_on_remove config option
     int nJsonOutput;       //output in json format
     int nTestOnly;         //run test transaction only
+    int nDryRun;           //resolve only, no download or install
     int nSkipBroken;
     int nSource;
     int nBuildDeps;
