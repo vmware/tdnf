@@ -21,6 +21,7 @@ static const char *help_msg =
  "           [--disablerepo=<repoid>]\n"
  "           [--downloaddir=<directory>]\n"
  "           [--downloadonly]\n"
+ "           [--dryrun]\n"
  "           [--enablerepo=<repoid>]\n"
  "           [--enableplugin=<plugin_name>]\n"
  "           [--exclude [file1,file2,...]]\n"
