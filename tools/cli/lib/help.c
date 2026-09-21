@@ -62,6 +62,9 @@ static const char *help_msg =
  "--downloadonly             Download packages only, do not install\n"
  "                           Example: tdnf --downloadonly install pkg\n"
  "\n"
+ "--dryrun                   Resolve transaction and show what would change, without downloading or installing\n"
+ "                           Example: tdnf --dryrun install package\n"
+
  "--urls                     Print package URLs only, do not download or install\n"
  "                           Example: tdnf --urls install pkg\n"
 
