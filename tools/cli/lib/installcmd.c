@@ -224,6 +224,12 @@ TDNFCliAlterCommand(
         }
     }
 
+    if (pCmdArgs->nDryRun)
+    {
+        pr_info("Dry run complete. Transaction is feasible. Run without --dryrun to apply the above changes.\n");
+        goto cleanup;
+    }
+
     if(pSolvedPkgInfo->nNeedAction)
     {
         int nAnswer = 0;

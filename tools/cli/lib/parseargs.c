@@ -41,6 +41,7 @@ static struct option pstOptions[] =
     {"disablerepo",   required_argument, 0, 0},            //--disablerepo
     {"downloaddir",   required_argument, 0, 0},            //--downloaddir
     {"downloadonly",  no_argument, &_opt.nDownloadOnly, 1}, //--downloadonly
+    {"dryrun",        no_argument, &_opt.nDryRun, 1},      //--dryrun
     {"enableplugin",  required_argument, 0, 0},            //--enableplugin
     {"enablerepo",    required_argument, 0, 0},            //--enablerepo
     {"exclude",       required_argument, 0, 0},            //--exclude
@@ -326,6 +327,7 @@ TDNFCopyOptions(
     pArgs->nDisableExcludes = pOptionArgs->nDisableExcludes;
     pArgs->nDownloadOnly  = pOptionArgs->nDownloadOnly;
     pArgs->nNoAutoRemove  = pOptionArgs->nNoAutoRemove;
+    pArgs->nDryRun        = pOptionArgs->nDryRun;
     pArgs->nSkipBroken    = pOptionArgs->nSkipBroken;
     pArgs->nJsonOutput    = pOptionArgs->nJsonOutput;
 
