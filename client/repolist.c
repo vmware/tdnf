@@ -557,6 +557,13 @@ TDNFCreateRepo(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    if (!TDNFStrIsValidRepoName(pszId))
+    {
+        pr_err("invalid repo id: %s\n", pszId);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     dwError = TDNFAllocateMemory(
                   1,
                   sizeof(TDNF_REPO_DATA),

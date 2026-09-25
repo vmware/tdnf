@@ -112,14 +112,11 @@ def check_repofrompath_skip_md(utils, mdpart, setopt):
 
     create_repo(utils)
 
-    utils.run(['tdnf',
-               '--repofrompath=synced-repo,{}'.format(synced_dir),
-               '--repo=synced-repo', 'clean', 'all'],
-              cwd=workdir)
-
-    for entry in os.listdir(cache_dir):
-        if fnmatch.fnmatch(entry, 'synced-repo-*'):
-            shutil.rmtree(os.path.join(cache_dir, entry), ignore_errors=True)
+    ret = utils.run(['tdnf',
+                     '--repofrompath=synced-repo,{}'.format(synced_dir),
+                     '--repo=synced-repo', 'clean', 'all'],
+                    cwd=workdir)
+    assert ret['retval'] == 0
 
     ret = utils.run(['tdnf',
                      '--repofrompath=synced-repo,{}'.format(synced_dir),
@@ -150,6 +147,15 @@ def test_repofrompath_skip_md_other_glob_setopt(utils):
 
 def test_repofrompath_skip_md_filelists_per_repo_setopt(utils):
     check_repofrompath_skip_md(utils, 'filelists', '--setopt=synced-repo.skip_md_filelists=1')
+
+
+@pytest.mark.parametrize('bad_id', ['bad*repo', 'bad?repo', 'bad[repo'])
+def test_repofrompath_invalid_repo_id(utils, bad_id):
+    ret = utils.run(['tdnf',
+                     '--repofrompath={},{}'.format(bad_id, WORKDIR),
+                     '--repo={}'.format(bad_id),
+                     'makecache'])
+    assert ret['retval'] != 0
 
 
 # reposync a repo and install from it using repofromdir
