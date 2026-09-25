@@ -44,13 +44,13 @@ if grep -qw "Fedora" ${rel_file}; then
   )
   dnf -y upgrade --refresh
   dnf -y install ${fedora_packages[@]}
+  dnf clean all
 elif grep -qw "Photon" ${rel_file}; then
   photon_packages=(
     ${common_pkgs[@]}
     build-essential
     curl-devel
     glib
-    glibc-debuginfo
     python3-virtualenv
     shadow
     zlib-devel
@@ -58,6 +58,9 @@ elif grep -qw "Photon" ${rel_file}; then
 
   tdnf -y upgrade --refresh
   tdnf remove -y toybox
-  tdnf -y install --enablerepo=photon-debuginfo ${photon_packages[@]}
+  tdnf -y install ${photon_packages[@]}
+  tdnf install -y --disablerepo=* --enablerepo=photon-debuginfo --setopt=skip_md_filelists=1 \
+        glibc-debuginfo-$(rpm -q --qf %{version}-%{release} glibc) && \
+  tdnf clean all
+  rm -rf /var/cache/tdnf
 fi
-
