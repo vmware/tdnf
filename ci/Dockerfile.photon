@@ -1,19 +1,46 @@
-FROM photon:latest
+FROM photon:5.0
 
-RUN tdnf update  -y
-RUN tdnf remove  -y toybox
-RUN tdnf install -y --enablerepo=photon-debuginfo \
-               build-essential cmake curl-devel rpm-build \
-               libsolv-devel popt-devel sed createrepo_c glib libxml2 \
-               findutils python3 python3-pip python3-setuptools \
-               python3-devel valgrind gpgme-devel glibc-debuginfo \
-               libxml2-devel openssl-devel zlib-devel sqlite-devel \
-               python3-requests python3-urllib3 python3-pyOpenSSL \
-               sudo shadow which e2fsprogs util-linux
-
-# this can to be removed once latest pytest gets published in photon
-RUN pip3 install pytest flake8
-
-RUN mkdir -p /var/lib/tdnf
+RUN echo 90 > /etc/tdnf/vars/subrelease && \
+    sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/*.repo && \
+    sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/photon-snapshot.repo && \
+    tdnf distro-sync -y && \
+    tdnf update -y && \
+    tdnf remove -y toybox && \
+    tdnf install -y --disablerepo=* --enablerepo=photon-snapshot \
+        build-essential \
+        cmake \
+        createrepo_c \
+        curl-devel \
+        e2fsprogs \
+        findutils \
+        glib \
+        gpgme-devel \
+        libsolv-devel \
+        libxml2 \
+        libxml2-devel \
+        openssl-devel \
+        popt-devel \
+        python3-devel \
+        python3-pip \
+        python3-pyOpenSSL \
+        python3-pytest \
+        python3-requests \
+        python3-setuptools \
+        python3-urllib3 \
+        rpm-build \
+        sed \
+        shadow \
+        sqlite-devel \
+        sudo \
+        util-linux \
+        valgrind \
+        which \
+        zlib-devel && \
+    tdnf install -y --disablerepo=* --enablerepo=photon-debuginfo --setopt=skip_md_filelists=1 \
+        glibc-debuginfo-$(rpm -q --qf %{version}-%{release} glibc) && \
+    pip3 install --no-cache-dir flake8 && \
+    mkdir -p /var/lib/tdnf && \
+    tdnf clean all && \
+    rm -rf /var/cache/tdnf/*
 
 CMD ["/bin/bash"]
