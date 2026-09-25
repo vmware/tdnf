@@ -1,0 +1,15 @@
+FROM photon:5.0
+
+RUN echo 91 > /etc/tdnf/vars/subrelease && \
+    sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/*.repo && \
+    sed -i 's/enabled=0/enabled=1/g' /etc/yum.repos.d/photon-snapshot.repo && \
+    tdnf distro-sync -y
+
+COPY ci/prep.sh /prep.sh
+RUN chmod +x /prep.sh && \
+    /prep.sh && \
+    rm -f /prep.sh && \
+    tdnf clean all && \
+    rm -rf /var/cache/tdnf/*
+
+CMD ["/bin/bash"]
