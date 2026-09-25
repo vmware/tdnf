@@ -741,6 +741,12 @@ error:
     goto cleanup;
 }
 
+/*
+ * set to the first errno from _rm_file so TDNFRecursivelyRemoveDir
+ * can report failure while still attempting to remove all files
+ */
+static int _nLastRmError = 0;
+
 static int
 _rm_file(const char *path, const struct stat *sbuf, int type, struct FTW *ftwb)
 {
@@ -750,7 +756,12 @@ _rm_file(const char *path, const struct stat *sbuf, int type, struct FTW *ftwb)
 
     if(remove(path) < 0)
     {
-        pr_crit("unable to remove %s: %s\n", path, strerror(errno));
+        int nErrno = errno;
+        pr_crit("unable to remove %s: %s\n", path, strerror(nErrno));
+        if (_nLastRmError == 0)
+        {
+            _nLastRmError = nErrno;
+        }
     }
     return 0;
 }
@@ -766,9 +777,15 @@ TDNFRecursivelyRemoveDir(const char *pszPath)
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+    _nLastRmError = 0;
     if (nftw(pszPath, _rm_file, 10, FTW_DEPTH|FTW_PHYS) < 0)
     {
         dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    if (_nLastRmError != 0)
+    {
+        dwError = _nLastRmError;
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 cleanup:

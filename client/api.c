@@ -397,6 +397,12 @@ TDNFClean(
             BAIL_ON_TDNF_ERROR(dwError);
         }
 
+        if (nCleanType == CLEANTYPE_ALL)
+        {
+            dwError = TDNFRepoRemoveStaleCacheDirs(pTdnf, pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
         /* remove the top level repo cache dir if it's not empty */
         dwError = TDNFRepoRemoveCacheDir(pTdnf, pRepo);
         if (dwError == ERROR_TDNF_SYSTEM_BASE + ENOTEMPTY)
