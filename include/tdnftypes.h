@@ -226,6 +226,7 @@ typedef struct _TDNF_CMD_ARGS
     int nNoAutoRemove;     //overide clean_requirements_on_remove config option
     int nSkipBroken;       //skip packages that cannot be installed/updated
     int nJsonOutput;       //output in json format
+    int nDryRun;           //resolve only, no download or install
     char* pszDownloadDir;  //directory for download, if nDownloadOnly is set
     char* pszInstallRoot;  //set install root
     char* pszConfFile;     //set conf file location
