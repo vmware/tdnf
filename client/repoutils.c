@@ -119,11 +119,79 @@ TDNFRepoRemoveCacheDir(
 
     if (rmdir(pszRepoCacheDir) != 0 && errno != ENOENT)
     {
-        dwError = errno;
-        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        dwError = ERROR_TDNF_SYSTEM_BASE + errno;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
+/*
+ * remove stale cache dirs for this repo created with a different base URL;
+ * called only during 'clean all' to avoid broad side-effects on partial cleans
+ */
+uint32_t
+TDNFRepoRemoveStaleCacheDirs(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    )
+{
+    uint32_t dwError = 0;
+    int nGlobOk = 0;
+    size_t i = 0;
+    char* pszRepoCacheDir = NULL;
+    char* pszIdPattern = NULL;
+    char* pszGlobPattern = NULL;
+    glob_t globBuf;
+
+    if(!pTdnf || !pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetCachePath(pTdnf, pRepo,
+                               NULL, NULL,
+                               &pszRepoCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /*
+     * Stale dirs share the same repoId but have a different 8-hex URL hash
+     * suffix: {cachedir}/{repoId}-{8hex}
+     */
+    dwError = TDNFAllocateStringPrintf(&pszIdPattern, "%s-????????", pRepo->pszId);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(&pszGlobPattern,
+                           pTdnf->pConf->pszCacheDir,
+                           pszIdPattern,
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (glob(pszGlobPattern, 0, NULL, &globBuf) == 0)
+    {
+        nGlobOk = 1;
+        for (i = 0; i < globBuf.gl_pathc; i++)
+        {
+            if (strcmp(globBuf.gl_pathv[i], pszRepoCacheDir) != 0)
+            {
+                TDNFRecursivelyRemoveDir(globBuf.gl_pathv[i]);
+            }
+        }
+    }
+
+cleanup:
+    if (nGlobOk)
+    {
+        globfree(&globBuf);
+    }
+    TDNF_SAFE_FREE_MEMORY(pszGlobPattern);
+    TDNF_SAFE_FREE_MEMORY(pszIdPattern);
     TDNF_SAFE_FREE_MEMORY(pszRepoCacheDir);
     return dwError;
 

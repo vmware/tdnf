@@ -108,13 +108,15 @@ def check_repofrompath_skip_md(utils, mdpart, setopt):
     workdir = WORKDIR
     reponame = 'photon-test'
     synced_dir = os.path.join(workdir, reponame)
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
 
     create_repo(utils)
 
-    utils.run(['tdnf',
-               '--repofrompath=synced-repo,{}'.format(synced_dir),
-               '--repo=synced-repo', 'clean', 'all'],
-              cwd=workdir)
+    ret = utils.run(['tdnf',
+                     '--repofrompath=synced-repo,{}'.format(synced_dir),
+                     '--repo=synced-repo', 'clean', 'all'],
+                    cwd=workdir)
+    assert ret['retval'] == 0
 
     ret = utils.run(['tdnf',
                      '--repofrompath=synced-repo,{}'.format(synced_dir),
@@ -124,7 +126,6 @@ def check_repofrompath_skip_md(utils, mdpart, setopt):
                     cwd=workdir)
     assert ret['retval'] == 0
 
-    cache_dir = utils.tdnf_config.get('main', 'cachedir')
     synced_cache = next(
         (os.path.join(cache_dir, f) for f in os.listdir(cache_dir)
          if fnmatch.fnmatch(f, 'synced-repo-*')),
