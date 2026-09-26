@@ -87,6 +87,12 @@ TDNFRepoRemoveCacheDir(
     );
 
 uint32_t
+TDNFRepoRemoveStaleCacheDirs(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo
+    );
+
+uint32_t
 TDNFRepoRemoveCache(
     PTDNF pTdnf,
     PTDNF_REPO_DATA pRepo
