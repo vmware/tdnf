@@ -27,3 +27,10 @@
  * in fedora docker images and as a result ci fails
  */
 #define TDNF_INSTANCE_LOCK_FILE     "/var/run/.tdnf-instance-lockfile"
+
+/* macOS compatibility: EBADFD doesn't exist on macOS */
+#ifdef __APPLE__
+#ifndef EBADFD
+#define EBADFD EIO
+#endif
+#endif
