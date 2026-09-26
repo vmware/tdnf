@@ -215,7 +215,7 @@ TDNFCliAskForAction(
         }
     }
 
-    if(pSolvedPkgInfo->nNeedAction)
+    if(pSolvedPkgInfo->nNeedAction && !pCmdArgs->nDryRun)
     {
         int nAnswer = 0;
 
@@ -292,6 +292,12 @@ TDNFCliAskAndAlter(
 
     dwError = TDNFCliAskForAction(pCmdArgs, pSolvedPkgInfo);
     BAIL_ON_CLI_ERROR(dwError);
+
+    if (pCmdArgs->nDryRun)
+    {
+        pr_info("Dry run complete. Transaction is feasible. Run without --dryrun to apply the above changes.\n");
+        goto cleanup;
+    }
 
     dwError = pContext->pFnAlter(
                 pContext,
