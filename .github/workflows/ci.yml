@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [photon-5.0-91, photon, fedora]
+        dist: [photon5-91, photon, fedora]
     env:
       DIST: ${{ matrix.dist }}
     steps:
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [photon-5.0-91, photon, fedora]
+        dist: [photon5-91, photon, fedora]
     env:
       DIST: ${{ matrix.dist }}
     steps:
@@ -77,7 +77,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [photon-5.0-91, photon, fedora]
+        dist: [photon5-91, photon, fedora]
     env:
       DIST: ${{ matrix.dist }}
     steps:
@@ -108,7 +108,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: [photon-5.0-91, photon]
+        dist: [photon5-91, photon]
     env:
       DIST: ${{ matrix.dist }}
     steps:
