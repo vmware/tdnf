@@ -1,17 +1,38 @@
 FROM photon:4.0
 
-RUN tdnf update  -y
-RUN tdnf remove  -y toybox
-RUN tdnf install -y --enablerepo=photon-debuginfo \
-               build-essential cmake curl-devel rpm-build \
-               libsolv-devel popt-devel sed createrepo_c glib libxml2 \
-               findutils python3 python3-pip python3-setuptools \
-               python3-devel valgrind gpgme-devel glibc-debuginfo \
-               libxml2-devel openssl-devel zlib-devel which \
-               python3-requests python3-urllib3 python3-pyOpenSSL \
-               sudo shadow
-
-# this can to be removed once latest pytest gets published in photon
-RUN pip3 install pytest flake8
+RUN tdnf update -y --refresh && \
+    tdnf remove -y toybox && \
+    tdnf install -y \
+        build-essential \
+        cmake \
+        createrepo_c \
+        curl-devel \
+        findutils \
+        glib \
+        gpgme-devel \
+        libsolv-devel \
+        libxml2 \
+        libxml2-devel \
+        openssl-devel \
+        popt-devel \
+        python3-devel \
+        python3-pip \
+        python3-pyOpenSSL \
+        python3-pytest \
+        python3-requests \
+        python3-setuptools \
+        python3-urllib3 \
+        rpm-build \
+        sed \
+        shadow \
+        sudo \
+        valgrind \
+        which \
+        zlib-devel && \
+    tdnf install -y --disablerepo=* --enablerepo=photon-debuginfo --setopt=skip_md_filelists=1 \
+        glibc-debuginfo-$(rpm -q --qf %{version}-%{release} glibc) && \
+    pip3 install --no-cache-dir flake8 && \
+    tdnf clean all && \
+    rm -rf /var/cache/tdnf/*
 
 CMD ["/bin/bash"]
