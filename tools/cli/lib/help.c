@@ -62,14 +62,14 @@ static const char *help_msg =
  "--downloadonly             Download packages only, do not install\n"
  "                           Example: tdnf --downloadonly install pkg\n"
  "\n"
- "--urls                     Print package URLs only, do not download or install\n"
- "                           Example: tdnf --urls install pkg\n"
-
- "--enablerepo <repoid>      Enable repositories by id\n"
- "                           Example: tdnf --enablerepo=updates install\n"
+ "--dryrun                   Resolve transaction and show what would change, without downloading or installing\n"
+ "                           Example: tdnf --dryrun install package\n"
 
  "--enableplugin <name>      Enable plugins by name\n"
  "                           Example: tdnf --enableplugin=versionlock install package\n"
+
+ "--enablerepo <repoid>      Enable repositories by id\n"
+ "                           Example: tdnf --enablerepo=updates install\n"
 
  "--exclude <pkg1,pkg2,...>  Exclude packages by name\n"
  "                           Example: tdnf --exclude=linux* install\n"
@@ -92,11 +92,11 @@ static const char *help_msg =
  "--nodeps                   Skip dependency checks (requires --downloadonly or --urls)\n"
  "                           Example: tdnf --downloadonly --nodeps install package\n"
 
- "--nogpgcheck               Skip GPG signature checks\n"
- "                           Example: tdnf --nogpgcheck install pkg\n"
-
  "--nocligpgcheck            Skip GPG signature checks for command line rpms\n"
  "                           Example: tdnf --nocligpgcheck install http://foo.bar.com/package.rpm\n"
+
+ "--nogpgcheck               Skip GPG signature checks\n"
+ "                           Example: tdnf --nogpgcheck install pkg\n"
 
  "--noplugins                Disable all plugins\n"
  "                           Example: tdnf --noplugins install package\n"
@@ -149,17 +149,20 @@ static const char *help_msg =
  "--skipdigest               Skip package digest verification\n"
  "                           Example: tdnf --skipdigest install pkg\n"
 
- "--skipsignature            Skip package signature verification\n"
- "                           Example: tdnf --skipsignature install\n"
-
  "--skipobsoletes            Skip obsolete packages\n"
  "                           Example: tdnf --skipobsoletes install\n"
+
+ "--skipsignature            Skip package signature verification\n"
+ "                           Example: tdnf --skipsignature install\n"
 
  "--source                   Operate on source packages\n"
  "                           Example: tdnf --source install package\n"
 
  "--testonly                 Run transaction in test mode only\n"
  "                           Example: tdnf --testonly install package\n"
+
+ "--urls                     Print package URLs only, do not download or install\n"
+ "                           Example: tdnf --urls install pkg\n"
 
  "-v, --verbose              Verbose operation\n"
  "                           Example: tdnf -v install package\n"
@@ -380,9 +383,6 @@ static const char *help_msg =
  "provides <cap>             Same as 'whatprovides'\n"
  "                           Example: tdnf provides /usr/bin/bash\n"
 
- "whatprovides <cap>         Find what package provides the given value\n"
- "                           Example: tdnf whatprovides /usr/bin/bash\n"
-
  "reinstall <pkg>            Reinstall a package\n"
  "                           Example: tdnf reinstall package\n"
 
@@ -415,6 +415,9 @@ static const char *help_msg =
 
  "upgrade-to <pkg-version>   Upgrade a package on your system to the specified version\n"
  "                           Example: tdnf upgrade-to package-1.0-1.ph5\n"
+
+ "whatprovides <cap>         Find what package provides the given value\n"
+ "                           Example: tdnf whatprovides /usr/bin/bash\n"
  "\nPlease refer to https://github.com/vmware/tdnf/wiki for documentation.";
 
 void
