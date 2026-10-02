@@ -556,6 +556,10 @@ TDNFListInternal(
     *pdwCount = dwCount;
 
 cleanup:
+    if (!dwError && pQuery && pQuery->queryError)
+    {
+        dwError = pQuery->queryError;
+    }
     if(pQuery)
     {
         SolvFreeQuery(pQuery);
@@ -564,6 +568,7 @@ cleanup:
     {
         SolvFreePackageList(pPkgList);
     }
+
     return dwError;
 error:
     if(ppPkgInfo)
@@ -875,7 +880,6 @@ TDNFProvides(
 
     dwError = SolvCreateQuery(pTdnf->pSack, &pQuery);
     BAIL_ON_TDNF_ERROR(dwError);
-
     dwError = SolvApplySinglePackageFilter(pQuery, pszSpec);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -889,6 +893,7 @@ TDNFProvides(
     BAIL_ON_TDNF_ERROR(dwError);
 
     *ppPkgInfo = pPkgInfo;
+
 cleanup:
     if(pQuery)
     {
@@ -899,16 +904,13 @@ cleanup:
         SolvFreePackageList(pPkgList);
     }
     return dwError;
+
 error:
     if(ppPkgInfo)
     {
       *ppPkgInfo = NULL;
     }
     TDNFFreePackageInfo(pPkgInfo);
-    if(dwError == ERROR_TDNF_NO_MATCH)
-    {
-        dwError = ERROR_TDNF_NO_DATA;
-    }
     goto cleanup;
 }
 
@@ -1823,6 +1825,10 @@ TDNFSearchCommand(
                   pCmdArgs->ppszCmds,
                   nStartArgIndex,
                   pCmdArgs->nCmdCount);
+    if (dwError == ERROR_TDNF_NO_MATCH)
+    {
+        dwError = 0;
+    }
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = SolvGetQueryResult(pQuery, &pPkgList);
@@ -1864,6 +1870,11 @@ TDNFSearchCommand(
     *punCount = unCount;
 
 cleanup:
+    if (!dwError && pQuery && pQuery->queryError)
+    {
+        dwError = pQuery->queryError;
+    }
+
     if(pQuery)
     {
         SolvFreeQuery(pQuery);
@@ -1873,6 +1884,7 @@ cleanup:
         SolvFreePackageList(pPkgList);
     }
     return dwError;
+
 error:
     if(ppPkgInfo)
     {
@@ -1883,11 +1895,6 @@ error:
         *punCount = 0;
     }
     TDNFFreePackageInfoArray(pPkgInfo, unCount);
-
-    if(dwError == ERROR_TDNF_NO_MATCH)
-    {
-        dwError = ERROR_TDNF_NO_SEARCH_RESULTS;
-    }
 
     goto cleanup;
 }

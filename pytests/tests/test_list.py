@@ -88,3 +88,18 @@ def test_list_notinstalled(utils):
         # spkg is not installed, expect error
         ret = utils.run(['tdnf', 'list', cmd, spkg])
         assert ret['retval'] == 1011
+
+
+def test_list_invalid_with_valid(utils):
+    spkg = utils.config["sglversion_pkgname"]
+
+    ret = utils.run(f"tdnf list {spkg} invalid1")
+    assert ret['retval'] == 1011
+    assert "No match found for 'invalid1'" in "\n".join(ret['stderr'])
+    assert "tdnf-test-one" in "\n".join(ret['stdout'])
+
+    ret = utils.run(f"tdnf list invalid1 {spkg} invalid2")
+    assert ret['retval'] == 1011
+    assert "No match found for 'invalid1'" in "\n".join(ret['stderr'])
+    assert "No match found for 'invalid2'" in "\n".join(ret['stderr'])
+    assert "tdnf-test-one" in "\n".join(ret['stdout'])

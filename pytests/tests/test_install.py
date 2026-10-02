@@ -72,7 +72,7 @@ def test_install_package_verbose(utils):
 def test_dummy_requires(utils):
     pkg = utils.config["dummy_requires_pkgname"]
     ret = utils.run(['tdnf', 'install', '-y', pkg])
-    assert ' nothing provides ' in ret['stderr'][0]
+    assert "nothing provides" in "\n".join(ret['stderr'])
 
 
 def test_install_testonly(utils):
