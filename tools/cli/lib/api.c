@@ -1617,6 +1617,8 @@ TDNFCliMarkCommand(
 {
     uint32_t dwError = 0;
     uint32_t nValue = 0;
+    char *pszLocksDir = NULL;
+    char *pszLockFile = NULL;
 
     if(!pContext || !pContext->hTdnf || !pContext->pFnCount)
     {
@@ -1634,6 +1636,36 @@ TDNFCliMarkCommand(
         {
             nValue = 1;
         }
+        else if (strcmp(pCmdArgs->ppszCmds[1], "lock") == 0 ||
+                 strcmp(pCmdArgs->ppszCmds[1], "unlock") == 0)
+        {
+            int nIsLock = (strcmp(pCmdArgs->ppszCmds[1], "lock") == 0);
+
+            if (pCmdArgs->nCmdCount < 3)
+            {
+                pr_crit("need package spec(s) as argument\n");
+                dwError = ERROR_TDNF_INVALID_PARAMETER;
+                BAIL_ON_CLI_ERROR(dwError);
+            }
+
+            dwError = DeriveLockPaths(pCmdArgs, &pszLocksDir, &pszLockFile);
+            BAIL_ON_CLI_ERROR(dwError);
+
+            if (nIsLock)
+            {
+                dwError = TDNFCliLockAdd(pszLocksDir, pszLockFile,
+                                         &pCmdArgs->ppszCmds[2],
+                                         pCmdArgs->nCmdCount - 2);
+            }
+            else
+            {
+                dwError = TDNFCliLockDelete(pszLocksDir, pszLockFile,
+                                             &pCmdArgs->ppszCmds[2],
+                                             pCmdArgs->nCmdCount - 2);
+            }
+            BAIL_ON_CLI_ERROR(dwError);
+            goto cleanup;
+        }
         else
         {
             pr_crit("unknown action '%s'\n", pCmdArgs->ppszCmds[1]);
@@ -1643,7 +1675,7 @@ TDNFCliMarkCommand(
     }
     else
     {
-        pr_crit("need action ('install' or 'remove') as argument\n");
+        pr_crit("need action ('install', 'remove', 'lock', or 'unlock') as argument\n");
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_CLI_ERROR(dwError);
     }
@@ -1661,6 +1693,8 @@ TDNFCliMarkCommand(
     }
 
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszLocksDir);
+    TDNF_SAFE_FREE_MEMORY(pszLockFile);
     return dwError;
 
 error:

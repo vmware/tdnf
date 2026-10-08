@@ -9,6 +9,13 @@
 #ifndef __COMMON_PROTOTYPES_H__
 #define __COMMON_PROTOTYPES_H__
 
+//utils.c
+uint32_t
+TDNFGetConfigFile(
+    PTDNF_CMD_ARGS pArgs,
+    char **ppszConfFile
+    );
+
 //memory.c
 uint32_t
 TDNFAllocateMemory(

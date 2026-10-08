@@ -35,6 +35,41 @@ HandleOptionsError(
     struct option* pstOptions
     );
 
+//versionlock.c
+uint32_t
+DeriveLockPaths(
+    PTDNF_CMD_ARGS pCmdArgs,
+    char **ppszLocksDir,
+    char **ppszLockFile
+    );
+
+uint32_t
+TDNFCliLockList(
+    const char *pszLockFile
+    );
+
+uint32_t
+TDNFCliLockAdd(
+    const char *pszLocksDir,
+    const char *pszLockFile,
+    char **ppszPkgs,
+    int nPkgCount
+    );
+
+uint32_t
+TDNFCliLockDelete(
+    const char *pszLocksDir,
+    const char *pszLockFile,
+    char **ppszPkgs,
+    int nPkgCount
+    );
+
+uint32_t
+TDNFCliLockClear(
+    const char *pszLocksDir,
+    const char *pszLockFile
+    );
+
 //updateinfocmd.c
 const char*
 TDNFGetUpdateInfoType(
