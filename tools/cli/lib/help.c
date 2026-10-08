@@ -377,8 +377,9 @@ static const char *help_msg =
  "makecache                  Generate the metadata cache\n"
  "                           Example: tdnf makecache\n"
 
- "mark <action> <pkg>        Mark package(s) (install|remove)\n"
+ "mark <action> <pkg>        Mark package(s) (install|remove|lock|unlock)\n"
  "                           Example: tdnf mark install package\n"
+ "                           Example: tdnf mark lock curl\n"
 
  "needs-restarting [-r]      List processes using deleted libs, or check if reboot is needed (-r)\n"
  "                           Example: tdnf needs-restarting\n"
@@ -418,6 +419,10 @@ static const char *help_msg =
 
  "upgrade-to <pkg-version>   Upgrade a package on your system to the specified version\n"
  "                           Example: tdnf upgrade-to package-1.0-1.ph5\n"
+
+ "lock <cmd> [pkg]           Manage package locks (list|add|delete|clear)\n"
+ "                           Locks block install, upgrade, and removal by name.\n"
+ "                           Example: tdnf lock add curl\n"
 
  "whatprovides <cap>         Find what package provides the given value\n"
  "                           Example: tdnf whatprovides /usr/bin/bash\n"

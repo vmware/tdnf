@@ -41,6 +41,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
     {"upgrade",            TDNFCliUpgradeCommand, true},
     {"upgrade-to",         TDNFCliUpgradeCommand, true},
     {"updateinfo",         TDNFCliUpdateInfoCommand, false},
+    {"lock",               TDNFCliLockCommand, true},
 };
 
 int main(int argc, char **argv)

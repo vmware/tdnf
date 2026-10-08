@@ -28,6 +28,7 @@ add_library(${LIB_TDNF_CLI} SHARED
     parsereposyncargs.c
     parseupdateinfo.c
     updateinfocmd.c
+    versionlock.c
 )
 
 target_link_libraries(${LIB_TDNF_CLI}
