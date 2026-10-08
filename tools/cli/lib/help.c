@@ -356,6 +356,11 @@ static const char *help_msg =
  "distro-sync                Synchronize installed packages to latest available versions\n"
  "                           Example: tdnf distro-sync\n"
 
+ "download <pkg>             Download standalone package RPM without installing\n"
+ "                           Use --withdeps to also download the dependency tree\n"
+ "                           Example: tdnf download --downloaddir=/tmp package\n"
+ "                           Example: tdnf download --withdeps --downloaddir=/tmp package\n"
+
  "downgrade <pkg>            Downgrade a package\n"
  "                           Example: tdnf downgrade package-1.0\n"
 

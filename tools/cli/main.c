@@ -19,6 +19,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
     {"clean",              TDNFCliCleanCommand, false},
     {"count",              TDNFCliCountCommand, false},
     {"distro-sync",        TDNFCliDistroSyncCommand, true},
+    {"download",           TDNFCliDownloadCommand, false},
     {"downgrade",          TDNFCliDowngradeCommand, true},
     {"erase",              TDNFCliEraseCommand, true},
     {"help",               TDNFCliHelpCommand, false},

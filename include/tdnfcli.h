@@ -298,6 +298,12 @@ TDNFCliMarkCommand(
     );
 
 uint32_t
+TDNFCliDownloadCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
 TDNFCliBuilddepCommand(
     PTDNF_CLI_CONTEXT pContext,
     PTDNF_CMD_ARGS pCmdArgs

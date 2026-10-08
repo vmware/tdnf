@@ -67,6 +67,7 @@ static struct option pstOptions[] =
     {"urls",          no_argument, &_opt.nUrlsOnly, 1},    //--urls
     {"verbose",       no_argument, &_opt.nVerbose, 1},     //-v --verbose
     {"version",       no_argument, &_opt.nShowVersion, 1}, //--version
+    {"withdeps",      no_argument, &_opt.nWithDeps, 1},    //--withdeps (download command)
     // reposync options
     {"arch",          required_argument, 0, 0},
     {"delete",        no_argument, 0, 0},
@@ -287,19 +288,44 @@ TDNFCliParseArgs(
         }
     }
 
-    if (pCmdArgs->pszDownloadDir && !pCmdArgs->nDownloadOnly) {
-        dwError = ERROR_TDNF_CLI_DOWNLOADDIR_REQUIRES_DOWNLOADONLY;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
+    /* 'download' sets --downloadonly and --alldeps implicitly */
+    {
+        int bIsDownloadCmd = pCmdArgs->nCmdCount > 0 &&
+                             strcmp(pCmdArgs->ppszCmds[0], "download") == 0;
 
-    if (pCmdArgs->nAllDeps && !pCmdArgs->nDownloadOnly && !pCmdArgs->nUrlsOnly) {
-        dwError = ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY;
-        BAIL_ON_CLI_ERROR(dwError);
-    }
+        if (bIsDownloadCmd) {
+            pCmdArgs->nDownloadOnly = 1;
+            /*
+             * Always set nAllDeps=1 so the solver ignores the installed-package
+             * database, including requested packages even when they are already
+             * installed on this machine.
+             *
+             * By default download only the standalone RPM (nNoDeps=1).
+             * With --withdeps the full dependency tree is included.
+             */
+            pCmdArgs->nAllDeps = 1;
+            if (!pCmdArgs->nWithDeps) {
+                pCmdArgs->nNoDeps = 1;
+            }
+        }
 
-    if (pCmdArgs->nNoDeps && !pCmdArgs->nDownloadOnly && !pCmdArgs->nUrlsOnly) {
-        dwError = ERROR_TDNF_CLI_NODEPS_REQUIRES_DOWNLOADONLY;
-        BAIL_ON_CLI_ERROR(dwError);
+        if (pCmdArgs->pszDownloadDir && !pCmdArgs->nDownloadOnly &&
+            !bIsDownloadCmd) {
+            dwError = ERROR_TDNF_CLI_DOWNLOADDIR_REQUIRES_DOWNLOADONLY;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+
+        if (pCmdArgs->nAllDeps && !pCmdArgs->nDownloadOnly &&
+            !pCmdArgs->nUrlsOnly && !bIsDownloadCmd) {
+            dwError = ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
+
+        if (pCmdArgs->nNoDeps && !pCmdArgs->nDownloadOnly &&
+            !pCmdArgs->nUrlsOnly && !bIsDownloadCmd) {
+            dwError = ERROR_TDNF_CLI_NODEPS_REQUIRES_DOWNLOADONLY;
+            BAIL_ON_CLI_ERROR(dwError);
+        }
     }
 
     *ppCmdArgs = pCmdArgs;
@@ -365,6 +391,7 @@ TDNFCopyOptions(
     pArgs->nSource        = pOptionArgs->nSource;
     pArgs->nRebootRequired = pOptionArgs->nRebootRequired;
     pArgs->nBuildDeps     = pOptionArgs->nBuildDeps;
+    pArgs->nWithDeps      = pOptionArgs->nWithDeps;
 
 cleanup:
     return dwError;
