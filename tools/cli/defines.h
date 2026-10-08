@@ -52,4 +52,5 @@
     {ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY, "ERROR_TDNF_CLI_ALLDEPS_REQUIRES_DOWNLOADONLY", "--alldeps requires --downloadonly"}, \
     {ERROR_TDNF_CLI_NODEPS_REQUIRES_DOWNLOADONLY, "ERROR_TDNF_CLI_NODEPS_REQUIRES_DOWNLOADONLY", "--nodeps requires --downloadonly"}, \
     {ERROR_TDNF_CLI_INVALID_MIXED_QUERY_QUERYFORMAT, "ERROR_TDNF_CLI_INVALID_MIXED_QUERY_QUERYFORMAT", "--qf requires only querytags. Invalid Mixed Query"}, \
+    {ERROR_TDNF_CLI_BUILDDEP_EXPECT_SPEC,         "ERROR_TDNF_CLI_BUILDDEP_EXPECT_SPEC",         "builddep requires a spec file, source RPM, or source package name"}, \
 };

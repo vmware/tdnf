@@ -12,6 +12,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
 {
     {"autoerase",          TDNFCliAutoEraseCommand, true},
     {"autoremove",         TDNFCliAutoEraseCommand, true},
+    {"builddep",           TDNFCliBuilddepCommand, true},
     {"check",              TDNFCliCheckCommand, false},
     {"check-local",        TDNFCliCheckLocalCommand, false},
     {"check-update",       TDNFCliCheckUpdateCommand, false},
