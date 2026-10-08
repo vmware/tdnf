@@ -14,6 +14,7 @@ configure_file(
 
 add_library(${LIB_TDNF_CLI} SHARED
     api.c
+    builddep.c
     help.c
     installcmd.c
     needsrestarting.c
