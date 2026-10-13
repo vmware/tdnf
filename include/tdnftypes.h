@@ -269,6 +269,7 @@ typedef struct _TDNF_CONF
     int nOpenMax;          //set max number of open files
     int nCheckUpdateCompat;
     int nDistroSyncReinstallChanged;
+    int nRequireAllMatches;
     int nConnectTimeout;
     rpmtransFlags rpmTransFlags;
     int nPluginsEnabled;

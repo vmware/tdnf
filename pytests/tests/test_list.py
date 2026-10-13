@@ -6,6 +6,7 @@
 # of the License are located in the COPYING file of this distribution.
 #
 
+import json
 import pytest
 
 
@@ -88,3 +89,55 @@ def test_list_notinstalled(utils):
         # spkg is not installed, expect error
         ret = utils.run(['tdnf', 'list', cmd, spkg])
         assert ret['retval'] == 1011
+
+
+def test_list_multiple(utils):
+    mpkg = utils.config["mulversion_pkgname"]
+    spkg = utils.config["sglversion_pkgname"]
+
+    # default: succeed if at least one spec matches
+    ret = utils.run(['tdnf', 'list', mpkg, spkg])
+    assert ret['retval'] == 0
+    ret = utils.run(['tdnf', 'list', spkg, 'invalid_package'])
+    assert ret['retval'] == 0
+    assert any(line.startswith(spkg + '.') for line in ret['stdout'])
+    ret = utils.run(['tdnf', 'list', 'invalid_package', 'invalid_package2'])
+    assert ret['retval'] == 1011
+
+
+def test_list_multiple_require_all(utils):
+    mpkg = utils.config["mulversion_pkgname"]
+    spkg = utils.config["sglversion_pkgname"]
+    opt = '--setopt=require_all_matches=1'
+
+    ret = utils.run(['tdnf', opt, 'list', mpkg, spkg])
+    assert ret['retval'] == 0
+
+    # fail if any of the specs has no match, but still list the others
+    for args in [[spkg, 'invalid_package'], ['invalid_package', spkg]]:
+        ret = utils.run(['tdnf', opt, 'list'] + args)
+        assert ret['retval'] == 1011
+        assert any(line.startswith(spkg + '.') for line in ret['stdout'])
+        assert "No match found for 'invalid_package'" in '\n'.join(ret['stderr'])
+        assert spkg not in '\n'.join(ret['stderr'])
+
+    ret = utils.run(['tdnf', opt, 'list', 'invalid_package', 'invalid_package2'])
+    assert ret['retval'] == 1011
+    assert "No match found for 'invalid_package'" in '\n'.join(ret['stderr'])
+    assert "No match found for 'invalid_package2'" in '\n'.join(ret['stderr'])
+
+
+def test_list_multiple_require_all_json(utils):
+    spkg = utils.config["sglversion_pkgname"]
+    opt = '--setopt=require_all_matches=1'
+
+    # json output does not fail for specs without a match
+    ret = utils.run(['tdnf', opt, '-j', 'list', spkg, 'invalid_package'])
+    assert ret['retval'] == 0
+    assert "No match found for 'invalid_package'" not in '\n'.join(ret['stderr'])
+    pkgs = json.loads("\n".join(ret['stdout']))
+    assert any(pkg['Name'] == spkg for pkg in pkgs)
+
+    ret = utils.run(['tdnf', opt, '-j', 'list', 'invalid_package', 'invalid_package2'])
+    assert ret['retval'] == 0
+    assert json.loads("\n".join(ret['stdout'])) == []

@@ -59,6 +59,7 @@
 #define TDNF_CONF_KEY_VARS_DIRS           "varsdir"
 #define TDNF_CONF_KEY_CHECK_UPDATE_COMPAT "dnf_check_update_compat"
 #define TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED "distrosync_reinstall_changed"
+#define TDNF_CONF_KEY_REQUIRE_ALL_MATCHES "require_all_matches"
 #define TDNF_CONF_KEY_CONNECT_TIMEOUT     "connect_timeout"
 
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
