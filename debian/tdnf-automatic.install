@@ -1,0 +1,8 @@
+usr/bin/tdnf-automatic
+etc/tdnf/automatic.conf
+lib/systemd/system/tdnf-automatic.timer
+lib/systemd/system/tdnf-automatic.service
+lib/systemd/system/tdnf-automatic-install.timer
+lib/systemd/system/tdnf-automatic-install.service
+lib/systemd/system/tdnf-automatic-notifyonly.timer
+lib/systemd/system/tdnf-automatic-notifyonly.service

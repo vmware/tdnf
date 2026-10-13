@@ -1,0 +1,2 @@
+etc/tdnf/pluginconf.d/tdnfmetalink.conf
+usr/lib/*/tdnf-plugins/libtdnfmetalink.so

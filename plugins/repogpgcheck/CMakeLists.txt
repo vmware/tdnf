@@ -32,4 +32,8 @@ target_link_libraries(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins/lib)
+
+# Apply appropriate flags for shared library
+apply_tdnf_flags(${PROJECT_NAME} SHARED)
+
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/tdnf-plugins)

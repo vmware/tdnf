@@ -18,6 +18,14 @@ add_library(${LIB_TDNF_JSONDUMP} STATIC
     jsondump.c
 )
 
+# Apply appropriate flags for static library
+apply_tdnf_flags(${LIB_TDNF_JSONDUMP} STATIC)
+
+set_target_properties(${LIB_TDNF_JSONDUMP} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    INTERFACE_POSITION_INDEPENDENT_CODE ON
+)
+
 target_link_libraries(${TDNF_JSON_BIN}
     ${LIB_TDNF_JSONDUMP}
 )

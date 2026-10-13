@@ -1,0 +1,13 @@
+usr/include/tdnf/tdnf.h
+usr/include/tdnf/tdnfcli.h
+usr/include/tdnf/tdnfclierror.h
+usr/include/tdnf/tdnfclitypes.h
+usr/include/tdnf/tdnf-common-defines.h
+usr/include/tdnf/tdnferror.h
+usr/include/tdnf/tdnfplugin.h
+usr/include/tdnf/tdnfplugineventmap.h
+usr/include/tdnf/tdnftypes.h
+usr/lib/*/libtdnf.so
+usr/lib/*/libtdnfcli.so
+usr/lib/*/pkgconfig/tdnf.pc
+usr/lib/*/pkgconfig/tdnf-cli-libs.pc

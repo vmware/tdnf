@@ -1,0 +1,3 @@
+shlibs:Depends=libc6 (>= 2.17), libgpgme11t64 (>= 1.2.0), tdnf (>= 3.6.0)
+misc:Depends=
+misc:Pre-Depends=

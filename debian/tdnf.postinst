@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+# Create history database directory if it doesn't exist
+HIST_DB_DIR="/var/lib/tdnf"
+HISTORY_DB_FN="${HIST_DB_DIR}/history.db"
+HISTORY_UTIL="/usr/libexec/tdnf/tdnf-history-util"
+
+case "$1" in
+    configure)
+        # Create history database directory
+        if [ ! -d "${HIST_DB_DIR}" ]; then
+            mkdir -p "${HIST_DB_DIR}"
+        fi
+        
+        # Initialize history database if it doesn't exist
+        if [ ! -f "${HISTORY_DB_FN}" ] && [ -x "${HISTORY_UTIL}" ]; then
+            "${HISTORY_UTIL}" init || true
+        fi
+        
+        # Update library cache
+        ldconfig
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
