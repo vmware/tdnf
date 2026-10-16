@@ -415,7 +415,7 @@ error:
     goto cleanup;
 }
 
-uint32_t
+static uint32_t
 SolvGenerateCommonJob(
     PSolvQuery pQuery,
     uint32_t dwSelectFlags

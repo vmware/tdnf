@@ -407,12 +407,6 @@ SolvApplySearch(
     );
 
 uint32_t
-SolvGenerateCommonJob(
-    PSolvQuery pQuery,
-    uint32_t dwSelectFlags
-    );
-
-uint32_t
 SolvAddSystemRepoFilter(
     PSolvQuery pQuery
     );

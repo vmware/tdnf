@@ -25,10 +25,12 @@ def test_provides_no_arg(utils):
 
 
 def test_provides_valid_pkg_name(utils):
-    ret = utils.run(['tdnf', 'provides', 'tdnf'])
+    pkgname = utils.config["sglversion_pkgname"]
+    ret = utils.run(['tdnf', 'provides', pkgname])
     assert ret['retval'] == 0
 
 
 def test_provides_invalid_pkg_name(utils):
     ret = utils.run(['tdnf', 'provides', 'invalid_pkg_name'])
-    assert ret['stderr'][0] == 'No data available'
+    assert "No match found for 'invalid_pkg_name'" in "\n".join(ret['stderr'])
+    assert ret['retval'] == 1011
