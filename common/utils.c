@@ -10,7 +10,6 @@
 
 hash_op hash_ops[TDNF_HASH_SENTINEL] =
     {
-       [TDNF_HASH_MD5]    = {"md5", MD5_DIGEST_LENGTH},
        [TDNF_HASH_SHA1]   = {"sha1", SHA_DIGEST_LENGTH},
        [TDNF_HASH_SHA256] = {"sha256", SHA256_DIGEST_LENGTH},
        [TDNF_HASH_SHA512] = {"sha512", SHA512_DIGEST_LENGTH},
@@ -18,7 +17,6 @@ hash_op hash_ops[TDNF_HASH_SENTINEL] =
 
 hash_type hashType[] =
     {
-        {"md5", TDNF_HASH_MD5},
         {"sha1", TDNF_HASH_SHA1},
         {"sha-1", TDNF_HASH_SHA1},
         {"sha256", TDNF_HASH_SHA256},
@@ -1053,9 +1051,26 @@ TDNFGetDigestForFile(
     EVP_MD_CTX *ctx = NULL;
     const EVP_MD *digest_type = NULL;
     unsigned int digest_length = 0;
+    int type = TDNF_HASH_SHA1;
 
-    if (IsNullOrEmptyString(filename) || !hash || !digest)
+    if (IsNullOrEmptyString(filename) || !hash || !digest ||
+        IsNullOrEmptyString(hash->hash_type))
     {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (; type < TDNF_HASH_SENTINEL; type++)
+    {
+        if (!strcmp(hash->hash_type, hash_ops[type].hash_type) &&
+            hash->length == hash_ops[type].length)
+        {
+            break;
+        }
+    }
+    if (type == TDNF_HASH_SENTINEL)
+    {
+        pr_err("Unsupported message digest %s\n", hash->hash_type);
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
@@ -1090,16 +1105,6 @@ TDNFGetDigestForFile(
     {
         pr_err("Digest Init Failed\n");
         dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
-        /* MD5 is not approved in FIPS mode. So, overrriding
-           the dwError to show the right error to the user */
-#if defined(OPENSSL_VERSION_MAJOR) && (OPENSSL_VERSION_MAJOR >= 3)
-        if (EVP_default_properties_is_fips_enabled(NULL) && !strcasecmp(hash->hash_type, "md5"))
-#else
-        if (FIPS_mode() && !strcasecmp(hash->hash_type, "md5"))
-#endif
-        {
-            dwError = ERROR_TDNF_FIPS_MODE_FORBIDDEN;
-        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
@@ -1164,7 +1169,7 @@ TDNFCheckHash(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    if (type  < TDNF_HASH_MD5 || type >= TDNF_HASH_SENTINEL)
+    if (type < TDNF_HASH_SHA1 || type >= TDNF_HASH_SENTINEL)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);

@@ -125,7 +125,6 @@ struct {
     {"nopretrans",      RPMTRANS_FLAG_NOPRETRANS },
     {"noposttrans",     RPMTRANS_FLAG_NOPOSTTRANS},
 //    {"nosysusers",      RPMTRANS_FLAG_NOSYSUSERS},
-    {"nomd5",           RPMTRANS_FLAG_NOMD5},
     {"nofiledigest",    RPMTRANS_FLAG_NOFILEDIGEST},
 
     {"noartifacts",     RPMTRANS_FLAG_NOARTIFACTS},
