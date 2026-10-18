@@ -302,12 +302,10 @@ def test_invalid_sha256_valid_sha1(utils):
     set_invalid_sha256_length(utils)
     set_sha1(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert ret['retval'] == 0
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
-
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert utils.check_package(pkgname)
+    # A malformed strongest digest must not fall back to a weaker hash.
+    assert ret['retval'] == 2501  # ERROR_TDNF_CHECKSUM_VALIDATION_FAILED
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    assert not os.path.isdir(os.path.join(cache_dir, 'photon-test/tmp'))
 
 
 def test_invalid_sha512_valid_sha1(utils):
@@ -319,9 +317,7 @@ def test_invalid_sha512_valid_sha1(utils):
     set_invalid_sha512_length(utils)
     set_sha1(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert ret['retval'] == 0
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
-
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert utils.check_package(pkgname)
+    # A malformed strongest digest must not fall back to a weaker hash.
+    assert ret['retval'] == 2501  # ERROR_TDNF_CHECKSUM_VALIDATION_FAILED
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    assert not os.path.isdir(os.path.join(cache_dir, 'photon-test/tmp'))

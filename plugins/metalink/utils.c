@@ -142,9 +142,10 @@ TDNFCheckRepoMDFileHashFromMetalink(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             if (dwError == 0)
-                break;
+                goto cleanup;
         }
     }
+    dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
 
 cleanup:
     return dwError;
