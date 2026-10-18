@@ -2,6 +2,53 @@
 #include <assert.h>
 
 static void
+check_parse(const char *document, size_t length, int valid)
+{
+    TDNF_ML_CTX *context = calloc(1, sizeof(*context));
+    FILE *file = tmpfile();
+    uint32_t result;
+    assert(context && file);
+    assert(fwrite(document, 1, length, file) == length);
+    rewind(file);
+    result = TDNFMetalinkParseFile(context, file, "repomd.xml");
+    assert(valid ? result == 0 : result != 0);
+    if (valid)
+    {
+        TDNF_ML_URL_INFO *url;
+        assert(context->urls);
+        url = context->urls->data;
+        assert(strcmp(url->url, "https://example.invalid/repomd.xml") == 0);
+    }
+    TDNFMetalinkFree(context);
+    assert(fclose(file) == 0);
+}
+
+static void
+check_xml(void)
+{
+    const char *preferences[] = {"0", "100", "101", "-1", "1junk", "", "999999999999999999999999"};
+    char document[512];
+    int length;
+
+    for (size_t i = 0; i < sizeof(preferences) / sizeof(preferences[0]); i++)
+    {
+        length = snprintf(document, sizeof(document),
+            "<metalink><file name=\"repomd.xml\">\n<url protocol=\"https\" preference=\"%s\">"
+            "https://example.invalid/repomd.xml</url></file></metalink>", preferences[i]);
+        assert(length > 0 && (size_t)length < sizeof(document));
+        check_parse(document, (size_t)length, i < 2);
+    }
+    length = snprintf(document, sizeof(document),
+        "<metalink><file name=\"repomd.xml\">\n<url protocol=\"https\">"
+        "https://example.invalid/repomd.xml</url></file></metalink>");
+    assert(length > 0 && (size_t)length < sizeof(document));
+    check_parse(document, (size_t)length, 1);
+    check_parse(document, (size_t)length - 1, 0);
+    check_parse(document, (size_t)length + 1, 0); /* Embedded NUL is XML input. */
+    check_parse("", 0, 0);
+}
+
+static void
 check_hashes(void)
 {
     char filename[] = "/tmp/tdnf-security-hash-XXXXXX";
@@ -61,6 +108,7 @@ check_hashes(void)
 int
 main(void)
 {
+    check_xml();
     check_hashes();
     return 0;
 }
