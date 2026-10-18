@@ -1889,6 +1889,10 @@ check_for_providers(
     {
         if (*beg != ' ')
         {
+            if ((size_t)i >= sizeof(pkgname) - 1)
+            {
+                return ERROR_TDNF_SOLV_FAILED;
+            }
             pkgname[i++] = *beg;
         }
     }
