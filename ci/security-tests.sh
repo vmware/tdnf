@@ -15,7 +15,7 @@ cmake -S . -B "$build_dir" \
   -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address,undefined"
 
 cmake --build "$build_dir" -j"$jobs" \
-  --target security-client security-solver
+  --target security-client security-metalink security-solver
 
 ASAN_OPTIONS=detect_leaks=1 \
 UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
