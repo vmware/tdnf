@@ -1225,28 +1225,32 @@ TDNFPopulatePkgInfos(
                       dwPkgId,
                       &nChecksumType,
                       &pPkgInfo->pbChecksum);
-        //Ignore no data
+        // Local and installed packages may have no repository checksum.
         if(dwError == ERROR_TDNF_NO_DATA)
         {
             dwError = 0;
-        } else if (nChecksumType == REPOKEY_TYPE_SHA512)
-        {
-            pPkgInfo->nChecksumType = TDNF_HASH_SHA512;
-        } else if (nChecksumType == REPOKEY_TYPE_SHA256)
-        {
-            pPkgInfo->nChecksumType = TDNF_HASH_SHA256;
-        } else if (nChecksumType == REPOKEY_TYPE_SHA1)
-        {
-            pPkgInfo->nChecksumType = TDNF_HASH_SHA1;
-        } else if (nChecksumType == REPOKEY_TYPE_MD5)
-        {
-            pPkgInfo->nChecksumType = TDNF_HASH_MD5;
-        } else
-        {
-            pPkgInfo->pbChecksum = NULL;
         }
-
-        BAIL_ON_TDNF_ERROR(dwError);
+        else
+        {
+            BAIL_ON_TDNF_ERROR(dwError);
+            switch (nChecksumType)
+            {
+                case REPOKEY_TYPE_SHA512:
+                    pPkgInfo->nChecksumType = TDNF_HASH_SHA512;
+                    break;
+                case REPOKEY_TYPE_SHA256:
+                    pPkgInfo->nChecksumType = TDNF_HASH_SHA256;
+                    break;
+                case REPOKEY_TYPE_SHA1:
+                    pPkgInfo->nChecksumType = TDNF_HASH_SHA1;
+                    break;
+                default:
+                    pr_err("Unsupported repository checksum for package %s\n",
+                           pPkgInfo->pszName);
+                    dwError = ERROR_TDNF_INVALID_REPO_FILE;
+                    BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
 
         dwError = SolvGetPkgInstallSizeFromId(
                       pSack,

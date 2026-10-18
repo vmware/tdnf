@@ -894,7 +894,14 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    if(pInfo->pbChecksum != NULL) {
+    if(pInfo->pbChecksum != NULL)
+    {
+        if (pInfo->nChecksumType < TDNF_HASH_SHA1 ||
+            pInfo->nChecksumType >= TDNF_HASH_SENTINEL)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
         hash = hash_ops + pInfo->nChecksumType;
 
         dwError = TDNFGetDigestForFile(pszFilePath, hash, digest_from_file);
