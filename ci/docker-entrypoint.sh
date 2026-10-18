@@ -22,6 +22,11 @@ if ! make -C ${build_dir} check -j${JOBS}; then
   exit_status=1
 fi
 
+# Configure this after pytest: CMake writes test configuration into the source tree.
+if ! ./ci/security-tests.sh; then
+  exit_status=1
+fi
+
 if ! command -v flake8 &> /dev/null; then
   VENV_DIR="$(mktemp -d /tmp/venv.XXXXXX)"
   python3 -m venv "$VENV_DIR"
