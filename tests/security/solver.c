@@ -6,27 +6,29 @@ int
 main(void)
 {
     SolvSack sack = {0};
-    char previous[256] = {0};
-    char dependency[257] = {0};
-    char problem[320] = {0};
+    const size_t lengths[] = {1, 255, 256, 257, 4096};
 
-    /* Both accepted boundaries must preserve a complete, terminated name. */
-    for (size_t length = 254; length <= 256; length++)
+    /* Names of any length must be extracted completely, so that they match
+     * the cached previous name instead of being truncated or rejected. */
+    for (size_t n = 0; n < sizeof(lengths) / sizeof(lengths[0]); n++)
     {
+        size_t length = lengths[n];
+        char *dependency = calloc(1, length + 1);
+        char *problem = NULL;
+        char *previous = NULL;
+
+        assert(dependency);
         memset(dependency, 'a', length);
-        dependency[length] = '\0';
-        memset(previous, 0, sizeof(previous));
-        if (length < sizeof(previous))
-            memcpy(previous, dependency, length);
-        assert(snprintf(problem, sizeof(problem), "package requires %s, unavailable",
+        assert(asprintf(&problem, "package requires %s, unavailable",
                         dependency) > 0);
+        previous = strdup(dependency);
+        assert(previous);
         assert(check_for_providers(&sack, SOLVER_RULE_PKG_REQUIRES,
-                                   problem, previous) ==
-               (length < sizeof(previous) ? 0 : ERROR_TDNF_SOLV_FAILED));
-        if (length == sizeof(previous))
-            assert(previous[0] == '\0');
-        else
-            assert(strcmp(previous, dependency) == 0);
+                                   problem, &previous) == 0);
+        assert(previous && strcmp(previous, dependency) == 0);
+        free(previous);
+        free(problem);
+        free(dependency);
     }
     return 0;
 }

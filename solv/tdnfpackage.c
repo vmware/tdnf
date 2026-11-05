@@ -1848,21 +1848,27 @@ SkipBasedOnType(
     return result;
 }
 
+/*
+ * Returns 0 if the problem should be skipped: either the required name is
+ * the same as in the previous problem, or a provider is available.
+ * *ppszPrevPkgname caches the last name looked up and is owned by the caller.
+ */
 static uint32_t
 check_for_providers(
     PSolvSack pSack,
     SolverRuleinfo type,
     const char *pszProblem,
-    char *prv_pkgname
+    char **ppszPrevPkgname
     )
 {
     const char *beg;
     const char *end = NULL;
     uint32_t dwError = 0;
-    char pkgname[256] = {0};
+    char *pkgname = NULL;
+    size_t i = 0;
     PSolvPackageList pAvailablePkgList = NULL;
 
-    if (!pSack || !prv_pkgname || !pszProblem)
+    if (!pSack || !ppszPrevPkgname || !pszProblem)
     {
         return ERROR_TDNF_INVALID_PARAMETER;
     }
@@ -1885,20 +1891,25 @@ check_for_providers(
         return ERROR_TDNF_SOLV_FAILED;
     }
 
-    for (int32_t i = 0; end > beg; beg++)
+    /* The dependency comes from repository metadata, so do not assume a
+     * maximum length. */
+    dwError = TDNFAllocateMemory(1, end - beg + 1, (void **)&pkgname);
+    if (dwError)
+    {
+        return dwError;
+    }
+
+    for (; end > beg; beg++)
     {
         if (*beg != ' ')
         {
-            if ((size_t)i >= sizeof(pkgname) - 1)
-            {
-                return ERROR_TDNF_SOLV_FAILED;
-            }
             pkgname[i++] = *beg;
         }
     }
 
-    if (!strcmp(pkgname, prv_pkgname))
+    if (*ppszPrevPkgname && !strcmp(pkgname, *ppszPrevPkgname))
     {
+        TDNF_SAFE_FREE_MEMORY(pkgname);
         return dwError;
     }
 
@@ -1907,7 +1918,8 @@ check_for_providers(
     {
         SolvFreePackageList(pAvailablePkgList);
     }
-    strcpy(prv_pkgname, pkgname);
+    TDNF_SAFE_FREE_MEMORY(*ppszPrevPkgname);
+    *ppszPrevPkgname = pkgname;
 
     return dwError;
 }
@@ -1927,7 +1939,7 @@ SolvReportProblems(
     SolverRuleinfo type;
     uint32_t dwError = 0;
     uint32_t total_prblms = 0;
-    char prv_pkgname[256] = {0};
+    char *pszPrevPkgname = NULL;
 
     if (!pSolv)
     {
@@ -1952,7 +1964,7 @@ SolvReportProblems(
         if (dwSkipProblem != SKIPPROBLEM_NONE &&
             type == SOLVER_RULE_PKG_REQUIRES)
         {
-            if (!check_for_providers(pSack, type, pszProblem, prv_pkgname))
+            if (!check_for_providers(pSack, type, pszProblem, &pszPrevPkgname))
             {
                 continue;
             }
@@ -1988,7 +2000,7 @@ SolvReportProblems(
                 if (dwSkipProblem != SKIPPROBLEM_NONE &&
                     type == SOLVER_RULE_PKG_REQUIRES)
                 {
-                    if (!check_for_providers(pSack, type, pszSubProblem, prv_pkgname))
+                    if (!check_for_providers(pSack, type, pszSubProblem, &pszPrevPkgname))
                     {
                         continue;
                     }
@@ -2014,6 +2026,7 @@ SolvReportProblems(
         }
     }
 
+    TDNF_SAFE_FREE_MEMORY(pszPrevPkgname);
     return dwError;
 }
 
