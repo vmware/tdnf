@@ -338,7 +338,6 @@ TDNFParseUrlTag(
     char *value = NULL;
     const char *prefval = NULL;
     const char *attribute = NULL;
-    char *prefEnd = NULL;
     long prefValue = 0;
     TDNF_ML_URL_INFO *ml_url_info = NULL;
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
@@ -376,21 +375,22 @@ TDNFParseUrlTag(
         if ((!strcmp(elementInfo->attributes[i], ATTR_PREFERENCE)) && (elementInfo->attributes[i + 1] != NULL))
         {
            prefval = elementInfo->attributes[i + 1];
-           errno = 0;
-           prefValue = strtol(prefval, &prefEnd, 10);
-           if (errno == ERANGE || prefEnd == prefval || *prefEnd != '\0' ||
-               strspn(prefval, "0123456789") != strlen(prefval))
+           /* Only plain decimal digits: no sign, whitespace or suffix. */
+           if (!prefval[0] ||
+               prefval[strspn(prefval, "0123456789")] != '\0')
            {
                dwError = ERROR_TDNF_INVALID_PARAMETER;
                pr_err("XML Parser Warning: Preference is invalid value: %s\n", prefval);
                BAIL_ON_TDNF_ERROR(dwError);
            }
 
-           if (prefValue < 0 || prefValue > 100)
+           /* Overflow saturates at LONG_MAX, which is out of range too. */
+           prefValue = strtol(prefval, NULL, 10);
+           if (prefValue > 100)
            {
                dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_ATTR;
-               pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\""
-                      "attribute in url element (should be in range 0-100)", prefval);
+               pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\" "
+                      "attribute in url element (should be in range 0-100)\n", prefval);
                BAIL_ON_TDNF_ERROR(dwError);
            }
            else
