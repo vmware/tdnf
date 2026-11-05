@@ -125,6 +125,9 @@ struct {
     {"nopretrans",      RPMTRANS_FLAG_NOPRETRANS },
     {"noposttrans",     RPMTRANS_FLAG_NOPOSTTRANS},
 //    {"nosysusers",      RPMTRANS_FLAG_NOSYSUSERS},
+    /* nomd5 is rpm's historical alias for nofiledigest (same flag bit),
+     * unrelated to tdnf's repository checksums. Keep it for existing configs. */
+    {"nomd5",           RPMTRANS_FLAG_NOMD5},
     {"nofiledigest",    RPMTRANS_FLAG_NOFILEDIGEST},
 
     {"noartifacts",     RPMTRANS_FLAG_NOARTIFACTS},
