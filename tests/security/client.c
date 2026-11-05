@@ -169,27 +169,25 @@ check_package_checksums(void)
         queue_push(&packages.queuePackages, package);
 
         result = TDNFPopulatePkgInfos(&sack, &packages, &info);
+        assert(result == 0 && info);
         if (types[i] == REPOKEY_TYPE_MD5)
         {
-            assert(result == ERROR_TDNF_INVALID_REPO_FILE);
-            assert(info == NULL);
+            /* Kept, but marked unsupported so installing fails. */
+            assert(info->nChecksumType == TDNF_HASH_UNSUPPORTED);
+            assert(info->pbChecksum);
+        }
+        else if (types[i])
+        {
+            assert(info->nChecksumType == TDNF_HASH_SHA256);
+            assert(info->pbChecksum);
+            assert(memcmp(info->pbChecksum, digest,
+                          SHA256_DIGEST_LENGTH) == 0);
         }
         else
         {
-            assert(result == 0 && info);
-            if (types[i])
-            {
-                assert(info->nChecksumType == TDNF_HASH_SHA256);
-                assert(info->pbChecksum);
-                assert(memcmp(info->pbChecksum, digest,
-                              SHA256_DIGEST_LENGTH) == 0);
-            }
-            else
-            {
-                assert(info->pbChecksum == NULL);
-            }
-            TDNFFreePackageInfo(info);
+            assert(info->pbChecksum == NULL);
         }
+        TDNFFreePackageInfo(info);
         queue_free(&packages.queuePackages);
         pool_free(sack.pPool);
     }

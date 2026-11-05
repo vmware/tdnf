@@ -1245,10 +1245,11 @@ TDNFPopulatePkgInfos(
                     pPkgInfo->nChecksumType = TDNF_HASH_SHA1;
                     break;
                 default:
-                    pr_err("Unsupported repository checksum for package %s\n",
-                           pPkgInfo->pszName);
-                    dwError = ERROR_TDNF_INVALID_REPO_FILE;
-                    BAIL_ON_TDNF_ERROR(dwError);
+                    /* Keep the checksum so that installing the package
+                     * fails closed in TDNFTransAddInstallPkg(), while
+                     * queries of the repository keep working. */
+                    pPkgInfo->nChecksumType = TDNF_HASH_UNSUPPORTED;
+                    break;
             }
         }
 
