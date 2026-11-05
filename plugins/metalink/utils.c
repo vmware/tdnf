@@ -24,6 +24,7 @@ static int hashTypeComparator(const void * p1, const void * p2)
 // Structure to hold element information
 struct MetalinkElementInfo {
     uint32_t     dwError;
+    XML_Parser   parser;
     TDNF_ML_CTX  *ml_ctx;
     const char   *filename;
     const char   *startElement;
@@ -465,14 +466,19 @@ TDNFXmlParseData(
 {
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
-    if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename) || elementInfo->dwError)
+    if (!elementInfo)
     {
-        uint32_t dwError = ERROR_TDNF_INVALID_PARAMETER;
-
-        if (elementInfo)
-            elementInfo->dwError = dwError;
-
-        BAIL_ON_TDNF_ERROR(dwError);
+        return;
+    }
+    /* Keep the first error; the parser is stopped once one is recorded. */
+    if (elementInfo->dwError)
+    {
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+    }
+    if(!elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename))
+    {
+        elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
     }
 
     if (elementInfo->startElement == NULL)
@@ -517,6 +523,11 @@ TDNFXmlParseData(
 cleanup:
     return;
 error:
+    /* Do not parse the rest of a document we already rejected. */
+    if (elementInfo->parser)
+    {
+        XML_StopParser(elementInfo->parser, XML_FALSE);
+    }
     goto cleanup;
 }
 
@@ -561,6 +572,7 @@ TDNFMetalinkParseFile(
 
     elementInfo.ml_ctx = ml_ctx;
     elementInfo.filename = filename;
+    elementInfo.parser = parser;
 
     XML_SetElementHandler(parser, TDNFXmlParseStartElement, TDNFXmlParseEndElement);
     XML_SetCharacterDataHandler(parser, TDNFXmlParseData);
@@ -595,7 +607,14 @@ TDNFMetalinkParseFile(
     buffer[file_size] = '\0';
     if (XML_Parse(parser, buffer, (int)file_size, XML_TRUE) != XML_STATUS_OK)
     {
-        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT;
+        /* A handler error stops the parser and is more specific. */
+        dwError = elementInfo.dwError;
+        if (!dwError)
+        {
+            pr_err("XML Parser Error: %s in metalink file %s\n",
+                   XML_ErrorString(XML_GetErrorCode(parser)), filename);
+            dwError = ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT;
+        }
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
