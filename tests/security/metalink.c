@@ -26,7 +26,11 @@ check_parse(const char *document, size_t length, int valid)
 static void
 check_xml(void)
 {
-    const char *preferences[] = {"0", "100", "101", "-1", "1junk", "", "999999999999999999999999"};
+    /* Valid preferences first, invalid ones after them. */
+    const char *preferences[] = {"0", "100", "0100",
+                                 "101", "-1", "+5", " 5", "5 ", "1junk", "",
+                                 "999999999999999999999999"};
+    const size_t nValid = 3;
     char document[512];
     int length;
 
@@ -36,7 +40,7 @@ check_xml(void)
             "<metalink><file name=\"repomd.xml\">\n<url protocol=\"https\" preference=\"%s\">"
             "https://example.invalid/repomd.xml</url></file></metalink>", preferences[i]);
         assert(length > 0 && (size_t)length < sizeof(document));
-        check_parse(document, (size_t)length, i < 2);
+        check_parse(document, (size_t)length, i < nValid);
     }
     length = snprintf(document, sizeof(document),
         "<metalink><file name=\"repomd.xml\">\n<url protocol=\"https\">"
@@ -46,6 +50,42 @@ check_xml(void)
     check_parse(document, (size_t)length - 1, 0);
     check_parse(document, (size_t)length + 1, 0); /* Embedded NUL is XML input. */
     check_parse("", 0, 0);
+}
+
+static void
+check_parse_error(const char *document, uint32_t expected)
+{
+    TDNF_ML_CTX *context = calloc(1, sizeof(*context));
+    FILE *file = tmpfile();
+    assert(context && file);
+    assert(fputs(document, file) >= 0);
+    rewind(file);
+    assert(TDNFMetalinkParseFile(context, file, "repomd.xml") == expected);
+    TDNFMetalinkFree(context);
+    assert(fclose(file) == 0);
+}
+
+static void
+check_errors(void)
+{
+    /* The first handler error is returned, not replaced by later callbacks
+     * or by the parse failure caused by stopping the parser. */
+    check_parse_error(
+        "<metalink><file name=\"repomd.xml\">\n"
+        "<verification><hash>0123</hash></verification>\n"
+        "<url protocol=\"https\">https://example.invalid/repomd.xml</url>\n"
+        "</file></metalink>",
+        ERROR_TDNF_METALINK_PARSER_MISSING_HASH_ATTR);
+    check_parse_error(
+        "<metalink><file name=\"other.xml\">\n"
+        "<url protocol=\"https\">https://example.invalid/repomd.xml</url>\n"
+        "</file></metalink>",
+        ERROR_TDNF_METALINK_PARSER_INVALID_FILE_NAME);
+    /* Documents that are not well-formed fail as invalid documents. */
+    check_parse_error(
+        "<metalink><file name=\"repomd.xml\">\n"
+        "<url protocol=\"https\">https://example.invalid/repomd.xml</file>",
+        ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT);
 }
 
 static void
@@ -109,6 +149,7 @@ int
 main(void)
 {
     check_xml();
+    check_errors();
     check_hashes();
     return 0;
 }
