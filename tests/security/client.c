@@ -193,6 +193,50 @@ check_package_checksums(void)
     }
 }
 
+static void
+check_install_unsupported_checksum(void)
+{
+    TDNF handle = {0};
+    TDNF_CONF conf = {0};
+    TDNF_CMD_ARGS args = {0};
+    TDNF_REPO_DATA repo = {0};
+    TDNFRPMTS ts = {0};
+    TDNF_PKG_INFO first = {0};
+    TDNF_PKG_INFO info = {0};
+    TDNF_SOLVED_PKG_INFO solved = {0};
+    unsigned char digest[SHA256_DIGEST_LENGTH] = {0};
+    char name[] = "checksum-test";
+    char location[] = "checksum-test.rpm";
+    char first_name[] = "first-test";
+    char first_location[] = "first-test.rpm";
+    char repo_name[] = "missing-repo";
+
+    handle.pConf = &conf;
+    handle.pArgs = &args;
+    info.pszName = name;
+    info.pszLocation = location;
+    info.pbChecksum = digest;
+    info.nChecksumType = TDNF_HASH_UNSUPPORTED;
+
+    /* Rejected before any download is attempted from the empty repo. */
+    assert(TDNFTransAddInstallPkg(&ts, &handle, &info, &repo, 0) ==
+           ERROR_TDNF_INVALID_REPO_FILE);
+    info.nChecksumType = TDNF_HASH_SENTINEL;
+    assert(TDNFTransAddInstallPkg(&ts, &handle, &info, &repo, 0) ==
+           ERROR_TDNF_INVALID_REPO_FILE);
+
+    /* The whole transaction is checked before any package is processed:
+     * the first package would otherwise fail on its unknown repository. */
+    first.pszName = first_name;
+    first.pszLocation = first_location;
+    first.pszRepoName = repo_name;
+    first.pNext = &info;
+    info.pszRepoName = repo_name;
+    solved.pPkgsToUpgrade = &first;
+    assert(TDNFPopulateTransaction(&ts, &handle, &solved) ==
+           ERROR_TDNF_INVALID_REPO_FILE);
+}
+
 int
 main(void)
 {
@@ -204,6 +248,7 @@ main(void)
     check_downloads(directory);
     check_hash_parameters();
     check_package_checksums();
+    check_install_unsupported_checksum();
     assert(chdir(cwd) == 0);
     free(cwd);
     assert(rmdir(directory) == 0);
