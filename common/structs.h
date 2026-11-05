@@ -38,8 +38,10 @@ typedef uint32_t
 
 // Enum in order of preference
 enum {
-    /* Preserve checksum identifiers; zero is not a supported type. */
-    TDNF_HASH_SHA1 = 1,
+    /* A checksum of a type we cannot verify. Keep it zero so that zeroed
+     * structures never claim a supported type. */
+    TDNF_HASH_UNSUPPORTED = 0,
+    TDNF_HASH_SHA1,
     TDNF_HASH_SHA256,
     TDNF_HASH_SHA512,
     TDNF_HASH_SENTINEL
