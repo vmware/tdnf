@@ -98,7 +98,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/tools")
 add_subdirectory("${PROJECT_SOURCE_DIR}/pytests")
 
 enable_testing()
-add_subdirectory(tests/security)
+add_subdirectory(tests/security EXCLUDE_FROM_ALL)
 add_dependencies(check security-client security-metalink security-solver)
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/bin/tdnf-automatic.in ${PROJECT_SOURCE_DIR}/bin/tdnf-automatic @ONLY)
