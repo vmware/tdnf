@@ -355,6 +355,40 @@ error:
     goto cleanup;
 }
 
+/*
+ * A package whose repository declares a checksum of a type we cannot verify
+ * must not be installed, and should not be downloaded either.
+ */
+static uint32_t
+TDNFCheckPkgChecksumType(
+    PTDNF_PKG_INFO pInfo
+    )
+{
+    if (pInfo->pbChecksum != NULL &&
+        (pInfo->nChecksumType < TDNF_HASH_SHA1 ||
+         pInfo->nChecksumType >= TDNF_HASH_SENTINEL))
+    {
+        pr_err("Unsupported repository checksum type for package %s\n",
+               pInfo->pszName);
+        return ERROR_TDNF_INVALID_REPO_FILE;
+    }
+    return 0;
+}
+
+static uint32_t
+TDNFCheckPkgChecksumTypes(
+    PTDNF_PKG_INFO pInfos
+    )
+{
+    uint32_t dwError = 0;
+
+    for (; pInfos && !dwError; pInfos = pInfos->pNext)
+    {
+        dwError = TDNFCheckPkgChecksumType(pInfos);
+    }
+    return dwError;
+}
+
 uint32_t
 TDNFPopulateTransaction(
     PTDNFRPMTS pTS,
@@ -363,6 +397,17 @@ TDNFPopulateTransaction(
     )
 {
     uint32_t dwError = 0;
+
+    /* Check all packages before downloading any of them. */
+    dwError = TDNFCheckPkgChecksumTypes(pSolvedInfo->pPkgsToInstall);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFCheckPkgChecksumTypes(pSolvedInfo->pPkgsToReinstall);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFCheckPkgChecksumTypes(pSolvedInfo->pPkgsToUpgrade);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFCheckPkgChecksumTypes(pSolvedInfo->pPkgsToDowngrade);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if(pSolvedInfo->pPkgsToInstall)
     {
         dwError = TDNFTransAddInstallPkgs(
@@ -808,6 +853,10 @@ TDNFTransAddInstallPkg(
     pszPackageLocation = pInfo->pszLocation;
     pszPkgName = pInfo->pszName;
 
+    /* Also checked for the whole transaction in TDNFPopulateTransaction(). */
+    dwError = TDNFCheckPkgChecksumType(pInfo);
+    BAIL_ON_TDNF_ERROR(dwError);
+
     if (pszPackageLocation[0] == '/')
     {
         dwError = TDNFAllocateString(
@@ -894,7 +943,9 @@ TDNFTransAddInstallPkg(
         BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
     }
 
-    if(pInfo->pbChecksum != NULL) {
+    if(pInfo->pbChecksum != NULL)
+    {
+        /* nChecksumType was validated above. */
         hash = hash_ops + pInfo->nChecksumType;
 
         dwError = TDNFGetDigestForFile(pszFilePath, hash, digest_from_file);

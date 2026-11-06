@@ -36,6 +36,8 @@ if grep -qw "Fedora" ${rel_file}; then
     gcc
     glib2-devel
     libcurl-devel
+    libasan
+    libubsan
     make
     openssl
     python3-flake8

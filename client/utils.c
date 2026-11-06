@@ -638,6 +638,7 @@ error:
     goto cleanup;
 }
 
+/* Join a repository metadata location to a contained local destination. */
 uint32_t
 TDNFAppendPath(
     const char *pszBase,
@@ -647,37 +648,76 @@ TDNFAppendPath(
 {
     uint32_t dwError = 0;
     char *pszPath = NULL;
-    int nLength = 0;
+    char *pszBasePath = NULL;
+    char *pszNormalPath = NULL;
+    char *pszCwd = NULL;
+    const char *pszComponent = NULL;
+    size_t nLength = 0;
 
     if(IsNullOrEmptyString(pszBase) ||
-       IsNullOrEmptyString(pszPart) ||
-       !ppszPath)
+       IsNullOrEmptyString(pszPart) || !ppszPath)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+    if (pszPart[0] == '/')
+    {
+        dwError = ERROR_TDNF_URL_INVALID;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
-    dwError = TDNFAllocateMemory(
-                  1,
-                  strlen(pszBase) + strlen(pszPart) + 2,
-                  (void **)&pszPath);
+    /* Metadata locations must not walk through parent directories, even if
+     * a lexical normalization would place the result back under the base. */
+    for (pszComponent = pszPart; *pszComponent; )
+    {
+        size_t nComponentLength = strcspn(pszComponent, "/");
+        if (nComponentLength == 2 && !strncmp(pszComponent, "..", 2))
+        {
+            dwError = ERROR_TDNF_URL_INVALID;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        pszComponent += nComponentLength;
+        if (*pszComponent == '/')
+            pszComponent++;
+    }
+
+    /* Resolve relative bases and existing symlinks, including when reposync
+     * only prints URLs and has not created the destination yet. */
+    if (pszBase[0] != '/')
+    {
+        pszCwd = getcwd(NULL, 0);
+        if (!pszCwd)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+        }
+        dwError = TDNFJoinPath(&pszPath, pszCwd, pszBase, NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = TDNFNormalizePath(pszPath ? pszPath : pszBase, &pszBasePath);
+    BAIL_ON_TDNF_ERROR(dwError);
+    TDNF_SAFE_FREE_MEMORY(pszPath);
+    dwError = TDNFJoinPath(&pszPath, pszBasePath, pszPart, NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFNormalizePath(pszPath, &pszNormalPath);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    nLength = strlen(pszBase);
-    if(pszBase[nLength - 1] == '/')
+    nLength = strlen(pszBasePath);
+    if (strncmp(pszBasePath, pszNormalPath, nLength) ||
+        (nLength > 1 && pszNormalPath[nLength] != '/') ||
+        !strcmp(pszBasePath, pszNormalPath))
     {
-        --nLength;
+        dwError = ERROR_TDNF_URL_INVALID;
+        BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    strncpy(pszPath, pszBase, nLength);
-    if(pszPart[0] != '/')
-    {
-        strcat(pszPath, "/");
-    }
-    strcat(pszPath, pszPart);
-
-    *ppszPath = pszPath;
+    *ppszPath = pszNormalPath;
+    pszNormalPath = NULL;
 cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszPath);
+    TDNF_SAFE_FREE_MEMORY(pszBasePath);
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+    TDNF_SAFE_FREE_MEMORY(pszCwd);
     return dwError;
 
 error:
@@ -685,7 +725,6 @@ error:
     {
         *ppszPath = NULL;
     }
-    TDNF_SAFE_FREE_MEMORY(pszPath);
     goto cleanup;
 }
 

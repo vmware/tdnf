@@ -30,7 +30,6 @@ def setup_test(utils):
 def teardown_test(utils):
     set_baseurl(utils, True)
     set_metalink(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
     set_sha512(utils, False)
@@ -104,17 +103,6 @@ def enable_plugin(utils):
         f.write('[main]\nenabled=1\n')
 
 
-def set_md5(utils, enabled):
-    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
-    if enabled:
-        repomd_file = os.path.join(utils.config['repo_path'], repomd_file_path)
-        ret = utils.run(['md5sum', repomd_file])
-        md5sum = ret['stdout'][0].split()[0]
-        utils.run(['sed', '-i', '-e', r'/<verification>/a \    <hash type="md5">' + md5sum + '</hash>', photon_metalink])
-    else:
-        utils.run(['sed', '-i', '-e', '/type="md5"/d', photon_metalink])
-
-
 def set_sha1(utils, enabled):
     photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     if enabled:
@@ -148,12 +136,6 @@ def set_sha512(utils, enabled):
         utils.run(['sed', '-i', '-e', '/type="sha512"/d', photon_metalink])
 
 
-def set_invalid_md5(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
-    md5sum = 'f894a23a50e757b8aae25596ceb04777'
-    utils.run(['sed', '-i', '-e', r'/<verification>/a \    <hash type="md5">' + md5sum + '</hash>', photon_metalink])
-
-
 def set_invalid_sha1(utils):
     photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
     sha1sum = 'ac0a11d67d46f7c629e22714167b8fc3dc2f8e53'
@@ -178,12 +160,6 @@ def set_invalid_sha512_length(utils):
     utils.run(['sed', '-i', '-e', r'/<verification>/a \    <hash type="sha512">' + sha512sum + '</hash>', photon_metalink])
 
 
-def set_invalid_sha1_length(utils):
-    photon_metalink = os.path.join(utils.config['repo_path'], metalink_file_path)
-    sha1sum = 'f894a23a50e757b8aae25596ceb04777'
-    utils.run(['sed', '-i', '-e', r'/<verification>/a \    <hash type="sha1">' + sha1sum + '</hash>', photon_metalink])
-
-
 # uncomment metalink from repo file, so we have both url and metalink
 def test_with_metalink_and_url(utils):
     set_metalink(utils, True)
@@ -191,7 +167,6 @@ def test_with_metalink_and_url(utils):
     set_sha1(utils, True)
     set_sha256(utils, False)
     set_sha512(utils, False)
-    set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
     assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
@@ -208,7 +183,6 @@ def test_metalink_without_baseurl(utils):
     set_sha256(utils, False)
     set_sha512(utils, True)
     set_sha1(utils, False)
-    set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
     assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
@@ -226,7 +200,6 @@ def test_url_without_metalink(utils):
     set_sha256(utils, False)
     set_sha512(utils, False)
     set_sha1(utils, False)
-    set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
     assert ret['retval'] == 0
     pkgname = utils.config["mulversion_pkgname"]
@@ -243,32 +216,14 @@ def test_without_url_and_metalink(utils):
     set_sha256(utils, False)
     set_sha512(utils, False)
     set_sha1(utils, False)
-    set_md5(utils, False)
     ret = utils.run(['tdnf', 'makecache'])
     print(ret['stderr'][0])
     assert ret['stderr'][0].startswith('Error: Cannot find a valid base URL for repo')
 
 
-def test_md5_digest(utils):
-    set_metalink(utils, True)
-    set_baseurl(utils, False)
-    set_md5(utils, True)
-    set_sha1(utils, False)
-    set_sha256(utils, False)
-    set_sha512(utils, False)
-    ret = utils.run(['tdnf', 'makecache'])
-    assert ret['retval'] == 0
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
-
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert utils.check_package(pkgname)
-
-
 def test_sha1_digest(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, True)
     set_sha256(utils, False)
     set_sha512(utils, False)
@@ -283,7 +238,6 @@ def test_sha1_digest(utils):
 def test_sha256_digest(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, True)
     set_sha512(utils, False)
@@ -299,7 +253,6 @@ def test_sha256_digest(utils):
 def test_sha512_digest(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
     set_sha512(utils, True)
@@ -312,25 +265,9 @@ def test_sha512_digest(utils):
     assert utils.check_package(pkgname)
 
 
-def test_invalid_md5_digest(utils):
-    set_metalink(utils, True)
-    set_baseurl(utils, False)
-    set_md5(utils, False)
-    set_sha1(utils, False)
-    set_sha256(utils, False)
-    set_sha512(utils, False)
-    set_invalid_md5(utils)
-    ret = utils.run(['tdnf', 'makecache'])
-    assert ret['stderr'][0].startswith('Error: Validating Checksum')
-    cache_dir = utils.tdnf_config.get('main', 'cachedir')
-    tmp_dir = os.path.join(cache_dir, 'photon-test/tmp')
-    assert not os.path.isdir(tmp_dir)
-
-
 def test_invalid_sha1_digest(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
     set_sha512(utils, False)
@@ -345,7 +282,6 @@ def test_invalid_sha1_digest(utils):
 def test_invalid_sha256_digest(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
     set_sha512(utils, False)
@@ -360,52 +296,28 @@ def test_invalid_sha256_digest(utils):
 def test_invalid_sha256_valid_sha1(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
     set_sha512(utils, False)
     set_invalid_sha256_length(utils)
     set_sha1(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert ret['retval'] == 0
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
-
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert utils.check_package(pkgname)
+    # A malformed strongest digest must not fall back to a weaker hash.
+    assert ret['retval'] == 2501  # ERROR_TDNF_CHECKSUM_VALIDATION_FAILED
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    assert not os.path.isdir(os.path.join(cache_dir, 'photon-test/tmp'))
 
 
 def test_invalid_sha512_valid_sha1(utils):
     set_metalink(utils, True)
     set_baseurl(utils, False)
-    set_md5(utils, False)
     set_sha1(utils, False)
     set_sha256(utils, False)
     set_sha512(utils, False)
     set_invalid_sha512_length(utils)
     set_sha1(utils, True)
     ret = utils.run(['tdnf', 'makecache'])
-    assert ret['retval'] == 0
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
-
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert utils.check_package(pkgname)
-
-
-def test_invalid_sha1_valid_md5(utils):
-    set_metalink(utils, True)
-    set_baseurl(utils, False)
-    set_md5(utils, False)
-    set_sha1(utils, False)
-    set_sha256(utils, False)
-    set_sha512(utils, False)
-    set_invalid_sha1_length(utils)
-    set_md5(utils, True)
-    ret = utils.run(['tdnf', 'makecache'])
-    assert ret['retval'] == 0
-    pkgname = utils.config["mulversion_pkgname"]
-    utils.erase_package(pkgname)
-
-    utils.run(['tdnf', 'install', '-y', '--nogpgcheck', pkgname])
-    assert utils.check_package(pkgname)
+    # A malformed strongest digest must not fall back to a weaker hash.
+    assert ret['retval'] == 2501  # ERROR_TDNF_CHECKSUM_VALIDATION_FAILED
+    cache_dir = utils.tdnf_config.get('main', 'cachedir')
+    assert not os.path.isdir(os.path.join(cache_dir, 'photon-test/tmp'))

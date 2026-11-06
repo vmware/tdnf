@@ -530,7 +530,7 @@ TDNFAllocateStringN(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwSrcLength = strlen(pszSrc);
+    dwSrcLength = strnlen(pszSrc, dwNumElements);
     if(dwNumElements > dwSrcLength)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;

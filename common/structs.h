@@ -1,7 +1,6 @@
 #pragma once
 
 #include <openssl/sha.h>
-#include <openssl/md5.h>
 #include <openssl/evp.h>
 
 typedef struct _KEYVALUE_
@@ -39,7 +38,9 @@ typedef uint32_t
 
 // Enum in order of preference
 enum {
-    TDNF_HASH_MD5 = 0,
+    /* A checksum of a type we cannot verify. Keep it zero so that zeroed
+     * structures never claim a supported type. */
+    TDNF_HASH_UNSUPPORTED = 0,
     TDNF_HASH_SHA1,
     TDNF_HASH_SHA256,
     TDNF_HASH_SHA512,
@@ -58,4 +59,4 @@ typedef struct _hash_type {
 
 extern hash_op hash_ops[TDNF_HASH_SENTINEL];
 
-extern hash_type hashType[7];
+extern hash_type hashType[6];
