@@ -36,6 +36,8 @@ if grep -qw "Fedora" ${rel_file}; then
     gcc
     glib2-devel
     libcurl-devel
+    libasan
+    libubsan
     make
     python3-flake8
     rpm-devel

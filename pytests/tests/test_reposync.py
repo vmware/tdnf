@@ -303,19 +303,24 @@ def test_reposync_gpgcheck(utils):
 
 
 # reposync with --urls option (print only)
-def test_reposync_urls(utils):
+@pytest.mark.parametrize('metadata', [False, True])
+def test_reposync_urls(utils, metadata):
     reponame = TESTREPO
     workdir = WORKDIR
     os.makedirs(workdir, exist_ok=True)
 
-    ret = utils.run(['tdnf',
-                     '--disablerepo=*', '--enablerepo={}'.format(reponame),
-                     '--urls',
-                     'reposync'],
-                    cwd=workdir)
+    cmd = ['tdnf', '--disablerepo=*', '--enablerepo={}'.format(reponame),
+           '--urls', 'reposync']
+    if metadata:
+        cmd.append('--download-metadata')
+    ret = utils.run(cmd, cwd=workdir)
     assert ret['retval'] == 0
     synced_dir = os.path.join(workdir, reponame)
-    assert not os.path.isdir(synced_dir)
+    if metadata:
+        assert any('repodata/repomd.xml' in line for line in ret['stdout'])
+        assert not os.path.exists(os.path.join(synced_dir, 'repodata'))
+    else:
+        assert not os.path.isdir(synced_dir)
 
 
 # reposync a repo and install from it

@@ -7,6 +7,7 @@
  */
 
 #include "includes.h"
+#include <limits.h>
 
 #define MIN_URL_LENGTH  4
 #define ATTR_NAME       (char*)"name"
@@ -23,6 +24,7 @@ static int hashTypeComparator(const void * p1, const void * p2)
 // Structure to hold element information
 struct MetalinkElementInfo {
     uint32_t     dwError;
+    XML_Parser   parser;
     TDNF_ML_CTX  *ml_ctx;
     const char   *filename;
     const char   *startElement;
@@ -142,9 +144,10 @@ TDNFCheckRepoMDFileHashFromMetalink(
                 BAIL_ON_TDNF_ERROR(dwError);
             }
             if (dwError == 0)
-                break;
+                goto cleanup;
         }
     }
+    dwError = ERROR_TDNF_CHECKSUM_VALIDATION_FAILED;
 
 cleanup:
     return dwError;
@@ -292,7 +295,8 @@ TDNFParseHashTag(
     BAIL_ON_TDNF_ERROR(dwError);
 
     //Get Hash Content.
-    TDNFAllocateStringN(val, len, &value);
+    dwError = TDNFAllocateStringN(val, len, &value);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     if(!value)
     {
@@ -332,8 +336,9 @@ TDNFParseUrlTag(
 {
     uint32_t dwError = 0;
     char *value = NULL;
-    char *prefval = NULL;
-    int prefValue = 0;
+    const char *prefval = NULL;
+    const char *attribute = NULL;
+    long prefValue = 0;
     TDNF_ML_URL_INFO *ml_url_info = NULL;
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
@@ -351,37 +356,41 @@ TDNFParseUrlTag(
     {
         if ((!strcmp(elementInfo->attributes[i], ATTR_PROTOCOL)) && (elementInfo->attributes[i + 1] != NULL))
         {
-           value = (char *)elementInfo->attributes[i + 1];
-           dwError = TDNFAllocateString(value, &(ml_url_info->protocol));
+           attribute = elementInfo->attributes[i + 1];
+           dwError = TDNFAllocateString(attribute, &(ml_url_info->protocol));
            BAIL_ON_TDNF_ERROR(dwError);
         }
         if ((!strcmp(elementInfo->attributes[i], ATTR_TYPE)) && (elementInfo->attributes[i + 1] != NULL))
         {
-           value = (char *)elementInfo->attributes[i + 1];
-           dwError = TDNFAllocateString(value, &(ml_url_info->type));
+           attribute = elementInfo->attributes[i + 1];
+           dwError = TDNFAllocateString(attribute, &(ml_url_info->type));
            BAIL_ON_TDNF_ERROR(dwError);
         }
         if ((!strcmp(elementInfo->attributes[i], ATTR_LOCATION)) && (elementInfo->attributes[i + 1] != NULL))
         {
-           value = (char *)elementInfo->attributes[i + 1];
-           dwError = TDNFAllocateString(value, &(ml_url_info->location));
+           attribute = elementInfo->attributes[i + 1];
+           dwError = TDNFAllocateString(attribute, &(ml_url_info->location));
            BAIL_ON_TDNF_ERROR(dwError);
         }
         if ((!strcmp(elementInfo->attributes[i], ATTR_PREFERENCE)) && (elementInfo->attributes[i + 1] != NULL))
         {
-           prefval = (char *)elementInfo->attributes[i + 1];
-           if(sscanf(prefval, "%d", &prefValue) != 1)
+           prefval = elementInfo->attributes[i + 1];
+           /* Only plain decimal digits: no sign, whitespace or suffix. */
+           if (!prefval[0] ||
+               prefval[strspn(prefval, "0123456789")] != '\0')
            {
                dwError = ERROR_TDNF_INVALID_PARAMETER;
                pr_err("XML Parser Warning: Preference is invalid value: %s\n", prefval);
                BAIL_ON_TDNF_ERROR(dwError);
            }
 
-           if (prefValue < 0 || prefValue > 100)
+           /* Overflow saturates at LONG_MAX, which is out of range too. */
+           prefValue = strtol(prefval, NULL, 10);
+           if (prefValue > 100)
            {
                dwError = ERROR_TDNF_METALINK_PARSER_MISSING_URL_ATTR;
-               pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\""
-                      "attribute in url element (should be in range 0-100)", value);
+               pr_err("XML Parser Warning: Bad value (\"%s\") of \"preference\" "
+                      "attribute in url element (should be in range 0-100)\n", prefval);
                BAIL_ON_TDNF_ERROR(dwError);
            }
            else
@@ -392,7 +401,8 @@ TDNFParseUrlTag(
     }
 
     //Get URL Content.
-    TDNFAllocateStringN(val, len, &value);
+    dwError = TDNFAllocateStringN(val, len, &value);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     if(!value)
     {
@@ -456,14 +466,19 @@ TDNFXmlParseData(
 {
     struct MetalinkElementInfo* elementInfo = (struct MetalinkElementInfo*)userData;
 
-    if(!elementInfo || !elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename) || elementInfo->dwError)
+    if (!elementInfo)
     {
-        uint32_t dwError = ERROR_TDNF_INVALID_PARAMETER;
-
-        if (elementInfo)
-            elementInfo->dwError = dwError;
-
-        BAIL_ON_TDNF_ERROR(dwError);
+        return;
+    }
+    /* Keep the first error; the parser is stopped once one is recorded. */
+    if (elementInfo->dwError)
+    {
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
+    }
+    if(!elementInfo->ml_ctx || IsNullOrEmptyString(elementInfo->filename))
+    {
+        elementInfo->dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(elementInfo->dwError);
     }
 
     if (elementInfo->startElement == NULL)
@@ -508,6 +523,11 @@ TDNFXmlParseData(
 cleanup:
     return;
 error:
+    /* Do not parse the rest of a document we already rejected. */
+    if (elementInfo->parser)
+    {
+        XML_StopParser(elementInfo->parser, XML_FALSE);
+    }
     goto cleanup;
 }
 
@@ -552,6 +572,7 @@ TDNFMetalinkParseFile(
 
     elementInfo.ml_ctx = ml_ctx;
     elementInfo.filename = filename;
+    elementInfo.parser = parser;
 
     XML_SetElementHandler(parser, TDNFXmlParseStartElement, TDNFXmlParseEndElement);
     XML_SetCharacterDataHandler(parser, TDNFXmlParseData);
@@ -565,22 +586,37 @@ TDNFMetalinkParseFile(
     }
 
     // Get the file size from the stat structure
-    file_size = st.st_size;
+    if (st.st_size < 0 || st.st_size > INT_MAX)
+    {
+        dwError = ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    file_size = (size_t)st.st_size;
 
     // Allocate memory for the buffer
-    dwError = TDNFAllocateMemory(file_size + 1, sizeof(char*), (void **)&buffer);
+    dwError = TDNFAllocateMemory(file_size + 1, sizeof(char), (void **)&buffer);
     BAIL_ON_TDNF_ERROR(dwError);
 
     // Read the file into the buffer
     if (fread(buffer, 1, file_size, file) != file_size) {
         pr_err("Failed to read the metalink file %s.\n", filename);
-        dwError = errno;
+        dwError = EIO;
         BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
     }
 
     buffer[file_size] = '\0';
-    dwError = XML_Parse(parser, buffer, file_size + 1, XML_TRUE);
-    BAIL_ON_TDNF_ERROR(dwError);
+    if (XML_Parse(parser, buffer, (int)file_size, XML_TRUE) != XML_STATUS_OK)
+    {
+        /* A handler error stops the parser and is more specific. */
+        dwError = elementInfo.dwError;
+        if (!dwError)
+        {
+            pr_err("XML Parser Error: %s in metalink file %s\n",
+                   XML_ErrorString(XML_GetErrorCode(parser)), filename);
+            dwError = ERROR_TDNF_METALINK_PARSER_INVALID_DOC_OBJECT;
+        }
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
 
     if(elementInfo.dwError != 0)
     {

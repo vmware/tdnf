@@ -1277,10 +1277,7 @@ TDNFDownloadRepoMDParts(
                           SOLVID_POS,
                           REPOSITORY_REPOMD_LOCATION);
 
-        dwError = TDNFJoinPath(&pszPartPath,
-                               pszDir,
-                               pszPartFile,
-                               NULL);
+        dwError = TDNFAppendPath(pszDir, pszPartFile, &pszPartPath);
         BAIL_ON_TDNF_ERROR(dwError);
 
         if (!nPrintOnly)

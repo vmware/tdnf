@@ -167,6 +167,8 @@ TDNFDownloadFile(
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
     int i;
+    int fd = -1;
+    int nTempCreated = 0;
     int nNoOutput = 1;
 
     /* TDNFFetchRemoteGPGKey sends pszProgressData as NULL */
@@ -239,20 +241,27 @@ TDNFDownloadFile(
         }
     }
 
-    dwError = TDNFAllocateStringPrintf(&pszFileTmp,
-                                       "%s.tmp",
-                                       pszFile);
-    BAIL_ON_TDNF_ERROR(dwError);
-
     for(i = 0; i <= pRepo->nRetries; i++)
     {
-        fp = fopen(pszFileTmp, "wb");
+        TDNF_SAFE_FREE_MEMORY(pszFileTmp);
+        dwError = TDNFAllocateStringPrintf(&pszFileTmp, "%s.tmp.XXXXXX", pszFile);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        fd = mkstemp(pszFileTmp);
+        if (fd == -1)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+        }
+        nTempCreated = 1;
+        fp = fdopen(fd, "wb");
         if(!fp)
         {
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
         }
 
+        fd = -1; /* fp now owns the descriptor. */
         dwError = curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fp);
         BAIL_ON_TDNF_CURL_ERROR(dwError);
 
@@ -263,8 +272,6 @@ TDNFDownloadFile(
         dwError = curl_easy_perform(pCurl);
         if (dwError == CURLE_OK)
         {
-            fclose(fp);
-            fp = NULL;
             break;
         }
         if (i == pRepo->nRetries || TDNFCurlErrorIsFatal(dwError))
@@ -275,6 +282,12 @@ TDNFDownloadFile(
         }
         fclose(fp);
         fp = NULL;
+        if (unlink(pszFileTmp) == -1)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+        }
+        nTempCreated = 0;
     }
 
     /* finish progress line output,
@@ -300,16 +313,30 @@ TDNFDownloadFile(
     }
     else
     {
+        if (!fp)
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        if (fflush(fp) == EOF ||
+            fchmod(fileno(fp), S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) == -1)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+        }
+        if (fclose(fp) == EOF)
+        {
+            fp = NULL;
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+        }
+        fp = NULL;
         if (rename(pszFileTmp, pszFile) == -1)
         {
             dwError = errno;
             BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
         }
-        if (chmod(pszFile, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) == -1)
-        {
-            dwError = errno;
-            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
-        }
+        nTempCreated = 0;
     }
 
 cleanup:
@@ -332,7 +359,11 @@ error:
         fclose(fp);
         fp = NULL;
     }
-    if(!IsNullOrEmptyString(pszFileTmp))
+    if (fd != -1)
+    {
+        close(fd);
+    }
+    if(nTempCreated)
     {
         unlink(pszFileTmp);
     }

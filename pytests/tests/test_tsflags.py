@@ -154,3 +154,15 @@ def test_install_multiple_from_config(utils):
     for f in process.stdout.split():
         if f.startswith("/"):
             assert os.path.exists(f)
+
+
+# nomd5 is rpm's historical alias for nofiledigest and must stay accepted
+@pytest.mark.parametrize('flag', ['nomd5', 'nofiledigest'])
+def test_install_nofiledigest_aliases(utils, flag):
+    pkgname = utils.config["mulversion_pkgname"]
+    utils.erase_package(pkgname)
+
+    ret = utils.run(['tdnf', 'install', '-y', '--nogpgcheck',
+                     '--setopt=tsflags={}'.format(flag), pkgname])
+    assert ret['retval'] == 0
+    assert utils.check_package(pkgname)
