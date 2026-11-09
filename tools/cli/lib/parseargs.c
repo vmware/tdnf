@@ -47,7 +47,7 @@ static struct option pstOptions[] =
     {"quiet",         no_argument, &_opt.nQuiet, 1},       //--quiet
     {"refresh",       no_argument, &_opt.nRefresh, 1},     //--refresh
     {"releasever",    required_argument, 0, 0},            //--releasever
-    {"reboot-required", no_argument, 0, 0},                //--reboot-required
+    {"reboot-required", no_argument, &_opt.nRebootRequired, 1}, //-r --reboot-required
     {"repo",          required_argument, 0, 0},            //--repo
     {"repofromdir",   required_argument, 0, 0},            //--repofromdir
     {"repofrompath",  required_argument, 0, 0},            //--repofrompath
@@ -178,7 +178,7 @@ TDNFCliParseArgs(
             nOption = getopt_long_only (
                           argc,
                           argv,
-                          "46bCc:d:e:hi:qvxy",
+                          "46bCc:d:e:hi:qrvxy",
                           pstOptions,
                           &nOptionIndex);
             if (nOption == -1)
@@ -222,6 +222,7 @@ TDNFCliParseArgs(
                     _opt.nQuiet = 1;
                 break;
                 case 'r':
+                    _opt.nRebootRequired = 1;
                 break;
                 case 'y':
                     _opt.nAssumeYes = 1;
@@ -362,6 +363,7 @@ TDNFCopyOptions(
     pArgs->nDryRun        = pOptionArgs->nDryRun;
     pArgs->nSkipBroken    = pOptionArgs->nSkipBroken;
     pArgs->nSource        = pOptionArgs->nSource;
+    pArgs->nRebootRequired = pOptionArgs->nRebootRequired;
     pArgs->nBuildDeps     = pOptionArgs->nBuildDeps;
 
 cleanup:
