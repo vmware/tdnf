@@ -220,6 +220,7 @@ typedef struct _TDNF_CMD_ARGS
     int nShowDuplicates;   //show dups in list/search
     int nShowVersion;      //show version and exit
     int nNoDeps;           //download no dependencies
+    int nWithDeps;         //download package and all dependencies (download command)
     int nNoGPGCheck;       //skip gpg check
     int nNoCmdLineGPGCheck;  //skip gpg check for local packages (from command line)
     int nSkipSignature;
