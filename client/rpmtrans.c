@@ -971,12 +971,6 @@ TDNFTransAddInstallPkg(
     dwError = TDNFGPGCheckPackage(pTS, pTdnf, pRepo, pszFilePath, &rpmHeader);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (!pRepo->nGPGCheck)
-    {
-        rpmtsSetVSFlags(pTS->pTS, rpmtsVSFlags(pTS->pTS) | RPMVSF_MASK_NODIGESTS | RPMVSF_MASK_NOSIGNATURES);
-        rpmtsSetVfyLevel(pTS->pTS, ~RPMSIG_VERIFIABLE_TYPE);
-    }
-
     if (headerIsSource(rpmHeader)) {
         if (!pTdnf->pArgs->nDownloadOnly && !pTdnf->pArgs->nTestOnly) {
             dwError = rpmInstallSource(pTS->pTS, pszFilePath, NULL, NULL);
