@@ -192,3 +192,24 @@ def test_parallel_download_failure(utils, env):
     # transfers aborted by the failure leave no temporary files behind
     assert not [p for p in env['rpm_cache'].iterdir() if '.tmp' in p.name]
     assert not (env['rpm_cache'] / failing).exists()
+
+
+def test_parallel_reposync(utils, env, tmp_path):
+    downloaddir = tmp_path / 'sync'
+    downloaddir.mkdir()
+    command = env['command'] + ['--setopt=max_parallel_downloads=3',
+                                'reposync', f'--download-path={downloaddir}']
+
+    ret = utils.run(command)
+    assert ret['retval'] == 0, ret
+    server = env['server']
+    assert server.rpm_requests == len(PKGNAMES)
+    assert server.max_inflight == 3
+    assert_downloaded(env, downloaddir / REPONAME / 'RPMS')
+
+    # packages already synced are not downloaded again
+    server.reset()
+    ret = utils.run(command)
+    assert ret['retval'] == 0, ret
+    assert server.rpm_requests == 0
+    assert_downloaded(env, downloaddir / REPONAME / 'RPMS')
