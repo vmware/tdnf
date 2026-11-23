@@ -451,6 +451,548 @@ error:
     goto cleanup;
 }
 
+/*
+ * Parallel downloads with the curl multi interface.
+ *
+ * Failure handling matches TDNFDownloadFileFromRepo(): a transfer is retried
+ * on the same URL up to the repo's retries setting unless the curl error is
+ * fatal, then the next base URL is tried. An HTTP error moves on to the next
+ * base URL directly. The first file that cannot be downloaded from any URL
+ * aborts all other transfers.
+ */
+
+typedef struct _TDNF_XFER
+{
+    PTDNF_DOWNLOAD_ITEM pItem;
+    CURL *pCurl;
+    FILE *fp;
+    char *pszUrl;
+    char *pszFileTmp;
+    int nBaseUrl;       /* base URL in use, -1 if pszLocation is a URL */
+    int nTry;
+    curl_off_t nNow;    /* bytes received by the current attempt */
+} TDNF_XFER, *PTDNF_XFER;
+
+typedef struct _TDNF_XFER_PROGRESS
+{
+    int nShow;          /* print per file lines */
+    int nTty;           /* also print an updating summary line */
+    size_t nItems;
+    size_t nDone;
+    uint64_t nBytesDone;
+    uint64_t nBytesTotal;
+    time_t tLast;
+    size_t nLineLen;    /* length of the summary line on screen */
+} TDNF_XFER_PROGRESS, *PTDNF_XFER_PROGRESS;
+
+static int
+xfer_progress_cb(
+    void *pUserData,
+    curl_off_t dlTotal,
+    curl_off_t dlNow,
+    curl_off_t ulTotal,
+    curl_off_t ulNow
+    )
+{
+    UNUSED(dlTotal);
+    UNUSED(ulTotal);
+    UNUSED(ulNow);
+
+    ((PTDNF_XFER)pUserData)->nNow = dlNow;
+    return 0;
+}
+
+static void
+TDNFXferClearLine(
+    PTDNF_XFER_PROGRESS pProgress
+    )
+{
+    if (pProgress->nLineLen)
+    {
+        pr_info("\r%*s\r", (int)pProgress->nLineLen, "");
+        pProgress->nLineLen = 0;
+    }
+}
+
+static void
+TDNFXferShowSummary(
+    PTDNF_XFER_PROGRESS pProgress,
+    PTDNF_XFER pXfers,
+    size_t nStarted,
+    int nForce
+    )
+{
+    time_t tNow = time(NULL);
+    uint64_t nBytes = pProgress->nBytesDone;
+    char *pszNow = NULL;
+    char *pszTotal = NULL;
+    char szLine[80];
+    int nLen;
+    size_t i;
+
+    if (!pProgress->nTty ||
+        (!nForce && tNow == pProgress->tLast))
+    {
+        return;
+    }
+    pProgress->tLast = tNow;
+
+    for (i = 0; i < nStarted; i++)
+    {
+        if (pXfers[i].pCurl && pXfers[i].nNow > 0)
+        {
+            nBytes += (uint64_t)pXfers[i].nNow;
+        }
+    }
+
+    if (TDNFUtilsFormatSize(nBytes, &pszNow) ||
+        TDNFUtilsFormatSize(pProgress->nBytesTotal, &pszTotal))
+    {
+        goto cleanup;
+    }
+
+    if (pProgress->nBytesTotal)
+    {
+        nLen = snprintf(szLine, sizeof(szLine),
+                        "Downloading %zu/%zu: %s / %s",
+                        pProgress->nDone, pProgress->nItems,
+                        pszNow, pszTotal);
+    }
+    else
+    {
+        nLen = snprintf(szLine, sizeof(szLine),
+                        "Downloading %zu/%zu: %s",
+                        pProgress->nDone, pProgress->nItems, pszNow);
+    }
+    if (nLen < 0)
+    {
+        goto cleanup;
+    }
+    TDNFXferClearLine(pProgress);
+    pr_info("%s\r", szLine);
+    fflush(stdout);
+    pProgress->nLineLen = strlen(szLine);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszNow);
+    TDNF_SAFE_FREE_MEMORY(pszTotal);
+}
+
+static void
+TDNFXferShowDone(
+    PTDNF_XFER_PROGRESS pProgress,
+    PTDNF_XFER pXfer
+    )
+{
+    if (!pProgress->nShow)
+    {
+        return;
+    }
+    TDNFXferClearLine(pProgress);
+    /* same format as progress_cb() uses for a finished download */
+    if (pProgress->nTty)
+    {
+        pr_info("%-35s %10ld 100%%\n", pXfer->pItem->pszName, (long)pXfer->nNow);
+    }
+    else
+    {
+        pr_info("%s 100%% %ld\n", pXfer->pItem->pszName, (long)pXfer->nNow);
+    }
+}
+
+/* Close and remove the temporary file of the current attempt, if any. */
+static void
+TDNFXferDiscardFile(
+    PTDNF_XFER pXfer
+    )
+{
+    if (pXfer->fp)
+    {
+        fclose(pXfer->fp);
+        pXfer->fp = NULL;
+    }
+    if (pXfer->pszFileTmp)
+    {
+        unlink(pXfer->pszFileTmp);
+        TDNF_SAFE_FREE_MEMORY(pXfer->pszFileTmp);
+    }
+}
+
+static void
+TDNFXferFree(
+    CURLM *pMulti,
+    PTDNF_XFER pXfer
+    )
+{
+    if (pXfer->pCurl)
+    {
+        curl_multi_remove_handle(pMulti, pXfer->pCurl);
+        curl_easy_cleanup(pXfer->pCurl);
+        pXfer->pCurl = NULL;
+    }
+    TDNFXferDiscardFile(pXfer);
+    TDNF_SAFE_FREE_MEMORY(pXfer->pszUrl);
+}
+
+/* Start (or restart) the transfer from the current URL. */
+static uint32_t
+TDNFXferStart(
+    PTDNF pTdnf,
+    CURLM *pMulti,
+    PTDNF_XFER pXfer
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_DOWNLOAD_ITEM pItem = pXfer->pItem;
+    PTDNF_REPO_DATA pRepo = pItem->pRepo;
+    int fd = -1;
+
+    TDNF_SAFE_FREE_MEMORY(pXfer->pszUrl);
+    if (pXfer->nBaseUrl >= 0)
+    {
+        dwError = TDNFJoinPath(&pXfer->pszUrl,
+                               pRepo->ppszBaseUrls[pXfer->nBaseUrl],
+                               pItem->pszLocation, NULL);
+    }
+    else
+    {
+        dwError = TDNFAllocateString(pItem->pszLocation, &pXfer->pszUrl);
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if (pXfer->pCurl)
+    {
+        curl_easy_reset(pXfer->pCurl);
+    }
+    else
+    {
+        pXfer->pCurl = curl_easy_init();
+        if (!pXfer->pCurl)
+        {
+            dwError = ERROR_TDNF_CURL_INIT;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    dwError = TDNFCurlSetup(pTdnf, pRepo, pXfer->pCurl, pXfer->pszUrl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFAllocateStringPrintf(&pXfer->pszFileTmp, "%s.tmp.XXXXXX",
+                                       pItem->pszFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    fd = mkstemp(pXfer->pszFileTmp);
+    if (fd == -1)
+    {
+        dwError = errno;
+        TDNF_SAFE_FREE_MEMORY(pXfer->pszFileTmp);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+    }
+    pXfer->fp = fdopen(fd, "wb");
+    if (!pXfer->fp)
+    {
+        dwError = errno;
+        close(fd);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+    }
+
+    dwError = curl_easy_setopt(pXfer->pCurl, CURLOPT_WRITEDATA, pXfer->fp);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+    dwError = curl_easy_setopt(pXfer->pCurl, CURLOPT_XFERINFOFUNCTION,
+                               xfer_progress_cb);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+    dwError = curl_easy_setopt(pXfer->pCurl, CURLOPT_XFERINFODATA, pXfer);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+    dwError = curl_easy_setopt(pXfer->pCurl, CURLOPT_NOPROGRESS, 0L);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+    dwError = curl_easy_setopt(pXfer->pCurl, CURLOPT_PRIVATE, (char *)pXfer);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    pXfer->nNow = 0;
+    if (curl_multi_add_handle(pMulti, pXfer->pCurl) != CURLM_OK)
+    {
+        dwError = ERROR_TDNF_CURL_INIT;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+cleanup:
+    return dwError;
+error:
+    TDNFXferDiscardFile(pXfer);
+    goto cleanup;
+}
+
+/* Move a completely downloaded file into place. */
+static uint32_t
+TDNFXferCommit(
+    PTDNF_XFER pXfer
+    )
+{
+    uint32_t dwError = 0;
+    FILE *fp = pXfer->fp;
+
+    pXfer->fp = NULL;
+    if (fflush(fp) == EOF ||
+        fchmod(fileno(fp), S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH) == -1)
+    {
+        dwError = errno;
+        fclose(fp);
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+    }
+    if (fclose(fp) == EOF)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR_UNCOND(dwError);
+    }
+    if (rename(pXfer->pszFileTmp, pXfer->pItem->pszFile) == -1)
+    {
+        dwError = errno;
+        BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+    }
+    TDNF_SAFE_FREE_MEMORY(pXfer->pszFileTmp);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/*
+ * Handle a finished transfer. Sets *pnRestarted if the transfer was restarted
+ * with a retry or the next base URL, otherwise the transfer is complete.
+ */
+static uint32_t
+TDNFXferDone(
+    PTDNF pTdnf,
+    CURLM *pMulti,
+    PTDNF_XFER pXfer,
+    CURLcode result,
+    int *pnRestarted
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_REPO_DATA pRepo = pXfer->pItem->pRepo;
+    long lStatus = 0;
+
+    *pnRestarted = 0;
+    curl_multi_remove_handle(pMulti, pXfer->pCurl);
+
+    if (result == CURLE_OK)
+    {
+        dwError = curl_easy_getinfo(pXfer->pCurl, CURLINFO_RESPONSE_CODE,
+                                    &lStatus);
+        BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+        if (lStatus < 400)
+        {
+            curl_off_t nSize = 0;
+
+            if (curl_easy_getinfo(pXfer->pCurl, CURLINFO_SIZE_DOWNLOAD_T,
+                                  &nSize) == CURLE_OK)
+            {
+                pXfer->nNow = nSize;
+            }
+            dwError = TDNFXferCommit(pXfer);
+            BAIL_ON_TDNF_ERROR(dwError);
+            goto cleanup;
+        }
+        pr_err("Error: %ld when downloading %s. Please check repo url "
+               "or refresh metadata with 'tdnf makecache'.\n",
+               lStatus, pXfer->pszUrl);
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+    }
+    else
+    {
+        TDNFXferDiscardFile(pXfer);
+        if (pXfer->nTry < pRepo->nRetries && !TDNFCurlErrorIsFatal(result))
+        {
+            pXfer->nTry++;
+            pr_info("retrying %d/%d\n", pXfer->nTry, pRepo->nRetries);
+            dwError = TDNFXferStart(pTdnf, pMulti, pXfer);
+            BAIL_ON_TDNF_ERROR(dwError);
+            *pnRestarted = 1;
+            goto cleanup;
+        }
+        pr_err("Error: failed to download %s: %s\n",
+               pXfer->pszUrl, curl_easy_strerror(result));
+        dwError = ERROR_TDNF_CURL_BASE + result;
+    }
+
+    TDNFXferDiscardFile(pXfer);
+    if (pXfer->nBaseUrl >= 0 && pRepo->ppszBaseUrls[pXfer->nBaseUrl + 1])
+    {
+        pr_err("Warning: failed to download %s, trying next base URL\n",
+               pXfer->pszUrl);
+        pXfer->nBaseUrl++;
+        pXfer->nTry = 0;
+        dwError = TDNFXferStart(pTdnf, pMulti, pXfer);
+        BAIL_ON_TDNF_ERROR(dwError);
+        *pnRestarted = 1;
+    }
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadFiles(
+    PTDNF pTdnf,
+    PTDNF_DOWNLOAD_ITEM pItems,
+    size_t nItems
+    )
+{
+    uint32_t dwError = 0;
+    CURLM *pMulti = NULL;
+    PTDNF_XFER pXfers = NULL;
+    TDNF_XFER_PROGRESS progress = {0};
+    size_t nMax;
+    size_t nStarted = 0;
+    size_t nActive = 0;
+    size_t i;
+
+    if (!pTdnf || !pTdnf->pArgs || !pTdnf->pConf || (nItems && !pItems))
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    if (nItems == 0)
+    {
+        goto cleanup;
+    }
+
+    for (i = 0; i < nItems; i++)
+    {
+        if (!pItems[i].pRepo ||
+            IsNullOrEmptyString(pItems[i].pszLocation) ||
+            IsNullOrEmptyString(pItems[i].pszFile) ||
+            IsNullOrEmptyString(pItems[i].pszName))
+        {
+            dwError = ERROR_TDNF_INVALID_PARAMETER;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        progress.nBytesTotal += pItems[i].nSize;
+    }
+
+    nMax = pTdnf->pConf->nMaxParallelDownloads > 0 ?
+           (size_t)pTdnf->pConf->nMaxParallelDownloads : 1;
+    if (nMax > TDNF_CONF_MAX_PARALLEL_DOWNLOADS_LIMIT)
+    {
+        nMax = TDNF_CONF_MAX_PARALLEL_DOWNLOADS_LIMIT;
+    }
+
+    progress.nItems = nItems;
+    progress.nShow = !pTdnf->pArgs->nQuiet &&
+                     (isatty(STDOUT_FILENO) || pTdnf->pArgs->nVerbose);
+    progress.nTty = progress.nShow && isatty(STDOUT_FILENO);
+
+    dwError = TDNFAllocateMemory(nItems, sizeof(TDNF_XFER), (void **)&pXfers);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    pMulti = curl_multi_init();
+    if (!pMulti)
+    {
+        dwError = ERROR_TDNF_CURL_INIT;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    for (;;)
+    {
+        CURLMsg *pMsg = NULL;
+        int nMsgs = 0;
+        int nRunning = 0;
+
+        while (nActive < nMax && nStarted < nItems)
+        {
+            PTDNF_XFER pXfer = &pXfers[nStarted];
+            PTDNF_DOWNLOAD_ITEM pItem = &pItems[nStarted];
+
+            nStarted++;
+            pXfer->pItem = pItem;
+            pXfer->nBaseUrl =
+                (pItem->pRepo->ppszBaseUrls && pItem->pRepo->ppszBaseUrls[0] &&
+                 strstr(pItem->pszLocation, "://") == NULL) ? 0 : -1;
+            dwError = TDNFXferStart(pTdnf, pMulti, pXfer);
+            BAIL_ON_TDNF_ERROR(dwError);
+            nActive++;
+        }
+        if (nActive == 0)
+        {
+            break;
+        }
+
+        if (curl_multi_perform(pMulti, &nRunning) != CURLM_OK)
+        {
+            dwError = ERROR_TDNF_CURL_INIT;
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+
+        while ((pMsg = curl_multi_info_read(pMulti, &nMsgs)) != NULL)
+        {
+            /* pMsg is invalid once its handle is removed, copy what we need */
+            CURL *pCurl = pMsg->easy_handle;
+            CURLcode result = pMsg->data.result;
+            PTDNF_XFER pXfer = NULL;
+            int nRestarted = 0;
+
+            if (pMsg->msg != CURLMSG_DONE)
+            {
+                continue;
+            }
+            curl_easy_getinfo(pCurl, CURLINFO_PRIVATE, (char **)&pXfer);
+
+            TDNFXferClearLine(&progress);
+            dwError = TDNFXferDone(pTdnf, pMulti, pXfer, result, &nRestarted);
+            BAIL_ON_TDNF_ERROR(dwError);
+            if (!nRestarted)
+            {
+                TDNFXferShowDone(&progress, pXfer);
+                progress.nDone++;
+                progress.nBytesDone += (uint64_t)pXfer->nNow;
+                TDNFXferFree(pMulti, pXfer);
+                nActive--;
+            }
+            TDNFXferShowSummary(&progress, pXfers, nStarted, 1);
+        }
+
+        TDNFXferShowSummary(&progress, pXfers, nStarted, 0);
+
+        if (nActive)
+        {
+#if LIBCURL_VERSION_NUM >= 0x074200 /* 7.66.0 */
+            if (curl_multi_poll(pMulti, NULL, 0, 1000, NULL) != CURLM_OK)
+#else
+            if (curl_multi_wait(pMulti, NULL, 0, 1000, NULL) != CURLM_OK)
+#endif
+            {
+                dwError = ERROR_TDNF_CURL_INIT;
+                BAIL_ON_TDNF_ERROR(dwError);
+            }
+        }
+    }
+
+cleanup:
+    TDNFXferClearLine(&progress);
+    if (pXfers)
+    {
+        for (i = 0; i < nStarted; i++)
+        {
+            TDNFXferFree(pMulti, &pXfers[i]);
+        }
+        TDNFFreeMemory(pXfers);
+    }
+    if (pMulti)
+    {
+        curl_multi_cleanup(pMulti);
+    }
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFCreatePackageUrl(
     PTDNF_REPO_DATA pRepo,
@@ -609,26 +1151,19 @@ error:
 */
 
 uint32_t
-TDNFDownloadPackageToTree(
-    PTDNF pTdnf,
+TDNFGetPackageTreePath(
     const char* pszPackageLocation,
-    const char* pszPkgName,
-    PTDNF_REPO_DATA pRepo,
-    char* pszNormalRpmCacheDir,
+    const char* pszNormalRootDir,
     char** ppszFilePath
     )
 {
     uint32_t dwError = 0;
     char* pszFilePath = NULL;
     char* pszNormalPath = NULL;
-    char* pszDownloadCacheDir = NULL;
     char* pszRemotePath = NULL;
 
-    if(!pTdnf ||
-       IsNullOrEmptyString(pszPackageLocation) ||
-       IsNullOrEmptyString(pszPkgName) ||
-       !pRepo ||
-       IsNullOrEmptyString(pszNormalRpmCacheDir) ||
+    if(IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszNormalRootDir) ||
        !ppszFilePath)
     {
         dwError = ERROR_TDNF_INVALID_PARAMETER;
@@ -642,7 +1177,7 @@ TDNFDownloadPackageToTree(
     }
     BAIL_ON_TDNF_ERROR(dwError);
 
-    dwError = TDNFJoinPath(&pszFilePath, pszNormalRpmCacheDir, pszRemotePath, NULL);
+    dwError = TDNFJoinPath(&pszFilePath, pszNormalRootDir, pszRemotePath, NULL);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFNormalizePath(
@@ -650,12 +1185,95 @@ TDNFDownloadPackageToTree(
                   &pszNormalPath);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (strncmp(pszNormalRpmCacheDir, pszNormalPath,
-                strlen(pszNormalRpmCacheDir)))
+    if (strncmp(pszNormalRootDir, pszNormalPath,
+                strlen(pszNormalRootDir)))
     {
         dwError = ERROR_TDNF_URL_INVALID;
         BAIL_ON_TDNF_ERROR(dwError);
     }
+
+    *ppszFilePath = pszNormalPath;
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszRemotePath);
+    return dwError;
+
+error:
+    TDNF_SAFE_FREE_MEMORY(pszNormalPath);
+    goto cleanup;
+}
+
+uint32_t
+TDNFGetPackageCachePath(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    PTDNF_REPO_DATA pRepo,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszRpmCacheDir = NULL;
+    char* pszNormalRpmCacheDir = NULL;
+
+    if(!pTdnf || !pTdnf->pConf || !pRepo)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFJoinPath(&pszRpmCacheDir,
+                           pTdnf->pConf->pszCacheDir,
+                           pRepo->pszId,
+                           TDNF_RPM_CACHE_DIR_NAME,
+                           NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFNormalizePath(pszRpmCacheDir,
+                                &pszNormalRpmCacheDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFGetPackageTreePath(pszPackageLocation,
+                                     pszNormalRpmCacheDir,
+                                     ppszFilePath);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszNormalRpmCacheDir);
+    TDNF_SAFE_FREE_MEMORY(pszRpmCacheDir);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+uint32_t
+TDNFDownloadPackageToTree(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    const char* pszPkgName,
+    PTDNF_REPO_DATA pRepo,
+    char* pszNormalRpmCacheDir,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszNormalPath = NULL;
+    char* pszDownloadCacheDir = NULL;
+
+    if(!pTdnf ||
+       IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszPkgName) ||
+       !pRepo ||
+       IsNullOrEmptyString(pszNormalRpmCacheDir) ||
+       !ppszFilePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFGetPackageTreePath(pszPackageLocation,
+                                     pszNormalRpmCacheDir,
+                                     &pszNormalPath);
+    BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFDirName(pszNormalPath, &pszDownloadCacheDir);
     BAIL_ON_TDNF_ERROR(dwError);
@@ -686,9 +1304,7 @@ TDNFDownloadPackageToTree(
 
     *ppszFilePath = pszNormalPath;
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszFilePath);
     TDNF_SAFE_FREE_MEMORY(pszDownloadCacheDir);
-    TDNF_SAFE_FREE_MEMORY(pszRemotePath);
     return dwError;
 
 error:
@@ -706,6 +1322,42 @@ error:
  * (so RPMS/x86_64/ will be stripped).
 */
 
+/*
+ * The path TDNFDownloadPackageToDirectory() downloads to. TDNFDownloadPackage()
+ * uses the basename of the location as is, so this must do the same.
+ */
+uint32_t
+TDNFGetPackageDirectoryPath(
+    const char* pszPackageLocation,
+    const char* pszDirectory,
+    char** ppszFilePath
+    )
+{
+    uint32_t dwError = 0;
+    char* pszCopyOfLocation = NULL;
+
+    if(IsNullOrEmptyString(pszPackageLocation) ||
+       IsNullOrEmptyString(pszDirectory) ||
+       !ppszFilePath)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFAllocateString(pszPackageLocation, &pszCopyOfLocation);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFJoinPath(ppszFilePath, pszDirectory,
+                           basename(pszCopyOfLocation), NULL);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszCopyOfLocation);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFDownloadPackageToDirectory(
     PTDNF pTdnf,
@@ -718,8 +1370,6 @@ TDNFDownloadPackageToDirectory(
 {
     uint32_t dwError = 0;
     char* pszFilePath = NULL;
-    char* pszRemotePath = NULL;
-    char* pszFileName = NULL;
 
     if(!pTdnf ||
        IsNullOrEmptyString(pszPackageLocation) ||
@@ -732,16 +1382,8 @@ TDNFDownloadPackageToDirectory(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFPathFromUri(pszPackageLocation, &pszRemotePath);
-    if (dwError == ERROR_TDNF_URL_INVALID)
-    {
-        dwError = TDNFAllocateString(pszPackageLocation, &pszRemotePath);
-    }
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    pszFileName = basename(pszRemotePath);
-
-    dwError = TDNFJoinPath(&pszFilePath, pszDirectory, pszFileName, NULL);
+    dwError = TDNFGetPackageDirectoryPath(pszPackageLocation, pszDirectory,
+                                          &pszFilePath);
     BAIL_ON_TDNF_ERROR(dwError);
 
     dwError = TDNFDownloadPackage(pTdnf, pszPackageLocation, pszPkgName,
@@ -750,7 +1392,6 @@ TDNFDownloadPackageToDirectory(
 
     *ppszFilePath = pszFilePath;
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszRemotePath);
     return dwError;
 
 error:

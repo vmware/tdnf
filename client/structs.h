@@ -81,3 +81,13 @@ typedef struct progress_cb_data {
     time_t prev_time;
     char pszData[64];
 } pcb_data;
+
+/* A file to download with TDNFDownloadFiles(). */
+typedef struct _TDNF_DOWNLOAD_ITEM
+{
+    PTDNF_REPO_DATA pRepo;
+    const char *pszLocation;   /* relative to the repo base URLs, or a URL */
+    const char *pszFile;       /* destination path */
+    const char *pszName;       /* shown in progress output */
+    uint64_t nSize;            /* expected size for progress, 0 if unknown */
+} TDNF_DOWNLOAD_ITEM, *PTDNF_DOWNLOAD_ITEM;

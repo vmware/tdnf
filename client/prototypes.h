@@ -194,9 +194,38 @@ TDNFDownloadFile(
     const char *pszProgressData
     );
 
+uint32_t
+TDNFDownloadFiles(
+    PTDNF pTdnf,
+    PTDNF_DOWNLOAD_ITEM pItems,
+    size_t nItems
+    );
+
 void
 TDNFFreeCurlShare(
     PTDNF pTdnf
+    );
+
+uint32_t
+TDNFGetPackageTreePath(
+    const char* pszPackageLocation,
+    const char* pszNormalRootDir,
+    char** ppszFilePath
+    );
+
+uint32_t
+TDNFGetPackageCachePath(
+    PTDNF pTdnf,
+    const char* pszPackageLocation,
+    PTDNF_REPO_DATA pRepo,
+    char** ppszFilePath
+    );
+
+uint32_t
+TDNFGetPackageDirectoryPath(
+    const char* pszPackageLocation,
+    const char* pszDirectory,
+    char** ppszFilePath
     );
 
 uint32_t

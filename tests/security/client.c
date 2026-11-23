@@ -96,6 +96,46 @@ check_downloads(const char *directory)
     globfree(&matches);
     free(url);
 
+    /* Several files at once, then one failing file among others. */
+    {
+        char *urls[3] = {NULL};
+        TDNF_DOWNLOAD_ITEM items[3] = {0};
+        const char *files[3] = {"parallel-1", "parallel-2", "parallel-3"};
+
+        for (size_t i = 0; i < 3; i++)
+        {
+            assert(TDNFAllocateStringPrintf(&urls[i], "file://%s/source",
+                                            directory) == 0);
+            items[i].pRepo = &repo;
+            items[i].pszLocation = urls[i];
+            items[i].pszFile = files[i];
+            items[i].pszName = files[i];
+        }
+        conf.nMaxParallelDownloads = 2;
+        assert(TDNFDownloadFiles(&handle, items, 3) == 0);
+        for (size_t i = 0; i < 3; i++)
+        {
+            check_file(files[i], "download contents");
+            assert(stat(files[i], &st) == 0);
+            assert((st.st_mode & 0777) == 0644);
+            assert(unlink(files[i]) == 0);
+        }
+
+        free(urls[1]);
+        assert(TDNFAllocateStringPrintf(&urls[1], "file://%s/missing",
+                                        directory) == 0);
+        items[1].pszLocation = urls[1];
+        assert(TDNFDownloadFiles(&handle, items, 3) != 0);
+        assert(access(files[1], F_OK) == -1 && errno == ENOENT);
+        assert(glob("parallel-*.tmp.*", 0, NULL, &matches) == GLOB_NOMATCH);
+        globfree(&matches);
+        for (size_t i = 0; i < 3; i++)
+        {
+            unlink(files[i]);
+            free(urls[i]);
+        }
+    }
+
     TDNFFreeCurlShare(&handle);
     assert(unlink("source") == 0);
     assert(unlink("destination") == 0);

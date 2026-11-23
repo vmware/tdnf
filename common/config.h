@@ -60,6 +60,7 @@
 #define TDNF_CONF_KEY_CHECK_UPDATE_COMPAT "dnf_check_update_compat"
 #define TDNF_CONF_KEY_DISTROSYNC_REINSTALL_CHANGED "distrosync_reinstall_changed"
 #define TDNF_CONF_KEY_CONNECT_TIMEOUT     "connect_timeout"
+#define TDNF_CONF_KEY_MAX_PARALLEL_DOWNLOADS "max_parallel_downloads"
 
 #define TDNF_PLUGIN_CONF_KEY_ENABLED      "enabled"
 
@@ -122,6 +123,8 @@
 #define TDNF_CONF_DEFAULT_INSTALLONLY_LIMIT  2
 #define TDNF_CONF_DEFAULT_SSLVERIFY          1
 #define TDNF_CONF_DEFAULT_CONNECT_TIMEOUT    0  // seconds (unlimited)
+#define TDNF_CONF_DEFAULT_MAX_PARALLEL_DOWNLOADS 3
+#define TDNF_CONF_MAX_PARALLEL_DOWNLOADS_LIMIT   20
 
 // repo default settings
 #define TDNF_REPO_DEFAULT_ENABLED            0

@@ -8,7 +8,8 @@
 
 """
 Downloads share connections to the server instead of opening a new
-connection (and doing a new TLS handshake) for each file.
+connection (and doing a new TLS handshake) for each file. Packages are
+downloaded in parallel, at most max_parallel_downloads at a time.
 """
 
 from functools import partial
@@ -23,7 +24,7 @@ import pytest
 REPONAME = 'download-connections'
 PKGNAMES = ['tdnf-test-one', 'tdnf-test-two', 'tdnf-test3', 'tdnf-test4',
             'tdnf-test-noarch', 'tdnf-test-doc', 'tdnf-test-epoch']
-# long enough for transfers to overlap, if they do
+# long enough for transfers to overlap
 RPM_DELAY = 0.3
 
 
@@ -125,8 +126,9 @@ def env(utils, tmp_path):
             utils.erase_package(name)
 
 
-def download_only(env, *args):
-    return env['command'] + ['install', '-y', '--downloadonly', *args,
+def download_only(env, parallel, *args):
+    return env['command'] + [f'--setopt=max_parallel_downloads={parallel}',
+                             'install', '-y', '--downloadonly', *args,
                              *PKGNAMES]
 
 
@@ -137,13 +139,56 @@ def assert_downloaded(env, directory):
     assert not [p for p in directory.iterdir() if '.tmp' in p.name]
 
 
-def test_downloads_share_connection(utils, env):
-    ret = utils.run(download_only(env))
+@pytest.mark.parametrize('parallel', [1, 3])
+def test_parallel_download_limit(utils, env, parallel):
+    ret = utils.run(download_only(env, parallel))
     assert ret['retval'] == 0, ret
 
     server = env['server']
     assert server.rpm_requests == len(PKGNAMES)
-    assert server.max_inflight == 1
-    # metadata and all packages over one connection
-    assert server.connections == 1
+    assert server.max_inflight == parallel
+    # metadata and packages share connections instead of one per file
+    if parallel == 1:
+        assert server.connections == 1
+    else:
+        assert server.connections <= parallel
     assert_downloaded(env, env['rpm_cache'])
+
+
+def test_parallel_download_install(utils, env):
+    ret = utils.run(env['command'] + ['install', '-y', *PKGNAMES])
+    assert ret['retval'] == 0, ret
+    assert env['server'].max_inflight > 1
+    for name in PKGNAMES:
+        assert utils.check_package(name)
+
+
+def test_parallel_download_to_directory(utils, env, tmp_path):
+    downloaddir = tmp_path / 'downloads'
+    downloaddir.mkdir()
+
+    ret = utils.run(download_only(env, 3, f'--downloaddir={downloaddir}'))
+    assert ret['retval'] == 0, ret
+    assert env['server'].max_inflight == 3
+    assert_downloaded(env, downloaddir)
+
+    env['server'].reset()
+    ret = utils.run(download_only(env, 3, f'--downloaddir={downloaddir}'))
+    assert ret['retval'] == 0, ret
+    assert env['server'].rpm_requests == 0
+    for name in PKGNAMES:
+        assert f'{name} package already downloaded' in ret['stdout']
+
+
+def test_parallel_download_failure(utils, env):
+    server = env['server']
+    failing = env['sources'][PKGNAMES[0]].name
+    server.fail = failing
+
+    ret = utils.run(download_only(env, 3))
+    assert ret['retval'] != 0
+    assert (f'Error: 404 when downloading {server.url}/RPMS/{failing}'
+            in '\n'.join(ret['stderr']))
+    # transfers aborted by the failure leave no temporary files behind
+    assert not [p for p in env['rpm_cache'].iterdir() if '.tmp' in p.name]
+    assert not (env['rpm_cache'] / failing).exists()
