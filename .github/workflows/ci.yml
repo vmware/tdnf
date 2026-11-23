@@ -61,6 +61,12 @@ jobs:
         run: |
           docker load < ${{ matrix.dist }}-tdnf-build.tar
 
+      # Older AddressSanitizer runtimes (photon-5.0-91) crash at random with
+      # the 32 bits of mmap randomization of current runner kernels.
+      - name: Reduce mmap randomization for AddressSanitizer
+        run: |
+          sudo sysctl -w vm.mmap_rnd_bits=28
+
       - name: Run container with tests
         run: |
           docker run --privileged --security-opt seccomp:unconfined --rm \
