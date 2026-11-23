@@ -27,6 +27,7 @@ typedef struct _TDNF_
     PTDNF_REPO_DATA pRepos;
     Repo *pSolvCmdLineRepo;
     PTDNF_PLUGIN pPlugins;
+    CURLSH *pCurlShare; /* connections, DNS and TLS sessions shared by downloads */
 } TDNF;
 
 typedef struct _TDNF_CACHED_RPM_ENTRY

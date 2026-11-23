@@ -194,6 +194,11 @@ TDNFDownloadFile(
     const char *pszProgressData
     );
 
+void
+TDNFFreeCurlShare(
+    PTDNF pTdnf
+    );
+
 uint32_t
 TDNFCreatePackageUrl(
     PTDNF_REPO_DATA pRepo,

@@ -94,6 +94,127 @@ error:
 }
 
 
+/*
+ * Connections, DNS lookups and TLS sessions are shared by all downloads of a
+ * handle, so downloading many files from the same server does not need a new
+ * connection and TLS handshake for each file. Failing to set up sharing is
+ * not an error, downloads just don't share anything then.
+ */
+static CURLSH *
+TDNFGetCurlShare(
+    PTDNF pTdnf
+    )
+{
+    CURLSH *pShare = NULL;
+
+    if (pTdnf->pCurlShare)
+    {
+        return pTdnf->pCurlShare;
+    }
+
+    pShare = curl_share_init();
+    if (!pShare)
+    {
+        return NULL;
+    }
+    if (curl_share_setopt(pShare, CURLSHOPT_SHARE,
+                          CURL_LOCK_DATA_DNS) != CURLSHE_OK ||
+        curl_share_setopt(pShare, CURLSHOPT_SHARE,
+                          CURL_LOCK_DATA_SSL_SESSION) != CURLSHE_OK
+#if LIBCURL_VERSION_NUM >= 0x073900 /* 7.57.0 */
+        || curl_share_setopt(pShare, CURLSHOPT_SHARE,
+                             CURL_LOCK_DATA_CONNECT) != CURLSHE_OK
+#endif
+        )
+    {
+        curl_share_cleanup(pShare);
+        return NULL;
+    }
+    pTdnf->pCurlShare = pShare;
+    return pShare;
+}
+
+void
+TDNFFreeCurlShare(
+    PTDNF pTdnf
+    )
+{
+    if (pTdnf && pTdnf->pCurlShare)
+    {
+        curl_share_cleanup(pTdnf->pCurlShare);
+        pTdnf->pCurlShare = NULL;
+    }
+}
+
+/* Apply the settings common to all downloads from pRepo to pCurl. */
+static uint32_t
+TDNFCurlSetup(
+    PTDNF pTdnf,
+    PTDNF_REPO_DATA pRepo,
+    CURL *pCurl,
+    const char *pszUrl
+    )
+{
+    uint32_t dwError = 0;
+    char *pszUserPass = NULL;
+    CURLSH *pShare = NULL;
+
+    dwError = TDNFRepoGetUserPass(pTdnf, pRepo, &pszUserPass);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    if(!IsNullOrEmptyString(pszUserPass))
+    {
+        dwError = curl_easy_setopt(
+                      pCurl,
+                      CURLOPT_USERPWD,
+                      pszUserPass);
+        BAIL_ON_TDNF_CURL_ERROR(dwError);
+    }
+
+    if(!IsNullOrEmptyString(pTdnf->pConf->pszUserAgentHeader))
+    {
+        dwError = curl_easy_setopt(
+                      pCurl,
+                      CURLOPT_USERAGENT,
+                      pTdnf->pConf->pszUserAgentHeader);
+        BAIL_ON_TDNF_CURL_ERROR(dwError);
+    }
+
+    dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRepoApplyDownloadSettings(pRepo, pCurl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFRepoApplySSLSettings(pRepo, pCurl);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_URL, pszUrl);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+    BAIL_ON_TDNF_CURL_ERROR(dwError);
+
+    if (pTdnf->pConf->nConnectTimeout > 0)
+    {
+        curl_easy_setopt(pCurl, CURLOPT_CONNECTTIMEOUT,
+                          (long)pTdnf->pConf->nConnectTimeout);
+    }
+
+    pShare = TDNFGetCurlShare(pTdnf);
+    if (pShare)
+    {
+        dwError = curl_easy_setopt(pCurl, CURLOPT_SHARE, pShare);
+        BAIL_ON_TDNF_CURL_ERROR(dwError);
+    }
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszUserPass);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFDownloadFileFromRepo(
     PTDNF pTdnf,
@@ -162,7 +283,6 @@ TDNFDownloadFile(
     uint32_t dwError = 0;
     CURL *pCurl = NULL;
     FILE *fp = NULL;
-    char *pszUserPass = NULL;
     char *pszFileTmp = NULL;
     /* lStatus reads CURLINFO_RESPONSE_CODE. Must be long */
     long lStatus = 0;
@@ -188,47 +308,8 @@ TDNFDownloadFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
-    dwError = TDNFRepoGetUserPass(pTdnf, pRepo, &pszUserPass);
+    dwError = TDNFCurlSetup(pTdnf, pRepo, pCurl, pszFileUrl);
     BAIL_ON_TDNF_ERROR(dwError);
-
-    if(!IsNullOrEmptyString(pszUserPass))
-    {
-        dwError = curl_easy_setopt(
-                      pCurl,
-                      CURLOPT_USERPWD,
-                      pszUserPass);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    if(!IsNullOrEmptyString(pTdnf->pConf->pszUserAgentHeader))
-    {
-        dwError = curl_easy_setopt(
-                      pCurl,
-                      CURLOPT_USERAGENT,
-                      pTdnf->pConf->pszUserAgentHeader);
-        BAIL_ON_TDNF_ERROR(dwError);
-    }
-
-    dwError = TDNFRepoApplyProxySettings(pTdnf->pConf, pCurl);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFRepoApplyDownloadSettings(pRepo, pCurl);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = TDNFRepoApplySSLSettings(pRepo, pCurl);
-    BAIL_ON_TDNF_ERROR(dwError);
-
-    dwError = curl_easy_setopt(pCurl, CURLOPT_URL, pszFileUrl);
-    BAIL_ON_TDNF_CURL_ERROR(dwError);
-
-    dwError = curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
-    BAIL_ON_TDNF_CURL_ERROR(dwError);
-
-    if (pTdnf->pConf->nConnectTimeout > 0)
-    {
-        curl_easy_setopt(pCurl, CURLOPT_CONNECTTIMEOUT,
-                          (long)pTdnf->pConf->nConnectTimeout);
-    }
 
     if (!pTdnf->pArgs->nQuiet && pszProgressData != NULL)
     {
@@ -340,7 +421,6 @@ TDNFDownloadFile(
     }
 
 cleanup:
-    TDNF_SAFE_FREE_MEMORY(pszUserPass);
     TDNF_SAFE_FREE_MEMORY(pszFileTmp);
     if(fp)
     {

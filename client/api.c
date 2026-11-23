@@ -2614,6 +2614,7 @@ TDNFCloseHandle(
             SolvFreeSack(pTdnf->pSack);
         }
         TDNFFreePlugins(pTdnf->pPlugins);
+        TDNFFreeCurlShare(pTdnf);
         TDNFFreeMemory(pTdnf);
     }
     TdnfExitHandler();

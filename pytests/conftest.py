@@ -379,6 +379,23 @@ ui_repoid_vars=basearch
         with open(filename, "w") as f:
             f.write(templ.format(name=name, baseurl=baseurl))
 
+    def find_rpm(self, pkgname):
+        """Return the path of the newest built RPM of pkgname (any arch)."""
+        rpms_dir = os.path.join(self.config['repo_path'], 'build', 'RPMS')
+        matches = []
+        for arch in (ARCH, 'noarch'):
+            arch_dir = os.path.join(rpms_dir, arch)
+            if not os.path.isdir(arch_dir):
+                continue
+            for name in os.listdir(arch_dir):
+                if not name.endswith('.rpm'):
+                    continue
+                # name-version-release.arch.rpm, so strip version and release
+                if name.rsplit('-', 2)[0] == pkgname:
+                    matches.append(os.path.join(arch_dir, name))
+        assert matches, f'No RPM found for {pkgname} in {rpms_dir}'
+        return sorted(matches)[-1]
+
     def _get_stdout_total_download_size(self, stdout):
         key = "Total download size"
         for line in stdout:

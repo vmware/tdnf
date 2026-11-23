@@ -95,6 +95,8 @@ check_downloads(const char *directory)
     assert(glob("destination.tmp.*", 0, NULL, &matches) == GLOB_NOMATCH);
     globfree(&matches);
     free(url);
+
+    TDNFFreeCurlShare(&handle);
     assert(unlink("source") == 0);
     assert(unlink("destination") == 0);
     assert(unlink("destination.tmp") == 0);
