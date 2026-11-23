@@ -294,6 +294,7 @@ typedef struct _TDNF_CONF
     char **ppszVarsDirs;
     char *pszPluginPath;
     char *pszPluginConfPath;
+    int nMaxParallelDownloads;
 }TDNF_CONF, *PTDNF_CONF;
 
 typedef struct s_Repo Repo;

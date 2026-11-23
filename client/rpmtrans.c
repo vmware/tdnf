@@ -389,6 +389,256 @@ TDNFCheckPkgChecksumTypes(
     return dwError;
 }
 
+/*
+ * Find the file for a package to install. Packages in local repositories
+ * (file:// base URLs) and command line packages are used in place, all others
+ * are downloaded to the cache or, with --downloadonly --downloaddir, to the
+ * download directory. *pnRemote is set for those.
+ */
+static uint32_t
+TDNFGetPackageFile(
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo,
+    PTDNF_REPO_DATA pRepo,
+    char **ppszFilePath,
+    int *pnRemote
+    )
+{
+    uint32_t dwError = 0;
+    const char *pszPackageLocation = pInfo->pszLocation;
+    char *pszFilePath = NULL;
+    int i;
+
+    *pnRemote = 0;
+
+    if (pszPackageLocation[0] == '/')
+    {
+        dwError = TDNFAllocateString(pszPackageLocation, &pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else if (pTdnf->pArgs->nDownloadOnly && pTdnf->pArgs->pszDownloadDir)
+    {
+        dwError = TDNFGetPackageDirectoryPath(pszPackageLocation,
+                                              pTdnf->pArgs->pszDownloadDir,
+                                              &pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+        *pnRemote = 1;
+    }
+    else
+    {
+        /* avoid copying a file to cache if we can access it directly */
+
+        /* location may already be an absolute file:// URL (from xml:base) */
+        if (strncasecmp(pszPackageLocation, "file://", 7) == 0)
+        {
+            dwError = TDNFAllocateString(pszPackageLocation + 7, &pszFilePath);
+            BAIL_ON_TDNF_ERROR(dwError);
+            if (access(pszFilePath, F_OK) != 0)
+            {
+                TDNF_SAFE_FREE_MEMORY(pszFilePath);
+            }
+        }
+
+        for (i = 0;
+             !pszFilePath && pRepo->ppszBaseUrls && pRepo->ppszBaseUrls[i];
+             i++)
+        {
+            if (strncasecmp(pRepo->ppszBaseUrls[i], "file://", 7) == 0)
+            {
+                dwError = TDNFJoinPath(&pszFilePath,
+                                       &(pRepo->ppszBaseUrls[i][7]),
+                                       pszPackageLocation,
+                                       NULL);
+                BAIL_ON_TDNF_ERROR(dwError);
+                if (access(pszFilePath, F_OK) != 0)
+                {
+                    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+                }
+            }
+        }
+
+        if (!pszFilePath)
+        {
+            dwError = TDNFGetPackageCachePath(pTdnf, pszPackageLocation,
+                                              pRepo, &pszFilePath);
+            BAIL_ON_TDNF_ERROR(dwError);
+            *pnRemote = 1;
+        }
+    }
+
+    *ppszFilePath = pszFilePath;
+
+cleanup:
+    return dwError;
+error:
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    goto cleanup;
+}
+
+/*
+ * Check whether a package has to be downloaded to pszFilePath, and if so fill
+ * in *pItem (which refers to pszFilePath) and create the cache directory for
+ * it. With nReport, say so for packages already in the download directory.
+ */
+static uint32_t
+TDNFPreparePackageDownload(
+    PTDNF pTdnf,
+    PTDNF_PKG_INFO pInfo,
+    PTDNF_REPO_DATA pRepo,
+    const char *pszFilePath,
+    int nReport,
+    PTDNF_DOWNLOAD_ITEM pItem,
+    int *pnNeeded
+    )
+{
+    uint32_t dwError = 0;
+    char *pszDir = NULL;
+    int nSize = 0;
+
+    *pnNeeded = 0;
+
+    /* Older versions may have left size 0 files, download those again. */
+    dwError = TDNFGetFileSize(pszFilePath, &nSize);
+    if (dwError == 0 && nSize > 0)
+    {
+        if (nReport && pTdnf->pArgs->nDownloadOnly && pTdnf->pArgs->pszDownloadDir)
+        {
+            pr_info("%s package already downloaded\n", pInfo->pszName);
+        }
+        goto cleanup;
+    }
+    if (dwError != 0 && dwError != ERROR_TDNF_FILE_NOT_FOUND)
+    {
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    dwError = 0;
+
+    if (!pTdnf->pArgs->nDownloadOnly || !pTdnf->pArgs->pszDownloadDir)
+    {
+        dwError = TDNFDirName(pszFilePath, &pszDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (access(pszDir, F_OK))
+        {
+            if (errno != ENOENT)
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            dwError = TDNFUtilsMakeDirs(pszDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+    }
+
+    pItem->pRepo = pRepo;
+    pItem->pszLocation = pInfo->pszLocation;
+    pItem->pszFile = pszFilePath;
+    pItem->pszName = pInfo->pszName;
+    pItem->nSize = pInfo->dwDownloadSizeBytes;
+    *pnNeeded = 1;
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszDir);
+    return dwError;
+error:
+    goto cleanup;
+}
+
+/*
+ * Download all packages of a transaction that are not available locally,
+ * in parallel, before they are checked and added to the transaction one by
+ * one.
+ */
+static uint32_t
+TDNFDownloadTransactionPkgs(
+    PTDNF pTdnf,
+    PTDNF_SOLVED_PKG_INFO pSolvedInfo
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO ppLists[] = {
+        pSolvedInfo->pPkgsToInstall,
+        pSolvedInfo->pPkgsToReinstall,
+        pSolvedInfo->pPkgsToUpgrade,
+        pSolvedInfo->pPkgsToDowngrade,
+    };
+    PTDNF_PKG_INFO pInfo = NULL;
+    PTDNF_DOWNLOAD_ITEM pItems = NULL;
+    char **ppszFiles = NULL;
+    size_t nPkgs = 0;
+    size_t nItems = 0;
+    size_t i;
+
+    for (i = 0; i < ARRAY_SIZE(ppLists); i++)
+    {
+        for (pInfo = ppLists[i]; pInfo; pInfo = pInfo->pNext)
+        {
+            nPkgs++;
+        }
+    }
+    if (nPkgs == 0)
+    {
+        goto cleanup;
+    }
+
+    dwError = TDNFAllocateMemory(nPkgs, sizeof(TDNF_DOWNLOAD_ITEM),
+                                 (void **)&pItems);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFAllocateMemory(nPkgs, sizeof(char *), (void **)&ppszFiles);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (i = 0; i < ARRAY_SIZE(ppLists); i++)
+    {
+        for (pInfo = ppLists[i]; pInfo; pInfo = pInfo->pNext)
+        {
+            PTDNF_REPO_DATA pRepo = NULL;
+            char *pszFilePath = NULL;
+            int nRemote = 0;
+            int nNeeded = 0;
+
+            dwError = TDNFFindRepoById(pTdnf, pInfo->pszRepoName, &pRepo);
+            BAIL_ON_TDNF_ERROR(dwError);
+
+            dwError = TDNFGetPackageFile(pTdnf, pInfo, pRepo,
+                                         &pszFilePath, &nRemote);
+            BAIL_ON_TDNF_ERROR(dwError);
+            if (!nRemote)
+            {
+                TDNF_SAFE_FREE_MEMORY(pszFilePath);
+                continue;
+            }
+
+            dwError = TDNFPreparePackageDownload(pTdnf, pInfo, pRepo,
+                                                 pszFilePath, 1,
+                                                 &pItems[nItems], &nNeeded);
+            if (dwError || !nNeeded)
+            {
+                TDNF_SAFE_FREE_MEMORY(pszFilePath);
+                BAIL_ON_TDNF_ERROR(dwError);
+                continue;
+            }
+            ppszFiles[nItems++] = pszFilePath;
+        }
+    }
+
+    dwError = TDNFDownloadFiles(pTdnf, pItems, nItems);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if (ppszFiles)
+    {
+        for (i = 0; i < nItems; i++)
+        {
+            TDNF_SAFE_FREE_MEMORY(ppszFiles[i]);
+        }
+        TDNFFreeMemory(ppszFiles);
+    }
+    TDNF_SAFE_FREE_MEMORY(pItems);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFPopulateTransaction(
     PTDNFRPMTS pTS,
@@ -406,6 +656,9 @@ TDNFPopulateTransaction(
     dwError = TDNFCheckPkgChecksumTypes(pSolvedInfo->pPkgsToUpgrade);
     BAIL_ON_TDNF_ERROR(dwError);
     dwError = TDNFCheckPkgChecksumTypes(pSolvedInfo->pPkgsToDowngrade);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    dwError = TDNFDownloadTransactionPkgs(pTdnf, pSolvedInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
     if(pSolvedInfo->pPkgsToInstall)
@@ -839,10 +1092,10 @@ TDNFTransAddInstallPkg(
     Header rpmHeader = NULL;
     PTDNF_CACHED_RPM_ENTRY pRpmCache = NULL;
     const char* pszPackageLocation = NULL;
-    const char* pszPkgName = NULL;
     uint8_t digest_from_file[EVP_MAX_MD_SIZE] = {0};
     hash_op *hash = NULL;
     int nSize = 0;
+    int nRemote = 0;
 
     if(!pTS || !pTdnf || !pInfo || !pRepo)
     {
@@ -851,87 +1104,28 @@ TDNFTransAddInstallPkg(
     }
 
     pszPackageLocation = pInfo->pszLocation;
-    pszPkgName = pInfo->pszName;
 
     /* Also checked for the whole transaction in TDNFPopulateTransaction(). */
     dwError = TDNFCheckPkgChecksumType(pInfo);
     BAIL_ON_TDNF_ERROR(dwError);
 
-    if (pszPackageLocation[0] == '/')
+    dwError = TDNFGetPackageFile(pTdnf, pInfo, pRepo, &pszFilePath, &nRemote);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    /* normally TDNFDownloadTransactionPkgs() downloaded it already */
+    if (nRemote)
     {
-        dwError = TDNFAllocateString(
-                      pszPackageLocation,
-                      &pszFilePath
-                  );
+        TDNF_DOWNLOAD_ITEM item = {0};
+        int nNeeded = 0;
+
+        dwError = TDNFPreparePackageDownload(pTdnf, pInfo, pRepo, pszFilePath,
+                                             0, &item, &nNeeded);
         BAIL_ON_TDNF_ERROR(dwError);
-    }
-    else
-    {
-        if (!pTdnf->pArgs->nDownloadOnly || pTdnf->pArgs->pszDownloadDir == NULL)
+        if (nNeeded)
         {
-            int nInPlace = 0;
-            int i;
-
-            /* avoid copying a file to cache if we can access it directly */
-
-            /* location may already be an absolute file:// URL (from xml:base) */
-            if (strncasecmp(pszPackageLocation, "file://", 7) == 0)
-            {
-                dwError = TDNFAllocateString(pszPackageLocation + 7, &pszFilePath);
-                BAIL_ON_TDNF_ERROR(dwError);
-                if (access(pszFilePath, F_OK) == 0)
-                {
-                    nInPlace = 1;
-                }
-                else
-                {
-                    TDNF_SAFE_FREE_MEMORY(pszFilePath);
-                }
-            }
-
-            if (!nInPlace)
-            {
-                for (i = 0; pRepo->ppszBaseUrls[i]; i++) {
-                    if (strncasecmp(pRepo->ppszBaseUrls[i], "file://", 7) == 0)
-                    {
-                        dwError = TDNFJoinPath(&pszFilePath,
-                                               &(pRepo->ppszBaseUrls[i][7]),
-                                               pszPackageLocation,
-                                               NULL);
-                        BAIL_ON_TDNF_ERROR(dwError);
-                        if(access(pszFilePath, F_OK) == 0) {
-                            nInPlace = 1;
-                            break;
-                        }
-                        TDNF_SAFE_FREE_MEMORY(pszFilePath);
-                    }
-                }
-            }
-
-            if (!nInPlace)
-            {
-                dwError = TDNFDownloadPackageToCache(
-                              pTdnf,
-                              pszPackageLocation,
-                              pszPkgName,
-                              pRepo,
-                              &pszFilePath
-                );
-            }
+            dwError = TDNFDownloadFiles(pTdnf, &item, 1);
+            BAIL_ON_TDNF_ERROR(dwError);
         }
-        else
-        {
-            dwError = TDNFDownloadPackageToDirectory(
-                          pTdnf,
-                          pszPackageLocation,
-                          pszPkgName,
-                          pRepo,
-                          pTdnf->pArgs->pszDownloadDir,
-                          &pszFilePath
-            );
-
-        }
-        BAIL_ON_TDNF_ERROR(dwError);
     }
 
     //A download could have been triggered.

@@ -1041,6 +1041,181 @@ error:
     goto cleanup;
 }
 
+static int
+TDNFRepoSyncWantsPkg(
+    PTDNF_PKG_INFO pPkgInfo,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs
+    )
+{
+    if (strcmp(pPkgInfo->pszRepoName, SYSTEM_REPO_NAME) == 0)
+    {
+        return 0;
+    }
+    if (pReposyncArgs->ppszArchs)
+    {
+        int result = 0;
+        TDNFStringMatchesOneOf(pPkgInfo->pszArch, pReposyncArgs->ppszArchs, &result);
+        return result;
+    }
+    if (pReposyncArgs->nSourceOnly)
+    {
+        return strcmp(pPkgInfo->pszArch, "src") == 0;
+    }
+    return 1;
+}
+
+/* the directory a package is synced to, created if needed */
+static uint32_t
+TDNFRepoSyncPkgDir(
+    PTDNF_PKG_INFO pPkgInfo,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs,
+    const char *pszRootPath,
+    char **ppszDir
+    )
+{
+    uint32_t dwError = 0;
+    char *pszDir = NULL;
+
+    if (!pReposyncArgs->nNoRepoPath)
+    {
+        dwError = TDNFJoinPath(&pszDir,
+                               pszRootPath && strcmp(pszRootPath, "/") ? pszRootPath : "",
+                               pPkgInfo->pszRepoName,
+                               NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    else
+    {
+        dwError = TDNFAllocateString(pszRootPath, &pszDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
+    dwError = TDNFUtilsMakeDir(pszDir);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    *ppszDir = pszDir;
+cleanup:
+    return dwError;
+error:
+    TDNF_SAFE_FREE_MEMORY(pszDir);
+    goto cleanup;
+}
+
+/*
+ * Download all packages to sync that are missing, in parallel. They are
+ * checked afterwards by TDNFRepoSync(), which then finds them in place.
+ */
+static uint32_t
+TDNFRepoSyncDownloadPkgs(
+    PTDNF pTdnf,
+    PTDNF_REPOSYNC_ARGS pReposyncArgs,
+    const char *pszRootPath,
+    PTDNF_PKG_INFO pPkgInfos
+    )
+{
+    uint32_t dwError = 0;
+    PTDNF_PKG_INFO pPkgInfo = NULL;
+    PTDNF_DOWNLOAD_ITEM pItems = NULL;
+    char **ppszFiles = NULL;
+    char *pszDir = NULL;
+    char *pszFilePath = NULL;
+    char *pszFileDir = NULL;
+    size_t nPkgs = 0;
+    size_t nItems = 0;
+    size_t i;
+
+    for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        nPkgs++;
+    }
+    if (nPkgs == 0)
+    {
+        goto cleanup;
+    }
+
+    dwError = TDNFAllocateMemory(nPkgs, sizeof(TDNF_DOWNLOAD_ITEM),
+                                 (void **)&pItems);
+    BAIL_ON_TDNF_ERROR(dwError);
+    dwError = TDNFAllocateMemory(nPkgs, sizeof(char *), (void **)&ppszFiles);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+    for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
+    {
+        PTDNF_REPO_DATA pRepo = NULL;
+
+        if (!TDNFRepoSyncWantsPkg(pPkgInfo, pReposyncArgs))
+        {
+            continue;
+        }
+
+        dwError = TDNFRepoSyncPkgDir(pPkgInfo, pReposyncArgs, pszRootPath,
+                                     &pszDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        dwError = TDNFFindRepoById(pTdnf, pPkgInfo->pszRepoName, &pRepo);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        /* same path as TDNFDownloadPackageToTree() */
+        dwError = TDNFGetPackageTreePath(pPkgInfo->pszLocation, pszDir,
+                                         &pszFilePath);
+        BAIL_ON_TDNF_ERROR(dwError);
+        TDNF_SAFE_FREE_MEMORY(pszDir);
+
+        if (access(pszFilePath, F_OK) == 0)
+        {
+            TDNF_SAFE_FREE_MEMORY(pszFilePath);
+            continue;
+        }
+        if (errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+
+        dwError = TDNFDirName(pszFilePath, &pszFileDir);
+        BAIL_ON_TDNF_ERROR(dwError);
+        if (access(pszFileDir, F_OK))
+        {
+            if (errno != ENOENT)
+            {
+                dwError = errno;
+                BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+            }
+            dwError = TDNFUtilsMakeDirs(pszFileDir);
+            BAIL_ON_TDNF_ERROR(dwError);
+        }
+        TDNF_SAFE_FREE_MEMORY(pszFileDir);
+
+        pItems[nItems].pRepo = pRepo;
+        pItems[nItems].pszLocation = pPkgInfo->pszLocation;
+        pItems[nItems].pszFile = pszFilePath;
+        pItems[nItems].pszName = pPkgInfo->pszName;
+        pItems[nItems].nSize = pPkgInfo->dwDownloadSizeBytes;
+        ppszFiles[nItems++] = pszFilePath;
+        pszFilePath = NULL;
+    }
+
+    dwError = TDNFDownloadFiles(pTdnf, pItems, nItems);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    if (ppszFiles)
+    {
+        for (i = 0; i < nItems; i++)
+        {
+            TDNF_SAFE_FREE_MEMORY(ppszFiles[i]);
+        }
+        TDNFFreeMemory(ppszFiles);
+    }
+    TDNF_SAFE_FREE_MEMORY(pItems);
+    TDNF_SAFE_FREE_MEMORY(pszDir);
+    TDNF_SAFE_FREE_MEMORY(pszFilePath);
+    TDNF_SAFE_FREE_MEMORY(pszFileDir);
+    return dwError;
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFRepoSync(
     PTDNF pTdnf,
@@ -1152,50 +1327,28 @@ TDNFRepoSync(
         TDNFPkgInfoFilterNewest(pTdnf->pSack, pPkgInfos);
     }
 
+    if (!pReposyncArgs->nPrintUrlsOnly)
+    {
+        dwError = TDNFRepoSyncDownloadPkgs(pTdnf, pReposyncArgs, pszRootPath,
+                                           pPkgInfos);
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+
     /* iterate through all packages */
     for (pPkgInfo = pPkgInfos; pPkgInfo; pPkgInfo = pPkgInfo->pNext)
     {
         dwCount++;
-        if (strcmp(pPkgInfo->pszRepoName, SYSTEM_REPO_NAME) == 0)
+        if (!TDNFRepoSyncWantsPkg(pPkgInfo, pReposyncArgs))
         {
             continue;
-        }
-        if (pReposyncArgs->ppszArchs)
-        {
-            int result = 0;
-            TDNFStringMatchesOneOf(pPkgInfo->pszArch, pReposyncArgs->ppszArchs, &result);
-            if (result == 0)
-            {
-                continue;
-            }
-        }
-        else if (pReposyncArgs->nSourceOnly)
-        {
-            if (strcmp(pPkgInfo->pszArch, "src") != 0)
-            {
-                continue;
-            }
         }
 
         if (!pReposyncArgs->nPrintUrlsOnly)
         {
             PTDNF_REPO_DATA pPkgRepo = NULL;
 
-            if (!pReposyncArgs->nNoRepoPath)
-            {
-                dwError = TDNFJoinPath(&pszDir,
-                                       pszRootPath && strcmp(pszRootPath, "/") ? pszRootPath : "",
-                                       pPkgInfo->pszRepoName,
-                                       NULL);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-            else
-            {
-                dwError = TDNFAllocateString(pszRootPath, &pszDir);
-                BAIL_ON_TDNF_ERROR(dwError);
-            }
-
-            dwError = TDNFUtilsMakeDir(pszDir);
+            dwError = TDNFRepoSyncPkgDir(pPkgInfo, pReposyncArgs, pszRootPath,
+                                         &pszDir);
             BAIL_ON_TDNF_ERROR(dwError);
 
             dwError = TDNFFindRepoById(pTdnf, pPkgInfo->pszRepoName, &pPkgRepo);
@@ -2614,6 +2767,7 @@ TDNFCloseHandle(
             SolvFreeSack(pTdnf->pSack);
         }
         TDNFFreePlugins(pTdnf->pPlugins);
+        TDNFFreeCurlShare(pTdnf);
         TDNFFreeMemory(pTdnf);
     }
     TdnfExitHandler();
