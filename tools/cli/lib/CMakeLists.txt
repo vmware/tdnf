@@ -16,6 +16,7 @@ add_library(${LIB_TDNF_CLI} SHARED
     api.c
     help.c
     installcmd.c
+    needsrestarting.c
     options.c
     output.c
     parseargs.c

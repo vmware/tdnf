@@ -380,6 +380,9 @@ static const char *help_msg =
  "mark <action> <pkg>        Mark package(s) (install|remove)\n"
  "                           Example: tdnf mark install package\n"
 
+ "needs-restarting [-r]      List processes using deleted libs, or check if reboot is needed (-r)\n"
+ "                           Example: tdnf needs-restarting\n"
+
  "provides <cap>             Same as 'whatprovides'\n"
  "                           Example: tdnf provides /usr/bin/bash\n"
 

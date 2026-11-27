@@ -298,6 +298,12 @@ TDNFCliMarkCommand(
     );
 
 uint32_t
+TDNFCliNeedsRestartingCommand(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs
+    );
+
+uint32_t
 TDNFCliAskForAction(
     PTDNF_CMD_ARGS pCmdArgs,
     PTDNF_SOLVED_PKG_INFO pSolvedPkgInfo

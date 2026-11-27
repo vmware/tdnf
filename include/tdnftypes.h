@@ -219,6 +219,7 @@ typedef struct _TDNF_CMD_ARGS
     int nRpmVerbosity;     //set to rpm verbosity level
     int nShowDuplicates;   //show dups in list/search
     int nShowVersion;      //show version and exit
+    int nRebootRequired;   //needs-restarting: check reboot instead of listing procs
     int nNoDeps;           //download no dependencies
     int nNoGPGCheck;       //skip gpg check
     int nNoCmdLineGPGCheck;  //skip gpg check for local packages (from command line)
