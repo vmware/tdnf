@@ -8,6 +8,17 @@
 
 #pragma once
 
+//installcmd.c
+uint32_t
+TDNFCliAlterWithPkgList(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    const char *pszCmdName,
+    char **ppszPkgs,
+    const char *pszDownloadDir,
+    int nAlterType
+    );
+
 //parseargs.c
 uint32_t
 TDNFCopyOptions(
@@ -33,6 +44,41 @@ HandleOptionsError(
     const char* pszName,
     const char* pszArg,
     struct option* pstOptions
+    );
+
+//versionlock.c
+uint32_t
+DeriveLockPaths(
+    PTDNF_CMD_ARGS pCmdArgs,
+    char **ppszLocksDir,
+    char **ppszLockFile
+    );
+
+uint32_t
+TDNFCliLockList(
+    const char *pszLockFile
+    );
+
+uint32_t
+TDNFCliLockAdd(
+    const char *pszLocksDir,
+    const char *pszLockFile,
+    char **ppszPkgs,
+    int nPkgCount
+    );
+
+uint32_t
+TDNFCliLockDelete(
+    const char *pszLocksDir,
+    const char *pszLockFile,
+    char **ppszPkgs,
+    int nPkgCount
+    );
+
+uint32_t
+TDNFCliLockClear(
+    const char *pszLocksDir,
+    const char *pszLockFile
     );
 
 //updateinfocmd.c

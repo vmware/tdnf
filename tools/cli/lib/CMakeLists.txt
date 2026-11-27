@@ -14,8 +14,11 @@ configure_file(
 
 add_library(${LIB_TDNF_CLI} SHARED
     api.c
+    builddep.c
+    downloadcmd.c
     help.c
     installcmd.c
+    needsrestarting.c
     options.c
     output.c
     parseargs.c
@@ -27,6 +30,7 @@ add_library(${LIB_TDNF_CLI} SHARED
     parsereposyncargs.c
     parseupdateinfo.c
     updateinfocmd.c
+    versionlock.c
 )
 
 target_link_libraries(${LIB_TDNF_CLI}

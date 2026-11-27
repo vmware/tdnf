@@ -350,8 +350,16 @@ static const char *help_msg =
  "count                      Count packages\n"
  "                           Example: tdnf count\n"
 
+ "builddep <spec|srpm|pkg>   Install build dependencies for a spec file, source RPM, or source package\n"
+ "                           Example: tdnf builddep package.spec\n"
+
  "distro-sync                Synchronize installed packages to latest available versions\n"
  "                           Example: tdnf distro-sync\n"
+
+ "download <pkg>             Download standalone package RPM without installing\n"
+ "                           Use --withdeps to also download the dependency tree\n"
+ "                           Example: tdnf download --downloaddir=/tmp package\n"
+ "                           Example: tdnf download --withdeps --downloaddir=/tmp package\n"
 
  "downgrade <pkg>            Downgrade a package\n"
  "                           Example: tdnf downgrade package-1.0\n"
@@ -377,8 +385,12 @@ static const char *help_msg =
  "makecache                  Generate the metadata cache\n"
  "                           Example: tdnf makecache\n"
 
- "mark <action> <pkg>        Mark package(s) (install|remove)\n"
+ "mark <action> <pkg>        Mark package(s) (install|remove|lock|unlock)\n"
  "                           Example: tdnf mark install package\n"
+ "                           Example: tdnf mark lock curl\n"
+
+ "needs-restarting [-r]      List processes using deleted libs, or check if reboot is needed (-r)\n"
+ "                           Example: tdnf needs-restarting\n"
 
  "provides <cap>             Same as 'whatprovides'\n"
  "                           Example: tdnf provides /usr/bin/bash\n"
@@ -415,6 +427,10 @@ static const char *help_msg =
 
  "upgrade-to <pkg-version>   Upgrade a package on your system to the specified version\n"
  "                           Example: tdnf upgrade-to package-1.0-1.ph5\n"
+
+ "lock <cmd> [pkg]           Manage package locks (list|add|delete|clear)\n"
+ "                           Locks block install, upgrade, and removal by name.\n"
+ "                           Example: tdnf lock add curl\n"
 
  "whatprovides <cap>         Find what package provides the given value\n"
  "                           Example: tdnf whatprovides /usr/bin/bash\n"

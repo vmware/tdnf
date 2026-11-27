@@ -7,6 +7,61 @@
  */
 
 #include "includes.h"
+#include "config.h"
+
+/* Keep CLI file operations and the client on the same configuration path. */
+uint32_t
+TDNFGetConfigFile(
+    PTDNF_CMD_ARGS pArgs,
+    char **ppszConfFile
+    )
+{
+    uint32_t dwError = 0;
+    char *pszRootConf = NULL;
+    const char *pszConfFile = TDNF_CONF_FILE;
+    struct stat st = {0};
+
+    if (!pArgs || !ppszConfFile)
+    {
+        return ERROR_TDNF_INVALID_PARAMETER;
+    }
+    *ppszConfFile = NULL;
+
+    if (!IsNullOrEmptyString(pArgs->pszConfFile))
+    {
+        pszConfFile = pArgs->pszConfFile;
+    }
+    else if (!IsNullOrEmptyString(pArgs->pszInstallRoot) &&
+             strcmp(pArgs->pszInstallRoot, "/"))
+    {
+        dwError = TDNFJoinPath(&pszRootConf, pArgs->pszInstallRoot,
+                               TDNF_CONF_FILE, NULL);
+        BAIL_ON_TDNF_ERROR(dwError);
+
+        if (stat(pszRootConf, &st) == 0)
+        {
+            if (S_ISREG(st.st_mode))
+            {
+                pszConfFile = pszRootConf;
+            }
+        }
+        else if (errno != ENOENT)
+        {
+            dwError = errno;
+            BAIL_ON_TDNF_SYSTEM_ERROR(dwError);
+        }
+    }
+
+    dwError = TDNFAllocateString(pszConfFile, ppszConfFile);
+    BAIL_ON_TDNF_ERROR(dwError);
+
+cleanup:
+    TDNF_SAFE_FREE_MEMORY(pszRootConf);
+    return dwError;
+
+error:
+    goto cleanup;
+}
 
 hash_op hash_ops[TDNF_HASH_SENTINEL] =
     {

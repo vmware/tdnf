@@ -12,12 +12,14 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
 {
     {"autoerase",          TDNFCliAutoEraseCommand, true},
     {"autoremove",         TDNFCliAutoEraseCommand, true},
+    {"builddep",           TDNFCliBuilddepCommand, true},
     {"check",              TDNFCliCheckCommand, false},
     {"check-local",        TDNFCliCheckLocalCommand, false},
     {"check-update",       TDNFCliCheckUpdateCommand, false},
     {"clean",              TDNFCliCleanCommand, false},
     {"count",              TDNFCliCountCommand, false},
     {"distro-sync",        TDNFCliDistroSyncCommand, true},
+    {"download",           TDNFCliDownloadCommand, false},
     {"downgrade",          TDNFCliDowngradeCommand, true},
     {"erase",              TDNFCliEraseCommand, true},
     {"help",               TDNFCliHelpCommand, false},
@@ -27,6 +29,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
     {"list",               TDNFCliListCommand, false},
     {"makecache",          TDNFCliMakeCacheCommand, false},
     {"mark",               TDNFCliMarkCommand, false},
+    {"needs-restarting",   TDNFCliNeedsRestartingCommand, false},
     {"provides",           TDNFCliProvidesCommand, false},
     {"whatprovides",       TDNFCliProvidesCommand, false},
     {"reinstall",          TDNFCliReinstallCommand, true},
@@ -40,6 +43,7 @@ static TDNF_CLI_CMD_MAP arCmdMap[] =
     {"upgrade",            TDNFCliUpgradeCommand, true},
     {"upgrade-to",         TDNFCliUpgradeCommand, true},
     {"updateinfo",         TDNFCliUpdateInfoCommand, false},
+    {"lock",               TDNFCliLockCommand, true},
 };
 
 int main(int argc, char **argv)
@@ -128,6 +132,11 @@ int main(int argc, char **argv)
             _context.hTdnf = pTdnf;
 
             dwError = pCmd->pFnCmd(&_context, pCmdArgs);
+            if (pCmd->pFnCmd == TDNFCliNeedsRestartingCommand && dwError == 1)
+            {
+                /* Preserve the informational exit status without an error. */
+                goto cleanup;
+            }
             BAIL_ON_CLI_ERROR(dwError);
         }
         else
