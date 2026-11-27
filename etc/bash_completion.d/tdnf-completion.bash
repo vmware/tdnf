@@ -141,7 +141,11 @@ _tdnf__process_if_cmd() {
             ;;
         mark)
             if [ $1 -eq $(($COMP_CWORD - 1)) ]; then
-                opts="install remove"
+                opts="install remove lock unlock"
+            elif [ $1 -eq $(($COMP_CWORD - 2)) ] && \
+                 [[ "${COMP_WORDS[$1+1]}" == "lock" || \
+                    "${COMP_WORDS[$1+1]}" == "unlock" ]]; then
+                opts=$(tdnf repoquery --installed --qf=%{name} 2>/dev/null)
             else
                 return 0
             fi
@@ -161,6 +165,13 @@ _tdnf__process_if_cmd() {
             ;;
         update|upgrade)
             opts=$(tdnf repoquery --upgrades --qf=%{name} 2>/dev/null)
+            ;;
+        lock)
+            if [ $1 -eq $(($COMP_CWORD - 1)) ]; then
+                opts="list add delete clear"
+            else
+                opts=$(tdnf repoquery --installed --qf=%{name} 2>/dev/null)
+            fi
             ;;
         check|help|makecache)
             # Commands that take no arguments
@@ -214,7 +225,7 @@ _tdnf() {
     local c=0 cur __opts __cmds
     COMPREPLY=()
     __opts="--4 -4 --6 -6 --alldeps --allowerasing --assumeno -y --assumeyes -b --best --builddeps -C --cacheonly -c --config -d --debuglevel --debugsolver --disableexcludes --disableplugin --disablerepo --downloaddir --downloadonly --enablerepo --enableplugin --exclude --forcearch --help -h -i --installroot --json --noautoremove --nodeps --nogpgcheck --nocligpgcheck --noplugins -q --quiet --reboot-required --refresh --releasever --repo --repofromdir --repofrompath --repoid --rpmdefine --rpmverbosity --sec-severity --security --setopt --skip-broken --skipconflicts --skipdigest --skipsignature --skipobsoletes --source --testonly -v --verbose --version --available --duplicates --extras --file --installed --userinstalled --upgrades --downgrades --whatdepends --whatrequires --whatenhances --whatobsoletes --whatprovides --whatrecommends --whatsuggests --whatsupplements --whatconflicts --changelogs --conflicts --depends --enhances --list --location --obsoletes --provides --qf --recommends --requires --requires-pre --suggests --supplements --all --info --summary --recent --updates --downgrades --to --from --reverse --arch --delete --download-metadata --download-path --gpgcheck --metadata-path --newest-only --norepopath --urls"
-    __cmds="autoerase autoremove check check-local check-update clean count distro-sync downgrade erase help history info install list makecache mark provides whatprovides reinstall remove repolist repoquery reposync search update update-to updateinfo upgrade upgrade-to"
+    __cmds="autoerase autoremove check check-local check-update clean count distro-sync downgrade erase help history info install list lock makecache mark provides whatprovides reinstall remove repolist repoquery reposync search update update-to updateinfo upgrade upgrade-to"
     cur="${COMP_WORDS[COMP_CWORD]}"
     _tdnf__process_if_prev_is_option && return 0
     while [ $c -lt ${COMP_CWORD} ]; do
