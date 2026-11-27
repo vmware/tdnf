@@ -60,6 +60,7 @@ error:
     goto cleanup;
 }
 
+#ifndef BUILD_WITH_RPM_6X
 uint32_t
 ReadGPGKeyFile(
     const char* pszFile,
@@ -105,6 +106,7 @@ error:
     TDNF_SAFE_FREE_MEMORY(pszKeyData);
     goto cleanup;
 }
+#endif
 
 uint32_t
 AddKeyFileToKeyring(
@@ -159,12 +161,16 @@ TDNFImportGPGKeyFile(
     )
 {
     uint32_t dwError = 0;
+    int nKeys = 0;
+#ifdef BUILD_WITH_RPM_6X
+    const char *argv[] = {pszFile, NULL};
+#else
     uint8_t* pPkt = NULL;
     size_t nPktLen = 0;
     char* pszKeyData = NULL;
-    int nKeyDataSize;
-    int nKeys = 0;
+    int nKeyDataSize = 0;
     int nOffset = 0;
+#endif
 
     if(pTS == NULL || IsNullOrEmptyString(pszFile))
     {
@@ -172,6 +178,13 @@ TDNFImportGPGKeyFile(
         BAIL_ON_TDNF_ERROR(dwError);
     }
 
+#ifdef BUILD_WITH_RPM_6X
+    if (rpmcliImportPubkeys(pTS, (ARGV_const_t)argv) != 0) {
+        dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
+        BAIL_ON_TDNF_ERROR(dwError);
+    }
+    nKeys = 1;
+#else
     dwError = ReadGPGKeyFile(pszFile, &pszKeyData, &nKeyDataSize);
     BAIL_ON_TDNF_ERROR(dwError);
 
@@ -186,6 +199,7 @@ TDNFImportGPGKeyFile(
         }
         nOffset += nPktLen;
     }
+#endif
 
     if (nKeys == 0) {
         dwError = ERROR_TDNF_INVALID_PUBKEY_FILE;
@@ -193,7 +207,9 @@ TDNFImportGPGKeyFile(
     }
 
 cleanup:
+#ifndef BUILD_WITH_RPM_6X
     TDNF_SAFE_FREE_MEMORY(pszKeyData);
+#endif
     return dwError;
 error:
     goto cleanup;

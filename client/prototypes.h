@@ -21,12 +21,14 @@ TDNFApplyScopeFilter(
     );
 
 //gpgcheck.c
+#ifndef BUILD_WITH_RPM_6X
 uint32_t
 ReadGPGKeyFile(
     const char* pszFile,
     char** ppszKeyData,
     int* pnSize
    );
+#endif
 
 uint32_t
 AddKeyFileToKeyring(
