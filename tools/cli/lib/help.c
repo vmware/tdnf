@@ -350,6 +350,9 @@ static const char *help_msg =
  "count                      Count packages\n"
  "                           Example: tdnf count\n"
 
+ "builddep <spec|srpm|pkg>   Install build dependencies for a spec file, source RPM, or source package\n"
+ "                           Example: tdnf builddep package.spec\n"
+
  "distro-sync                Synchronize installed packages to latest available versions\n"
  "                           Example: tdnf distro-sync\n"
 

@@ -309,6 +309,94 @@ error:
     goto cleanup;
 }
 
+/*
+ * Temporarily replace pCmdArgs->ppszCmds with [pszCmdName, ppszPkgs...],
+ * and if pszDownloadDir is non-NULL, also replace pCmdArgs->pszDownloadDir.
+ * Then run TDNFCliAlterCommand(nAlterType) and restore all modified fields.
+ *
+ * This is the shared implementation for commands (builddep, download, …) that
+ * need to invoke the alter/resolve path with a programmatically assembled
+ * package list, without modifying the caller's pCmdArgs permanently.
+ */
+uint32_t
+TDNFCliAlterWithPkgList(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    const char *pszCmdName,
+    char **ppszPkgs,
+    const char *pszDownloadDir,
+    int nAlterType
+    )
+{
+    uint32_t dwError = 0;
+    char **ppszOldCmds = NULL;
+    int nOldCmdCount = 0;
+    char *pszOldDownloadDir = NULL;
+    int nCount = 0;
+    int i = 0;
+
+    if (!pContext || !pCmdArgs || IsNullOrEmptyString(pszCmdName) || !ppszPkgs)
+    {
+        dwError = ERROR_TDNF_INVALID_PARAMETER;
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+
+    for (nCount = 0; ppszPkgs[nCount]; nCount++)
+        ;
+
+    if (nCount == 0)
+    {
+        goto cleanup;
+    }
+
+    ppszOldCmds = pCmdArgs->ppszCmds;
+    nOldCmdCount = pCmdArgs->nCmdCount;
+    pszOldDownloadDir = pCmdArgs->pszDownloadDir;
+
+    dwError = TDNFAllocateMemory(
+                  nCount + 2, sizeof(char *),
+                  (void **)&pCmdArgs->ppszCmds);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    dwError = TDNFAllocateString(pszCmdName, &pCmdArgs->ppszCmds[0]);
+    BAIL_ON_CLI_ERROR(dwError);
+
+    for (i = 0; i < nCount; i++)
+    {
+        dwError = TDNFAllocateString(ppszPkgs[i], &pCmdArgs->ppszCmds[i + 1]);
+        BAIL_ON_CLI_ERROR(dwError);
+    }
+    pCmdArgs->ppszCmds[nCount + 1] = NULL;
+    pCmdArgs->nCmdCount = nCount + 1;
+
+    if (pszDownloadDir)
+    {
+        pCmdArgs->pszDownloadDir = (char *)pszDownloadDir;
+    }
+
+    dwError = TDNFCliAlterCommand(pContext, pCmdArgs, nAlterType);
+
+cleanup:
+    if (pCmdArgs->ppszCmds && pCmdArgs->ppszCmds != ppszOldCmds)
+    {
+        for (i = 0; pCmdArgs->ppszCmds[i]; i++)
+        {
+            TDNFFreeMemory(pCmdArgs->ppszCmds[i]);
+        }
+        TDNFFreeMemory(pCmdArgs->ppszCmds);
+    }
+    if (ppszOldCmds)
+    {
+        pCmdArgs->ppszCmds = ppszOldCmds;
+        pCmdArgs->nCmdCount = nOldCmdCount;
+    }
+    pCmdArgs->pszDownloadDir = pszOldDownloadDir;
+    return dwError;
+
+error:
+    goto cleanup;
+}
+
 uint32_t
 TDNFCliAlterCommand(
     PTDNF_CLI_CONTEXT pContext,

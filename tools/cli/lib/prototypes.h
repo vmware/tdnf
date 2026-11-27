@@ -8,6 +8,17 @@
 
 #pragma once
 
+//installcmd.c
+uint32_t
+TDNFCliAlterWithPkgList(
+    PTDNF_CLI_CONTEXT pContext,
+    PTDNF_CMD_ARGS pCmdArgs,
+    const char *pszCmdName,
+    char **ppszPkgs,
+    const char *pszDownloadDir,
+    int nAlterType
+    );
+
 //parseargs.c
 uint32_t
 TDNFCopyOptions(
