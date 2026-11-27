@@ -1011,7 +1011,8 @@ TDNFListInternal(
     char** ppszPackageNameSpecs,
     PTDNF_PKG_INFO* ppPkgInfo,
     uint32_t* pdwCount,
-    TDNF_PKG_DETAIL nDetail
+    TDNF_PKG_DETAIL nDetail,
+    int nRequireAllMatches
     );
 
 uint32_t
