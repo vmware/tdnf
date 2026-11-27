@@ -18,7 +18,10 @@ target_link_libraries(${TDNF_BIN}
     ${LIB_TDNF}
 )
 
-set_target_properties(${TDNF_BIN} PROPERTIES OUTPUT_NAME tdnf)
+set_target_properties(${TDNF_BIN} PROPERTIES
+    OUTPUT_NAME tdnf
+    POSITION_INDEPENDENT_CODE ON
+)
 
 install(TARGETS ${TDNF_BIN} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binary)
 

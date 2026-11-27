@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# Enable hardening
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Configure CMake options
+CMAKE_OPTS = \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DCMAKE_INSTALL_LIBDIR=lib/$(DEB_HOST_MULTIARCH) \
+	-DSYSTEMD_DIR=/lib/systemd/system \
+	-DHISTORY_DB_DIR=/var/lib/tdnf
+
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- $(CMAKE_OPTS)
+
+override_dh_auto_install:
+	dh_auto_install
+	# Create cache directory
+	mkdir -p debian/tmp/var/cache/tdnf
+	# Create yum.repos.d directory for compatibility
+	mkdir -p debian/tmp/etc/yum.repos.d
+	# Create symlinks for yum compatibility
+	ln -sv tdnf debian/tmp/usr/bin/tyum
+	ln -sv tdnf debian/tmp/usr/bin/yum
+	ln -sv tdnf debian/tmp/usr/bin/tdnfj
+	# Remove static libraries
+	find debian/tmp -name '*.a' -delete
+
+override_dh_install:
+	dh_install --sourcedir=debian/tmp
+
+override_dh_installsystemd:
+	dh_installsystemd --package=tdnf-automatic --name=tdnf-automatic --no-enable --no-start
+	dh_installsystemd --package=tdnf-automatic --name=tdnf-automatic-install --no-enable --no-start
+	dh_installsystemd --package=tdnf-automatic --name=tdnf-automatic-notifyonly --no-enable --no-start
+
+override_dh_auto_test:
+	# Skip tests during build - they require special setup
+	true

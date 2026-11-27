@@ -21,7 +21,13 @@ add_library(${LIB_TDNF_HISTORY} STATIC
     history.c
 )
 
-set_target_properties(${LIB_TDNF_HISTORY} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Apply appropriate flags for static library
+apply_tdnf_flags(${LIB_TDNF_HISTORY} STATIC)
+
+set_target_properties(${LIB_TDNF_HISTORY} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    INTERFACE_POSITION_INDEPENDENT_CODE ON
+)
 
 install(TARGETS ${TDNF_HISTORY_UTIL_BIN} RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/tdnf COMPONENT binary)
 

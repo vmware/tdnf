@@ -1,0 +1,10 @@
+tdnf (3.6.0) unstable; urgency=medium
+
+  * Initial Debian package release
+  * Port from RPM spec file to Debian packaging
+  * Support for Ubuntu 22.04, 24.04 and Debian Bookworm
+  * dnf/yum equivalent using C libs with libsolv and libcurl
+  * Includes plugins for metalink and repository GPG checking
+  * Automatic update functionality via systemd timers
+
+ -- VMware, Inc. <support@vmware.com>  Wed, 10 Sep 2025 12:00:00 +0000

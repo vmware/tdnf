@@ -1,0 +1,66 @@
+# Exclude macOS metadata files and other binary files
+extend-diff-ignore = "\.DS_Store$"
+extend-diff-ignore = "\._.*$"
+extend-diff-ignore = "\.tar\.gz$"
+extend-diff-ignore = "\.tar\.bz2$"
+extend-diff-ignore = "\.tar\.xz$"
+extend-diff-ignore = "\.rpm$"
+extend-diff-ignore = "\.deb$"
+extend-diff-ignore = "build/"
+extend-diff-ignore = "\.git/"
+
+# Exclude patch files that might be in working directory
+extend-diff-ignore = ".*\.patch$"
+
+# Exclude build artifacts and generated files
+extend-diff-ignore = "package_list\.gz$"
+extend-diff-ignore = "rpmprovides$"
+extend-diff-ignore = "mirror\.list$"
+
+# Exclude test artifacts
+extend-diff-ignore = "pytests/\.pytest_cache/"
+extend-diff-ignore = "pytests/virtual_disks/"
+extend-diff-ignore = "pytests/tdnf-test-one$"
+
+# Exclude repository data
+extend-diff-ignore = "repo/repodata/"
+extend-diff-ignore = "repo/.*\.rpm$"
+
+# Exclude generated binaries and scripts
+extend-diff-ignore = "bin/tdnf-automatic$"
+extend-diff-ignore = "bin/tdnf-cache-updateinfo$"
+extend-diff-ignore = "scripts/build-tdnf-rpms$"
+
+# Exclude pytest and test configuration
+extend-diff-ignore = "pytests/config-install\.json$"
+extend-diff-ignore = "pytests/config\.json$"
+extend-diff-ignore = "pytests/snapshot\.repo$"
+extend-diff-ignore = "pytests/mount-small-cache$"
+
+# Exclude additional generated/untracked files
+extend-diff-ignore = "history/config\.h$"
+extend-diff-ignore = "include/tdnf-common-defines\.h\.trace$"
+extend-diff-ignore = "solv/defines\.h\.trace$"
+extend-diff-ignore = "rpmprovides\.c$"
+extend-diff-ignore = "tdnf\.spec\.in\.away$"
+extend-diff-ignore = "tdnf\.spec$"
+extend-diff-ignore = "v.*\.tar\.gz$"
+
+# Exclude CMake-generated config.h files
+extend-diff-ignore = "client/config\.h$"
+extend-diff-ignore = "plugins/metalink/config\.h$"
+extend-diff-ignore = "plugins/repogpgcheck/config\.h$"
+extend-diff-ignore = "common/config\.h$"
+
+# Also exclude from tarball creation
+tar-ignore = "._*"
+tar-ignore = "*.tar.gz"
+tar-ignore = "*.rpm"
+tar-ignore = "*.deb"
+tar-ignore = ".DS_Store"
+tar-ignore = "package_list.gz"
+tar-ignore = "rpmprovides"
+tar-ignore = "pytests/.pytest_cache"
+tar-ignore = "pytests/virtual_disks"
+tar-ignore = "repo/repodata"
+tar-ignore = "build"
