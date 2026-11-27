@@ -907,7 +907,7 @@ error:
     TDNFFreePackageInfo(pPkgInfo);
     if(dwError == ERROR_TDNF_NO_MATCH)
     {
-        dwError = ERROR_TDNF_NO_DATA;
+        pr_err("No match found for '%s'\n", pszSpec);
     }
     goto cleanup;
 }
